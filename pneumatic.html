@@ -545,13 +545,13 @@ $('sCopy').onclick=async()=>{const st=sendReady();if(!st)return;const {text}=awa
 $('sImg').onclick=async()=>{const st=sendReady();if(!st)return;const b=await panelBlob(st.n,st.id);if(!b)return okMsg('تعذّر إنشاء الصورة.',1);const r=await saveBlob(b,'دائرة-'+st.id+'.png');okMsg(r==='saved'?'نُزّلت الصورة.':'',r==='failed');};
 /* cloud (same Google sheet as the electrical workshop; pneumatic rows are marked pn) */
 const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
-async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JSON.stringify(d)});}catch(_){throw new Error('net');}const t=await r.text();let j;try{j=JSON.parse(t);}catch(_){throw new Error('setup');}if(!j.ok)throw new Error(j.err||'fail');return j;}
+async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JSON.stringify(d)});}catch(_){throw new Error('net');}const t=await r.text();let j;try{j=JSON.parse(t);}catch(_){throw new Error('setup');}if(!j.ok){const E=new Error(j.err||'fail');E.srv=j.msg||'';throw E;};return j;}
 async function imgs(st){try{const b=await panelBlob(st.n,st.id);if(!b)return{};const u=URL.createObjectURL(b),im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});URL.revokeObjectURL(u);
   const jpg=(w,q)=>{const c=document.createElement('canvas');c.width=w;c.height=Math.round(im.height*w/im.width);const g=c.getContext('2d');g.fillStyle='#8e9aa4';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q).split(',')[1];};
   let th=jpg(220,.6);if(th.length>44000)th=jpg(160,.5);return{img:jpg(900,.8),th};}catch(_){return{};}}
 $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
   try{const {code}=await buildMsg(st),im=await imgs(st);const j=await cloud({action:'submit',n:st.n,id:st.id,ex:'pn',s:'',code,img:im.img,th:im.th});okMsg('✔ وصلت دائرتك للمدرب. رقم المرجع: '+j.uid);}
-  catch(e){okMsg(e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
+  catch(e){okMsg(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set()};try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id).includes(q));$('rDelSel').disabled=!RS.sel.size;
