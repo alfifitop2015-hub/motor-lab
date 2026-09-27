@@ -100,6 +100,24 @@ body:not(.trainer) .trainer-only{display:none!important}
 .stu input.bad,.fld input.bad{border-color:var(--warn);box-shadow:0 0 0 2px color-mix(in srgb,var(--warn) 30%,transparent)}
 .sendb{height:38px;border:0;border-radius:9px;background:var(--ok);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;flex:none;white-space:nowrap}
 .gradeb{background:#ffb300;color:#1c1400}
+.plcbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.plcbar .grow{flex:1}
+.plcbar button,.plckeys button,.plcpal button{height:36px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.88rem}
+.plcbar button.on{background:#1a8a42;color:#fff;border-color:#1a8a42}.plcbar button.stop.on{background:#c42b22;border-color:#c42b22}
+.plcst{font-weight:700;font-size:.9rem}
+.plcio{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 8px;direction:ltr;justify-content:flex-end}
+.plcio span{font:700 .78rem 'Courier New',monospace;padding:3px 6px;border-radius:6px;background:var(--chip);color:var(--muted)}.plcio span.on{background:#1a8a42;color:#fff}
+.plclcd{background:#b8c46a;border:3px solid #4d533a;border-radius:10px;padding:8px 6px;max-height:300px;overflow:auto;font-family:'Courier New',monospace}
+.pr{display:flex;align-items:center;gap:2px;margin:1px 0}.pln{width:22px;font-size:.7rem;color:#4d5a24;text-align:right;padding-right:4px}
+.pc{border:0;background:transparent;font:700 15px 'Courier New',monospace;color:#1f2a0c;height:30px;border-radius:4px;cursor:pointer;padding:0;white-space:pre}
+.pc.k{width:46px}.pc.j{width:18px}.pc.q{width:56px}.pc.e{color:#7f8b45}.pc.cur{outline:2.5px solid #1f2a0c;background:#d7e08f}.pc.on{background:#1f2a0c;color:#d7e08f}
+.pc .nc{text-decoration:overline}
+.plcnote{font-size:.85rem;margin:8px 0 4px;min-height:1.2em}
+.plcpal{background:var(--chip);border-radius:10px;padding:8px;margin:6px 0}.plcpal .pt{font-size:.8rem;color:var(--muted);margin:6px 0 4px}
+.plcpal .row{display:flex;gap:4px;flex-wrap:wrap;direction:ltr;justify-content:flex-end}.plcpal button{height:32px;min-width:40px;padding:0 8px;font-family:'Courier New',monospace;font-weight:700}
+.plcpal button.sel{background:#0b3d91;color:#fff;border-color:#0b3d91}
+.plckeys{display:flex;gap:5px;flex-wrap:wrap;direction:ltr;justify-content:center;margin:8px 0}.plckeys button{min-width:46px;background:#4a4f55;color:#fff;border-color:#33373b;font-weight:700}
+.plctm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0;font-size:.88rem}.plctm select,.plctm input{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:0 6px}
+.plctm input{width:80px;direction:ltr}
 body:not(.cloud) .cloud-only{display:none!important}
 .rth{width:56px;height:76px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line);background:#0c2753;cursor:zoom-in;display:block}
 .rth.none{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.7rem;cursor:default;background:var(--chip)}
@@ -260,6 +278,7 @@ body.fs{padding-bottom:0}
     <button class="db full" data-add="timer" title="إضافة مؤقت"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="1" width="32" height="42" rx="4" fill="#f1f0ea"/><circle cx="15" cy="22" r="9" fill="#fff" stroke="#999"/><path d="M15 13a9 9 0 0 1 9 9" fill="none" stroke="#ff9f1a" stroke-width="3"/></svg>مؤقت<b class="cnt" style="font-weight:400"></b></button>
     <button class="db full" data-add="ol" title="إضافة أوفرلود"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="1" width="32" height="42" rx="4" fill="#eeeeea"/><circle cx="13" cy="22" r="8" fill="#d8322b"/><circle cx="26" cy="17" r="3" fill="#2d6fd6"/><circle cx="26" cy="27" r="3" fill="#d8322b"/></svg>أوفرلود<b class="cnt" style="font-weight:400"></b></button>
     <button class="db full" data-add="aux" title="إضافة نقاط مساعدة"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="4" width="4" height="36" rx="1" fill="#222"/><rect x="29" y="4" width="4" height="36" rx="1" fill="#222"/><rect x="4" y="2" width="26" height="40" rx="3" fill="#f5f6f5" stroke="#888"/><circle cx="10" cy="9" r="2.6" fill="#5d646a"/><circle cx="17" cy="9" r="2.6" fill="#5d646a"/><circle cx="24" cy="9" r="2.6" fill="#5d646a"/><circle cx="10" cy="35" r="2.6" fill="#5d646a"/><circle cx="17" cy="35" r="2.6" fill="#5d646a"/><circle cx="24" cy="35" r="2.6" fill="#5d646a"/><rect x="14" y="17" width="6" height="9" rx="1" fill="#f6a01a"/></svg>مساعدة<b class="cnt" style="font-weight:400"></b></button>
+    <button class="db full" id="dMM" title="ملتميتر للقياس"><span class="ic">📟</span>ملتميتر</button>
     <select class="dsel full" id="dRail" aria-label="سكة التثبيت"></select>
     <span class="dsep full"></span>
     <select class="dsel full trainer-only" id="dPreset" aria-label="أمثلة جاهزة">
@@ -311,6 +330,20 @@ body.fs{padding-bottom:0}
     <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
+  </div>
+</div>
+<div class="modal" id="plcModal" role="dialog" aria-modal="true" aria-labelledby="plcT">
+  <div class="box appbox" style="max-width:720px">
+    <div class="ah"><h2 id="plcT">برمجة easy 512-AC-RC</h2><button class="btn" id="plcClose">إغلاق</button></div>
+    <div class="plcbar"><span class="plcst" id="plcState"></span><button id="plcRun">▶ RUN</button><button id="plcStop" class="stop">■ STOP</button><span class="grow"></span><button id="plcClear">مسح البرنامج</button></div>
+    <div class="plcio" id="plcIO"></div>
+    <div class="plclcd" id="plcGrid" dir="ltr"></div>
+    <p class="plcnote" id="plcNote"></p>
+    <div class="plcpal" id="plcPal"></div>
+    <div class="plckeys"><button data-k="DEL">DEL</button><button data-k="ALT">ALT</button><button data-k="L">◀</button><button data-k="U">▲</button><button data-k="D">▼</button><button data-k="R">▶</button><button data-k="ESC">ESC</button><button data-k="OK">OK</button></div>
+    <div id="plcTm"></div>
+    <div class="trainer-only" style="margin-top:8px"><div class="pt" style="font-size:.85rem;color:var(--muted)">برامج جاهزة (للمدرب):</div><div class="plcbar" id="plcEx"></div></div>
+    <details style="margin-top:8px"><summary style="cursor:pointer;font-weight:700">طريقة البرمجة والتوصيل</summary><div class="exbody" id="plcHelp"></div></details>
   </div>
 </div>
 <div class="modal" id="imgModal" role="dialog" aria-modal="true" aria-labelledby="imgT" style="z-index:70">
@@ -434,8 +467,9 @@ function relayout(){
   devices=[];T={};
   mk('Q1','mcb',60,110,132,150,[tu('1',22,18),tu('3',66,18),tu('5',110,18),td('2',22,132),td('4',66,132),td('6',110,132)],{poles:3,rating:'C16'});
   mk('F1','mcb',205,110,50,150,[tu('1',25,18),td('2',25,132)],{poles:1,rating:'C6'});
-  mk('PLC','plc',270,118,300,134,[]);
-  mk('FLOW','flowbtn',590,140,96,96,[]);
+  mk('PLC','plc',266,96,172,190,[tu('L',12,14,''),tu('N1',26.6,14,''),tu('N2',41.2,14,'')]);
+  {const xt=[];for(let i=0;i<16;i++){const nm=i<8?'I'+(i+1):'Q'+(Math.floor((i-8)/2)+1)+'_'+((i%2)+1);xt.push(td(nm,i*24+12,60,''));}mk('XP','xps',452,150,384,72,xt);}
+  mk('FLOW','flowbtn',866,150,92,92,[]);
   mk('FEED','feed',60,0,132,110,[]);
   let x=45,row=0;
   const maxR=S.devs.reduce((m,d)=>Math.max(m,d.rail),-1);
@@ -463,7 +497,7 @@ const M={U1:'M1.U1',V1:'M1.V1',W1:'M1.W1',U2:'M1.U2',V2:'M1.V2',W2:'M1.W2'},M2K=
 
 /* ---------- state ---------- */
 const FBW=250,FBH=364,FBDEF={x:705,y:348,sc:1};
-const S={fbp:{...FBDEF},power:true,Q1:true,F1:true,devs:[],railCount:1,target:0,tm:{},ol:{},done:{},rows:2,motor2:{state:'off'},pressed:new Set(),coils:{},
+const S={plc:{run:true,prog:[],tm:{},q:[false,false,false,false,false],m:{},ts:{},prev:{},inp:{},pw:false,flow:[]},mm:{on:false,x:700,y:40,mode:'v',red:null,black:null},mmPick:null,fbp:{...FBDEF},power:true,Q1:true,F1:true,devs:[],railCount:1,target:0,tm:{},ol:{},done:{},rows:2,motor2:{state:'off'},pressed:new Set(),coils:{},
   pos:0.5,ls1:false,ls2:false,
   fault:null,wires:[],sel:null,pending:null,showV:true,last:'',hist:[],zoom:1,R:null,motor:{state:'off'},lamps:{},warn:[],osc:false,nextId:1};
 const ofType=t=>S.devs.filter(d=>d.type===t).map(d=>d.id);
@@ -483,6 +517,7 @@ function links(coils,done){const L=[],pr=(d,a,b)=>L.push([d+'.'+a,d+'.'+b]),x=(a
   ofType('k').forEach(k=>{if(coils[k]){pr(k,'1','2');pr(k,'3','4');pr(k,'5','6');pr(k,'13','14');}else pr(k,'21','22');});
   ofType('timer').forEach(t=>{if(done[t])pr(t,'15','18');else pr(t,'15','16');});
   ofType('aux').forEach(a=>{const h=S.devs.find(d=>d.id===a).host;if(coils[h]){pr(a,'53','54');pr(a,'83','84');}else{pr(a,'61','62');pr(a,'71','72');}});
+  L.push(['PLC.N1','PLC.N2'],['F1.2','PLC.L'],['X1.33','PLC.N1']);for(let i=1;i<=4;i++)if(S.plc.q[i])L.push(['XP.Q'+i+'_1','XP.Q'+i+'_2']);
   ofType('ol').forEach(f=>{const hd=S.devs.find(d=>d.id===f).host;if(hd){L.push([hd+'.2',f+'.1'],[hd+'.4',f+'.3'],[hd+'.6',f+'.5']);}pr(f,'1','2');pr(f,'3','4');pr(f,'5','6');if(S.ol[f].trip)pr(f,'97','98');else pr(f,'95','96');});
   const P=s=>S.pressed.has(s);
   if(!P('S0'))x(7,8);
@@ -522,7 +557,8 @@ function solve(){
     coils=nc;
     tids.forEach(t=>{const tm=S.tm[t];if(coils[t]){if(tm.start==null)tm.start=performance.now();}else tm.start=null;});
     const nd=dmap(),sameD=tids.every(t=>nd[t]===done[t]);
-    if(same&&sameD)break;
+    const pc=plcCycle(R);
+    if(same&&sameD&&!pc)break;
     done=nd;
     if(++it>40){S.osc=true;R=compute(coils,done);break;}
   }
@@ -534,6 +570,7 @@ function solve(){
       S.power=false;S.coils={};tids.forEach(t=>S.tm[t].start=null);return solve();
     }}
   S.coils=coils;S.done=done;S.R=R;S.warn=[];
+  if(loadV(R,'PLC.L','PLC.N1')==='over')S.warn.push('PLC: طوران على L وN (400V) والجهاز يعمل على 230V.');
   coilIds().forEach(k=>{if(loadV(R,k+'.A1',k+'.A2')==='over')S.warn.push(nm(k)+': طوران على طرفي الملف (400V) والملف يعمل على 230V.');});
   S.lamps={};[29,30,31,32].forEach((t,i)=>{const v=loadV(R,'X1.'+t,'X1.33');S.lamps['H'+(i+1)]=v==='on';});
   if(S.osc)S.warn.push('الدائرة تتذبذب: ملف يفصل نفسه بنفسه. راجع التلامسات المغلقة NC في مسار الملف.');
@@ -665,11 +702,47 @@ function drawDev(d){const {x,y,w,h}=d;
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${on?'#d4ff00':'#1d4a8f'}" stroke="${on?'#8aa600':'#8fb0e0'}" stroke-width="3" filter="url(#ds2)"/>
     <path d="M${x+54} ${y+14}L${x+30} ${y+52}H${x+48}L${x+40} ${y+80}L${x+68} ${y+40}H${x+50}Z" fill="${on?'#1b2400':'#fff'}"/>
     ${txt(x+w/2,y+h+16,on?'مسار التيار: ظاهر':'مسار التيار: مخفي',11,'#fff',700)}</g>`;}
-  case'plc':return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#e9e8e2" stroke="#999"/>
-    <rect x="${x+20}" y="${y+30}" width="90" height="56" rx="3" fill="#9fb39a" stroke="#6f7f6b"/>
-    <rect x="${x+135}" y="${y+34}" width="46" height="46" rx="6" fill="#56595c" transform="rotate(45 ${x+158} ${y+57})"/>
-    <rect x="${x+200}" y="${y+10}" width="${w-210}" height="${h-20}" rx="4" fill="#dcdad2"/>
-    ${txt(x+65,y+62,'PLC',16,'#2d3a2a',700)}${txt(x+150,y+118,'وحدة PLC للعرض فقط',11,'#555')}`;
+  case'plc':{const P=S.plc,lcd=plcLCD();let s=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#e2e4e1" stroke="#9aa0a4"/>
+    <rect x="${x+2}" y="${y+2}" width="${w-4}" height="26" rx="4" fill="#d3d6d4"/><rect x="${x+2}" y="${y+h-30}" width="${w-4}" height="28" rx="4" fill="#d3d6d4"/>`;
+    ['L','N','N','I1','I2','I3','I4','I5','I6','I7','I8'].forEach((l,i)=>{const cx=x+12+i*14.6;s+=`<circle cx="${cx}" cy="${y+14}" r="5.8" fill="#2f3438" stroke="#15181a"/><path d="M${cx-3} ${y+14}h6" stroke="#8a9096" stroke-width="1.4"/>${txt(cx,y+34,l,6.4,'#2a2f33',700)}`;});
+    s+=`<line x1="${x+4}" y1="${y+38}" x2="${x+w-4}" y2="${y+38}" stroke="#b9bec2"/>
+    <text x="${x+8}" y="${y+48}" style="font:600 6.4px sans-serif;fill:#333">AC115..240V</text><text x="${x+8}" y="${y+56}" style="font:600 6.4px sans-serif;fill:#333">50/60 Hz</text>
+    <text x="${x+104}" y="${y+50}" style="font:600 6.4px sans-serif;fill:#333">Input 8 x AC</text>
+    <text x="${x+8}" y="${y+70}" style="font:700 8.5px Georgia,serif;fill:#333;letter-spacing:.5px">MOELLER</text>
+    <g class="act" data-act="plc:open"><title>اضغط للبرمجة</title><rect x="${x+8}" y="${y+75}" width="92" height="62" rx="3" fill="${lcd?'#b8c46a':'#7d8457'}" stroke="#4d533a" stroke-width="1.5"/>
+    ${lcd?lcd.map((l,i)=>`<text x="${x+13}" y="${y+89+i*13}" style="font:700 9.2px 'Courier New',monospace;fill:#1f2a0c" xml:space="preserve">${esc(l)}</text>`).join(''):''}</g>
+    <g class="act" data-act="plc:open"><rect x="${x+108}" y="${y+71}" width="24" height="12" rx="3" fill="#4a4f55"/><text x="${x+120}" y="${y+80}" text-anchor="middle" style="font:700 6.2px sans-serif;fill:#fff">DEL</text>
+    <rect x="${x+140}" y="${y+71}" width="24" height="12" rx="3" fill="#4a4f55"/><text x="${x+152}" y="${y+80}" text-anchor="middle" style="font:700 6.2px sans-serif;fill:#fff">ALT</text>
+    <circle cx="${x+136}" cy="${y+105}" r="17" fill="#34393e"/><path d="M${x+136} ${y+93}l12 12l-12 12l-12 -12z" fill="none" stroke="#c9ced3" stroke-width="1.2"/>
+    <rect x="${x+108}" y="${y+126}" width="24" height="12" rx="3" fill="#4a4f55"/><text x="${x+120}" y="${y+135}" text-anchor="middle" style="font:700 6.2px sans-serif;fill:#fff">ESC</text>
+    <rect x="${x+140}" y="${y+126}" width="24" height="12" rx="3" fill="#4a4f55"/><text x="${x+152}" y="${y+135}" text-anchor="middle" style="font:700 6.2px sans-serif;fill:#fff">OK</text></g>
+    <text x="${x+8}" y="${y+151}" style="font:italic 700 12px sans-serif;fill:#9aa0a5">easy</text><text x="${x+40}" y="${y+151}" style="font:600 8px sans-serif;fill:#333">512-AC-RC</text>
+    <text x="${x+108}" y="${y+146}" style="font:600 6px sans-serif;fill:#333">Output</text><text x="${x+108}" y="${y+154}" style="font:600 6px sans-serif;fill:#333">4xRelais/8A</text>`;
+    for(let g=0;g<4;g++){const c1=x+16+g*40,c2=c1+15,cy=y+h-14,on=P.q[g+1];
+      s+=`<rect x="${c1-2}" y="${y+h-29}" width="19" height="9" rx="2" fill="${on?'#1a8a42':'transparent'}"/>${txt(c1+7.5,y+h-22,'Q'+(g+1),6.6,on?'#fff':'#2a2f33',700)}`;
+      [c1,c2].forEach((cx,k)=>{s+=`<circle cx="${cx}" cy="${cy}" r="5.8" fill="#2f3438" stroke="#15181a"/><path d="M${cx-3} ${cy}h6" stroke="#8a9096" stroke-width="1.4"/>${txt(cx+(k?7:-7),cy+2,String(k+1),5.6,'#333',700)}`;});}
+    {const f=T['F1.2'],lx=x+12,nx=x+26.6,ty=y+14,lL=isLive('F1.2'),dL=`M${f.x} ${f.y}V${f.y+10}H${x-6}V${y-6}H${lx}V${ty}`,dN=`M150 22H${nx}V${ty}`;
+     s+=`<g pointer-events="none"><path d="${dL}" fill="none" stroke="#5a0f0c" stroke-width="5" stroke-linejoin="round"/><path d="${dL}" fill="none" stroke="#e0342f" stroke-width="3.2" stroke-linejoin="round"/>
+     <path d="${dN}" fill="none" stroke="#1b4f75" stroke-width="5" stroke-linejoin="round"/><path d="${dN}" fill="none" stroke="#4aa3df" stroke-width="3.2" stroke-linejoin="round"/>
+     ${lL&&S.showV?`<path d="${dL}" class="flowb"/><path d="${dL}" class="flow"/>`:''}
+     <rect x="${x-44}" y="${y-19}" width="40" height="12" rx="3" fill="rgba(10,20,35,.85)"/><text x="${x-24}" y="${y-10}" text-anchor="middle" style="font:700 7.5px sans-serif;fill:#ffd24a">L من F1</text>
+     <rect x="${nx+6}" y="${y-19}" width="42" height="12" rx="3" fill="rgba(10,20,35,.85)"/><text x="${nx+27}" y="${y-10}" text-anchor="middle" style="font:700 7.5px sans-serif;fill:#9fd4ff">N تعادل</text></g>`;}
+    return s;}
+  case'xps':{const pl=devices.find(q=>q.id==='PLC');let s='';
+    for(let i=0;i<16;i++){const bx=x+i*24,isQ=i>=8;s+=`<rect x="${bx+1}" y="${y}" width="22" height="${h}" rx="3" fill="${isQ?'#e9d38c':'#d6d8d9'}" stroke="#7d7d7d"/>
+      <circle cx="${bx+12}" cy="${y+14}" r="5" fill="#9aa1a7" stroke="#555"/><path d="M${bx+9.5} ${y+14}h5" stroke="#444" stroke-width="1.3"/>
+      <rect x="${bx+3}" y="${y+26}" width="18" height="14" rx="2" fill="#fff"/>${txt(bx+12,y+37,isQ?String((i%2)+1):'I'+(i+1),isQ?8.5:7.6,'#111',700)}`;}
+    s+=`<path d="M${x+2} ${y+h+4}v5H${x+190}v-5" fill="none" stroke="#fff" stroke-width="1.5"/>${txt(x+96,y+h+20,'مداخل PLC  I1-I8',10,'#fff',700)}`;
+    for(let g=0;g<4;g++){const gx=x+192+g*48;s+=`<path d="M${gx+2} ${y+h+4}v5H${gx+46}v-5" fill="none" stroke="#fff" stroke-width="1.5"/>${txt(gx+24,y+h+20,'Q'+(g+1),10,'#fff',700)}`;}
+    if(pl){let hw='';
+      const iy=pl.y-7,oy=pl.y+pl.h+6,ry=y-12,rx=x+w+12;
+      for(let k=0;k<8;k++){const sx=pl.x+12+(3+k)*14.6,tx=x+12+k*24;hw+=`M${sx} ${pl.y+14}V${iy}M${tx} ${iy}V${y+14}`;}
+      let ho='';for(let j=0;j<8;j++){const g=Math.floor(j/2),sx=pl.x+16+g*40+(j%2)*15,tx=x+12+(8+j)*24;ho+=`M${sx} ${pl.y+pl.h-14}V${oy}M${tx} ${ry}V${y+14}`;}
+      const sl=(d)=>`<path d="${d}" fill="none" stroke="#2b3036" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#5d656d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2"/>`;
+      s+=`<path d="${hw}" fill="none" stroke="#e0342f" stroke-width="1.8"/><path d="${ho}" fill="none" stroke="#ff8a1f" stroke-width="1.8"/>
+      ${sl(`M${pl.x+12+3*14.6} ${iy}H${x+12+7*24}`)}${sl(`M${pl.x+16} ${oy}H${rx}V${ry}H${x+12+8*24}`)}
+      <rect x="${x+w/2-130}" y="${y-36}" width="260" height="17" rx="8" fill="rgba(10,20,35,.85)"/>${txt(x+w/2,y-24,'ترمنالات PLC: موصولة من الأعلى، وصّل من الأسفل',9.5,'#fff',700)}`;}
+    return s;}
   case'supply':{const cols={L1:'#cfd2d4',L2:'#cfd2d4',L3:'#cfd2d4',N:'#3d7be0',PE:'url(#pe)'},nm=['L1','L2','L3','PE','N'];
     let s=`<path d="M${x+18} ${y-60}V${y}M${x+w-18} ${y-60}V${y}" stroke="#222" stroke-width="10"/><rect x="${x-4}" y="${y-58}" width="${w+8}" height="22" rx="4" fill="#333"/>${txt(x+w/2,y-43,'تغذية 3 أطوار 400V',11,'#fff',700)}`;
     nm.forEach((n,i)=>{const bx=x+30*i;s+=`<rect x="${bx+1}" y="${y}" width="28" height="${h}" rx="3" fill="${cols[n]}" stroke="#777"/><rect x="${bx+4}" y="${y+10}" width="22" height="16" rx="3" fill="#fff" opacity=".9"/>${txt(bx+15,y+22,n,10,'#111',700)}<circle cx="${bx+15}" cy="${y+48}" r="5" fill="#dfe2e5" stroke="#555"/>`;});
@@ -967,7 +1040,7 @@ function pathWithHops(q,hops){const f=v=>+v.toFixed(1),n=q.length;
     if(i+1<n-1){const c=cut[i+1];d+=`L${f(c.a[0])} ${f(c.a[1])}Q${f(c.v[0])} ${f(c.v[1])} ${f(c.b[0])} ${f(c.b[1])}`;}
     else d+=`L${f(p1[0])} ${f(p1[1])}`;}
   return d;}
-const D3T=['mcb','plc','k','timer','ol','olh','aux','strip','fboard'],GLT=['mcb','plc','k','timer','ol','olh','aux'],DEP=8;
+const D3T=['mcb','plc','xps','k','timer','ol','olh','aux','strip','fboard'],GLT=['mcb','plc','k','timer','ol','olh','aux'],DEP=8;
 function ext3(d){if(d.type==='fboard')return '';const {x,y,w,h}=d;return `<path d="M${x+w-4} ${y+2}l${DEP} ${DEP}V${y+h+DEP-6}q0 6 -6 6H${x+2+DEP}l${-DEP} ${-DEP}H${x+w-4}Z" fill="#3b3f44" pointer-events="none"/><path d="M${x+w-4} ${y+2}l${DEP} ${DEP}V${y+h+DEP-6}l${-DEP} ${-DEP}Z" fill="#5a6066" pointer-events="none"/>`;}
 function gloss3(d){const {x,y,w,h}=d;return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="url(#gGloss)" pointer-events="none"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="url(#gEdge)" pointer-events="none"/>`;}
 function render(){
@@ -980,6 +1053,7 @@ function render(){
   s+='<path id="preview" class="preview" d=""/>';
   for(const k in T){const t=T[k],ly=t.lyo!=null?t.y+t.lyo:t.side==='u'?t.y+21:t.y-12,r=k.startsWith('X1.')?5.5:6.5;
     s+=`<g class="term${isLive(k)?' live':''}${S.pending===k?' pend':''}" data-term="${k}"><circle cx="${t.x}" cy="${t.y}" r="12" class="thit"/><circle cx="${t.x}" cy="${t.y}" r="${r}" class="screw"/><path d="M${t.x-3} ${t.y}H${t.x+3}" class="slot"/>${t.badge?`<rect x="${t.x-13}" y="${t.y-36}" width="26" height="16" rx="4" fill="#0b3d91" stroke="#fff" stroke-width="1.2" pointer-events="none"/><text x="${t.x}" y="${t.y-24}" class="dl" style="font-size:11.5px;fill:#fff;pointer-events:none">${t.badge}</text>`:''}${t.label?`<text x="${t.x}" y="${ly}" class="tl${t.stud||t.lt?' tlf':''}">${t.label}</text>`:''}</g>`;}
+  s+=mmSVG();
   if(S.sel!=null&&S.selPt){const sc=Math.max(1,Math.min(2.6,0.9/S.zoom)),[bx,by]=S.selPt,sw=S.wires.find(w=>w.id===S.sel);
     if(sw)s+=`<g transform="translate(${bx} ${by-14*sc}) scale(${sc})"><g class="act" data-act="wdel"><rect x="-58" y="-34" width="80" height="28" rx="14" fill="#d8322b" stroke="#fff" stroke-width="2"/><text x="-18" y="-15" class="dl" style="font-size:13px;fill:#fff">🗑 حذف</text></g>
       <g class="act" data-act="wsel0"><circle cx="38" cy="-20" r="14" fill="#39424b" stroke="#fff" stroke-width="2"/><path d="M33 -25l10 10m0-10l-10 10" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g>
@@ -990,7 +1064,7 @@ function render(){
       s+=`<g data-wh="${i}" style="cursor:${hor?'ns-resize':'ew-resize'}" transform="translate(${mx} ${my}) scale(${hs})"><title>اسحب لتحريك هذا الجزء من السلك</title><circle r="13" fill="transparent"/><circle r="8" fill="#fff" stroke="#1f6fe5" stroke-width="2.5"/><path d="${hor?'M0 -5l-3 3h6zM0 5l-3 -3h6z':'M-5 0l3 -3v6zM5 0l-3 -3v6z'}" fill="#1f6fe5"/></g>`;}}
   svg.innerHTML=s;svg.style.width=(W*S.zoom)+'px';measureTop();
   renderTop();save();updateSound();}
-function syncDock(){
+function syncDock(){document.getElementById('dMM').classList.toggle('on',S.mm.on);
   document.getElementById('dDel').disabled=S.sel==null;document.getElementById('dDel').classList.toggle('hl',S.sel!=null);
   const m=S.motor,m2=S.motor2;let h='';
   if(S.fault)h+=`<span class="c bad">${S.fault}</span>`;
@@ -1063,7 +1137,7 @@ function renderTop(){
   document.getElementById('dRail').innerHTML=o;
   syncDock();renderInsp();
   document.querySelectorAll('[data-add]').forEach(b=>{const n=ofType(b.dataset.add).length;b.querySelector('.cnt').textContent=n?'('+n+')':'';});
-  document.getElementById('hint').textContent=S.pending?'اختر الطرف الثاني لتوصيله بـ '+S.pending+' (اضغط نفس الطرف للإلغاء)':S.sel!=null?'السلك محدد: احذفه بزر «حذف السلك» أو غيّر لونه من الألوان':'اضغط أي طرف ثم طرفًا آخر لتمديد سلك. اضغط على أي قطعة لتظهر أزرار نقلها وحذفها.';}
+  document.getElementById('hint').textContent=S.mmPick?'اضغط الطرف الذي ستضع عليه المجس '+(S.mmPick==='red'?'الأحمر':'الأسود')+' (أو اضغط المقبس مرة أخرى للإلغاء).':S.pending?'اختر الطرف الثاني لتوصيله بـ '+S.pending+' (اضغط نفس الطرف للإلغاء)':S.sel!=null?'السلك محدد: احذفه بزر «حذف السلك» أو غيّر لونه من الألوان':'اضغط أي طرف ثم طرفًا آخر لتمديد سلك. اضغط على أي قطعة لتظهر أزرار نقلها وحذفها.';}
 function partial(){const C=2*Math.PI*26;if(S.selDev&&S.tm[S.selDev])renderInsp();
   ofType('timer').forEach(t=>{const tm=S.tm[t],arc=document.getElementById('ktArc-'+t);if(arc&&tm.start!=null){const f=Math.min(1,(performance.now()-tm.start)/(tm.delay*1000));arc.setAttribute('stroke-dasharray',(f*C)+' '+C);
     const tt=document.getElementById('ktTxt-'+t);if(tt)tt.textContent=Math.max(0,tm.delay-(performance.now()-tm.start)/1000).toFixed(1)+' ث';}});
@@ -1074,7 +1148,7 @@ function update(){solve();render();}
 
 /* ---------- actions ---------- */
 function snap(){S.ran=false;S.power=true;S.fault=null;S.hist.push(JSON.stringify(serial()));if(S.hist.length>60)S.hist.shift();}
-function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c])};}
+function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c]),plc:{prog:S.plc.prog,tm:S.plc.tm,run:S.plc.run}};}
 const railEnd=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][1]:955,railStart=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][0]:45;
 function railUsed(r,skip){return S.devs.filter(d=>d.rail===r&&!d.host&&d.id!==skip).reduce((a,d)=>a+DEFS[d.type].w+14,railStart(r));}
 const fits=(r,type,skip)=>railUsed(r,skip)+DEFS[type].w<=railEnd(r);
@@ -1091,7 +1165,8 @@ function devsFromWires(w,o){const ids=new Set();w.forEach(([a,b])=>[a,b].forEach
   return arr;}
 function applyObj(o){if(!o||!Array.isArray(o.w))throw 0;
   const m21=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
-  o={...o,w:o.w.map(([a,b,c])=>[m21(a),m21(b),c])};
+  o={...o,w:o.w.map(([a,b,c,m])=>m?[m21(a),m21(b),c,m]:[m21(a),m21(b),c])};
+  {const P=S.plc;P.prog=o.plc&&Array.isArray(o.plc.prog)?JSON.parse(JSON.stringify(o.plc.prog)):[];P.tm=o.plc&&o.plc.tm?JSON.parse(JSON.stringify(o.plc.tm)):{};P.run=!(o.plc&&o.plc.run===false);P.m={};P.ts={};P.prev={};P.q=[false,false,false,false,false];}
   if(o.devs){const need=new Set();o.w.forEach(([a,b])=>[a,b].forEach(k=>{const m=/^(K\d+)A\./.exec(k);if(m)need.add(m[1]);}));
     const devs=[...o.devs];need.forEach(h=>{if(!devs.some(d=>d.id===h+'A')){const hd=devs.find(d=>d.id===h);if(hd)devs.push({id:h+'A',type:'aux',host:h,rail:hd.rail});}});o={...o,devs};}
   o={...o,w:o.w.filter(([a,b])=>!((a==='F1.1'&&/^Q1\.[246]$/.test(b))||(b==='F1.1'&&/^Q1\.[246]$/.test(a))))};
@@ -1105,6 +1180,7 @@ const M2MAP={37:'U1',38:'V1',39:'W1',40:'U2',41:'V2',42:'W2'};
 function mapKey(k){if(LEG[k])k=LEG[k];if(X0M[k])k=X0M[k];const mx=/^X2\.(U1|V1|W1|U2|V2|W2)(b?)$/.exec(k);if(mx)k='X1.'+X2M[mx[1]]+mx[2];const m37=/^X1\.(3[7-9]|4[0-2])b?$/.exec(k);if(m37)k='M2.'+M2MAP[m37[1]];if(T[k])return k;const [id,t]=k.split('.');const dv=S.devs.find(d=>d.id===id);if(dv&&dv.host&&['1','3','5'].includes(t))return dv.host+'.'+(+t+1);return null;}
 function setWires(list){S.wires=[];list.forEach(([a,b,c,m])=>{a=mapKey(a);b=mapKey(b);if(a&&b){const n=S.wires.length;addWire(a,b,c?normC(c):c);if(m&&S.wires.length>n)S.wires[n].man=m;}});}
 function termClick(k){
+  if(S.mmPick){S.mm[S.mmPick]=k;say('وُضع المجس '+(S.mmPick==='red'?'الأحمر':'الأسود')+' على '+k);S.mmPick=null;return render();}
   if(!S.pending){S.pending=k;S.sel=null;}
   else if(S.pending===k)S.pending=null;
   else if((T[S.pending].zone||'p')!==(T[k].zone||'p')&&!((T[S.pending].m2&&!T[k].zone)||(T[k].m2&&!T[S.pending].zone))){say('لا يمكن توصيل طرف داخل اللوحة بالمحرك M1 مباشرة. وصّله من أسفل الشعب 1 إلى 6. أما M2 فيوصَّل مباشرة من الأوفرلود أو الكونتاكتور.');S.pending=null;}
@@ -1116,6 +1192,9 @@ function act(a){const [k,id,sg]=a.split(':');
   else if(a==='flow'){S.showV=!S.showV;return render();}
   else if(k==='snd'){return soundOn(id,!SNDM[id]);}
   else if(k==='app'){return openApps(id);}
+  else if(k==='plc'){return openPLC();}
+  else if(k==='mm'){if(id==='hide'){S.mm.on=false;S.mmPick=null;}else if(id==='mode'){S.mm.mode=sg;mmAudio();}
+    else if(id==='probe'){mmAudio();if(S.mm[sg]){S.mm[sg]=null;S.mmPick=null;}else S.mmPick=S.mmPick===sg?null:sg;}return render();}
   else if(a==='wdel'){if(S.sel!=null)return delWire(S.sel);}
   else if(a==='wsel0'){S.sel=null;return render();}
   else if(a==='wauto'){const w=S.wires.find(x=>x.id===S.sel);if(w&&w.man){snap();delete w.man;say('رجع السلك للمسار التلقائي');}return render();}
@@ -1163,13 +1242,14 @@ let drag=null;
 function svgPt(e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse());}
 const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
 svg.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-drag]');if(!g||e.target.closest('[data-press],[data-act],[data-term]'))return;
-  e.preventDefault();const p=svgPt(e);drag={kind:g.dataset.drag,p0:p,x:S.fbp.x,y:S.fbp.y,sc:S.fbp.sc,moved:false};try{svg.setPointerCapture(e.pointerId);}catch(_){}});
+  e.preventDefault();const p=svgPt(e);const mmd=g.dataset.drag==='mm';drag={kind:g.dataset.drag,p0:p,x:mmd?S.mm.x:S.fbp.x,y:mmd?S.mm.y:S.fbp.y,sc:S.fbp.sc,moved:false};try{svg.setPointerCapture(e.pointerId);}catch(_){}});
 svg.addEventListener('pointermove',e=>{if(!drag)return;const p=svgPt(e),dx=p.x-drag.p0.x,dy=p.y-drag.p0.y;if(!drag.moved&&Math.hypot(dx,dy)<5)return;
+  if(drag.kind==='mm'){drag.moved=true;S.mm.x=clampN(drag.x+dx,0,W-150*MS);S.mm.y=clampN(drag.y+dy,0,H-262*MS);mmMove();return;}
   if(!drag.moved){drag.moved=true;snap();}
   if(drag.kind==='fb'){const w=FBW*S.fbp.sc;S.fbp.x=clampN(drag.x+dx,40,960-w);S.fbp.y=clampN(drag.y+dy,332,S.trunkY[S.rows-1]-40);}
   else{const sc=clampN(drag.sc+Math.max(dx/FBW,dy/FBH),0.6,1.6);S.fbp.sc=+sc.toFixed(3);S.fbp.x=Math.min(S.fbp.x,960-FBW*sc);}
   const G=document.getElementById('fbG');if(G)G.setAttribute('transform',`translate(${S.fbp.x} ${S.fbp.y}) scale(${S.fbp.sc})`);});
-function endDrag(){if(!drag)return;const d=drag;drag=null;if(d.moved){relayout();say('نُقلت لوحة الأجهزة أو تغير حجمها');update();}else{S.selDev='FB';S.sel=null;S.pending=null;render();}}
+function endDrag(){if(!drag)return;const d=drag;drag=null;if(d.kind==='mm'){if(d.moved)render();return;}if(d.moved){relayout();say('نُقلت لوحة الأجهزة أو تغير حجمها');update();}else{S.selDev='FB';S.sel=null;S.pending=null;render();}}
 svg.addEventListener('pointerup',endDrag);svg.addEventListener('pointercancel',endDrag);
 svg.addEventListener('click',e=>{
   if(e.target.closest('[data-wh]'))return;
@@ -1405,11 +1485,12 @@ const GREQ={p1:'S1 تشغيل مع تثبيت ذاتي، S0 إيقاف. المح
  p6:'S1 يبدأ نجمة مع تثبيت ذاتي، وS2 يحوّل إلى دلتا ويبقى دلتا، وS0 إيقاف. لا يعمل كونتاكتورا النجمة والدلتا معًا. H1 نجمة، H2 دلتا، H3 إيقاف.',
  p7:'S1 يبدأ نجمة ويشغّل المؤقت، وبعد انتهاء زمن المؤقت يتحول المحرك تلقائيًا إلى دلتا. S0 إيقاف. لا يعمل كونتاكتورا النجمة والدلتا معًا. H1 نجمة، H2 دلتا، H3 إيقاف، H4 عطل.'};
 /* compare the trainee's wiring with the approved diagram, net by net (running is not required) */
+const isLampW=([a,b])=>{const t=k=>/^X1\.(29|30|31|32)$/.test(k)||/^F\d+\.(97|98)$/.test(k);return t(a)||t(b)||(a==='F1.2'&&/^K\d+A\.61$/.test(b))||(b==='F1.2'&&/^K\d+A\.61$/.test(a));};
 function refWires(ex){const m21=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
-  return [...PRESETS[ex],...((ex==='p6'||ex==='p7')?motorCable:motorCable.slice(0,3)),...(ex==='p3'?m2Cable:[])].map(([a,b])=>[m21(a),m21(b)]);}
+  return [...PRESETS[ex],...((ex==='p6'||ex==='p7')?motorCable:motorCable.slice(0,3)),...(ex==='p3'?m2Cable:[])].map(([a,b])=>[m21(a),m21(b)]).filter(w=>!isLampW(w));}
 function staticLinks(D){D=D||S.devs;const L=[['Q1.5','F1.1']];for(let i=34;i<=36;i++)L.push(['X1.'+i,'X1.33']);MB.forEach(n=>L.push(['X1.'+n,'X1.'+n+'b']));
   D.forEach(d=>{if(d.type==='ol'&&d.host)L.push([d.host+'.2',d.id+'.1'],[d.host+'.4',d.id+'.3'],[d.host+'.6',d.id+'.5']);});return L;}
-function gradeNow(ex,W,D){W=W||S.wires.map(w=>[w.a,w.b]);const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
+function gradeNow(ex,W,D){W=(W||S.wires.map(w=>[w.a,w.b])).filter(w=>!isLampW(w));const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
   const u0=uf([]),seen=new Set(),ref=[];
   refWires(ex).forEach(([a,b])=>{if(a===b||u0.find(a)===u0.find(b))return;const k=[a,b].sort().join('|');if(!seen.has(k)){seen.add(k);ref.push([a,b]);}});
   const us=uf(W),ur=uf(ref);
@@ -1431,7 +1512,7 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   return `<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <p style="margin:0 0 6px;font-weight:700">${esc(PNAME[G.ex])}</p>
   ${G.tot!=null?`<ul class="glist"><li><span>✔</span><span>توصيلات صحيحة مطابقة للمخطط</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>توصيلات خاطئة أو زائدة</span><b>${G.bad}</b></li></ul>
-  <p class="gmeta" style="margin-top:6px">طريقة الحساب: الدرجة = 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.s}</p>
+  <p class="gmeta" style="margin-top:6px">توصيلات لمبات البيان لا تدخل في التقييم. طريقة الحساب: الدرجة = 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.s}</p>
   ${G.wrongW&&G.wrongW.length?`<details style="margin-top:6px"><summary>التوصيلات الخاطئة (${G.wrongW.length})</summary><ul class="glist">${wl(G.wrongW)}</ul></details>`:''}
   ${G.miss&&G.miss.length?`<details class="trainer-only" style="margin-top:6px"><summary>التوصيلات الناقصة (${G.miss.length}) · تظهر للمدرب فقط</summary><ul class="glist">${wl(G.miss)}</ul></details>`:''}`:
   `<ul class="glist">${G.items.map(([t,p,ok])=>`<li class="${ok?'':'no'}"><span>${ok?'✔':'✖'}</span><span>${esc(t)}</span><b>${ok?p:0} / ${p}</b></li>`).join('')}</ul>`}
@@ -1530,6 +1611,173 @@ window.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(imM.classLis
 // open trainee work from a link (#t=...)
 if(/^#t=/.test(location.hash))decodeCode(location.hash).then(o=>{snap();applyObj(o);S.stu=o.st||null;stuCheck();say(o.st?'فُتحت تجربة المتدرب '+o.st.n:'فُتحت تجربة من رابط');update();}).catch(()=>{});
 
+/* ---------- easy 512-AC-RC programmable relay ---------- */
+function plcLCD(){const P=S.plc;if(!P.pw)return null;const d=new Date(),dd=['SU','MO','TU','WE','TH','FR','SA'][d.getDay()],hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return['I'+[1,2,3,4,5,6,7,8].map(i=>P.inp[i]?i:'.').join(''),dd+' '+hm,'Q'+[1,2,3,4].map(i=>P.q[i]?i:'.').join(''),(P.run?'RUN':'STOP').padStart(12,' ')];}
+function plcVal(op,inp,P){const k=op[0],n=+op.slice(1);return k==='I'?!!inp[n]:k==='Q'?!!P.q[n]:k==='M'?!!P.m[n]:k==='T'?!!(P.ts[n]&&P.ts[n].out):false;}
+function plcScan(inp,now){const P=S.plc,L=P.prog,n=L.length;let node=L.map(()=>true);const flow=L.map(()=>[false,false,false,false]);
+  for(let b=0;b<3;b++){const out=L.map((ln,r)=>{const c=ln.c[b];if(!c)return false;const v=c.op==='-'?true:(plcVal(c.op,inp,P)!==!!c.nc);flow[r][b]=node[r]&&v;return node[r]&&v;});
+    const nx=out.slice();let r=0;while(r<n){let e=r;while(e<n-1&&L[e].j&&L[e].j[b])e++;if(e>r){const v=out.slice(r,e+1).some(Boolean);for(let i=r;i<=e;i++)nx[i]=v;}r=e+1;}node=nx;}
+  Object.values(P.ts).forEach(ts=>ts.hold=false);
+  L.forEach((ln,r)=>{const co=ln.coil;if(!co)return;const pw=node[r];flow[r][3]=pw;const was=!!P.prev[r];P.prev[r]=pw;const t=co.op[0],num=+co.op.slice(1);
+    if(t==='T'){const ts=P.ts[num]||(P.ts[num]={trig:false,start:null,out:false,pt:false,hold:false});if(co.f==='R')ts.hold=ts.hold||pw;else ts.trig=pw;return;}
+    const tgt=t==='Q'?P.q:P.m;if(co.f==='C')tgt[num]=pw;else if(co.f==='S'){if(pw)tgt[num]=true;}else if(co.f==='R'){if(pw)tgt[num]=false;}else if(co.f==='I'){if(pw&&!was)tgt[num]=!tgt[num];}});
+  Object.keys(P.ts).forEach(k=>{const ts=P.ts[k],cfg=P.tm[k]||{mode:'X',t:3},T0=Math.max(.1,+cfg.t||0)*1000;
+    if(ts.hold){ts.start=null;ts.out=false;ts.pt=ts.trig;return;}
+    if(cfg.mode==='OFF'){if(ts.trig){ts.out=true;ts.start=null;}else if(ts.out){if(ts.start==null)ts.start=now;if(now-ts.start>=T0){ts.out=false;ts.start=null;}}}
+    else if(cfg.mode==='P'){if(ts.trig&&!ts.pt){ts.out=true;ts.start=now;}if(ts.out&&ts.start!=null&&now-ts.start>=T0){ts.out=false;ts.start=null;}}
+    else if(cfg.mode==='F'){if(ts.trig){if(ts.start==null)ts.start=now;ts.out=Math.floor((now-ts.start)/T0)%2===0;}else{ts.start=null;ts.out=false;}}
+    else{if(ts.trig){if(ts.start==null)ts.start=now;ts.out=now-ts.start>=T0;}else{ts.start=null;ts.out=false;}}
+    ts.pt=ts.trig;});
+  P.flow=flow;}
+function plcCycle(R){const P=S.plc,q0=P.q.join(),pw=loadV(R,'PLC.L','PLC.N1')==='on';
+  if(!pw){if(P.pw){P.m={};P.ts={};P.prev={};}P.pw=false;P.inp={};P.flow=[];P.q=[false,false,false,false,false];return q0!==P.q.join();}
+  if(!P.pw){P.m={};P.ts={};P.prev={};}P.pw=true;const inp={};for(let i=1;i<=8;i++)inp[i]=loadV(R,'XP.I'+i,'PLC.N1')==='on';P.inp=inp;
+  if(!P.run){P.q=[false,false,false,false,false];P.flow=[];return q0!==P.q.join();}
+  plcScan(inp,performance.now());return q0!==P.q.join();}
+// ----- editor
+const plM=$('plcModal'),PE={r:0,c:0,cf:'C',tf:'T'};
+const TMODES={X:'تأخير تشغيل (X)',OFF:'تأخير فصل',P:'نبضة واحدة',F:'وميض'};
+function plcLine(r){const P=S.plc;while(P.prog.length<=r)P.prog.push({c:[null,null,null],j:[false,false,false],coil:null});return P.prog[r];}
+function plcTrim(){const P=S.plc;while(P.prog.length){const l=P.prog[P.prog.length-1];if(l.c.some(Boolean)||l.coil||l.j.some(Boolean))break;P.prog.pop();}}
+function plcAutoWire(l){if(!l.coil)return;let last=-1;l.c.forEach((c,i)=>{if(c)last=i;});for(let i=last+1;i<3;i++)l.c[i]={op:'-'};}
+function plcRows(){return Math.min(41,Math.max(S.plc.prog.length+1,5));}
+function plcCellTxt(l,ci,r){const P=S.plc;if(ci%2===0&&ci<6){const c=l&&l.c[ci/2];if(!c)return['··','e'];if(c.op==='-')return['──',''];return[c.nc?`<span class="nc">${c.op}</span>`:c.op,''];}
+  if(ci===6){const co=l&&l.coil;return co?[co.f+co.op,'']:['····','e'];}
+  const b=(ci-1)/2,dn=!!(l&&l.j[b]),up=r>0&&!!(P.prog[r-1]&&P.prog[r-1].j[b]),left=l&&l.c[b];
+  return[dn&&up?'┤':dn?'┐':up?'┘':left?'─':' ',left||dn||up?'':'e'];}
+function plcRender(){const P=S.plc,run=P.run;$('plcState').textContent=(P.pw?'مغذى 230V':'غير مغذى')+' · '+(run?'RUN':'STOP');
+  $('plcRun').classList.toggle('on',run);$('plcStop').classList.toggle('on',!run);
+  $('plcIO').innerHTML=[1,2,3,4,5,6,7,8].map(i=>`<span class="${P.inp[i]?'on':''}">I${i}</span>`).join('')+'<span style="background:none"> </span>'+[1,2,3,4].map(i=>`<span class="${P.q[i]?'on':''}">Q${i}</span>`).join('');
+  let g='';for(let r=0;r<plcRows();r++){const l=P.prog[r],fl=P.flow[r]||[];g+=`<div class="pr"><span class="pln">${r+1}</span>`;
+    for(let ci=0;ci<7;ci++){const [t,cl]=plcCellTxt(l,ci,r),kind=ci===6?'q':ci%2===0?'k':'j',on=run&&P.pw&&((ci%2===0&&ci<6&&fl[ci/2]&&l.c[ci/2]&&l.c[ci/2].op!=='-')||(ci===6&&fl[3]&&l&&l.coil));
+      g+=`<button class="pc ${kind} ${cl}${PE.r===r&&PE.c===ci?' cur':''}${on?' on':''}" data-r="${r}" data-c="${ci}">${t}</button>`;}g+='</div>';}
+  $('plcGrid').innerHTML=g;plcPal();plcTimers();}
+function plcNote(t,warn){const n=$('plcNote');n.textContent=t||'';n.style.color=warn?'var(--warn)':'';}
+function plcPal(){const P=S.plc,el=$('plcPal');if(P.run){el.innerHTML='<div class="pt">البرنامج يعمل (RUN). للتعديل اضغط ■ STOP كما في الجهاز الحقيقي.</div>';return;}
+  const l=P.prog[PE.r],ci=PE.c,btn=(t,a,sel)=>`<button data-p="${a}" class="${sel?'sel':''}">${t}</button>`;let h='';
+  if(ci===6){const co=l&&l.coil;h+=`<div class="pt">ملف مخرج أو علامة (M): اختر الوظيفة ثم الرقم</div><div class="row">`+[['C','C تشغيل'],['S','S ضبط'],['R','R إعادة ضبط'],['I','I نبضي']].map(([f,t])=>btn(t,'cf:'+f,PE.cf===f)).join('')+`</div>
+    <div class="row">`+[1,2,3,4].map(i=>btn('Q'+i,'co:Q'+i,co&&co.op==='Q'+i)).join('')+`</div><div class="row">`+Array.from({length:16},(_,i)=>btn('M'+(i+1),'co:M'+(i+1),co&&co.op==='M'+(i+1))).join('')+`</div>
+    <div class="pt">ملف مؤقت: T يشغّل المؤقت، R يعيد ضبطه</div><div class="row">`+[['T','T تشغيل'],['R','R إعادة']].map(([f,t])=>btn(t,'tf:'+f,PE.tf===f)).join('')+`</div><div class="row">`+Array.from({length:8},(_,i)=>btn('T'+(i+1),'ct:T'+(i+1),co&&co.op==='T'+(i+1))).join('')+`</div>
+    <div class="row" style="margin-top:6px">${btn('🗑 حذف الملف','del')}</div>`;}
+  else if(ci%2===0){const c=l&&l.c[ci/2],grp=(k,n)=>`<div class="row">`+Array.from({length:n},(_,i)=>btn(k+(i+1),'op:'+k+(i+1),c&&c.op===k+(i+1))).join('')+`</div>`;
+    h+=`<div class="pt">تلامس ${ci/2+1}: المدخل I، المخرج Q، العلامة M، المؤقت T</div>${grp('I',8)}${grp('Q',4)}${grp('M',16)}${grp('T',8)}
+    <div class="row" style="margin-top:6px">${btn('NO مفتوح','no',c&&c.op!=='-'&&!c.nc)}${btn('NC مغلق (ALT)','nc',c&&c.nc)}${btn('── خط توصيل','wire',c&&c.op==='-')}${btn('🗑 حذف','del')}</div>`;}
+  else{const b=(ci-1)/2,on=!!(l&&l.j[b]);h+=`<div class="pt">نقطة ربط: الربط الرأسي يوصل هذا السطر بالسطر التالي عند هذه النقطة (توازي / OR)، مثل تثبيت الذاتي.</div><div class="row">${btn(on?'┐ إلغاء الربط بالسطر التالي':'┐ ربط بالسطر التالي (ALT)','link',on)}</div>`;}
+  el.innerHTML=h;}
+function plcTimers(){const P=S.plc,used=new Set();P.prog.forEach(l=>{l.c.forEach(c=>{if(c&&c.op[0]==='T')used.add(+c.op.slice(1));});if(l.coil&&l.coil.op[0]==='T')used.add(+l.coil.op.slice(1));});
+  $('plcTm').innerHTML=used.size?'<div class="pt" style="font-size:.85rem;color:var(--muted);margin-top:8px">إعدادات المؤقتات:</div>'+[...used].sort((a,b)=>a-b).map(n=>{const c=P.tm[n]||{mode:'X',t:3},ts=P.ts[n];
+    return `<div class="plctm"><b dir="ltr">T${n}</b><select data-tmm="${n}">${Object.entries(TMODES).map(([k,v])=>`<option value="${k}"${c.mode===k?' selected':''}>${v}</option>`).join('')}</select><input type="number" min="0.1" max="99.9" step="0.1" value="${c.t}" data-tmt="${n}" aria-label="زمن T${n} بالثواني"> ث <span style="color:var(--muted)">${ts&&ts.out?'● خرج المؤقت فعّال':''}</span></div>`;}).join(''):'';}
+function plcSet(fn){const P=S.plc;if(P.run){plcNote('اضغط ■ STOP أولًا للتعديل.',1);return;}snap();fn();plcTrim();update();plcRender();}
+function plcKey(k){const P=S.plc,rows=plcRows();
+  if(k==='L')PE.c=Math.max(0,PE.c-1);else if(k==='R')PE.c=Math.min(6,PE.c+1);else if(k==='U')PE.r=Math.max(0,PE.r-1);else if(k==='D')PE.r=Math.min(rows-1,PE.r+1);
+  else if(k==='ESC'){plM.classList.remove('open');return;}
+  else if(k==='DEL')return plcDo('del');else if(k==='ALT'){const ci=PE.c;return plcDo(ci===6?'none':ci%2===0?'alt':'link');}
+  else if(k==='OK'){const l=P.prog[PE.r];if(PE.c%2===0&&PE.c<6&&!(l&&l.c[PE.c/2]))return plcDo('op:I1');if(PE.c===6&&!(l&&l.coil))return plcDo('co:Q1');}
+  plcNote('');plcRender();}
+function plcDo(a){const ci=PE.c,r=PE.r;const [k,v]=a.split(':');
+  if(k==='cf'){PE.cf=v;const l=S.plc.prog[r];if(l&&l.coil&&l.coil.op[0]!=='T')return plcSet(()=>{l.coil.f=v;});return plcRender();}
+  if(k==='tf'){PE.tf=v;const l=S.plc.prog[r];if(l&&l.coil&&l.coil.op[0]==='T')return plcSet(()=>{l.coil.f=v;});return plcRender();}
+  if(a==='none')return;
+  plcSet(()=>{const l=plcLine(r);
+    if(k==='op'){const old=l.c[ci/2];l.c[ci/2]={op:v,nc:!!(old&&old.nc&&old.op!=='-')};plcAutoWire(l);}
+    else if(a==='no'||a==='nc'){const c=l.c[ci/2];if(c&&c.op!=='-')c.nc=a==='nc';}
+    else if(a==='alt'){const c=l.c[ci/2];if(!c)l.c[ci/2]={op:'-'};else if(c.op!=='-')c.nc=!c.nc;}
+    else if(a==='wire'){l.c[ci/2]={op:'-'};}
+    else if(k==='co'){l.coil={f:PE.cf==='I'||PE.cf==='S'||PE.cf==='R'?PE.cf:'C',op:v};plcAutoWire(l);}
+    else if(k==='ct'){l.coil={f:PE.tf,op:v};if(!S.plc.tm[+v.slice(1)])S.plc.tm[+v.slice(1)]={mode:'X',t:3};plcAutoWire(l);}
+    else if(a==='link'){const b=(ci-1)/2;l.j[b]=!l.j[b];plcLine(r+1);}
+    else if(a==='del'){if(ci===6)l.coil=null;else if(ci%2===0)l.c[ci/2]=null;else l.j[(ci-1)/2]=false;}});}
+function openPLC(){if(document.body.classList.contains('fs'))exitFS();plcNote(S.plc.pw?'':'الجهاز غير مغذى: أغلق قاطع التحكم F1 (والقاطع Q1).',!S.plc.pw);plcRender();plM.classList.add('open');}
+$('plcClose').onclick=()=>plM.classList.remove('open');plM.addEventListener('click',e=>{if(e.target===plM)plM.classList.remove('open');});
+$('plcGrid').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b)return;PE.r=+b.dataset.r;PE.c=+b.dataset.c;plcNote('');plcRender();});
+$('plcPal').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b)plcDo(b.dataset.p);});
+document.querySelector('.plckeys').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b)plcKey(b.dataset.k);});
+$('plcTm').addEventListener('change',e=>{const m=e.target.dataset.tmm,t=e.target.dataset.tmt,P=S.plc;
+  if(m){P.tm[m]={...(P.tm[m]||{t:3}),mode:e.target.value};}if(t){P.tm[t]={...(P.tm[t]||{mode:'X'}),t:Math.min(99.9,Math.max(.1,+e.target.value||.1))};}save();plcRender();});
+$('plcRun').onclick=()=>{const P=S.plc;if(P.run)return;P.run=true;P.m={};P.ts={};P.prev={};P.q=[false,false,false,false,false];say('easy: RUN');update();plcRender();};
+$('plcStop').onclick=()=>{const P=S.plc;if(!P.run)return;P.run=false;say('easy: STOP، المخارج مفصولة');update();plcRender();};
+$('plcClear').onclick=()=>{if(S.plc.run){plcNote('اضغط ■ STOP أولًا.',1);return;}const b=$('plcClear');if(!b.dataset.arm){b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{delete b.dataset.arm;b.textContent='مسح البرنامج';},3000);return;}
+  delete b.dataset.arm;b.textContent='مسح البرنامج';plcSet(()=>{S.plc.prog=[];S.plc.tm={};});PE.r=0;PE.c=0;};
+window.addEventListener('keydown',e=>{if(!plM.classList.contains('open')||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;const m={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D',Escape:'ESC',Delete:'DEL',Enter:'OK'}[e.key];if(m){e.preventDefault();e.stopPropagation();plcKey(m);}},true);
+setInterval(()=>{if(plM.classList.contains('open')&&S.plc.run)plcRender();},300);
+const K=(op,nc)=>({op,nc:!!nc}),WL={op:'-'},LN=(c,coil,j)=>({c,coil:coil||null,j:j||[false,false,false]});
+const PLCEX=[
+ {n:'تشغيل/إيقاف مع تثبيت',p:[LN([K('I1'),K('I2'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null])],tm:{},
+  h:'I1 = ضاغط تشغيل (NO)، I2 = ضاغط إيقاف (NC لذلك يبقى المدخل فعالًا)، Q1 يشغّل الكونتاكتور K1. السطر الثاني Q1 موصول رأسيًا بالسطر الأول = تثبيت ذاتي.'},
+ {n:'ضبط وإعادة ضبط (S/R)',p:[LN([K('I1'),WL,WL],{f:'S',op:'Q1'}),LN([K('I2',1),WL,WL],{f:'R',op:'Q1'})],tm:{},h:'I1 يضبط Q1 (يبقى يعمل)، وفصل I2 (ضاغط إيقاف NC) يعيد ضبطه.'},
+ {n:'نجمة/دلتا بمؤقت',p:[LN([K('I1'),K('I2'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('Q1'),K('T1',1),K('Q3',1)],{f:'C',op:'Q2'}),LN([K('Q1'),WL,WL],{f:'T',op:'T1'}),LN([K('T1'),K('Q2',1),WL],{f:'C',op:'Q3'})],tm:{1:{mode:'X',t:5}},
+  h:'Q1 رئيسي، Q2 نجمة، Q3 دلتا. T1 تأخير تشغيل 5 ث يحوّل من النجمة إلى الدلتا، والتلامسات المغلقة تمنع عمل النجمة والدلتا معًا.'},
+ {n:'وميض لمبة',p:[LN([K('I1'),WL,WL],{f:'T',op:'T1'}),LN([K('T1'),WL,WL],{f:'C',op:'Q4'})],tm:{1:{mode:'F',t:0.5}},h:'عند تفعيل I1 يومض Q4 كل نصف ثانية (مؤقت بنمط الوميض).'}];
+$('plcEx').innerHTML=PLCEX.map((x,i)=>`<button data-plex="${i}">${x.n}</button>`).join('');
+$('plcEx').addEventListener('click',e=>{const b=e.target.closest('[data-plex]');if(!b)return;const x=PLCEX[+b.dataset.plex];const P=S.plc;snap();P.prog=JSON.parse(JSON.stringify(x.p));P.tm=JSON.parse(JSON.stringify(x.tm));P.run=false;P.q=[false,false,false,false,false];update();PE.r=0;PE.c=0;plcRender();plcNote('حُمّل البرنامج (في STOP): '+x.h);});
+$('plcHelp').innerHTML=`<h3>التغذية</h3><ul><li>التغذية موصولة مسبقًا: <b>L</b> من خرج قاطع التحكم F1 (أحمر)، و<b>N</b> من خط التعادل (أزرق). يعمل الجهاز على 230V، وفصل F1 يطفئه.</li></ul>
+<h3>المداخل I1 إلى I8</h3><ul><li>كل مدخل موصول داخليًا بشعبة في ترمنال PLC. وصّل طورًا عبر ضاغط أو نهاية مشوار إلى أسفل الشعبة؛ وجود 230V على المدخل = 1.</li></ul>
+<h3>المخارج Q1 إلى Q4</h3><ul><li>كل مخرج تلامس ريليه بين شعبتين (1 و2). وصّل طورًا إلى الشعبة 1، ومن الشعبة 2 إلى A1 للكونتاكتور، وA2 إلى التعادل.</li></ul>
+<h3>البرمجة</h3><ul><li>كل سطر: 3 تلامسات ثم ملف. اختر الخانة بالضغط عليها أو بالأسهم، ثم اختر من اللوحة تحتها.</li><li><b>ALT</b> على التلامس يحوّله بين مفتوح NO ومغلق NC (يظهر بخط فوقه)، وعلى نقطة الربط يصنع ربطًا رأسيًا بالسطر التالي (توازي/OR)، و<b>DEL</b> يحذف.</li>
+<li>الملفات: C تشغيل عادي، S ضبط (يبقى)، R إعادة ضبط، I نبضي (يتبدل مع كل نبضة). المؤقت: T يشغّل المؤقت، وR يعيد ضبطه، وتلامس T يتغير بعد الزمن.</li><li>التعديل في وضع STOP فقط، ثم ▶ RUN للتشغيل. في RUN تظهر الخانات الموصلة للتيار مظللة.</li></ul>`;
+
+/* ---------- multimeter (movable, two probes, V~ and Ω) ---------- */
+function mmAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();}catch(_){}}
+function mmBeep(){if(!AC||QUIET)return;try{const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=2700;g.gain.value=.05;o.connect(g);g.connect(AC.destination);const t=AC.currentTime;o.start(t);g.gain.setTargetAtTime(0,t+.16,.02);o.stop(t+.25);}catch(_){}}
+function mmLoads(){const L=[];coilIds().forEach(k=>L.push([k+'.A1',k+'.A2',k.startsWith('KT')?3300:580]));
+  [29,30,31,32].forEach(t=>L.push(['X1.'+t,'X1.33',2000]));
+  [['M1',6.8],['M2',18]].forEach(([m,w])=>[['U1','U2'],['V1','V2'],['W1','W2']].forEach(([a,b])=>L.push([m+'.'+a,m+'.'+b,w])));return L;}
+function mmGraph(){const R=S.R,adj=new Map(),add=(a,b,w)=>{if(!adj.has(a))adj.set(a,[]);adj.get(a).push([b,w]);};
+  mmLoads().forEach(([a,b,w])=>{if(!T[a]||!T[b])return;const na=R.uf.find(a),nb=R.uf.find(b);if(na!==nb){add(na,nb,w);add(nb,na,w);}});return adj;}
+function mmPot(net,adj){const R=S.R,own=R.src.get(net);if(own&&own.size)return own;const seen=new Set([net]);let q=[net];
+  for(let d=0;d<4&&q.length;d++){const nq=[];for(const n of q)for(const [m] of adj.get(n)||[]){if(seen.has(m))continue;seen.add(m);const s2=R.src.get(m);if(s2&&s2.size)return s2;nq.push(m);}q=nq;}return EMPTY;}
+function mmOhm(a,b,adj){const dist=new Map([[a,0]]),done=new Set();for(let it=0;it<500;it++){let u=null,du=Infinity;for(const [n,d] of dist)if(!done.has(n)&&d<du){u=n;du=d;}
+  if(u==null)break;if(u===b)return du;done.add(u);for(const [m,w] of adj.get(u)||[]){const nd=du+w;if(nd<(dist.has(m)?dist.get(m):Infinity))dist.set(m,nd);}}return Infinity;}
+function mmRead(){const m=S.mm;if(m.mode==='off')return{t:'',u:'',note:'الجهاز مطفأ: أدر المفتاح إلى V~ أو Ω'};
+  const u=m.mode==='v'?'V~':'Ω';
+  if(m.red&&!T[m.red])m.red=null;if(m.black&&!T[m.black])m.black=null;
+  if(!m.red||!m.black||!S.R)return{t:m.mode==='v'?'0.0':'OL',u,note:'اضغط المقبس ثم الطرف لوضع كل مجس'};
+  const adj=mmGraph(),a=S.R.uf.find(m.red),b=S.R.uf.find(m.black);
+  if(m.mode==='v'){if(a===b)return{t:'0.0',u,note:'الطرفان على نفس النقطة الكهربائية'};
+    const sa=mmPot(a,adj),sb=mmPot(b,adj),pa=phasesOf(sa),pb=phasesOf(sb),na=sa.has('N'),nb=sb.has('N');
+    let v=0;if(pa.length&&pb.length)v=pa[0]===pb[0]?0:400;else if((pa.length&&nb)||(pb.length&&na))v=230;
+    return{t:v?String(v):'0.0',u,note:v===400?'بين طورين':v===230?'بين طور وتعادل':'لا يوجد فرق جهد'};}
+  const live=n=>phasesOf(mmPot(n,adj)).length>0;
+  if(live(a)||live(b))return{t:'LIVE',u:'',warn:1,note:'⚠ الدائرة مكهربة! افصل F1 أو Q1 قبل قياس المقاومة'};
+  if(a===b)return{t:'0.0',u,cont:1,note:'🔊 استمرارية: توصيل مباشر'};
+  const r=mmOhm(a,b,adj);if(!isFinite(r))return{t:'OL',u,note:'دائرة مفتوحة'};
+  return{t:r>=1000?(r/1000).toFixed(2)+'k':r<100?r.toFixed(1):String(Math.round(r)),u,cont:r<30,note:r<30?'🔊 استمرارية':'مقاومة عبر حِمل (ملف/لمبة/محرك)'};}
+function mmLeadsSVG(){const m=S.mm;if(!m.on)return '';let s='';
+  [['black',45,'#1b1b1b'],['red',105,'#d8322b']].forEach(([p,jx,c])=>{const J=[m.x+jx*MS,m.y+230*MS],t=m[p]&&T[m[p]];
+    const tip=t?[t.x,t.y]:[J[0]+(p==='red'?14:-14),J[1]+86],H=t?[t.x+(p==='red'?20:-20),t.y-36]:[J[0]+(p==='red'?6:-6),J[1]+48];
+    const cy=Math.max(J[1],H[1])+(t?80:6),cx=(J[0]+H[0])/2;
+    s+=`<path d="M${J[0]} ${J[1]}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${H[0]} ${H[1]}" stroke="#000" stroke-opacity=".35" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M${J[0]} ${J[1]}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${H[0]} ${H[1]}" stroke="${c}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
+    const mid=[H[0]+(tip[0]-H[0])*.6,H[1]+(tip[1]-H[1])*.6];
+    s+=`<line x1="${H[0]}" y1="${H[1]}" x2="${mid[0]}" y2="${mid[1]}" stroke="${c}" stroke-width="9" stroke-linecap="round"/><line x1="${mid[0]}" y1="${mid[1]}" x2="${tip[0]}" y2="${tip[1]}" stroke="#d6dbe0" stroke-width="2.6" stroke-linecap="round"/>`+
+      (t?`<circle cx="${tip[0]}" cy="${tip[1]}" r="9" fill="none" stroke="${c==='#1b1b1b'?'#fff':c}" stroke-width="2.5"/>`:'');});
+  return s;}
+const MS=1.4;
+function mmSVG(){const m=S.mm;if(!m.on)return '';const r=mmRead();
+  if(r.cont&&!m.beep)mmBeep();m.beep=!!r.cont;
+  const ang={off:-55,v:0,r:55},pos=a=>[75+42*Math.sin(a*Math.PI/180),166-42*Math.cos(a*Math.PI/180)];
+  const knob=['off','v','r'].map(k=>{const [px,py]=pos(ang[k]),on=m.mode===k;return `<g class="act" data-act="mm:mode:${k}"><title>${k==='off'?'إطفاء':k==='v'?'قياس الجهد المتردد':'قياس المقاومة والاستمرارية'}</title><circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="14" fill="${on?'#ffd24a':'#3a3f45'}"/><text x="${px.toFixed(1)}" y="${(py+4.5).toFixed(1)}" text-anchor="middle" style="font:700 12px sans-serif;fill:${on?'#1c1400':'#fff'}">${k==='off'?'OFF':k==='v'?'V~':'Ω'}</text></g>`;}).join('');
+  const [kx,ky]=pos(ang[m.mode]);
+  const jack=(p,x,lab,col)=>{const pk=S.mmPick===p,has=!!m[p];return `<g class="act" data-act="mm:probe:${p}"><title>${has?'إزالة':'وضع'} المجس ${p==='red'?'الأحمر':'الأسود'}</title><circle cx="${x}" cy="230" r="16" fill="transparent"/><circle cx="${x}" cy="230" r="11" fill="#111" stroke="${pk?'#ffd24a':col}" stroke-width="${pk?4:3}"/><circle cx="${x}" cy="230" r="4" fill="#555"/><text x="${x}" y="214" text-anchor="middle" style="font:700 9px sans-serif;fill:#fff">${lab}</text></g>`;};
+  return `<g id="mmLeads" pointer-events="none">${mmLeadsSVG()}</g><g id="mmG" transform="translate(${m.x} ${m.y}) scale(${MS})">
+  <rect data-drag="mm" x="0" y="0" width="150" height="262" rx="18" fill="#f2b705" stroke="#8a6500" stroke-width="2" filter="url(#ds2)" style="cursor:move"><title>اسحب لتحريك الملتميتر</title></rect>
+  <rect data-drag="mm" x="8" y="30" width="134" height="224" rx="12" fill="#2b2f33" style="cursor:move"/>
+  <text data-drag="mm" x="60" y="21" text-anchor="middle" style="font:700 11px sans-serif;fill:#3a2a00;cursor:move">✥ ملتميتر</text>
+  <g class="act" data-act="mm:hide"><title>إخفاء الملتميتر</title><circle cx="130" cy="16" r="9" fill="#d8322b"/><path d="M126.5 12.5l7 7m0-7l-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
+  <rect x="16" y="38" width="118" height="52" rx="6" fill="${r.warn?'#f0b8ab':m.mode==='off'?'#7d8a70':'#b9c7a3'}" stroke="#111" stroke-width="1.5" pointer-events="none"/>
+  <text x="118" y="76" text-anchor="end" style="font:700 28px 'Courier New',monospace;fill:#1c2410" pointer-events="none">${r.t}</text>
+  <text x="22" y="52" style="font:700 11px sans-serif;fill:#1c2410" pointer-events="none">${r.u}</text>
+  <text x="75" y="103" text-anchor="middle" style="font:500 8.2px sans-serif;fill:${r.warn?'#ff9d8f':'#dfe6ec'}" pointer-events="none">${esc(r.note||'')}</text>
+  <circle cx="75" cy="166" r="24" fill="#1b1d20" stroke="#555" stroke-width="2" pointer-events="none"/><line x1="75" y1="166" x2="${(75+(kx-75)*.5).toFixed(1)}" y2="${(166+(ky-166)*.5).toFixed(1)}" stroke="#ffd24a" stroke-width="4" stroke-linecap="round" pointer-events="none"/>
+  ${knob}${jack('black',45,'COM','#888')}${jack('red',105,'VΩ','#d8322b')}
+  <text x="75" y="250" text-anchor="middle" style="font:500 8px sans-serif;fill:#c7d2dc" pointer-events="none">اضغط المقبس ثم الطرف</text></g>`;}
+function mmMove(){const G=document.getElementById('mmG'),L=document.getElementById('mmLeads');if(G)G.setAttribute('transform',`translate(${S.mm.x} ${S.mm.y}) scale(${MS})`);if(L)L.innerHTML=mmLeadsSVG();}
+document.getElementById('dMM').onclick=()=>{const m=S.mm;m.on=!m.on;S.mmPick=null;
+  if(m.on){mmAudio();const r=svg.getBoundingClientRect(),vw=window.innerWidth,vh=window.innerHeight,wr=wrap.getBoundingClientRect();
+    const cx=(Math.max(wr.left,0)+Math.min(wr.right,vw))/2,cy=(Math.max(r.top,0)+Math.min(r.bottom,vh))/2;
+    m.x=clampN((cx-r.left)/S.zoom-75*MS,0,W-150*MS);m.y=clampN((cy-r.top)/S.zoom-131*MS,0,H-262*MS);say('الملتميتر ظاهر: اسحبه من إطاره الأصفر، واضغط المقبس ثم الطرف لوضع المجس');}
+  render();};
+
 /* ---------- explanations: live, circuits, components ---------- */
 const SYM={
  mcb3:`<g transform="translate(0,4) scale(.86)"><path d="M12 8v14l10 14v20M32 8v14l10 14v20M52 8v14l10 14v20" stroke="#222" stroke-width="2.5" fill="none"/><path d="M8 26h52" stroke="#222" stroke-dasharray="3 3"/><rect x="18" y="38" width="8" height="8" fill="none" stroke="#c0392b" stroke-width="2"/><rect x="38" y="38" width="8" height="8" fill="none" stroke="#c0392b" stroke-width="2"/><rect x="58" y="38" width="4" height="8" fill="none" stroke="#c0392b" stroke-width="2"/></g>`,
@@ -1562,6 +1810,16 @@ const PARTS=[
  {k:'motor',s:'motor',n:'المحرك ثلاثي الأطوار',what:'له ثلاثة ملفات، ولكل ملف بداية (U1 V1 W1) ونهاية (U2 V2 W2).',use:'نجمة: نقصر النهايات U2 V2 W2 معًا، فيقل الجهد على كل ملف ويقل تيار البدء. دلتا: نوصل U1 مع W2، وV1 مع U2، وW1 مع V2، فيأخذ المحرك قدرته الكاملة.',tm:'عكس الاتجاه: تبديل أي طورين من الثلاثة (مثل L1 مع L3).',tip:'راجع لوحة البيانات: 400V Δ تعني أن المحرك يعمل دلتا على شبكة 400V.'},
  {k:'rail',s:'rail',n:'سكة التثبيت ومجاري الأسلاك',what:'سكة معدنية قياسية (DIN) تُركّب عليها القطع، ومجاري بلاستيكية تمر فيها الأسلاك.',use:'ترتيب اللوحة وتسهيل الفك والتركيب، وحماية الأسلاك وتنظيمها.',tm:'',tip:'مرّر الأسلاك داخل المجاري وليس فوق القطع، ليسهل تتبعها وصيانتها.'},
  {k:'wire',s:'wire',n:'ألوان الأسلاك (المعيار الدولي IEC)',what:'لكل وظيفة لون ثابت.',use:'بني L1، أسود L2، رمادي L3، أزرق فاتح للتعادل N، أحمر لدوائر التحكم، برتقالي للتغذية الخارجية.',tm:'',tip:'الالتزام بالألوان يجعل أي فني يفهم اللوحة من النظرة الأولى.'}];
+SYM.meter=`<rect x="14" y="4" width="36" height="56" rx="7" fill="#f2b705" stroke="#8a6500" stroke-width="2"/><rect x="19" y="10" width="26" height="12" rx="2" fill="#b9c7a3"/><circle cx="32" cy="36" r="8" fill="#222"/><line x1="32" y1="36" x2="32" y2="29" stroke="#fff" stroke-width="2"/><circle cx="24" cy="52" r="3" fill="#111"/><circle cx="40" cy="52" r="3" fill="#d8322b"/>`;
+SYM.plc=`<rect x="8" y="8" width="48" height="48" rx="4" fill="#e2e4e1" stroke="#777"/><rect x="13" y="20" width="22" height="16" fill="#b8c46a" stroke="#555"/><circle cx="45" cy="28" r="7" fill="#34393e"/>${[0,1,2,3,4,5].map(i=>`<circle cx="${13+i*7.5}" cy="13" r="2.2" fill="#333"/>`).join('')}${[0,1,2,3].map(i=>`<circle cx="${14+i*11}" cy="51" r="2.2" fill="#333"/>`).join('')}`;
+PARTS.push({k:'plc',s:'plc',n:'المرحّل المبرمج easy 512-AC-RC (Moeller)',what:'جهاز تحكم صغير قابل للبرمجة: 8 مداخل 230V متردد (I1-I8) و4 مخارج ريليه (Q1-Q4) بتيار حتى 8A، وشاشة ولوحة مفاتيح للبرمجة بمخطط السلّم.',
+ use:'يستبدل أسلاك التحكم والمؤقتات والمرحّلات المساعدة ببرنامج: التثبيت الذاتي والإعاقة والتأخير والوميض تُكتب في البرنامج، فيقل عدد الأسلاك ويسهل تعديل طريقة العمل دون فك التوصيل.',
+ tm:'L وN: التغذية 230V موصولة مسبقًا من F1 والتعادل. I1-I8: المداخل (عبر ترمنالات XP). Q1-Q4: تلامسات ريليه، لكل مخرج شعبتان 1 و2. اضغط شاشة الجهاز لفتح البرمجة.',
+ tip:'ضاغط الإيقاف يوصل عادة NC إلى المدخل، فيكون المدخل فعالًا في الوضع الطبيعي، ويُكتب في البرنامج تلامسًا مفتوحًا NO؛ فإذا انقطع السلك توقف المحرك (أمان).'});
+PARTS.push({k:'mm',s:'meter',n:'جهاز الملتميتر (أداة القياس)',what:'جهاز قياس رقمي بمجسّين: الأسود في المقبس COM، والأحمر في المقبس VΩ. يُسحب ويُحرّك فوق اللوحة، ويظهر من زر «📟 ملتميتر» في شريط الأدوات.',
+ use:'وضع V~ يقيس الجهد المتردد بين طرفين: 230V بين طور وتعادل، و400V بين طورين، و0 على طرفي تلامس مغلق. وضع Ω يقيس المقاومة والاستمرارية (صفير عند التوصيل) لفحص الأسلاك والتلامسات والملفات والدائرة مفصولة.',
+ tm:'قراءات تقريبية في وضع Ω: ملف الكونتاكتور حوالي 580Ω، ملف المؤقت حوالي 3.3kΩ، ملف المحرك M1 حوالي 6.8Ω، وOL تعني دائرة مفتوحة.',
+ tip:'لتتبّع عطل: ابدأ من F1 وقس الجهد إلى التعادل نقطة بعد نقطة؛ النقطة التي يختفي عندها الجهد يكون العطل قبلها. ولا تقس المقاومة والدائرة مكهربة.'});
 const CIRCS={
  p1:{n:'تشغيل محرك من مكان واحد',idea:'تشغيل المحرك بضغطة واحدة، واستمرار عمله بعد رفع الإصبع، وإيقافه بضاغط الإيقاف.',
   power:['Q1 يوصل الأطوار الثلاثة إلى نقاط القوى في K1 (1-3-5).','عند عمل K1 تمر الأطوار من 2-4-6 إلى الأوفرلود F2 ثم إلى المحرك.'],
@@ -1605,6 +1863,9 @@ function nowHTML(){const L=[],add=(c,t)=>L.push(`<li class="${c}">${t}</li>`);
     add(m.state==='run'?'on':m.state==='fault'?'bad':'',m.state==='run'?`المحرك ${k} يدور ${m.mode==='star'?'نجمة (النهايات U2 V2 W2 مقصورة معًا، تيار أقل)':'دلتا (كل ملف بين طورين، قدرة كاملة)'} ${m.dir==='cw'?'للأمام':'للخلف (طوران مبدّلان)'}.`:m.state==='fault'?`المحرك ${k}: ${esc(m.why)}`:`المحرك ${k} متوقف: لا تصل الأطوار لأطرافه.`);});
   const LN={H1:'H1 تشغيل 1',H2:'H2 تشغيل 2',H3:'H3 إيقاف',H4:'H4 عطل'},lit=Object.keys(LN).filter(h=>S.lamps[h]);
   add(lit.length?'on':'',lit.length?'اللمبات المضيئة: '+lit.map(h=>LN[h]).join('، ')+'.':'لا توجد لمبة بيان مضيئة.');
+  {const P=S.plc,used=S.wires.some(w=>/^(PLC|XP)\./.test(w.a)||/^(PLC|XP)\./.test(w.b));
+    if(P.pw){const ins=[1,2,3,4,5,6,7,8].filter(i=>P.inp[i]).map(i=>'I'+i),qs=[1,2,3,4].filter(i=>P.q[i]).map(i=>'Q'+i);add('on',`جهاز easy مغذى (230V بين L وN) وفي وضع ${P.run?'RUN: ينفذ البرنامج':'STOP: المخارج مفصولة'}. المداخل الفعالة: ${ins.join('، ')||'لا شيء'}. المخارج المغلقة: ${qs.join('، ')||'لا شيء'}.`);}
+    else if(used)add('bad','جهاز easy غير مغذى: أغلق قاطع التحكم F1، فتغذيته موصولة منه.');}
   S.warn.forEach(w=>add('bad','⚠️ '+esc(w)));
   return '<p>قراءة مباشرة للوحة، وتتحدث مع كل تغيير:</p><ul class="nowl">'+L.join('')+'</ul>';}
 function circHTML(){const C=CIRCS[EX.circ];
@@ -1770,6 +2031,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(0.5,(now-last)/1000);la
   ofType('ol').forEach(f=>{const o=S.ol[f];o.I=(o.m1?motorI():0)+(o.m2?motor2I():0);const r=o.I/o.iset;
     if(r>1.05)o.heat=Math.min(1,o.heat+dt/Math.min(40,Math.max(2,2/(r-1))));else o.heat=Math.max(0,o.heat-dt/12);
     if(o.heat>=1&&!o.trip){o.trip=true;say(f+' فصل: التيار '+o.I.toFixed(1)+'A أكبر من الضبط '+o.iset.toFixed(1)+'A');need=true;}});
+  if(S.plc.pw&&S.plc.run&&S.R&&plcCycle(S.R))need=true;
   if(need)update();else partial();},100);
 
 S.zoom=fitZoom();
