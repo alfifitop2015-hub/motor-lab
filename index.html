@@ -231,7 +231,8 @@ body.fs{padding-bottom:0}
     <button class="ib" id="bQR" title="باركود دخول المتدربين" aria-label="باركود دخول المتدربين">▦</button>
     <details class="more"><summary class="ib" title="المزيد" aria-label="المزيد">⋯</summary>
       <div class="menu">
-        <button class="mi trainer-only cloud-only" id="bResults">📋 نتائج المتدربين</button>
+        <button class="mi trainer-only" id="bResults">📋 نتائج المتدربين</button>
+        <button class="mi trainer-only" id="bClrGrades">🧹 مسح الدرجات من هذا الجهاز</button>
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <button class="mi" id="bHelp2">📖 شرح الدوائر والتركيبات</button>
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
@@ -1458,6 +1459,7 @@ $('gBody').addEventListener('click',e=>{const id=e.target.id;
     say('قُيّمت التجربة: '+r.s+' من 20 (الدرجة مقفلة)');renderTop();gRender();gUpdBtn();}
   else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
   else if(id==='gRedo'){const A=gAll();delete A[GV.ex];if(A._cur===GV.ex)delete A._cur;gSave(A);gRender();gUpdBtn();}});
+$('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex='';gUpdBtn();say('مُسحت الدرجات المقفلة من هذا الجهاز');renderTop();};
 function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20':'🎯 تقييم';}
 gUpdBtn();
 function stuCheck(){const st=S.stu;if(!st||!st.g||!PRESETS[st.g.ex]){if(st)st.gc=null;return;}try{const r=gradeNow(st.g.ex);st.gc=r.s;st.gi=r;}catch(_){st.gc=null;}}
@@ -1469,16 +1471,17 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'&&gM.classList.contains
 
 /* ---------- cloud: submissions saved in the trainer's Google Sheet ---------- */
 const CLOUD_URL='https://script.google.com/macros/s/AKfycbzW0GhYTzvq_t332RqtqbKZxxSC5bBXBNZC55qxiSQ9FevJ7YuMD_JJcQh3kbBMUiajog/exec';   // رابط تطبيق Google Apps Script (يُضاف بعد الإعداد)
-if(CLOUD_URL)document.body.classList.add('cloud');
+const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
 async function cloudImgs(st){try{const b=await withGraded(()=>panelBlob(st.n,st.id));if(!b)return{};
   const url=URL.createObjectURL(b);const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});URL.revokeObjectURL(url);
   const jpg=(w,q)=>{const c=document.createElement('canvas');c.width=w;c.height=Math.round(im.height*w/im.width);const g=c.getContext('2d');g.fillStyle='#0c2753';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q).split(',')[1];};
   let th=jpg(220,.6);if(th.length>44000)th=jpg(160,.5);return{img:jpg(Math.min(1000,im.width),.82),th};}catch(_){return{};}}
-async function cloud(d){const r=await fetch(CLOUD_URL,{method:'POST',body:JSON.stringify(d)});const j=await r.json();if(!j.ok)throw new Error(j.err||'fail');return j;}
+async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JSON.stringify(d)});}catch(_){throw new Error('net');}
+  const t=await r.text();let j;try{j=JSON.parse(t);}catch(_){throw new Error('setup');}if(!j.ok)throw new Error(j.err||'fail');return j;}
 $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const G=curGrade();const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
   try{const {code}=await buildMsg(st);okMsg('جارٍ تجهيز صورة اللوحة…');const im=await cloudImgs(st);okMsg('جارٍ الإرسال…');const j=await cloud({action:'submit',n:st.n,id:st.id,ex:G?G.ex:'',s:G?G.s:'',code,img:im.img,th:im.th});
     okMsg('✔ وصلت تجربتك للمدرب'+(G?' مع درجتك '+G.s+' من 20':'')+'. رقم المرجع: '+j.uid);}
-  catch(e){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='تعذّر الإرسال. تأكد من الإنترنت وحاول مرة أخرى، أو أرسل عبر واتساب.';}
+  catch(e){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent=(e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أبلغ المدرب، وأرسل الآن عبر واتساب.':'تعذّر الوصول لخادم الحفظ. تأكد من الإنترنت وحاول مرة أخرى، أو أرسل عبر واتساب.');}
   finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set(),chk:{}};
 try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
@@ -1499,10 +1502,11 @@ async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textC
   $('rMsg').textContent='جارٍ التحميل…';
   try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).sort((a,b)=>b.t-a.t);RS.sel=new Set([...RS.sel].filter(u=>RS.rows.some(r=>r.uid===u)));
     $('rMsg').textContent=RS.rows.length+' تجربة محفوظة';rRender();for(const r of RS.rows)await recheck(r);rRender();}
-  catch(e){$('rMsg').textContent=e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال بالجدول. تأكد من الإنترنت.';}}
+  catch(e){$('rMsg').textContent=e.message==='key'?'كلمة السر غير صحيحة.':e.message==='setup'?'خادم Google لم يرد بشكل صحيح. في Apps Script: نشر ← إدارة عمليات النشر ← ✏️، وتأكد أن «من يمكنه الوصول» = أي شخص (Anyone)، ثم اختر إصدار جديد ← نشر.':'تعذّر الوصول لخادم Google. تأكد من الإنترنت، وأن النشر على «أي شخص (Anyone)».';}}
 async function rDelete(uids){$('rMsg').textContent='جارٍ الحذف…';try{await cloud({action:'del',key:$('rKey').value.trim(),uids});uids.forEach(u=>RS.sel.delete(u));await rLoad();$('rMsg').textContent='حُذف '+uids.length+' · '+$('rMsg').textContent;}catch(e){$('rMsg').textContent='تعذّر الحذف.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
-$('bResults').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();rM.classList.add('open');if($('rKey').value)rLoad();else $('rKey').focus();};
+$('bResults').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();rM.classList.add('open');
+  if(!CLOUD_ON){$('rList').innerHTML='';$('rMsg').innerHTML=CLOUD_URL?'النتائج لا تُعرض من هذه النسخة. افتح موقعك: <a href="https://alfifitop2015-hub.github.io/motor-lab/" target="_blank" rel="noopener">alfifitop2015-hub.github.io/motor-lab</a>':'حفظ النتائج غير مفعّل.';return;}if($('rKey').value)rLoad();else $('rKey').focus();};
 $('rClose').onclick=()=>rM.classList.remove('open');rM.addEventListener('click',e=>{if(e.target===rM)rM.classList.remove('open');});
 $('rLoad').onclick=rLoad;$('rKey').addEventListener('keydown',e=>{if(e.key==='Enter')rLoad();});$('rFind').addEventListener('input',rRender);
 $('rDelSel').onclick=()=>arm($('rDelSel'),()=>rDelete([...RS.sel]));
