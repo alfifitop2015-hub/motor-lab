@@ -109,7 +109,16 @@ body:not(.trainer) .trainer-only{display:none!important}
 .plclcd{background:#b8c46a;border:3px solid #4d533a;border-radius:10px;padding:8px 6px;max-height:300px;overflow:auto;font-family:'Courier New',monospace}
 .pr{display:flex;align-items:center;gap:2px;margin:1px 0}.pln{width:22px;font-size:.7rem;color:#4d5a24;text-align:right;padding-right:4px}
 .pc{border:0;background:transparent;font:700 15px 'Courier New',monospace;color:#1f2a0c;height:30px;border-radius:4px;cursor:pointer;padding:0;white-space:pre}
-.pc.k{width:46px}.pc.j{width:18px}.pc.q{width:56px}.pc.e{color:#7f8b45}.pc.cur{outline:2.5px solid #1f2a0c;background:#d7e08f}.pc.on{background:#1f2a0c;color:#d7e08f}
+.pc.k{width:46px}.pc.j{width:18px}.pc.q{width:56px}.pc.e{color:#7f8b45}.pc.cur{outline:2.5px solid #1f2a0c;background:#d7e08f}
+.pr{position:relative;padding-left:5px}.pc{position:relative;overflow:visible}
+.pc i{position:absolute;display:block;background:#44521a;pointer-events:none}
+.pc .wl,.pc .wr{top:calc(50% - .75px);height:1.5px;width:50%}.pc .wl{left:0}.pc .wr{right:0}
+.pc .vd,.pc .vu{left:calc(50% - .75px);width:1.5px;height:calc(50% + 2px)}.pc .vd{top:50%}.pc .vu{top:-2px}
+.pc i.h{background:#0b1200}.pc .wl.h,.pc .wr.h{height:6px;top:calc(50% - 3px)}.pc .vd.h,.pc .vu.h{width:6px;left:calc(50% - 3px)}
+.pc .lab{position:relative;z-index:1;background:#b8c46a;padding:0 3px;border-radius:3px}.pc.cur .lab{background:#d7e08f}
+.pc.on .lab,.pc.cl .lab{background:#1f2a0c;color:#d7e08f}
+.rail{position:absolute;left:24px;top:-1px;bottom:-1px;width:1.5px;background:#44521a}.rail.h{width:6px;left:22px;background:#0b1200}.rail.off{display:none}
+.plclegend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;margin:6px 0 0;color:var(--muted)}.plclegend b{display:inline-block;width:26px;vertical-align:middle;margin-inline-end:4px;background:#1f2a0c;border-radius:2px}
 .pc .nc{text-decoration:overline}
 .plcnote{font-size:.85rem;margin:8px 0 4px;min-height:1.2em}
 .plcpal{background:var(--chip);border-radius:10px;padding:8px;margin:6px 0}.plcpal .pt{font-size:.8rem;color:var(--muted);margin:6px 0 4px}
@@ -290,6 +299,15 @@ body.fs{padding-bottom:0}
         <option value="p5">5. عكس حركة سريع (بدون توقف)</option>
         <option value="p6">6. نجمة / دلتا يدوي</option>
         <option value="p7">7. نجمة / دلتا بمؤقت</option>
+        <optgroup label="مع جهاز التحكم المبرمج easy">
+        <option value="p8">8. تشغيل محرك من مكان واحد (easy)</option>
+        <option value="p9">9. تشغيل محرك من مكانين (easy)</option>
+        <option value="p10">10. تشغيل محركين بالتتابع (easy)</option>
+        <option value="p11">11. عكس حركة بطيء (easy)</option>
+        <option value="p12">12. عكس حركة سريع (easy)</option>
+        <option value="p13">13. نجمة / دلتا يدوي (easy)</option>
+        <option value="p14">14. نجمة / دلتا بمؤقت (easy)</option>
+        </optgroup>
         </select>
     <span class="dsep full"></span>
     <button class="db full fs-only" id="dZo" aria-label="تصغير"><span class="ic">−</span>تصغير</button>
@@ -338,6 +356,7 @@ body.fs{padding-bottom:0}
     <div class="plcbar"><span class="plcst" id="plcState"></span><button id="plcRun">▶ RUN</button><button id="plcStop" class="stop">■ STOP</button><span class="grow"></span><button id="plcClear">مسح البرنامج</button></div>
     <div class="plcio" id="plcIO"></div>
     <div class="plclcd" id="plcGrid" dir="ltr"></div>
+    <div class="plclegend"><span><b style="height:6px"></b>خط ثخين: يصله تيار</span><span><b style="height:1.5px"></b>خط رفيع: لا يصله تيار</span><span><b style="height:12px;width:18px"></b>تلامس مغلق / ملف يعمل</span></div>
     <p class="plcnote" id="plcNote"></p>
     <div class="plcpal" id="plcPal"></div>
     <div class="plckeys"><button data-k="DEL">DEL</button><button data-k="ALT">ALT</button><button data-k="L">◀</button><button data-k="U">▲</button><button data-k="D">▼</button><button data-k="R">▶</button><button data-k="ESC">ESC</button><button data-k="OK">OK</button></div>
@@ -1344,6 +1363,14 @@ const sdPow=[...feed,...k1pow,...toMotor,
    ['X1.6','K2.1',GR],['X1.4','K2.3',GR],['X1.5','K2.5',GR],['K2.2','K2.4',GR],['K2.4','K2.6',GR]];
 const sdHead=[...ctrlHead,['X1.8','X1.11',RD],['X1.12','K1.A1',RD],['X1.8','K1.13',RD],['K1.14','K1.A1',RD],
    ['K1.A2','X1.33',BL],['K2.A2','X1.34',BL],['K3.A2','X1.35',BL],['K2.A1','X1.29',OR],['K3.A1','X1.30',OR],['F1.2','K1.21',RD],['K1.22','X1.31',OR]];
+/* PLC exercises: button outputs on X1 go to the easy inputs I1, I2 ... in order; each button is fed from F1 through strip jumpers */
+function plcIn(outs){const inOf={8:7,12:11,16:15,18:17,22:21,26:25},L=[],ins=outs.map(o=>inOf[o]);
+  L.push(['F1.2','X1.'+ins[0],RD]);for(let i=1;i<ins.length;i++)L.push(['X1.'+ins[i-1],'X1.'+ins[i],RD]);outs.forEach((o,i)=>L.push(['X1.'+o,'XP.I'+(i+1),RD]));return L;}
+const plcOut1=[['F1.2','F2.95',RD],['F2.96','XP.Q1_1',RD],['XP.Q1_2','K1.A1',RD],['K1.A2','X1.33',BL]];
+const plcLamps1=[['F1.2','K1.13',RD],['K1.14','X1.29',OR],['F1.2','K1.21',RD],['K1.22','X1.31',OR],['F1.2','F2.97',RD],['F2.98','X1.32',OR]];
+const plcOutRev=[['F1.2','F2.95',RD],['F2.96','XP.Q1_1',RD],['XP.Q1_1','XP.Q2_1',RD],['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['K1.A2','X1.33',BL],['K2.A2','X1.34',BL]];
+const plcOutSD=[['F1.2','F2.95',RD],['F2.96','XP.Q1_1',RD],['XP.Q1_1','XP.Q2_1',RD],['XP.Q2_1','XP.Q3_1',RD],['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['XP.Q3_2','K3.A1',RD],['K1.A2','X1.33',BL],['K2.A2','X1.34',BL],['K3.A2','X1.35',BL]];
+const plcLampsSD=[['K2.A1','X1.29',OR],['K3.A1','X1.30',OR],['F1.2','K1.21',RD],['K1.22','X1.31',OR],['F1.2','F2.97',RD],['F2.98','X1.32',OR]];
 const PRESETS={
  p1:[...feed,...k1pow,...toMotor,...deltaJump,...ctrlHead,
    ['X1.8','X1.11',RD],['X1.12','K1.A1',RD],['X1.8','K1.13',RD],['K1.14','K1.A1',RD],['K1.A2','X1.33',BL],...lampsStd],
@@ -1366,10 +1393,21 @@ const PRESETS={
    ['K1.14','X1.13',RD],['X1.14','K3.21',RD],['K3.22','K2.A1',RD],
    ['K1.14','X1.15',RD],['X1.16','K2.21',RD],['K2.22','K3.A1',RD],['K1.14','K3.13',RD],['K3.14','X1.16',RD]],
  p7:[...sdPow,...sdHead,
-   ['K1.14','KT1.A1',RD],['K1.14','KT1.15',RD],['KT1.16','K3.21',RD],['K3.22','K2.A1',RD],['KT1.18','K2.21',RD],['K2.22','K3.A1',RD],['KT1.A2','X1.36',BL]]};
-const PNAME={p1:'تشغيل محرك من مكان واحد مع لمبات بيان',p2:'تشغيل محرك من مكانين مع لمبات بيان',p3:'تشغيل محركين بالتتابع مع لمبات بيان',p4:'عكس حركة بطيء (مع توقف)',p5:'عكس حركة سريع (بدون توقف)',p6:'نجمة / دلتا يدوي',p7:'نجمة / دلتا بمؤقت'};
+   ['K1.14','KT1.A1',RD],['K1.14','KT1.15',RD],['KT1.16','K3.21',RD],['K3.22','K2.A1',RD],['KT1.18','K2.21',RD],['K2.22','K3.A1',RD],['KT1.A2','X1.36',BL]],
+ p8:[...feed,...k1pow,...toMotor,...deltaJump,...plcIn([8,12]),...plcOut1,...plcLamps1],
+ p9:[...feed,...k1pow,...toMotor,...deltaJump,...plcIn([8,12,16,18]),...plcOut1,...plcLamps1],
+ p10:[...feed,...k1pow,...toMotor,...deltaJump,...k2pow,['K2.2','F3.1',BR],['K2.4','F3.3',BK],['K2.6','F3.5',GR],['F3.2','M2.U1',BR],['F3.4','M2.V1',BK],['F3.6','M2.W1',GR],
+   ...plcIn([8,12,16,18]),['F1.2','F2.95',RD],['F2.96','F3.95',RD],['F3.96','XP.Q1_1',RD],['XP.Q1_1','XP.Q2_1',RD],['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['K1.A2','X1.33',BL],['K2.A2','X1.34',BL],
+   ['F1.2','K1.13',RD],['K1.14','X1.29',OR],['K1.13','K2.13',RD],['K2.14','X1.30',OR],['F1.2','K1.21',RD],['K1.22','X1.31',OR],['F1.2','F2.97',RD],['F2.97','F3.97',RD],['F2.98','X1.32',OR],['F3.98','X1.32',OR]],
+ p11:[...revPow,...plcIn([8,12,16,22,26]),...plcOutRev,['K1.A1','X1.29',OR],['K2.A1','X1.30',OR],['F1.2','F2.97',RD],['F2.98','X1.32',OR]],
+ p12:[...revPow,...plcIn([8,12,16,22,26]),...plcOutRev,['K1.A1','X1.29',OR],['K2.A1','X1.30',OR],['F1.2','F2.97',RD],['F2.98','X1.32',OR]],
+ p13:[...sdPow,...plcIn([8,12,16]),...plcOutSD,...plcLampsSD],
+ p14:[...sdPow,...plcIn([8,12]),...plcOutSD,...plcLampsSD]};
+const PNAME={p1:'تشغيل محرك من مكان واحد مع لمبات بيان',p2:'تشغيل محرك من مكانين مع لمبات بيان',p3:'تشغيل محركين بالتتابع مع لمبات بيان',p4:'عكس حركة بطيء (مع توقف)',p5:'عكس حركة سريع (بدون توقف)',p6:'نجمة / دلتا يدوي',p7:'نجمة / دلتا بمؤقت',p8:'تشغيل محرك من مكان واحد بجهاز easy',p9:'تشغيل محرك من مكانين بجهاز easy',p10:'تشغيل محركين بالتتابع بجهاز easy',p11:'عكس حركة بطيء بجهاز easy',p12:'عكس حركة سريع بجهاز easy',p13:'نجمة / دلتا يدوي بجهاز easy',p14:'نجمة / دلتا بمؤقت easy'};
+const PLCX=new Set(['p8','p9','p10','p11','p12','p13','p14']);
+function presetExtra(v){const sd=['p6','p7','p13','p14'].includes(v),m2=['p3','p10'].includes(v);return[...(sd?motorCable:motorCable.slice(0,3)),...(m2?m2Cable:[])];}
 document.getElementById('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';loadPreset(v);};
-function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...((v==='p6'||v==='p7')?motorCable:motorCable.slice(0,3)),...(v==='p3'?m2Cable:[])],d:5});
+function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,plc:PPROG[v]?{prog:PPROG[v].prog,tm:PPROG[v].tm,run:true}:undefined});
   Object.assign(S,{power:true,Q1:true,F1:true,fault:null,coils:{},sel:null,pending:null,pos:0.5});
   S.selDev=null;say('حُمّل مثال: '+PNAME[v]+' (أُضيفت القطع اللازمة تلقائيًا)');update();}
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addDevice(b.dataset.add));
@@ -1483,22 +1521,51 @@ const GREQ={p1:'S1 تشغيل مع تثبيت ذاتي، S0 إيقاف. المح
  p4:'S1 تشغيل أمامي، S2 تشغيل عكسي، S0 إيقاف، مع تثبيت ذاتي وإعاقة كهربائية (لا يُعكس إلا بعد الإيقاف). SQ2 يوقف الحركة الأمامية، وSQ1 يوقف العكسية. H1 أمامي، H2 عكسي، H4 عطل.',
  p5:'مثل العكس البطيء، لكن الضغط على ضاغط الاتجاه الآخر يعكس الحركة مباشرة دون الضغط على S0، مع بقاء الإعاقة الكهربائية. SQ2 يوقف الأمامي وSQ1 يوقف العكسي.',
  p6:'S1 يبدأ نجمة مع تثبيت ذاتي، وS2 يحوّل إلى دلتا ويبقى دلتا، وS0 إيقاف. لا يعمل كونتاكتورا النجمة والدلتا معًا. H1 نجمة، H2 دلتا، H3 إيقاف.',
- p7:'S1 يبدأ نجمة ويشغّل المؤقت، وبعد انتهاء زمن المؤقت يتحول المحرك تلقائيًا إلى دلتا. S0 إيقاف. لا يعمل كونتاكتورا النجمة والدلتا معًا. H1 نجمة، H2 دلتا، H3 إيقاف، H4 عطل.'};
+ p7:'S1 يبدأ نجمة ويشغّل المؤقت، وبعد انتهاء زمن المؤقت يتحول المحرك تلقائيًا إلى دلتا. S0 إيقاف. لا يعمل كونتاكتورا النجمة والدلتا معًا. H1 نجمة، H2 دلتا، H3 إيقاف، H4 عطل.',
+ p8:'بجهاز easy: S0 (NC) إلى I1، وS1 (NO) إلى I2، والمخرج Q1 يشغّل K1. تلامس الأوفرلود 95-96 يغذي مشترك المخارج. البرنامج: تثبيت ذاتي بالمخرج Q1.',
+ p9:'بجهاز easy: S0 إلى I1، وS1 إلى I2، وS2 إلى I3، وS3 إلى I4. Q1 يشغّل K1. التشغيل من I2 أو I3 والإيقاف من I1 أو I4.',
+ p10:'بجهاز easy: S0 إلى I1، وS1 إلى I2، وS2 إلى I3، وS3 إلى I4. Q1 يشغّل K1 (M1)، وQ2 يشغّل K2 (M2) بشرط عمل Q1. الأوفرلودان F2 وF3 على التوالي في تغذية المخارج.',
+ p11:'بجهاز easy: S0 إلى I1، وS1 (أمامي) إلى I2، وS2 (عكسي) إلى I3، وSQ1 إلى I4، وSQ2 إلى I5. Q1 يشغّل K1 (أمامي) وQ2 يشغّل K2 (عكسي) مباشرة، والإعاقة بين الاتجاهين في البرنامج.',
+ p12:'مثل التمرين 11، لكن البرنامج يسمح بالعكس المباشر، مع الإعاقة بين الاتجاهين في البرنامج.',
+ p13:'بجهاز easy: S0 إلى I1، وS1 (بدء) إلى I2، وS2 (دلتا) إلى I3. Q1 رئيسي K1، وQ2 نجمة K2، وQ3 دلتا K3، والإعاقة بين النجمة والدلتا في البرنامج.',
+ p14:'بجهاز easy: S0 إلى I1، وS1 إلى I2. Q1 رئيسي، وQ2 نجمة، وQ3 دلتا. المؤقت T1 في البرنامج (تأخير تشغيل 5 ث) يحوّل من النجمة إلى الدلتا.'};
 /* compare the trainee's wiring with the approved diagram, net by net (running is not required) */
-const isLampW=([a,b])=>{const t=k=>/^X1\.(29|30|31|32)$/.test(k)||/^F\d+\.(97|98)$/.test(k);return t(a)||t(b)||(a==='F1.2'&&/^K\d+A\.61$/.test(b))||(b==='F1.2'&&/^K\d+A\.61$/.test(a));};
+const isLampW=([a,b],ex)=>{const t=k=>/^X1\.(29|30|31|32)$/.test(k)||/^F\d+\.(97|98)$/.test(k)||(PLCX.has(ex)&&/^K\d+\.(13|14)$/.test(k));return t(a)||t(b)||(a==='F1.2'&&/^K\d+A\.61$/.test(b))||(b==='F1.2'&&/^K\d+A\.61$/.test(a));};
 function refWires(ex){const m21=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
-  return [...PRESETS[ex],...((ex==='p6'||ex==='p7')?motorCable:motorCable.slice(0,3)),...(ex==='p3'?m2Cable:[])].map(([a,b])=>[m21(a),m21(b)]).filter(w=>!isLampW(w));}
+  return [...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21(a),m21(b)]).filter(w=>!isLampW(w,ex));}
 function staticLinks(D){D=D||S.devs;const L=[['Q1.5','F1.1']];for(let i=34;i<=36;i++)L.push(['X1.'+i,'X1.33']);MB.forEach(n=>L.push(['X1.'+n,'X1.'+n+'b']));
   D.forEach(d=>{if(d.type==='ol'&&d.host)L.push([d.host+'.2',d.id+'.1'],[d.host+'.4',d.id+'.3'],[d.host+'.6',d.id+'.5']);});return L;}
-function gradeNow(ex,W,D){W=(W||S.wires.map(w=>[w.a,w.b])).filter(w=>!isLampW(w));const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
+function gradeNow(ex,W,D,PG){W=(W||S.wires.map(w=>[w.a,w.b])).filter(w=>!isLampW(w,ex));const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
   const u0=uf([]),seen=new Set(),ref=[];
   refWires(ex).forEach(([a,b])=>{if(a===b||u0.find(a)===u0.find(b))return;const k=[a,b].sort().join('|');if(!seen.has(k)){seen.add(k);ref.push([a,b]);}});
   const us=uf(W),ur=uf(ref);
   const miss=ref.filter(([a,b])=>us.find(a)!==us.find(b));
   const wrongW=W.filter(([a,b])=>ur.find(a)!==ur.find(b)).map(([a,b])=>[a,b]);
   const tot=ref.length,ok=tot-miss.length,bad=wrongW.length;
-  const sc=tot?Math.round(200*ok/(tot+bad))/10:0;
+  const wr=tot?ok/(tot+bad):0;
+  if(PLCX.has(ex)&&PTEST[ex]){const pg=PG||S.plc,gp=gradeProg(ex,pg.prog,pg.tm);const sc=Math.round((10*wr+10*gp.r)*10)/10;
+    return{s:sc,ok,tot,bad,miss,wrongW,ws:Math.round(100*wr)/10,ps:Math.round(100*gp.r)/10,pOk:gp.ok,pRel:gp.rel,pBad:gp.bad};}
+  const sc=Math.round(200*wr)/10;
   return{s:sc,ok,tot,bad,miss,wrongW};}
+/* program check: run the trainee's ladder program and the model program through the same input sequence and compare Q1-Q4 */
+const PTEST={
+ p8:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I1:0},{I1:1},{I2:1},{I2:0},{I1:0},{I1:1}],d:['ضغط S1','رفع الإصبع','ضغط S0','رفع S0','تشغيل مرة ثانية','رفع','إيقاف','رفع']},
+ p9:{base:{I1:1,I4:1},steps:[{},{I2:1},{I2:0},{I4:0},{I4:1},{I3:1},{I3:0},{I1:0},{I1:1}]},
+ p10:{base:{I1:1,I4:1},steps:[{},{I3:1},{I3:0},{I2:1},{I2:0},{I3:1},{I3:0},{I4:0},{I4:1},{I3:1},{I3:0},{I1:0},{I1:1}]},
+ p11:{base:{I1:1,I4:1,I5:1},steps:[{},{I2:1},{I2:0},{I3:1},{I3:0},{I1:0},{I1:1},{I3:1},{I3:0},{I4:0},{I4:1},{I2:1},{I2:0},{I5:0},{I5:1}]},
+ p12:{base:{I1:1,I4:1,I5:1},steps:[{},{I2:1},{I2:0},{I3:1},{I3:0},{I2:1},{I2:0},{I1:0},{I1:1},{I3:1},{I3:0},{I4:0},{I4:1}]},
+ p13:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I3:1},{I3:0},{I1:0},{I1:1},{I2:1},{I2:0},{I1:0},{I1:1}]},
+ p14:{base:{I1:1},steps:[{},{I2:1},{I2:0},{t:2000},{t:3500},{I1:0},{I1:1},{I2:1},{I2:0},{t:1000}]}};
+function progSim(prog,tm,base,steps){const P={prog:Array.isArray(prog)?prog:[],tm:tm||{},q:[false,false,false,false,false],m:{},ts:{},prev:{},flow:[]},inp={};let now=0;
+  Object.entries(base).forEach(([k,v])=>inp[+k.slice(1)]=!!v);
+  const key=()=>P.q.join()+JSON.stringify(P.m)+Object.values(P.ts).map(t=>t.out).join();
+  const settle=()=>{for(let i=0;i<25;i++){const k=key();plcScan(inp,now,P);now+=10;if(i>0&&key()===k)break;}};
+  const out=[];settle();out.push(P.q.slice(1,5));
+  steps.forEach(st=>{Object.entries(st).forEach(([k,v])=>{if(k==='t'){const end=now+v;while(now<end){plcScan(inp,now,P);now+=50;}}else inp[+k.slice(1)]=!!v;});settle();out.push(P.q.slice(1,5));});return out;}
+function gradeProg(ex,prog,tm){const T=PTEST[ex];let ok=0,rel=0,bad=0;
+  try{const ref=progSim(PPROG[ex].prog,PPROG[ex].tm,T.base,T.steps),st=progSim(prog,tm,T.base,T.steps);
+    ref.forEach((r,i)=>{let stepBad=false;r.forEach((b,j)=>{const x=st[i][j];if(b||x){rel++;if(!!b===!!x)ok++;else stepBad=true;}});if(stepBad)bad++;});}catch(_){}
+  return{ok,rel,bad,r:rel?ok/rel:0};}
 const GK='wsGrades',gAll=()=>{try{return JSON.parse(localStorage.getItem(GK)||'{}');}catch(_){return{};}};
 function gSave(o){try{localStorage.setItem(GK,JSON.stringify(o));}catch(_){}}
 function curGrade(){const A=gAll();return A._cur&&A[A._cur]?A[A._cur]:null;}
@@ -1512,17 +1579,20 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   return `<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <p style="margin:0 0 6px;font-weight:700">${esc(PNAME[G.ex])}</p>
   ${G.tot!=null?`<ul class="glist"><li><span>✔</span><span>توصيلات صحيحة مطابقة للمخطط</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>توصيلات خاطئة أو زائدة</span><b>${G.bad}</b></li></ul>
-  <p class="gmeta" style="margin-top:6px">توصيلات لمبات البيان لا تدخل في التقييم. طريقة الحساب: الدرجة = 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.s}</p>
+  ${G.ps!=null?`<ul class="glist"><li class="${G.ps<10?'no':''}"><span>${G.ps>=10?'✔':'✖'}</span><span>البرنامج: مخارج صحيحة في اختبارات التشغيل</span><b>${G.pOk} / ${G.pRel}</b></li></ul>
+  <p class="gmeta" style="margin-top:6px">توصيلات لمبات البيان لا تدخل في التقييم. طريقة الحساب: التوصيل = 10 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.ws}، والبرنامج = 10 × ${G.pOk} ÷ ${G.pRel||1} = ${G.ps}. المجموع = ${G.s} من 20.</p>
+  <p class="gmeta">يُختبر البرنامج آليًا: تُمرَّر عليه حالات الضغط والرفع والإيقاف ونهاية المشوار والمؤقت، وتُقارن مخارجه Q1-Q4 بالبرنامج النموذجي. أي برنامج يؤدي العمل نفسه يأخذ الدرجة كاملة.</p>`:
+  `<p class="gmeta" style="margin-top:6px">توصيلات لمبات البيان لا تدخل في التقييم. طريقة الحساب: الدرجة = 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.s}</p>`}
   ${G.wrongW&&G.wrongW.length?`<details style="margin-top:6px"><summary>التوصيلات الخاطئة (${G.wrongW.length})</summary><ul class="glist">${wl(G.wrongW)}</ul></details>`:''}
   ${G.miss&&G.miss.length?`<details class="trainer-only" style="margin-top:6px"><summary>التوصيلات الناقصة (${G.miss.length}) · تظهر للمدرب فقط</summary><ul class="glist">${wl(G.miss)}</ul></details>`:''}`:
   `<ul class="glist">${G.items.map(([t,p,ok])=>`<li class="${ok?'':'no'}"><span>${ok?'✔':'✖'}</span><span>${esc(t)}</span><b>${ok?p:0} / ${p}</b></li>`).join('')}</ul>`}
   <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}${view?'':' · 🔒 الدرجة مقفلة'}</p>`;}
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
   let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+A[k].s+'/20 🔒':''}</option>`).join('')}</select></label>`;
-  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يقارن المحاكي كل توصيلة في لوحتك بتوصيلات المخطط المعتمد للتمرين، وتُحسب الدرجة من 20 بنسبة التوصيلات الصحيحة، سواء اشتغلت الدائرة أم لا. التوصيلات الخاطئة أو الزائدة تُنقص الدرجة.</p>`;}
+  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يقارن المحاكي كل توصيلة في لوحتك بتوصيلات المخطط المعتمد للتمرين، وتُحسب الدرجة بنسبة التوصيلات الصحيحة، سواء اشتغلت الدائرة أم لا. التوصيلات الخاطئة أو الزائدة تُنقص الدرجة. في تمارين easy (8 إلى 14): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
   else if(G){h+=`<div class="glock">🔒 قُيّم هذا التمرين من قبل، والدرجة مقفلة ولا تتغير حتى لو عدّلت التوصيل. التوصيل الذي قُيّم هو الذي يُرسل للمدرب.</div>`+gResHTML(G)+
     `<div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button>${tr?'<button class="btn trainer-only" id="gRedo" style="grid-column:1/-1">🔓 مسح الدرجة وإعادة التقييم (للمدرب)</button>':''}</div>`;}
-  else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}</div>
+  else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}${PLCX.has(ex)?'<br><b>التقييم:</b> التوصيل 10 درجات، والبرنامج 10 درجات (يُختبر تشغيله آليًا).':''}</div>
     <div class="glock">⚠️ التقييم يُحسب <b>مرة واحدة</b> لهذا التمرين. بعده تُقفل الدرجة ولا تتغير حتى لو عدّلت التوصيل، فراجع توصيلاتك قبل البدء. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
     <div class="sbtns"><button class="btn prim" id="gGo">🎯 ابدأ التقييم الآن</button></div>`;}
@@ -1569,7 +1639,7 @@ try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const exName=ex=>PNAME[ex]?'تمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]:'بدون تقييم';
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 async function recheck(r){if(RS.chk[r.uid]!==undefined||!r.code||!PRESETS[r.ex])return;RS.chk[r.uid]=null;
-  try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o.w.map(x=>[x[0],x[1]]),o.devs||[]).s;}catch(_){RS.chk[r.uid]=null;}}
+  try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o.w.map(x=>[x[0],x[1]]),o.devs||[],o.plc||{prog:[],tm:{}}).s;}catch(_){RS.chk[r.uid]=null;}}
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q));
   $('rDelSel').disabled=!RS.sel.size;$('rDelSel').textContent=RS.sel.size?'🗑 حذف المحدد ('+RS.sel.size+')':'🗑 حذف المحدد';
   $('rList').innerHTML=L.length?L.map(r=>{const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,ok=c==null||sv==='—'?'':c===+r.s?' <span title="أُعيد الفحص على التوصيل المرسل">✔</span>':` <span style="color:var(--warn)" title="إعادة الفحص أعطت ${c}">⚠${c}</span>`;
@@ -1615,11 +1685,11 @@ if(/^#t=/.test(location.hash))decodeCode(location.hash).then(o=>{snap();applyObj
 function plcLCD(){const P=S.plc;if(!P.pw)return null;const d=new Date(),dd=['SU','MO','TU','WE','TH','FR','SA'][d.getDay()],hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   return['I'+[1,2,3,4,5,6,7,8].map(i=>P.inp[i]?i:'.').join(''),dd+' '+hm,'Q'+[1,2,3,4].map(i=>P.q[i]?i:'.').join(''),(P.run?'RUN':'STOP').padStart(12,' ')];}
 function plcVal(op,inp,P){const k=op[0],n=+op.slice(1);return k==='I'?!!inp[n]:k==='Q'?!!P.q[n]:k==='M'?!!P.m[n]:k==='T'?!!(P.ts[n]&&P.ts[n].out):false;}
-function plcScan(inp,now){const P=S.plc,L=P.prog,n=L.length;let node=L.map(()=>true);const flow=L.map(()=>[false,false,false,false]);
-  for(let b=0;b<3;b++){const out=L.map((ln,r)=>{const c=ln.c[b];if(!c)return false;const v=c.op==='-'?true:(plcVal(c.op,inp,P)!==!!c.nc);flow[r][b]=node[r]&&v;return node[r]&&v;});
-    const nx=out.slice();let r=0;while(r<n){let e=r;while(e<n-1&&L[e].j&&L[e].j[b])e++;if(e>r){const v=out.slice(r,e+1).some(Boolean);for(let i=r;i<=e;i++)nx[i]=v;}r=e+1;}node=nx;}
+function plcScan(inp,now,P){P=P||S.plc;const L=P.prog,n=L.length;let node=L.map(()=>true);const flow=L.map(()=>({i:[0,0,0],o:[0,0,0],j:[0,0,0],v:[0,0,0],coil:false}));
+  for(let b=0;b<3;b++){const out=L.map((ln,r)=>{flow[r].i[b]=node[r];const c=ln.c[b];if(!c)return false;const v=c.op==='-'?true:(plcVal(c.op,inp,P)!==!!c.nc);flow[r].v[b]=v;flow[r].o[b]=node[r]&&v;return node[r]&&v;});
+    const nx=out.slice();let r=0;while(r<n){let e=r;while(e<n-1&&L[e].j&&L[e].j[b])e++;if(e>r){const v=out.slice(r,e+1).some(Boolean);for(let i=r;i<=e;i++)nx[i]=v;}r=e+1;}node=nx;L.forEach((_,r2)=>flow[r2].j[b]=nx[r2]);}
   Object.values(P.ts).forEach(ts=>ts.hold=false);
-  L.forEach((ln,r)=>{const co=ln.coil;if(!co)return;const pw=node[r];flow[r][3]=pw;const was=!!P.prev[r];P.prev[r]=pw;const t=co.op[0],num=+co.op.slice(1);
+  L.forEach((ln,r)=>{const co=ln.coil;if(!co)return;const pw=node[r];flow[r].coil=pw;const was=!!P.prev[r];P.prev[r]=pw;const t=co.op[0],num=+co.op.slice(1);
     if(t==='T'){const ts=P.ts[num]||(P.ts[num]={trig:false,start:null,out:false,pt:false,hold:false});if(co.f==='R')ts.hold=ts.hold||pw;else ts.trig=pw;return;}
     const tgt=t==='Q'?P.q:P.m;if(co.f==='C')tgt[num]=pw;else if(co.f==='S'){if(pw)tgt[num]=true;}else if(co.f==='R'){if(pw)tgt[num]=false;}else if(co.f==='I'){if(pw&&!was)tgt[num]=!tgt[num];}});
   Object.keys(P.ts).forEach(k=>{const ts=P.ts[k],cfg=P.tm[k]||{mode:'X',t:3},T0=Math.max(.1,+cfg.t||0)*1000;
@@ -1642,19 +1712,23 @@ function plcLine(r){const P=S.plc;while(P.prog.length<=r)P.prog.push({c:[null,nu
 function plcTrim(){const P=S.plc;while(P.prog.length){const l=P.prog[P.prog.length-1];if(l.c.some(Boolean)||l.coil||l.j.some(Boolean))break;P.prog.pop();}}
 function plcAutoWire(l){if(!l.coil)return;let last=-1;l.c.forEach((c,i)=>{if(c)last=i;});for(let i=last+1;i<3;i++)l.c[i]={op:'-'};}
 function plcRows(){return Math.min(41,Math.max(S.plc.prog.length+1,5));}
-function plcCellTxt(l,ci,r){const P=S.plc;if(ci%2===0&&ci<6){const c=l&&l.c[ci/2];if(!c)return['··','e'];if(c.op==='-')return['──',''];return[c.nc?`<span class="nc">${c.op}</span>`:c.op,''];}
-  if(ci===6){const co=l&&l.coil;return co?[co.f+co.op,'']:['····','e'];}
-  const b=(ci-1)/2,dn=!!(l&&l.j[b]),up=r>0&&!!(P.prog[r-1]&&P.prog[r-1].j[b]),left=l&&l.c[b];
-  return[dn&&up?'┤':dn?'┐':up?'┘':left?'─':' ',left||dn||up?'':'e'];}
+function plcCell(l,ci,r,f){const P=S.plc,h=v=>f&&v?' h':'';
+  if(ci===6){const co=l&&l.coil;if(!co)return['q e','····'];return['q'+(f&&f.coil?' on':''),`<i class="wl${h(f&&f.coil)}"></i><b class="lab">${co.f+co.op}</b>`];}
+  if(ci%2===0){const b=ci/2,c=l&&l.c[b];if(!c)return['k e','··'];
+    const ln=`<i class="wl${h(f&&f.i[b])}"></i><i class="wr${h(f&&f.o[b])}"></i>`;
+    if(c.op==='-')return['k',ln];return['k'+(f&&f.v[b]?' cl':''),ln+`<b class="lab">${c.nc?`<span class="nc">${c.op}</span>`:c.op}</b>`];}
+  const b=(ci-1)/2,dn=!!(l&&l.j[b]),up=r>0&&!!(P.prog[r-1]&&P.prog[r-1].j[b]),left=!!(l&&l.c[b]),right=!!(l&&(b<2?l.c[b+1]:l.coil)),hj=h(f&&f.j[b]);
+  const x=(left?`<i class="wl${h(f&&f.o[b])}"></i>`:'')+(right||(!left&&(dn||up))?`<i class="wr${hj}"></i>`:'')+(dn?`<i class="vd${hj}"></i>`:'')+(up?`<i class="vu${hj}"></i>`:'');
+  return[x?'j':'j e',x||' '];}
 function plcRender(){const P=S.plc,run=P.run;$('plcState').textContent=(P.pw?'مغذى 230V':'غير مغذى')+' · '+(run?'RUN':'STOP');
   $('plcRun').classList.toggle('on',run);$('plcStop').classList.toggle('on',!run);
   $('plcIO').innerHTML=[1,2,3,4,5,6,7,8].map(i=>`<span class="${P.inp[i]?'on':''}">I${i}</span>`).join('')+'<span style="background:none"> </span>'+[1,2,3,4].map(i=>`<span class="${P.q[i]?'on':''}">Q${i}</span>`).join('');
-  let g='';for(let r=0;r<plcRows();r++){const l=P.prog[r],fl=P.flow[r]||[];g+=`<div class="pr"><span class="pln">${r+1}</span>`;
-    for(let ci=0;ci<7;ci++){const [t,cl]=plcCellTxt(l,ci,r),kind=ci===6?'q':ci%2===0?'k':'j',on=run&&P.pw&&((ci%2===0&&ci<6&&fl[ci/2]&&l.c[ci/2]&&l.c[ci/2].op!=='-')||(ci===6&&fl[3]&&l&&l.coil));
-      g+=`<button class="pc ${kind} ${cl}${PE.r===r&&PE.c===ci?' cur':''}${on?' on':''}" data-r="${r}" data-c="${ci}">${t}</button>`;}g+='</div>';}
+  let g='';for(let r=0;r<plcRows();r++){const l=P.prog[r];g+=`<div class="pr"><span class="pln">${r+1}</span>`;
+    const live=run&&P.pw,f=live?P.flow[r]:null,has=l&&(l.c.some(Boolean)||l.coil);g+=`<i class="rail${live?' h':''}${has||live?'':' off'}"></i>`;
+    for(let ci=0;ci<7;ci++){const [cl,t]=plcCell(l,ci,r,f);g+=`<button class="pc ${cl}${PE.r===r&&PE.c===ci?' cur':''}" data-r="${r}" data-c="${ci}">${t}</button>`;}g+='</div>';}
   $('plcGrid').innerHTML=g;plcPal();plcTimers();}
 function plcNote(t,warn){const n=$('plcNote');n.textContent=t||'';n.style.color=warn?'var(--warn)':'';}
-function plcPal(){const P=S.plc,el=$('plcPal');if(P.run){el.innerHTML='<div class="pt">البرنامج يعمل (RUN). للتعديل اضغط ■ STOP كما في الجهاز الحقيقي.</div>';return;}
+function plcPal(){const P=S.plc,el=$('plcPal');if(P.run){el.innerHTML='<div class="pt">البرنامج يعمل (RUN). تتبّع الخط الثخين من اليسار: النقطة التي يصبح بعدها الخط رفيعًا هي مكان انقطاع التيار. للتعديل اضغط ■ STOP كما في الجهاز الحقيقي.</div>';return;}
   const l=P.prog[PE.r],ci=PE.c,btn=(t,a,sel)=>`<button data-p="${a}" class="${sel?'sel':''}">${t}</button>`;let h='';
   if(ci===6){const co=l&&l.coil;h+=`<div class="pt">ملف مخرج أو علامة (M): اختر الوظيفة ثم الرقم</div><div class="row">`+[['C','C تشغيل'],['S','S ضبط'],['R','R إعادة ضبط'],['I','I نبضي']].map(([f,t])=>btn(t,'cf:'+f,PE.cf===f)).join('')+`</div>
     <div class="row">`+[1,2,3,4].map(i=>btn('Q'+i,'co:Q'+i,co&&co.op==='Q'+i)).join('')+`</div><div class="row">`+Array.from({length:16},(_,i)=>btn('M'+(i+1),'co:M'+(i+1),co&&co.op==='M'+(i+1))).join('')+`</div>
@@ -1702,6 +1776,18 @@ $('plcClear').onclick=()=>{if(S.plc.run){plcNote('اضغط ■ STOP أولًا.'
 window.addEventListener('keydown',e=>{if(!plM.classList.contains('open')||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;const m={ArrowLeft:'L',ArrowRight:'R',ArrowUp:'U',ArrowDown:'D',Escape:'ESC',Delete:'DEL',Enter:'OK'}[e.key];if(m){e.preventDefault();e.stopPropagation();plcKey(m);}},true);
 setInterval(()=>{if(plM.classList.contains('open')&&S.plc.run)plcRender();},300);
 const K=(op,nc)=>({op,nc:!!nc}),WL={op:'-'},LN=(c,coil,j)=>({c,coil:coil||null,j:j||[false,false,false]});
+const PPROG={
+ p8:{prog:[LN([K('I2'),K('I1'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null])],tm:{}},
+ p9:{prog:[LN([K('I2'),K('I1'),K('I4')],{f:'C',op:'Q1'},[true,false,false]),LN([K('I3'),null,null],null,[true,false,false]),LN([K('Q1'),null,null])],tm:{}},
+ p10:{prog:[LN([K('I2'),K('I1'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('I3'),K('I4'),K('Q1')],{f:'C',op:'Q2'},[true,false,false]),LN([K('Q2'),null,null])],tm:{}},
+ p11:{prog:[LN([K('I2'),K('I1'),K('Q2',1)],{f:'C',op:'M1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('M1'),K('I5'),WL],{f:'C',op:'Q1'}),
+   LN([K('I3'),K('I1'),K('Q1',1)],{f:'C',op:'M2'},[true,false,false]),LN([K('Q2'),null,null]),LN([K('M2'),K('I4'),WL],{f:'C',op:'Q2'})],tm:{}},
+ p12:{prog:[LN([K('I2'),K('I1'),K('I3',1)],{f:'C',op:'M1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('M1'),K('Q2',1),K('I5')],{f:'C',op:'Q1'}),
+   LN([K('I3'),K('I1'),K('I2',1)],{f:'C',op:'M2'},[true,false,false]),LN([K('Q2'),null,null]),LN([K('M2'),K('Q1',1),K('I4')],{f:'C',op:'Q2'})],tm:{}},
+ p13:{prog:[LN([K('I2'),K('I1'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('Q1'),K('M1',1),K('Q3',1)],{f:'C',op:'Q2'}),
+   LN([K('I3'),K('Q1'),WL],{f:'C',op:'M1'},[true,false,false]),LN([K('M1'),null,null]),LN([K('M1'),K('Q2',1),K('Q1')],{f:'C',op:'Q3'})],tm:{}},
+ p14:{prog:[LN([K('I2'),K('I1'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('Q1'),K('T1',1),K('Q3',1)],{f:'C',op:'Q2'}),
+   LN([K('Q1'),WL,WL],{f:'T',op:'T1'}),LN([K('T1'),K('Q2',1),K('Q1')],{f:'C',op:'Q3'})],tm:{1:{mode:'X',t:5}}}};
 const PLCEX=[
  {n:'تشغيل/إيقاف مع تثبيت',p:[LN([K('I1'),K('I2'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null])],tm:{},
   h:'I1 = ضاغط تشغيل (NO)، I2 = ضاغط إيقاف (NC لذلك يبقى المدخل فعالًا)، Q1 يشغّل الكونتاكتور K1. السطر الثاني Q1 موصول رأسيًا بالسطر الأول = تثبيت ذاتي.'},
@@ -1849,7 +1935,28 @@ const CIRCS={
  p7:{n:'نجمة / دلتا بمؤقت',idea:'نفس فكرة النجمة/دلتا، لكن التحويل آلي بعد زمن محدد.',
   power:['نفس دائرة قوى النجمة/دلتا.'],
   ctrl:['S1 يشغّل K1، ومعه يعمل المؤقت KT1 ويبدأ العد.','أثناء العد تغذي النقطة 15-16 (مغلقة) الكونتاكتور K2، فيعمل المحرك نجمة.','بعد انتهاء الزمن تنفتح 15-16 فيفصل K2، وتنغلق 15-18 فيعمل K3 دلتا.','الإعاقة بين K2 وK3 تمنع عملهما معًا لحظة التحويل.'],
-  lamps:'H1 نجمة، H2 دلتا، H3 إيقاف، H4 عطل.',err:['زمن قصير جدًا: تحويل قبل وصول السرعة. زمن طويل جدًا: المحرك يعمل نجمة تحت الحمل ويسخن.']}};
+  lamps:'H1 نجمة، H2 دلتا، H3 إيقاف، H4 عطل.',err:['زمن قصير جدًا: تحويل قبل وصول السرعة. زمن طويل جدًا: المحرك يعمل نجمة تحت الحمل ويسخن.']},
+ p8:{n:'تشغيل محرك من مكان واحد بجهاز easy',idea:'نفس التمرين 1، لكن التثبيت الذاتي يُكتب في البرنامج بدل سلك 13-14.',power:['نفس دائرة القوى في التمرين 1.'],
+  ctrl:['F1 يغذي الضاغطين عبر جسر على الترمنالات: S0 (NC) يخرج إلى المدخل I1، وS1 (NO) إلى I2.','F1 ← 95-96 للأوفرلود ← المشترك 1 للمخرج Q1، والطرف 2 للمخرج ← A1 للكونتاكتور K1.','البرنامج: السطر 1: I2 على التوازي مع Q1 (ربط رأسي)، ثم I1، ثم الملف Q1.','الضغط على S1 يفعّل I2 فيشتغل Q1 ويثبت نفسه، والضغط على S0 يلغي I1 فيفصل Q1.'],
+  lamps:'H1 عبر 13-14 لـ K1، وH3 عبر 61-62، وH4 عبر 97-98.',err:['كتابة I1 في البرنامج مغلقًا (NC): ضاغط الإيقاف موصول NC، فالمدخل فعال طبيعيًا ويُكتب مفتوحًا NO.','نسيان الربط الرأسي بين I2 وQ1: لا يوجد تثبيت ذاتي.']},
+ p9:{n:'تشغيل محرك من مكانين بجهاز easy',idea:'التشغيل والإيقاف من مكانين، والتوازي والتوالي يُكتبان في البرنامج.',power:['نفس دائرة القوى في التمرين 2.'],
+  ctrl:['S0 إلى I1، وS1 إلى I2، وS2 إلى I3، وS3 إلى I4. كل الضواغط تُغذى من F1 بجسور على الترمنالات.','البرنامج: I2 وI3 وQ1 على التوازي (ربطان رأسيان)، ثم I1 ثم I4 على التوالي، ثم الملف Q1.'],
+  lamps:'مثل التمرين 8.',err:['وضع I1 وI4 على التوازي في البرنامج: لا يتوقف المحرك إلا بالضغط على الإيقافين معًا.']},
+ p10:{n:'تشغيل محركين بالتتابع بجهاز easy',idea:'شرط التتابع (M2 بعد M1) يُكتب في البرنامج بتلامس Q1 في سطر Q2.',power:['نفس دائرة القوى في التمرين 3.'],
+  ctrl:['S0 إلى I1، وS1 إلى I2، وS2 إلى I3، وS3 إلى I4.','تغذية المخارج تمر بالأوفرلودين F2 وF3 على التوالي، فعطل أي محرك يوقف الاثنين.','السطر 1: (I2 أو Q1) ثم I1 ← Q1. السطر 3: (I3 أو Q2) ثم I4 ثم Q1 ← Q2.'],
+  lamps:'H1 عبر 13-14 لـ K1، وH2 عبر 13-14 لـ K2، وH3 إيقاف، وH4 عطل.',err:['نسيان تلامس Q1 في سطر Q2: يعمل M2 قبل M1.']},
+ p11:{n:'عكس حركة بطيء بجهاز easy',idea:'الإعاقة بين الاتجاهين تُكتب في البرنامج: تلامس مغلق (NC) لكل اتجاه في سطر الاتجاه الآخر.',power:['نفس دائرة القوى في التمرين 4.'],
+  ctrl:['S0 إلى I1، وS1 إلى I2، وS2 إلى I3، وSQ1 إلى I4، وSQ2 إلى I5.','المخرج Q1 ← A1 لـ K1، والمخرج Q2 ← A1 لـ K2 مباشرة.','البرنامج: (I2 أو Q1) ثم I1 ثم Q2 مغلق ← M1، ثم M1 ثم I5 ← Q1. والعكس نفسه بـ I3 وQ1 مغلق وI4 ← Q2.'],
+  lamps:'H1 مع ملف K1، وH2 مع ملف K2، وH4 عطل.',err:['نسيان Q2 مغلقًا في سطر M1 أو Q1 مغلقًا في سطر M2: يمكن تشغيل الاتجاهين معًا = قصر بين طورين.']},
+ p12:{n:'عكس حركة سريع بجهاز easy',idea:'العكس المباشر: ضاغط الاتجاه الآخر يُكتب مغلقًا (NC) في سطر الاتجاه الحالي.',power:['نفس دائرة القوى في التمرين 5.'],
+  ctrl:['نفس توصيل التمرين 11.','البرنامج: (I2 أو Q1) ثم I1 ثم I3 مغلق ← M1، ثم M1 ثم Q2 مغلق ثم I5 ← Q1، والعكس بالمقابل.','الضغط على S2 أثناء الأمامي يفصل M1 ثم Q1، ثم يعمل Q2 في الدورة التالية.'],
+  lamps:'مثل التمرين 11.',err:['حذف الإعاقة بين Q1 وQ2 من البرنامج: قد يعمل الاتجاهان معًا لحظة التبديل.']},
+ p13:{n:'نجمة / دلتا يدوي بجهاز easy',idea:'البدء نجمة ثم التحويل إلى دلتا بضاغط، والطلب يُحفظ في العلامة M1.',power:['نفس دائرة القوى في التمرين 6.'],
+  ctrl:['S0 إلى I1، وS1 إلى I2، وS2 إلى I3. المخارج مباشرة: Q1 ← K1، وQ2 ← K2، وQ3 ← K3.','البرنامج: Q1 بتثبيت ذاتي. Q2 = Q1 و(M1 مغلق) و(Q3 مغلق). M1 = (I3 أو M1) وQ1. Q3 = M1 و(Q2 مغلق) وQ1.'],
+  lamps:'H1 نجمة، H2 دلتا، H3 إيقاف.',err:['نسيان Q3 مغلق في سطر Q2 أو العكس: النجمة والدلتا معًا = قصر.']},
+ p14:{n:'نجمة / دلتا بمؤقت easy',idea:'المؤقت الخارجي KT1 يُستبدل بالمؤقت T1 داخل البرنامج.',power:['نفس دائرة القوى في التمرين 7.'],
+  ctrl:['S0 إلى I1، وS1 إلى I2، والمخارج مثل التمرين 13.','البرنامج: Q1 بتثبيت ذاتي. Q1 يشغّل ملف المؤقت TT1. Q2 = Q1 و(T1 مغلق) و(Q3 مغلق). Q3 = T1 و(Q2 مغلق) وQ1.','زمن T1 يُضبط من إعدادات المؤقتات (تأخير تشغيل X، 5 ث).'],
+  lamps:'H1 نجمة، H2 دلتا، H3 إيقاف، H4 عطل.',err:['استخدام نمط وميض أو نبضة للمؤقت بدل تأخير التشغيل: يتذبذب المحرك بين النجمة والدلتا.']}};
 const exM=$('exModal');let EX={tab:'now',circ:'p1',hl:null};
 function nowHTML(){const L=[],add=(c,t)=>L.push(`<li class="${c}">${t}</li>`);
   if(!S.wires.length)return '<div class="note">لا توجد توصيلات بعد. ابدأ التوصيل أو اطلب من المدرب تمرينًا، ثم افتح هذا القسم لترى شرح ما يحدث في دائرتك.</div>';
