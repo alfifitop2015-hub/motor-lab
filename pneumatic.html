@@ -105,7 +105,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
   <div class="bar1">
     <h1>محاكي ورشة التحكم الهوائي (النيوماتيك)</h1>
     <span class="tbadge trainer-only">مدرب</span>
-    <a class="ib" id="bElec" title="ورشة التحكم الكهربائي" aria-label="ورشة التحكم الكهربائي">⚡</a>
+    <a class="ib" id="bElec" title="رجوع إلى ورشة التحكم الكهربائي" aria-label="رجوع إلى ورشة التحكم الكهربائي" style="text-decoration:none;color:inherit;font-weight:700;font-size:.9rem;gap:4px;white-space:nowrap;min-width:auto;padding:0 10px;display:inline-flex;align-items:center"><span>رجوع</span><span aria-hidden="true" style="font-size:1.15rem">↪</span></a>
     <button class="ib" id="bHelp" title="شرح الدوائر والتركيبات" aria-label="شرح الدوائر والتركيبات">📖</button>
     <details class="more"><summary class="ib" title="المزيد" aria-label="المزيد">⋯</summary>
       <div class="menu">
@@ -186,7 +186,7 @@ const EMB=(()=>{try{return window.parent!==window&&!!window.parent.__pnClose;}ca
 const LOC=(()=>{try{return EMB?window.parent.location:location;}catch(_){return location;}})();
 const isHosted=()=>/^https?:$/.test(LOC.protocol)&&!/(claude\.ai|claudeusercontent|anthropic)/.test(LOC.hostname);
 const PN_URL=()=>LOC.href.split('#')[0].replace(/[^/]*$/,'')+'pneumatic.html';
-if(EMB){$('bElec').href='#';$('bElec').title='الرجوع للمحاكي الكهربائي';$('bElec').onclick=e=>{e.preventDefault();window.parent.__pnClose();};}
+if(EMB){$('bElec').href='#';$('bElec').title='رجوع إلى المحاكي الكهربائي';$('bElec').onclick=e=>{e.preventDefault();window.parent.__pnClose();};}
 else{$('bElec').href=isHosted()?'index.html':ELEC_URL;if(!isHosted())$('bElec').target='_blank';}
 
 /* ---------- component definitions (ISO 1219 ports: 1 supply, 2/4 outputs, 3/5 exhaust, 12/14 pilots) ---------- */
