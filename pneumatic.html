@@ -3,6 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b3d91">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ورشة التحكم">
+
 <title>محاكي ورشة التحكم الهوائي</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,7 +122,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <button class="mi" id="bShare">⇪ مشاركة الدائرة</button>
         <button class="mi" id="bClearAll">⌫ مسح اللوحة</button>
-        <button class="mi" id="bTrainer">🔒 وضع المدرب</button>
+        <button class="mi" id="bInstall" style="display:none">📲 تثبيت التطبيق</button><button class="mi" id="bTrainer">🔒 وضع المدرب</button>
       </div>
     </details>
   </div>
@@ -550,8 +559,8 @@ async function imgs(st){try{const b=await panelBlob(st.n,st.id);if(!b)return{};c
   const jpg=(w,q)=>{const c=document.createElement('canvas');c.width=w;c.height=Math.round(im.height*w/im.width);const g=c.getContext('2d');g.fillStyle='#8e9aa4';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q).split(',')[1];};
   let th=jpg(220,.6);if(th.length>44000)th=jpg(160,.5);return{img:jpg(900,.8),th};}catch(_){return{};}}
 $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
-  try{const {code}=await buildMsg(st),im=await imgs(st);const j=await cloud({action:'submit',n:st.n,id:st.id,ex:'pn',s:'',code,img:im.img,th:im.th});okMsg('✔ وصلت دائرتك للمدرب. رقم المرجع: '+j.uid);}
-  catch(e){okMsg(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
+  try{const {code}=await buildMsg(st),im=await imgs(st);const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:'pn',s:'',code,img:im.img,th:im.th});okMsg('✔ وصلت دائرتك للمدرب. رقم المرجع: '+j.uid);}
+  catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}okMsg(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set()};try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id).includes(q));$('rDelSel').disabled=!RS.sel.size;
@@ -664,6 +673,38 @@ $('exBody').addEventListener('click',e=>{const c=e.target.closest('[data-ci]');i
 setInterval(()=>{if(exM.classList.contains('open')&&EXS.tab==='now')$('exBody').innerHTML=nowHTML();},500);
 window.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));});
 
+/* ===== تطبيق قابل للتثبيت + طابور إرسال دون إنترنت ===== */
+let _qP=null;
+const PWA_EMB=(()=>{try{return window.parent!==window;}catch(_){return true;}})();
+const QK='wsQueue';
+function qGet(){try{return JSON.parse(localStorage.getItem(QK)||'[]');}catch(_){return [];}}
+function qSet(a){try{if(a.length)localStorage.setItem(QK,JSON.stringify(a));else localStorage.removeItem(QK);return true;}catch(_){return false;}}
+function qAdd(d){const a=qGet();a.push(Object.assign({},d,{_q:Date.now()}));if(qSet(a))return true;
+  const b=Object.assign({},d,{img:'',th:''});a[a.length-1]=b;return qSet(a);} /* الذاكرة ممتلئة: يحفظ بدون الصورة */
+function pwaToast(t,w){let el=document.getElementById('pwaToast');
+  if(!el){el=document.createElement('div');el.id='pwaToast';el.style.cssText='position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:99999;max-width:min(92vw,460px);padding:10px 14px;border-radius:12px;font:600 .9rem system-ui,sans-serif;color:#fff;box-shadow:0 6px 24px #0008;direction:rtl;text-align:center;transition:opacity .3s';document.body.appendChild(el);}
+  el.style.background=w?'#9a3412':'#166534';el.textContent=t;el.style.opacity='1';clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity='0';},6000);}
+let qBusy=false;
+async function qFlush(){if(qBusy||PWA_EMB||navigator.onLine===false)return;let a=qGet();if(!a.length)return;qBusy=true;let sent=0;
+  try{while(a.length){const d=a[0];const x=Object.assign({},d);delete x._q;delete x._t;
+      try{await cloud(x);sent++;a.shift();}
+      catch(e){if(e.message==='net')break;d._t=(d._t||0)+1;if(d._t>=3)a.shift();else break;}
+      qSet(a);}}
+  finally{qBusy=false;}
+  if(sent)pwaToast('✔ أُرسلت '+(sent===1?'تجربة محفوظة':sent+' تجارب محفوظة')+' للمدرب بعد عودة الإنترنت'+(a.length?' — بقي '+a.length:''));}
+if(!PWA_EMB){addEventListener('online',()=>setTimeout(qFlush,1500));setTimeout(qFlush,2500);setInterval(()=>{if(qGet().length)qFlush();},120000);}
+/* عامل الخدمة للعمل دون إنترنت */
+if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* زر التثبيت */
+{const bI=$('bInstall');let dp=null;
+  const standalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;}catch(_){return false;}};
+  const iOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const upd=()=>{if(bI)bI.style.display=(!PWA_EMB&&isHosted()&&!standalone()&&(dp||iOS))?'':'none';};
+  addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;upd();});
+  addEventListener('appinstalled',()=>{dp=null;upd();pwaToast('✔ تم تثبيت التطبيق — تجده في الشاشة الرئيسية');});
+  if(bI)bI.onclick=async()=>{if(dp){dp.prompt();try{await dp.userChoice;}catch(_){}dp=null;upd();}
+    else alert('لتثبيت التطبيق على الآيفون أو الآيباد:\n\n١) افتح الموقع في متصفح Safari\n٢) اضغط زر المشاركة ⬆ أسفل الشاشة\n٣) اختر «إضافة إلى الشاشة الرئيسية»\n٤) اضغط «إضافة»');};
+  upd();}
 S.zoom=fitZ();update();measureDock();
 window.addEventListener('resize',()=>{measureDock();});
 })();
