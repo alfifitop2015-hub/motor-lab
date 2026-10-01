@@ -652,6 +652,8 @@ const ofType=t=>S.devs.filter(d=>d.type===t).map(d=>d.id);
 relayout();
 let curColor='#e0342f';
 const DN={LS1:'SQ1',LS2:'SQ2'};
+/* the carriage and limit switches under M1 appear only when the exercise uses them or a wire reaches X1.21-28 */
+const lsShown=()=>S.pex==='p15'||!!(S.stu&&S.stu.g&&S.stu.g.ex==='p15')||S.wires.some(w=>/^X1\.2[1-8]b?$/.test(w.a)||/^X1\.2[1-8]b?$/.test(w.b));
 const LSact=n=>n==='LS1'?(S.ls1||S.pressed.has('LS1')):(S.ls2||S.pressed.has('LS2'));
 
 /* ---------- solver ---------- */
@@ -993,7 +995,7 @@ function drawField(){
     <circle cx="${hx}" cy="${hy}" r="10" fill="#bdb28a" stroke="#6b6242" stroke-width="1.5"/><circle cx="${hx}" cy="${hy}" r="10" fill="url(#gDome)"/>
     <g transform="rotate(${ang} ${hx} ${hy})"><line x1="${hx}" y1="${hy}" x2="${hx}" y2="${hy+30}" stroke="#4a4a4a" stroke-width="4.5" stroke-linecap="round"/><circle cx="${hx}" cy="${hy+33}" r="6.5" fill="#2d2d2d" stroke="${act?'#ffb000':'#111'}" stroke-width="${act?3:1}"/><circle cx="${hx}" cy="${hy+33}" r="6.5" fill="url(#gDome)"/></g></g>
     ${txt(x,TRACK.y-60,DN[id],11,'#3b3520',700)}${txt(x+(id==='LS1'?34:-34),TRACK.y-70,act?'مضغوط':'',9,'#ffd666',700)}`;};
-  s+=`<rect x="${TRACK.x1-20}" y="${TRACK.y+14}" width="${TRACK.x2-TRACK.x1+110}" height="10" rx="3" fill="#8b949c"/>
+  if(lsShown())s+=`<rect x="${TRACK.x1-20}" y="${TRACK.y+14}" width="${TRACK.x2-TRACK.x1+110}" height="10" rx="3" fill="#8b949c"/>
   <g id="carr" transform="translate(${carX()} 0)"><rect x="0" y="${TRACK.y-20}" width="70" height="34" rx="5" fill="#e0a526" stroke="#111"/>${txt(35,TRACK.y+2,'عربة',11,'#111',700)}</g>
   ${lsDraw('LS1',TRACK.x1-18,LSact('LS1'))}${lsDraw('LS2',TRACK.x2+88,LSact('LS2'))}
   ${txt(740,TRACK.y+48,'M1 يحرك العربة: للأمام نحو SQ2 وللخلف نحو SQ1',10,'#c7d2dc')}`;
@@ -3006,7 +3008,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(0.5,(now-last)/1000);la
   const m=S.motor;
   if(m.state==='run'){const v=(m.mode==='star'?0.05:0.1)*(m.dir==='cw'?1:-1);S.pos=Math.min(1,Math.max(0,S.pos+v*dt));}
   const l1=S.pos<=0.01,l2=S.pos>=0.99;
-  if(l1!==S.ls1||l2!==S.ls2){S.ls1=l1;S.ls2=l2;if(l1||l2)say((l1?'SQ1':'SQ2')+' اشتغل: العربة وصلت النهاية');need=true;}
+  if(l1!==S.ls1||l2!==S.ls2){S.ls1=l1;S.ls2=l2;if((l1||l2)&&lsShown())say((l1?'SQ1':'SQ2')+' اشتغل: العربة وصلت النهاية');need=true;}
   ofType('ol').forEach(f=>{const o=S.ol[f];o.I=(o.m1?motorI():0)+(o.m2?motor2I():0);const r=o.I/o.iset;
     if(r>1.05)o.heat=Math.min(1,o.heat+dt/Math.min(40,Math.max(2,2/(r-1))));else o.heat=Math.max(0,o.heat-dt/12);
     if(o.heat>=1&&!o.trip){o.trip=true;say(f+' فصل: التيار '+o.I.toFixed(1)+'A أكبر من الضبط '+o.iset.toFixed(1)+'A');need=true;}});
