@@ -1089,7 +1089,7 @@ function buildRouting(){
   const bands=[];for(let i=0;i<ducts.length-1;i++){const y1=ducts[i],y2=ducts[i+1];
     bands.push(devices.filter(d=>d.y<y2-2&&d.y+d.h>y1+2).map(d=>[d.x,d.x+d.w]).sort((p,q)=>p[0]-q[0]));}
   return{ducts,bands};}
-const SP=7.4,HOP=6.5;
+const SP=7.4,HOP=6.5,SPX=13; // SPX: widest gap between neighbouring wires when there is room
 const laneOff=i=>(i%2?1:-1)*Math.ceil(i/2)*SP;           // 0, +SP, -SP, +2SP, ...
 function assignLanes(items){ // items:{lo,hi,ref}; returns via ref.lane
   items.sort((p,q)=>p.lo-q.lo||q.hi-p.hi);const ends=[];
@@ -1101,7 +1101,7 @@ function fin(r,pts){const q=[pts[0]];pts.slice(1).forEach(pt=>{const l=q[q.lengt
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=f<0?0:255,k=Math.abs(f);r=Math.round(r+(t-r)*k);g=Math.round(g+(t-g)*k);b=Math.round(b+(t-b)*k);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function routeAll(){
   const RT=buildRouting(),ys=RT.ducts,di=t=>{if(t.side==='u'){let i=0;ys.forEach((y,k)=>{if(y<t.y)i=k;});return i;}let i=ys.length-1;for(let k=ys.length-1;k>=0;k--)if(ys[k]>t.y)i=k;return i;};
-  const tcount={},chan={},rs=[];
+  const tcount={},chan={},rs=[],chW={};
   const used=(x,y1,y2)=>(chan[x]||[]).filter(([a,b])=>a<y2&&b>y1).length;
   const fw=[],mw=[],cw=[];S.wpts={};
   // --- escape paths: terminals whose way to the duct is blocked by another device leave sideways
@@ -1113,22 +1113,58 @@ function routeAll(){
       if(obs.length){const all=[own,...obs];let sx1=Math.min(...all.map(d=>d.x)),sx2=Math.max(...all.map(d=>d.x+d.w));
         const left=(t.x-sx1)<(sx2-t.x);e={gx:left?sx1-7:sx2+7,ly:up?own.y-3:own.y+own.h+3,dir:up?-1:1,grp:own.id+(up?'u':'d')+(left?'L':'R'),t};}}
     return escRaw[k]=e;};
-  S.wires.forEach(w=>{if(w.man||!T[w.a]||!T[w.b]||T[w.a].zone||T[w.b].zone)return;escFor(w.a);escFor(w.b);});
+  // --- short direct hops: two device terminals that sit near each other (e.g. the bottoms of two contactors) are joined
+  //     by the shortest path just past their terminal rows instead of the long trip down to the duct and back
+  const dw=[],dset=new Set();
+  {const INS=10,MAXS=36,obst=devices.filter(d=>!['strip','fboard','aux'].includes(d.type)),devOf=k=>devById[k.split('.')[0]],tk=Object.keys(T);
+    const hitH=(y,x1,x2)=>obst.some(d=>y>d.y+INS&&y<d.y+d.h-INS&&x2>d.x+2&&x1<d.x+d.w-2);
+    const hitV=(x,y1,y2,own)=>obst.some(d=>d!==own&&x>d.x-2&&x<d.x+d.w+2&&y2>d.y+INS&&y1<d.y+d.h-INS);
+    const nearT=(ka,kb,y,x1,x2,ax,ay,bx,by)=>tk.some(k=>{if(k===ka||k===kb)return false;const t=T[k];
+      return (Math.abs(t.y-y)<9&&t.x>x1-4&&t.x<x2+4)||(Math.abs(t.x-ax)<6&&t.y>Math.min(ay,y)-3&&t.y<Math.max(ay,y)+3)||(Math.abs(t.x-bx)<6&&t.y>Math.min(by,y)-3&&t.y<Math.max(by,y)+3);});
+    const pp=(c,y)=>[[c.A.x,c.A.y],[c.A.x,y],[c.B.x,y],[c.B.x,c.B.y]];
+    const xc=(P,Q)=>{let n=0;for(let i=0;i<3;i++)for(let j=0;j<3;j++){const [a,b]=[P[i],P[i+1]],[c,d]=[Q[j],Q[j+1]],ah=Math.abs(a[1]-b[1])<.01,ch=Math.abs(c[1]-d[1])<.01;if(ah===ch)continue;
+      const [h0,h1,v0,v1]=ah?[a,b,c,d]:[c,d,a,b],x=v0[0],y=h0[1];if(x>Math.min(h0[0],h1[0])+.5&&x<Math.max(h0[0],h1[0])-.5&&y>Math.min(v0[1],v1[1])+.5&&y<Math.max(v0[1],v1[1])-.5)n++;}return n;};
+    const cand=[];
+    S.wires.forEach(w=>{if(w.man)return;const A=T[w.a],B=T[w.b];if(!A||!B||A.zone||B.zone)return;const da=devOf(w.a),db=devOf(w.b);
+      if(!da||!db||['strip','fboard'].includes(da.type)||['strip','fboard'].includes(db.type))return;
+      const rg=t=>t.side==='u'?[t.y-MAXS,t.y-10]:[t.y+10,t.y+MAXS],[a1,a2]=rg(A),[b1,b2]=rg(B),lo=Math.ceil(Math.max(a1,b1)),hi=Math.floor(Math.min(a2,b2));if(lo>hi)return;
+      const x1=Math.min(A.x,B.x),x2=Math.max(A.x,B.x),dir=A.side==='u'&&B.side==='u'?-1:1,ok=[];
+      for(let y=lo;y<=hi;y++){if(hitH(y,x1,x2)||hitV(A.x,Math.min(A.y,y),Math.max(A.y,y),da)||hitV(B.x,Math.min(B.y,y),Math.max(B.y,y),db)||nearT(w.a,w.b,y,x1,x2,A.x,A.y,B.x,B.y))continue;ok.push(y);}
+      if(!ok.length)return;if(dir<0)ok.reverse();let e=1;while(e<ok.length&&Math.abs(ok[e]-ok[e-1])===1)e++;const run=ok.slice(0,e);
+      const y0=run[0],len=Math.abs(y0-A.y)+Math.abs(y0-B.y)+x2-x1,ia=di(A),ib=di(B),est=Math.abs(A.y-ys[ia])+Math.abs(B.y-ys[ib])+x2-x1+(ia!==ib?Math.abs(ys[ia]-ys[ib]):0);
+      if(len>est*.85)return;cand.push({w,A,B,x1,x2,run,dir});});
+    // spread wires that share the same corridor as far apart as the room allows
+    const par=cand.map((_,i)=>i),fd=i=>par[i]===i?i:(par[i]=fd(par[i]));
+    cand.forEach((c,i)=>cand.forEach((o,j)=>{if(j<=i)return;if(c.x1<o.x2+8&&o.x1<c.x2+8&&Math.min(...c.run)<=Math.max(...o.run)+12&&Math.min(...o.run)<=Math.max(...c.run)+12)par[fd(j)]=fd(i);}));
+    const grp={};cand.forEach((c,i)=>(grp[fd(i)]=grp[fd(i)]||[]).push(c));
+    const take=(c,y)=>{c.y=y;dw.push(c);dset.add(c.w.id);};
+    Object.values(grp).forEach(G=>{const n=G.length,dir=G.every(c=>c.dir<0)?-1:1;
+      const L=Math.max(...G.map(c=>Math.min(...c.run))),H=Math.min(...G.map(c=>Math.max(...c.run)));
+      if(n===1){take(G[0],G[0].run[0]);return;}
+      if(H-L>=(n-1)*8){const sp=Math.min(13,(H-L)/(n-1)),ys0=G.map((_,i)=>dir>0?L+i*sp:H-i*sp);let best=null,bc=1e9;
+        [(a,b)=>a.A.x+a.B.x-b.A.x-b.B.x,(a,b)=>b.A.x+b.B.x-a.A.x-a.B.x,(a,b)=>a.A.x-b.A.x,(a,b)=>b.A.x-a.A.x].forEach(f=>{const o=G.slice().sort(f);let k=0;
+          for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)k+=xc(pp(o[i],ys0[i]),pp(o[j],ys0[j]));if(k<bc){bc=k;best=o;}});
+        best.forEach((c,i)=>take(c,ys0[i]));return;}
+      // not enough shared room: place one by one keeping a clear gap, the rest go through the duct
+      const pl=[];G.forEach(c=>{const y=c.run.find(y=>pl.every(o=>!(o.x1<c.x2+8&&c.x1<o.x2+8)||Math.abs(o.y-y)>=9));if(y!=null){take(c,y);pl.push(c);}});});
+    dw.forEach(c=>{tcount[c.w.a]=(tcount[c.w.a]||0)+1;tcount[c.w.b]=(tcount[c.w.b]||0)+1;});}
+  S.wires.forEach(w=>{if(w.man||dset.has(w.id)||!T[w.a]||!T[w.b]||T[w.a].zone||T[w.b].zone)return;escFor(w.a);escFor(w.b);});
   {const byG={},byX={};Object.entries(escRaw).forEach(([k,e])=>{if(!e)return;(byG[e.grp]=byG[e.grp]||[]).push(e);(byX[Math.round(e.gx)]=byX[Math.round(e.gx)]||[]).push(e);});
-    Object.values(byG).forEach(L=>{L.sort((a,b)=>a.dir*(a.t.x-b.t.x));L.forEach((e,i)=>{e.lyy=e.ly+e.dir*i*3;});});
-    Object.values(byX).forEach(L=>{const sp=Math.min(5,12/Math.max(1,L.length));L.forEach((e,i)=>{e.gxx=e.gx+laneS(i,sp);});});}
+    Object.values(byG).forEach(L=>{L.sort((a,b)=>a.dir*(a.t.x-b.t.x));L.forEach((e,i)=>{e.lyy=e.ly+e.dir*i*5;});});
+    Object.values(byX).forEach(L=>{const sp=Math.min(8,16/Math.max(1,L.length-1));L.forEach((e,i)=>{e.gxx=e.gx+laneS(i,sp);});});}
   const virt=(k,t)=>{const e=escRaw[k];if(!e)return{P:t,pre:null};return{P:{x:e.gxx,y:e.lyy,side:t.side},pre:[[t.x,t.y],[t.x,e.lyy],[e.gxx,e.lyy]]};};
   S.wires.forEach(w=>{let A=T[w.a],B=T[w.b];if(!A||!B)return;
     if(A.zone==='z'||B.zone==='z'){cw.push({w,A,B});return;}
     if(w.man&&w.man.length>=2){mw.push({w,A,B});return;}
+    if(dset.has(w.id))return;
     if(A.zone==='f'||B.zone==='f'){fw.push({w,A,B});return;}
     const vA=virt(w.a,A),vB=virt(w.b,B);A=vA.P;B=vB.P;
     const ka=tcount[w.a]=(tcount[w.a]||0)+1,kb=tcount[w.b]=(tcount[w.b]||0)+1;
     const ia=di(A),ib=di(B),r={w,A,B,ia,ib,vx:null,ka,kb,preA:vA.pre,preB:vB.pre};
     if(ia!==ib){const lo=Math.min(ia,ib),hi=Math.max(ia,ib),crossed=RT.bands.slice(lo,hi),y1=ys[lo],y2=ys[hi];
       const cands=[{x:22,cap:5},{x:978,cap:5},{x:A.x,cap:1},{x:B.x,cap:1}];
-      crossed.forEach(bx=>{for(let i=0;i<bx.length-1;i++){const g1=bx[i][1],g2=bx[i+1][0];if(g2-g1>=8)cands.push({x:(g1+g2)/2,cap:Math.max(1,Math.floor((g2-g1-4)/SP))});}
-        if(bx.length){const e=bx[bx.length-1][1];if(e<930)cands.push({x:e+16,cap:5});}});
+      crossed.forEach(bx=>{for(let i=0;i<bx.length-1;i++){const g1=bx[i][1],g2=bx[i+1][0];if(g2-g1>=8){const x=(g1+g2)/2;chW[x]=Math.min(chW[x]??1e9,g2-g1-8);cands.push({x,cap:Math.max(1,Math.floor((g2-g1-4)/SP))});}}
+        if(bx.length){const e=bx[bx.length-1][1];if(e<930){chW[e+16]=chW[e+16]??24;cands.push({x:e+16,cap:5});}}});
       const free=x=>crossed.every(bx=>bx.every(([x1,x2])=>x<x1-2||x>x2+2));
       let best=null,bc=1e9;cands.forEach(c=>{if(!free(c.x))return;const u=used(c.x,y1,y2);const cost=Math.abs(A.x-c.x)+Math.abs(B.x-c.x)+(u>=c.cap?3000:u*8);if(cost<bc){bc=cost;best=c;}});
       r.vx=best?best.x:22;(chan[r.vx]=chan[r.vx]||[]).push([y1,y2]);r.y1=y1;r.y2=y2;}
@@ -1136,13 +1172,13 @@ function routeAll(){
   // horizontal lanes per duct
   const byDuct={};const addH=(d,x1,x2,set)=>{if(Math.abs(x1-x2)<.5){set(0);return;}(byDuct[d]=byDuct[d]||[]).push({lo:Math.min(x1,x2),hi:Math.max(x1,x2),set});};
   rs.forEach(r=>{const end1=r.vx!=null?r.vx:r.B.x;addH(r.ia,r.A.x,end1,k=>r.la=k);if(r.vx!=null)addH(r.ib,r.vx,r.B.x,k=>r.lb=k);});
-  const dSp={};Object.entries(byDuct).forEach(([d,it])=>{const n=assignLanes(it);dSp[d]=Math.min(SP,38/Math.max(1,n));});
+  const dSp={};Object.entries(byDuct).forEach(([d,it])=>{const n=assignLanes(it);dSp[d]=Math.min(SPX,46/Math.max(1,n-1));});
   // vertical lanes per channel
   const byCh={};rs.forEach(r=>{if(r.vx!=null)(byCh[r.vx]=byCh[r.vx]||[]).push({lo:r.y1,hi:r.y2,set:k=>r.lv=k});});
-  const cSp={};Object.entries(byCh).forEach(([x,it])=>{const n=assignLanes(it);cSp[x]=Math.min(SP,((+x===22||+x===978)?26:12)/Math.max(1,n));});
+  const cSp={};Object.entries(byCh).forEach(([x,it])=>{const n=assignLanes(it);cSp[x]=Math.min(SPX,((+x===22||+x===978)?30:(chW[x]||12))/Math.max(1,n-1));});
   // polylines
   rs.forEach(r=>{const {A,B}=r,dA=A.side==='u'?-1:1,dB=B.side==='u'?-1:1;
-    const oA=(r.ka>1&&!r.preA)?laneS(r.ka-1,5.5):0,oB=(r.kb>1&&!r.preB)?laneS(r.kb-1,5.5):0;
+    const oA=(r.ka>1&&!r.preA)?laneS(r.ka-1,7):0,oB=(r.kb>1&&!r.preB)?laneS(r.kb-1,7):0;
     const ya=ys[r.ia]+laneS(r.la||0,dSp[r.ia]||SP),pts=[[A.x,A.y]];
     if(oA)pts.push([A.x,A.y+dA*9],[A.x+oA,A.y+dA*9]);
     pts.push([A.x+oA,ya]);
@@ -1155,11 +1191,12 @@ function routeAll(){
   const yF=1131+DY,fl=[];
   fw.forEach(f=>{const {A,B}=f;if(A.stud&&B.stud){const my=(A.y+B.y)/2;const oy=A.y+(A.side==='u'?15:-15);fin(f,Math.abs(A.y-B.y)<.5?[[A.x,A.y],[A.x,oy],[B.x,oy],[B.x,B.y]]:[[A.x,A.y],[A.x,my],[B.x,my],[B.x,B.y]]);return;}
     const ex=P=>(P.x2top||!P.zone)?978:P.x;fl.push({lo:Math.min(ex(A),ex(B)),hi:Math.max(ex(A),ex(B)),set:k=>f.lane=k});});
-  const fSp=Math.min(SP,36/Math.max(1,assignLanes(fl)));
+  const fSp=Math.min(SPX,34/Math.max(1,assignLanes(fl)-1));
   fw.forEach(f=>{if(f.pts)return;const y=yF+laneS(f.lane||0,fSp);
     const exit=P=>{if(!P.zone){const xr=972+laneS(f.lane||0,Math.min(fSp,4)),yd=ys[di(P)]+laneS(f.lane||0,Math.min(fSp,4));return[[P.x,P.y],[P.x,yd],[xr,yd],[xr,y]];}return [[P.x,P.y],[P.x,y]];};
     fin(f,[...exit(f.A),...exit(f.B).reverse()]);});
   rs.push(...fw);
+  dw.forEach(c=>{const r={w:c.w,A:c.A,B:c.B};fin(r,[[c.A.x,c.A.y],[c.A.x,c.y],[c.B.x,c.y],[c.B.x,c.B.y]]);rs.push(r);});
   mw.forEach(r=>{const P=r.w.man.map(p=>[p[0],p[1]]),n=P.length,A=r.A,B=r.B;
     const v0=Math.abs(P[0][0]-P[1][0])<.5,v1=Math.abs(P[n-1][0]-P[n-2][0])<.5;
     P[0]=[A.x,A.y];if(n>2){if(v0)P[1][0]=A.x;else P[1][1]=A.y;}
