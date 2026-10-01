@@ -2116,9 +2116,12 @@ const wrap=document.getElementById('wrap');
 const topEl=document.querySelector('.top');
 function measureTop(){document.documentElement.style.setProperty('--toph',topEl.offsetHeight+'px');}
 const hintH=()=>document.querySelector('.wtop').offsetHeight||30;
-const fitZoom=()=>Math.max(0.2,Math.min(1.5,(wrap.clientWidth-2)/W));
+const wZoom=()=>Math.max(0.2,Math.min(1.5,(wrap.clientWidth-2)/W));
+/* default fit: fill the screen height down to the dock (board wider than the screen scrolls sideways), never smaller than fit-to-width */
+const fitZoom=()=>{const fs=document.body.classList.contains('fs'),dk=(document.querySelector('.dock')||{}).offsetHeight||0;
+  const avail=fs?wrap.clientHeight-hintH()-4:window.innerHeight-topEl.offsetHeight-dk-hintH()-2;return Math.max(wZoom(),Math.min(1.5,avail/H));};
 const allZoom=()=>{const avail=document.body.classList.contains('fs')?wrap.clientHeight-hintH()-4:window.innerHeight-topEl.offsetHeight-hintH()-8;
-  return Math.max(0.2,Math.min(fitZoom(),avail/H));};
+  return Math.max(0.2,Math.min(wZoom(),avail/H));};
 let fitMode='w';
 function setZoom(z,cx,cy){z=Math.max(0.2,Math.min(3,z));
   const r=svg.getBoundingClientRect();if(cx==null){const w=wrap.getBoundingClientRect();cx=w.left+w.width/2;cy=w.top+Math.min(w.height,window.innerHeight)/2;}
@@ -3207,7 +3210,7 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
   if(bI)bI.onclick=async()=>{if(dp){dp.prompt();try{await dp.userChoice;}catch(_){}dp=null;upd();}
     else alert('لتثبيت التطبيق على الآيفون أو الآيباد:\n\n١) افتح الموقع في متصفح Safari\n٢) اضغط زر المشاركة ⬆ أسفل الشاشة\n٣) اختر «إضافة إلى الشاشة الرئيسية»\n٤) اضغط «إضافة»');};
   upd();}
-measureTop();measureDock();
+measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());addEventListener("load",()=>{measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());});
 })();
 </script>
 </body>
