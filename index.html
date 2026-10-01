@@ -792,9 +792,9 @@ function bg(){const trunks=[[48,34],[298,36]],rails=[185];
 <pattern id="slotsC" width="16" height="10" patternUnits="userSpaceOnUse"><rect width="16" height="10" fill="#e4dec6"/><rect x="6" width="4" height="10" fill="#c3bb9c"/></pattern>
 <pattern id="slotsV" width="10" height="16" patternUnits="userSpaceOnUse"><rect width="10" height="16" fill="#e4dec6"/><rect y="6" width="10" height="4" fill="#c3bb9c"/></pattern>
 <pattern id="pe" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#e8d21d"/><rect width="5" height="10" fill="#2f9a3e"/></pattern>
-<linearGradient id="mbody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9bac7"/><stop offset=".3" stop-color="#70879a"/><stop offset=".75" stop-color="#3e505e"/><stop offset="1" stop-color="#26323b"/></linearGradient>
+<linearGradient id="mbody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8cc0f0"/><stop offset=".22" stop-color="#4f8fd4"/><stop offset=".6" stop-color="#2a63a6"/><stop offset="1" stop-color="#123a6b"/></linearGradient><linearGradient id="mcowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#78aee6"/><stop offset=".5" stop-color="#2f6db5"/><stop offset="1" stop-color="#143e70"/></linearGradient>
 <linearGradient id="mshaft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#b9c1c8"/><stop offset="1" stop-color="#7c858d"/></linearGradient>
-<linearGradient id="mbox" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5f7688"/><stop offset="1" stop-color="#3b4b58"/></linearGradient>
+<linearGradient id="mbox" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4c8ad0"/><stop offset="1" stop-color="#23548f"/></linearGradient>
 <filter id="glw" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
 <filter id="ds" x="-10%" y="-10%" width="130%" height="135%"><feDropShadow dx="5" dy="8" stdDeviation="4" flood-color="#000" flood-opacity=".5"/></filter>
 <filter id="ds2" x="-15%" y="-15%" width="140%" height="145%"><feDropShadow dx="2.5" dy="4" stdDeviation="2" flood-color="#000" flood-opacity=".45"/></filter>
@@ -1048,11 +1048,11 @@ function hexPts(x,y,r){let p=[];for(let i=0;i<6;i++){const a=Math.PI/3*i;p.push(
 const RED_MOTION=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 function motorSVG(id,ox,oy,sc,studs,st,plate){
   const run=st.state==='run',flt=st.state==='fault',hum=flt&&st.hum;
-  const E1=[52,152,34,64],E2=[250,146,30,58],pt=(E,t)=>[E[0]+E[2]*Math.cos(t),E[1]+E[3]*Math.sin(t)];
-  let fins='';for(let a=-80;a<=80;a+=9){const t=a*Math.PI/180,p1=pt(E1,t),p2=pt(E2,t),l=Math.max(.08,.45-(a+80)/400);
-    fins+=`<line x1="${p1[0].toFixed(1)}" y1="${p1[1].toFixed(1)}" x2="${p2[0].toFixed(1)}" y2="${p2[1].toFixed(1)}" stroke="rgba(0,0,0,.42)" stroke-width="2.6"/><line x1="${p1[0].toFixed(1)}" y1="${(p1[1]-2).toFixed(1)}" x2="${p2[0].toFixed(1)}" y2="${(p2[1]-2).toFixed(1)}" stroke="rgba(255,255,255,${l.toFixed(2)})" stroke-width="1.2"/>`;}
-  let vents='';for(let x=270;x<=300;x+=5)vents+=`<line x1="${x}" y1="${118}" x2="${x}" y2="${176}" stroke="#141b21" stroke-width="2.2" stroke-linecap="round"/>`;
-  let ribs='';for(let a=0;a<360;a+=30){const t=a*Math.PI/180;ribs+=`<line x1="${(E1[0]+13*Math.cos(t)).toFixed(1)}" y1="${(E1[1]+24*Math.sin(t)).toFixed(1)}" x2="${(E1[0]+27*Math.cos(t)).toFixed(1)}" y2="${(E1[1]+50*Math.sin(t)).toFixed(1)}" stroke="#3a4752" stroke-width="3.2"/>`;}
+  // realistic TEFC induction motor (side view, shaft on the left): ribbed cast body, fan cowl, feet, terminal box on top
+  let fins='';for(let y=98;y<=204;y+=7.5){fins+=`<line x1="62" y1="${y.toFixed(1)}" x2="248" y2="${y.toFixed(1)}" stroke="rgba(6,24,48,.55)" stroke-width="2.4"/><line x1="62" y1="${(y-1.6).toFixed(1)}" x2="248" y2="${(y-1.6).toFixed(1)}" stroke="rgba(190,222,255,${(.5-(y-98)/260).toFixed(2)})" stroke-width="1"/>`;}
+  let grille='';for(let x=256;x<=282;x+=4.5)grille+=`<line x1="${x.toFixed(1)}" y1="112" x2="${x.toFixed(1)}" y2="190" stroke="#0d2342" stroke-width="2" stroke-linecap="round"/>`;
+  let rings='';[44,34,24,14].forEach(r=>{rings+=`<ellipse cx="290" cy="151" rx="${(r*.36).toFixed(1)}" ry="${r}" fill="none" stroke="#0d2342" stroke-width="2.2"/>`;});
+  let bolts='';[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([i,j])=>{bolts+=`<circle cx="${52+i*15}" cy="${150+j*36}" r="3" fill="#c7cfd6" stroke="#22303c"/>`;});
   const dur=st.mode==='star'?'0.7s':'0.35s',anim=run&&!RED_MOTION?`<animateTransform attributeName="transform" type="rotate" from="${st.dir==='cw'?0:360}" to="${st.dir==='cw'?360:0}" dur="${dur}" repeatCount="indefinite"/>`:'';
   let nuts='';
   studs.forEach(t=>{const pc={U:'#7a4a22',V:'#1b1b1b',W:'#9aa0a6'}[t.l[0]];
@@ -1061,34 +1061,36 @@ function motorSVG(id,ox,oy,sc,studs,st,plate){
       <text x="${t.x-29}" y="${t.y+5}" class="dl" style="font-size:13px;fill:#111">${t.l}</text>`;});
   const bh=studs.length>3?96:80;
   return `<g transform="translate(${ox} ${oy}) scale(${sc})"><g class="${hum?'jit':''}">
-  <ellipse cx="150" cy="236" rx="150" ry="10" fill="#000" opacity=".35"/>
-  <path d="M30 208H92L100 234H22Z" fill="#46545f" stroke="#1d262e"/><path d="M22 234H100V240H22Z" fill="#2a343c"/>
-  <path d="M198 200H262L270 226H190Z" fill="#46545f" stroke="#1d262e"/><path d="M190 226H270V232H190Z" fill="#2a343c"/>
-  <path d="M250 96H287A24 50 0 0 1 287 196H250Z" fill="url(#mbody)" stroke="#1d262e"/><ellipse cx="287" cy="146" rx="22" ry="50" fill="#56656f" stroke="#1d262e"/>${vents}
-  <path d="M52 88L250 88A30 58 0 0 1 250 204L52 216Z" fill="url(#mbody)" stroke="${flt?'#ff3b30':'#1d262e'}" stroke-width="${flt?4:1.5}"/>
+  <ellipse cx="160" cy="240" rx="150" ry="9" fill="#000" opacity=".4"/>
+  <path d="M40 196H112L118 232H34Z" fill="url(#mbox)" stroke="#0d2342"/><path d="M30 232H122V241H30Z" fill="#1a4479" stroke="#0d2342"/><circle cx="46" cy="236" r="2.6" fill="#0b1a2c"/><circle cx="106" cy="236" r="2.6" fill="#0b1a2c"/>
+  <path d="M182 196H248L254 232H176Z" fill="url(#mbox)" stroke="#0d2342"/><path d="M172 232H258V241H172Z" fill="#1a4479" stroke="#0d2342"/><circle cx="188" cy="236" r="2.6" fill="#0b1a2c"/><circle cx="242" cy="236" r="2.6" fill="#0b1a2c"/>
+  <path d="M246 102H290A16 49 0 0 1 290 200H246Z" fill="url(#mcowl)" stroke="#0d2342" stroke-width="1.5"/>${grille}
+  <ellipse cx="290" cy="151" rx="17" ry="49" fill="#255e9f" stroke="#0d2342" stroke-width="1.5"/>${rings}<ellipse cx="290" cy="151" rx="3" ry="7" fill="#0d2342"/>
+  <path d="M52 90H250V212H52Z" fill="url(#mbody)" stroke="${flt?'#ff3b30':'#0d2342'}" stroke-width="${flt?4:1.5}"/>
   ${fins}
-  <path d="M110 150L204 146L204 182L110 188Z" fill="#dfe3e6" stroke="#5c666e"/>
-  ${plate.map((l,i)=>`<text x="157" y="${160+i*10}" transform="rotate(-2.4 157 ${160+i*10})" class="dl" style="font-size:${i?6.3:7.8}px;fill:#1c2126">${l}</text>`).join('')}
-  <circle cx="244" cy="80" r="8" fill="none" stroke="#6b7f8f" stroke-width="4.5"/>
-  <ellipse cx="${E1[0]}" cy="${E1[1]}" rx="${E1[2]}" ry="${E1[3]}" fill="url(#mbody)" stroke="#1d262e" stroke-width="1.5"/>
-  <ellipse cx="${E1[0]}" cy="${E1[1]}" rx="29" ry="55" fill="#7d8f9c" stroke="#33414c" stroke-width="1.5"/>
-  ${ribs}
-  <ellipse cx="${E1[0]}" cy="${E1[1]}" rx="13" ry="24" fill="#6b7c89" stroke="#2a343c" stroke-width="1.5"/><ellipse cx="${E1[0]}" cy="${E1[1]}" rx="9" ry="16" fill="#8d9ca7"/>
-  <path d="M${E1[0]} 143L16 147V167L${E1[0]} 163Z" fill="url(#mshaft)" stroke="#555"/>
-  <ellipse cx="16" cy="157" rx="6" ry="10" fill="#c8cfd5" stroke="#555"/>
-  <g transform="translate(9 157) scale(0.52 1)">
-    <circle r="27" fill="#3d4a55" stroke="#11181e" stroke-width="2"/><circle r="23" fill="#566674"/>
+  <rect x="62" y="90" width="186" height="8" fill="rgba(210,232,255,.35)"/>
+  <rect x="112" y="150" width="92" height="40" rx="3" fill="#e4e8ec" stroke="#5c666e"/><rect x="112" y="150" width="92" height="40" rx="3" fill="url(#gGloss)" opacity=".5"/>
+  ${plate.map((l,i)=>`<text x="158" y="${163+i*10}" class="dl" style="font-size:${i?6.3:7.8}px;fill:#1c2126">${l}</text>`).join('')}
+  <path d="M234 90V80A10 10 0 0 1 254 80V90" fill="none" stroke="#1d4f8c" stroke-width="5"/>
+  <ellipse cx="52" cy="151" rx="32" ry="63" fill="url(#mbody)" stroke="#0d2342" stroke-width="1.5"/>
+  <ellipse cx="52" cy="151" rx="25" ry="50" fill="#2b69b0" stroke="#123766" stroke-width="1.5"/>
+  <ellipse cx="52" cy="151" rx="12" ry="22" fill="#9aa7b2" stroke="#3c4752" stroke-width="1.5"/><ellipse cx="52" cy="151" rx="8" ry="14" fill="#c9d1d8"/>${bolts}
+  <path d="M52 143L16 146V156L52 159Z" fill="url(#mshaft)" stroke="#555"/><rect x="22" y="148.5" width="16" height="3" fill="#6f7880"/>
+  <ellipse cx="16" cy="151" rx="5" ry="8" fill="#c8cfd5" stroke="#555"/>
+  <g transform="translate(9 151) scale(0.52 1)">
+    <circle r="27" fill="#5d6770" stroke="#11181e" stroke-width="2"/><circle r="23" fill="#aeb8c1"/>
     <g>${anim}
-      ${[0,90,180,270].map(a=>`<path d="M0 0L${(24*Math.cos((a-12)*Math.PI/180)).toFixed(1)} ${(24*Math.sin((a-12)*Math.PI/180)).toFixed(1)}A24 24 0 0 1 ${(24*Math.cos((a+12)*Math.PI/180)).toFixed(1)} ${(24*Math.sin((a+12)*Math.PI/180)).toFixed(1)}Z" fill="#9fb0bd" stroke="#2a343c"/>`).join('')}
+      ${[0,90,180,270].map(a=>`<path d="M0 0L${(24*Math.cos((a-12)*Math.PI/180)).toFixed(1)} ${(24*Math.sin((a-12)*Math.PI/180)).toFixed(1)}A24 24 0 0 1 ${(24*Math.cos((a+12)*Math.PI/180)).toFixed(1)} ${(24*Math.sin((a+12)*Math.PI/180)).toFixed(1)}Z" fill="#d6dde3" stroke="#3a4550"/>`).join('')}
       <circle cx="0" cy="-17" r="5" fill="#ffcc00" stroke="#8a6d00"/><rect x="-2.5" y="8" width="5" height="12" rx="1" fill="#e0342f"/>
     </g>
     <circle r="6" fill="#2a3138" stroke="#111"/><circle r="27" fill="url(#gDome)" opacity=".35" pointer-events="none"/></g>
   ${run?`<g opacity=".75"><path d="M-10 118a28 36 0 0 ${st.dir==='cw'?1:0} 0 78" fill="none" stroke="#7dff9e" stroke-width="2.5" stroke-dasharray="6 6">${RED_MOTION?'':`<animate attributeName="stroke-dashoffset" from="0" to="${st.dir==='cw'?-24:24}" dur="${dur}" repeatCount="indefinite"/>`}</path></g>`:''}
   ${run?`<text x="-6" y="130" class="dl" style="font-size:16px;fill:#7dff9e">${st.dir==='cw'?'↻':'↺'}</text>`:''}
-  <path d="M30 -10L42 -20H238L226 -10Z" fill="#7d93a4" stroke="#1d262e"/><path d="M226 -10L238 -20V${bh-20}L226 ${bh-10}Z" fill="#33424e" stroke="#1d262e"/>
-  <rect x="30" y="-10" width="196" height="${bh}" rx="6" fill="url(#mbox)" stroke="#1d262e"/>
+  <path d="M40 ${bh-10}H216V92H40Z" fill="#1a4479" stroke="#0d2342"/>
+  <path d="M30 -10L42 -20H238L226 -10Z" fill="#5d97d6" stroke="#0d2342"/><path d="M226 -10L238 -20V${bh-20}L226 ${bh-10}Z" fill="#1a4479" stroke="#0d2342"/>
+  <rect x="30" y="-10" width="196" height="${bh}" rx="6" fill="url(#mbox)" stroke="#0d2342"/>
   <rect x="36" y="-4" width="184" height="${bh-12}" rx="4" fill="#1b232a"/>
-  <rect x="20" y="20" width="16" height="20" rx="3" fill="#2b2f33" stroke="#111"/>
+  <rect x="12" y="22" width="18" height="18" rx="2" fill="#8d969e" stroke="#3a4148"/><rect x="4" y="25" width="10" height="12" rx="2" fill="#2b2f33" stroke="#111"/><path d="M14 26V36M20 24V38" stroke="#5c646b" stroke-width="1.2"/>
   ${nuts}
   <rect data-act="app:${id}" x="-70" y="92" width="390" height="150" fill="transparent" style="cursor:pointer"><title>اضغط لعرض تطبيقات المحرك ${id} العملية</title></rect>
   </g></g>`;}
