@@ -2337,18 +2337,63 @@ function refWires(ex){const m21=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^
   return [...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21(a),m21(b)]).filter(w=>!isLampW(w,ex));}
 function staticLinks(D){D=D||S.devs;const L=[['Q1.5','F1.1']];for(let i=34;i<=36;i++)L.push(['X1.'+i,'X1.33']);MB.forEach(n=>L.push(['X1.'+n,'X1.'+n+'b']));
   D.forEach(d=>{if(d.type==='ol'&&d.host)L.push([d.host+'.2',d.id+'.1'],[d.host+'.4',d.id+'.3'],[d.host+'.6',d.id+'.5']);});return L;}
-function gradeNow(ex,W,D,PG){W=(W||S.wires.map(w=>[w.a,w.b])).filter(w=>!isLampW(w,ex));const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
+/* grading: the wiring is compared with the approved diagram net by net. Equivalent choices count as correct:
+   - a free auxiliary contact of the same kind (NO 13-14 / 53-54 / 83-84, NC 61-62 / 71-72) on the same contactor
+   - for one-motor exercises: M1 in delta or M2 in star (both match the 400 V supply)
+   Indicator lamps are graded by what they show and only added as a bonus (the total never passes 20). */
+const LAMP_BONUS=2,LAMPT=['X1.29','X1.30','X1.31','X1.32'];
+const CPAIR={'13':'14','14':'13','53':'54','54':'53','83':'84','84':'83','61':'62','62':'61','71':'72','72':'71','95':'96','96':'95','97':'98','98':'97'};
+const CGRP=[[['','13','14'],['A','53','54'],['A','83','84']],[['A','61','62'],['A','71','72']]];
+const NCREST=[[7,8],[9,10],[13,14],[17,18],[21,22],[25,26]];
+const m21k=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
+function refVariants(ex){const base=refWires(ex),V=[base];
+  if(!['p3','p10','p6','p7','p13','p14'].includes(ex)&&base.some(w=>w.some(k=>/^M1\./.test(k)))){
+    V.push([...base.filter(([a,b])=>!(/^M1\./.test(a)&&/^M1\./.test(b))).map(w=>w.map(k=>k.replace(/^M1\./,'M2.'))),...m2Star.map(([a,b])=>[a,b])]);}
+  return V;}
+function gCmp(ex,W,ref0,D){const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
   const u0=uf([]),seen=new Set(),ref=[];
-  refWires(ex).forEach(([a,b])=>{if(a===b||u0.find(a)===u0.find(b))return;const k=[a,b].sort().join('|');if(!seen.has(k)){seen.add(k);ref.push([a,b]);}});
-  const us=uf(W),ur=uf(ref);
+  ref0.forEach(([a,b])=>{if(a===b||u0.find(a)===u0.find(b))return;const k=[a,b].sort().join('|');if(!seen.has(k)){seen.add(k);ref.push([a,b]);}});
+  const refT=new Set();ref.forEach(w=>w.forEach(k=>refT.add(k)));
+  // lamp wires: anything touching a lamp terminal, or a free contact whose other side feeds a lamp
+  const ua=uf(W.map(x=>x.w)),lampNet=k=>LAMPT.some(l=>ua.find(l)===ua.find(k));
+  const free=k=>{const m=/^(.+)\.(\d+)$/.exec(k);return !!m&&!!CPAIR[m[2]]&&!refT.has(k)&&lampNet(m[1]+'.'+CPAIR[m[2]]);};
+  const M=W.filter(x=>!(isLampW(x.w,ex)||free(x.w[0])||free(x.w[1])));
+  const us=uf(M.map(x=>x.w)),ur=uf(ref);
   const miss=ref.filter(([a,b])=>us.find(a)!==us.find(b));
-  const wrongW=W.filter(([a,b])=>ur.find(a)!==ur.find(b)).map(([a,b])=>[a,b]);
+  const wrongW=M.filter(x=>ur.find(x.w[0])!==ur.find(x.w[1])).map(x=>x.o);
   const tot=ref.length,ok=tot-miss.length,bad=wrongW.length;
-  const wr=tot?ok/(tot+bad):0;
-  if(PLCX.has(ex)&&PTEST[ex]){const pg=PG||S.plc,gp=gradeProg(ex,pg.prog,pg.tm);const sc=Math.round((10*wr+10*gp.r)*10)/10;
-    return{s:sc,ok,tot,bad,miss,wrongW,ws:Math.round(100*wr)/10,ps:Math.round(100*gp.r)/10,pOk:gp.ok,pRel:gp.rel,pBad:gp.bad};}
-  const sc=Math.round(200*wr)/10;
-  return{s:sc,ok,tot,bad,miss,wrongW};}
+  return{ok,tot,bad,miss,wrongW,wr:tot?ok/(tot+bad):0,refT};}
+function gradeWiring(ex,W0,D){let best=null;
+  refVariants(ex).forEach(ref=>{let W=W0.map(w=>({w:[w[0],w[1]],o:[w[0],w[1]]})),r=gCmp(ex,W,ref,D);
+    // try moving each contact the trainee used onto an equivalent one the diagram uses
+    const used=new Set();W.forEach(x=>x.w.forEach(k=>used.add(k)));const ks=new Set();[...used,...r.refT].forEach(k=>{const m=/^(K\d+)A?\./.exec(k);if(m)ks.add(m[1]);});
+    ks.forEach(K=>CGRP.forEach(G=>{const P=G.map(([sf,a,b])=>[K+sf+'.'+a,K+sf+'.'+b]),inRef=p=>p.some(k=>r.refT.has(k)),inStu=p=>p.some(k=>W.some(x=>x.w.includes(k)));
+      P.filter(p=>inStu(p)&&!inRef(p)).forEach(sp=>{let bw=null,br=r;
+        P.filter(p=>inRef(p)&&!inStu(p)).forEach(rp=>[[rp[0],rp[1]],[rp[1],rp[0]]].forEach(([x,y])=>{const mp={[sp[0]]:x,[sp[1]]:y};
+          const W2=W.map(q=>({w:q.w.map(k=>mp[k]||k),o:q.o})),r2=gCmp(ex,W2,ref,D);if(r2.wr>br.wr+1e-9){br=r2;bw=W2;}}));
+        if(bw){W=bw;r=br;}});}));
+    if(!best||r.wr>best.r.wr)best={r,W};});
+  return best;}
+// lamps: switch every contactor / timer / overload on and off and compare which lamps light with the diagram
+function lampLit(W,D,vars,st,lamps){const u=makeUF();staticLinks(D).forEach(([a,b])=>u.union(a,b));W.forEach(([a,b])=>u.union(a,b));
+  NCREST.forEach(([a,b])=>u.union('X1.'+a,'X1.'+b));const j=(a,b)=>u.union(a,b);
+  vars.forEach((v,i)=>{const on=!!(st>>i&1);
+    if(/^K\d+$/.test(v)){if(on){j(v+'.1',v+'.2');j(v+'.3',v+'.4');j(v+'.5',v+'.6');j(v+'.13',v+'.14');j(v+'A.53',v+'A.54');j(v+'A.83',v+'A.84');j(v+'.A1','F1.2');}else{j(v+'A.61',v+'A.62');j(v+'A.71',v+'A.72');}}
+    else if(/^KT\d+$/.test(v)){if(on){j(v+'.15',v+'.18');j(v+'.A1','F1.2');}else j(v+'.15',v+'.16');}
+    else{if(on)j(v+'.97',v+'.98');else j(v+'.95',v+'.96');}});
+  return lamps.map(l=>u.find(l)===u.find('F1.2'));}
+function gradeLamps(ex,W,D){const R=[...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21k(a),m21k(b)]),lamps=LAMPT.filter(l=>R.some(w=>w.includes(l)));if(!lamps.length)return null;
+  const vs=new Set();[...R,...W].forEach(w=>w.forEach(k=>{const m=/^(K\d+|KT\d+|F[2-9])A?\./.exec(k);if(m)vs.add(m[1]);}));const vars=[...vs].sort();
+  let ok=0,n=0;for(let st=0;st<(1<<vars.length);st++){
+    if(vars.some((v,i)=>/^F/.test(v)&&st>>i&1)&&vars.some((v,i)=>/^K/.test(v)&&st>>i&1))continue; // a tripped overload drops every contactor
+    const a=lampLit(R,D,vars,st,lamps),b=lampLit(W,D,vars,st,lamps);a.forEach((x,i)=>{if(!x&&!b[i])return;n++;if(x===b[i])ok++;});}
+  return{lr:n?ok/n:0,lamps:lamps.length};}
+function gradeNow(ex,W,D,PG){W=W||S.wires.map(w=>[w.a,w.b]);D=D||S.devs;
+  const b=gradeWiring(ex,W,D),{ok,tot,bad,miss,wrongW,wr}=b.r,L=gradeLamps(ex,W,D),lb=L?Math.round(LAMP_BONUS*L.lr*10)/10:0;
+  const fin=sm=>{sm=Math.round(sm*10)/10;return{s:Math.min(20,Math.round((sm+lb)*10)/10),sm,lb,lr:L?Math.round(100*L.lr):null};};
+  if(PLCX.has(ex)&&PTEST[ex]){const pg=PG||S.plc,gp=gradeProg(ex,pg.prog,pg.tm);
+    return{...fin(10*wr+10*gp.r),ok,tot,bad,miss,wrongW,ws:Math.round(100*wr)/10,ps:Math.round(100*gp.r)/10,pOk:gp.ok,pRel:gp.rel,pBad:gp.bad};}
+  return{...fin(20*wr),ok,tot,bad,miss,wrongW};}
 /* program check: run the trainee's ladder program and the model program through the same input sequence and compare Q1-Q4 */
 const PTEST={
  p8:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I1:0},{I1:1},{I2:1},{I2:0},{I1:0},{I1:1}],d:['ضغط S1','رفع الإصبع','ضغط S0','رفع S0','تشغيل مرة ثانية','رفع','إيقاف','رفع']},
@@ -2377,14 +2422,15 @@ async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn
   try{applyObj(G.w);update();return await fn();}finally{applyObj(cur);update();}}
 const gM=$('gradeModal');let GV={ex:''};
 const wl=L=>L.map(([a,b])=>`<li><span dir="ltr">${esc(a)} ⟷ ${esc(b)}</span></li>`).join('');
+const gLampTxt=G=>G.sm==null?'. المجموع = '+G.s+' من 20.':`. لمبات البيان درجة إضافية حتى ${LAMP_BONUS}: تُضاف ${G.lb} إذا كانت الدرجة أقل من 20، ولا تتجاوز الدرجة 20. المجموع = ${G.s} من 20. يُقبل أي تلامس مساعد مكافئ، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.`;
 function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)';
   return `<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <p style="margin:0 0 6px;font-weight:700">${esc(PNAME[G.ex])}</p>
-  ${G.tot!=null?`<ul class="glist"><li><span>✔</span><span>توصيلات صحيحة مطابقة للمخطط</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>توصيلات خاطئة أو زائدة</span><b>${G.bad}</b></li></ul>
+  ${G.tot!=null?`<ul class="glist"><li><span>✔</span><span>توصيلات صحيحة مطابقة للمخطط</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>توصيلات خاطئة أو زائدة</span><b>${G.bad}</b></li>${G.lr!=null?`<li class="${G.lr<100?'no':''}"><span>💡</span><span>لمبات البيان (درجة إضافية، تعمل كما في المخطط ${G.lr}%)</span><b>+${G.lb}</b></li>`:''}</ul>
   ${G.ps!=null?`<ul class="glist"><li class="${G.ps<10?'no':''}"><span>${G.ps>=10?'✔':'✖'}</span><span>البرنامج: مخارج صحيحة في اختبارات التشغيل</span><b>${G.pOk} / ${G.pRel}</b></li></ul>
-  <p class="gmeta" style="margin-top:6px">توصيلات لمبات البيان لا تدخل في التقييم. طريقة الحساب: التوصيل = 10 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.ws}، والبرنامج = 10 × ${G.pOk} ÷ ${G.pRel||1} = ${G.ps}. المجموع = ${G.s} من 20.</p>
+  <p class="gmeta" style="margin-top:6px">طريقة الحساب: التوصيل = 10 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.ws}، والبرنامج = 10 × ${G.pOk} ÷ ${G.pRel||1} = ${G.ps}${gLampTxt(G)}</p>
   <p class="gmeta">يُختبر البرنامج آليًا: تُمرَّر عليه حالات الضغط والرفع والإيقاف ونهاية المشوار والمؤقت، وتُقارن مخارجه Q1-Q4 بالبرنامج النموذجي. أي برنامج يؤدي العمل نفسه يأخذ الدرجة كاملة.</p>`:
-  `<p class="gmeta" style="margin-top:6px">توصيلات لمبات البيان لا تدخل في التقييم. طريقة الحساب: الدرجة = 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.s}</p>`}
+  `<p class="gmeta" style="margin-top:6px">طريقة الحساب: التوصيل = 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.sm!=null?G.sm:G.s}${gLampTxt(G)}</p>`}
   ${G.wrongW&&G.wrongW.length?`<details style="margin-top:6px"><summary>التوصيلات الخاطئة (${G.wrongW.length})</summary><ul class="glist">${wl(G.wrongW)}</ul></details>`:''}
   ${G.miss&&G.miss.length?`<details class="trainer-only" style="margin-top:6px"><summary>التوصيلات الناقصة (${G.miss.length}) · تظهر للمدرب فقط</summary><ul class="glist">${wl(G.miss)}</ul></details>`:''}`:
   `<ul class="glist">${G.items.map(([t,p,ok])=>`<li class="${ok?'':'no'}"><span>${ok?'✔':'✖'}</span><span>${esc(t)}</span><b>${ok?p:0} / ${p}</b></li>`).join('')}</ul>`}
