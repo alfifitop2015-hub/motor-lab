@@ -184,6 +184,9 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .msg.err{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn);font-weight:500}
 .msg.wn{background:color-mix(in srgb,var(--amber) 18%,transparent)}
 .wrap{overflow-x:auto;background:#0c2753;position:relative;direction:ltr;touch-action:pan-x pan-y}
+/* fill the screen down to the dock so no light page shows under a short board */
+.wrap{min-height:calc(100vh - var(--toph,0px) - var(--dockh,120px) - env(safe-area-inset-top,0px));min-height:calc(100dvh - var(--toph,0px) - var(--dockh,120px) - env(safe-area-inset-top,0px))}
+body.fs .wrap{min-height:0}
 body.fs{overflow:hidden}
 body.fs .top{display:none}
 body.fs .wrap{position:fixed;left:0;right:0;top:0;bottom:var(--dockh,120px);overflow:auto;overscroll-behavior:contain;padding-top:env(safe-area-inset-top,0px)}
@@ -2113,9 +2116,12 @@ const wrap=document.getElementById('wrap');
 const topEl=document.querySelector('.top');
 function measureTop(){document.documentElement.style.setProperty('--toph',topEl.offsetHeight+'px');}
 const hintH=()=>document.querySelector('.wtop').offsetHeight||30;
-const fitZoom=()=>Math.max(0.2,Math.min(1.5,(wrap.clientWidth-2)/W));
+const wZoom=()=>Math.max(0.2,Math.min(1.5,(wrap.clientWidth-2)/W));
+/* default fit: fill the screen height down to the dock (board wider than the screen scrolls sideways), never smaller than fit-to-width */
+const fitZoom=()=>{const fs=document.body.classList.contains('fs'),dk=(document.querySelector('.dock')||{}).offsetHeight||0;
+  const avail=fs?wrap.clientHeight-hintH()-4:window.innerHeight-topEl.offsetHeight-dk-hintH()-2;return Math.max(wZoom(),Math.min(1.5,avail/H));};
 const allZoom=()=>{const avail=document.body.classList.contains('fs')?wrap.clientHeight-hintH()-4:window.innerHeight-topEl.offsetHeight-hintH()-8;
-  return Math.max(0.2,Math.min(fitZoom(),avail/H));};
+  return Math.max(0.2,Math.min(wZoom(),avail/H));};
 let fitMode='w';
 function setZoom(z,cx,cy){z=Math.max(0.2,Math.min(3,z));
   const r=svg.getBoundingClientRect();if(cx==null){const w=wrap.getBoundingClientRect();cx=w.left+w.width/2;cy=w.top+Math.min(w.height,window.innerHeight)/2;}
@@ -3079,15 +3085,20 @@ function sdEl(n,cx,y){let s=sdL(cx,y,cx,y+14)+sdL(cx,y+SDH-14,cx,y+SDH);const t=
 /* one node = one horizontal bar: wires leaving the same point share a single trunk; dot only where 3+ wires meet */
 function sdJn(y,up,dn){const cs=[...new Set([...up,...dn])].sort((a,b)=>a-b);if(cs.length<2)return '';const a=cs[0],b=cs[cs.length-1];
   let s=sdL(sdX(a),y,sdX(b),y);cs.forEach(c=>{if(up.includes(c)+dn.includes(c)+(c>a)+(c<b)>=3)s+=sdDot(sdX(c),y);});return s;}
-function sdDraw(n,c,y){if(n.e)return sdEl(n,sdX(c),y);let s='';
-  if(n.s){let yy=y;n.s.forEach((ch,i)=>{s+=sdDraw(ch,c,yy);yy+=ch.L.h;const nx=n.s[i+1];if(nx)s+=sdJn(yy,ch.L.en.map(o=>c+o),nx.L.st.map(o=>c+o));});return s;}
-  let cc=c;n.p.forEach(ch=>{s+=sdDraw(ch,cc,y);if(ch.L.h<n.L.h)ch.L.en.forEach(o=>{s+=sdL(sdX(cc+o),y+ch.L.h,sdX(cc+o),y+n.L.h);});cc+=ch.L.w;});
+/* H = height given to the node; spare height goes to the last item of a series, and loads (coils, lamps) sit at its bottom so all of them line up just above N */
+const SDLD=['coil','tcoil','lamp','in'];
+function sdDraw(n,c,y,H){H=H||n.L.h;
+  if(n.e){const x=sdX(c),xh=H-SDH;if(xh<=0)return sdEl(n,x,y);
+    return SDLD.includes(n.k)?sdL(x,y,x,y+xh)+sdEl(n,x,y+xh):sdEl(n,x,y)+sdL(x,y+SDH,x,y+H);}
+  let s='';
+  if(n.s){let yy=y;n.s.forEach((ch,i)=>{const nx=n.s[i+1],h=nx?ch.L.h:H-(yy-y);s+=sdDraw(ch,c,yy,h);yy+=h;if(nx)s+=sdJn(yy,ch.L.en.map(o=>c+o),nx.L.st.map(o=>c+o));});return s;}
+  let cc=c;n.p.forEach(ch=>{s+=sdDraw(ch,cc,y,H);cc+=ch.L.w;});
   return s;}
 function sdCtrl(ex){const root=SDC[ex];if(!root)return '';sdLay(root);
   const kids=root.p||[root],W=Math.max(3,kids.reduce((a,k)=>a+k.L.w,0)),Hm=Math.max(...kids.map(k=>k.L.h)),rt=46,rb=rt+16+Hm+16;let s='',c=0;
   s+=sdL(20,rt,40+W*SDW,rt)+sdL(20,rb,40+W*SDW,rb);
   s+=sdTx(22,rt-8,'الطور L من F1 (الطرف 2)',{a:'start',s:10,w:700,c:'#b3261e'})+sdTx(22,rb+16,'التعادل N (الشعب X1: 33-36)',{a:'start',s:10,w:700,c:'#1f5fd1'});
-  kids.forEach(k=>{const e=rt+16+k.L.h;k.L.st.forEach(o=>{const x=sdX(c+o);s+=sdDot(x,rt)+sdL(x,rt,x,rt+16);});s+=sdDraw(k,c,rt+16);
+  kids.forEach(k=>{const e=rt+16+Hm;k.L.st.forEach(o=>{const x=sdX(c+o);s+=sdDot(x,rt)+sdL(x,rt,x,rt+16);});s+=sdDraw(k,c,rt+16,Hm);
     k.L.en.forEach(o=>{const x=sdX(c+o);s+=sdL(x,e,x,rb)+sdDot(x,rb);});c+=k.L.w;});
   const plc=/^p(8|9|1[0-4])$/.test(ex);
   const note=plc?'المداخل I تُغذّى من F1 عبر الضواغط، ومخارج Q تشغّل الملفات. البرنامج يُكتب في جهاز easy.':'أرقام الضواغط واللمبات هي أرقام الشعب X1. طرف A2 لكل ملف يذهب إلى التعادل N.';
@@ -3125,17 +3136,20 @@ function sdPower(ex){const v=SDPW[ex],x0=60;let s=pwHead(x0),w=300,h=420;
     s+=pw3('km',x0,110,'K1',['1','3','5'],['2','4','6'],'أمامي')+pw3('km',x1,110,'K2',['1','3','5'],['2','4','6'],'خلفي')+down(170,196);
     [0,1,2].forEach(i=>{const y=182+i*6;s+=pwL(T[i],170,y)+sdL(T[i],y,x0+26*i,y)+sdDot(x0+26*i,y);});
     s+=sdTx(x1+26,80,'تبديل L1 و L3',{s:8.5,c:'#b3261e'})+pw3('fr',x0,196,'F2',['1','3','5'],['2','4','6'],'أوفرلود')+down(256,282)+pwX1(x0,286,['1','2','3'],'X1')+down(290,316)+pwMotor(x0+26,342,'M1',true);w=340;h=420;}
-  if(v==='sd'){const x1=190,T=[x1,x1+26,x1+52],x2=300,T2=[x2,x2+26,x2+52];
-    s+=Q+down(84,100)+pw3('km',x0,100,'K1',['1','3','5'],['2','4','6'],'رئيسي')+down(160,176)+pw3('fr',x0,176,'F2',['1','3','5'],['2','4','6'],'أوفرلود')+down(236,280)+pwX1(x0,284,['1','2','3'],'X1')+down(288,312);
-    [0,1,2].forEach(i=>{const y=244+i*6;s+=sdDot(x0+26*i,y)+sdL(x0+26*i,y,T[i],y)+pwL(T[i],y,262);});
-    s+=pw3('km',x1,262,'K3',['1','3','5'],['2','4','6'],'دلتا')+down(322,346,T)+pwX1(x1,350,['6','4','5']);
-    s+=`<circle cx="${x0+26}" cy="${340}" r="28" fill="#fff" stroke="${SDK}" stroke-width="1.8"/>`+sdTx(x0+26,338,'M',{s:15,w:700,c:SDK})+sdTx(x0+26,353,'3~',{s:10,w:700,c:SDK})+sdTx(x0-20,344,'M1',{a:'end',s:12,w:700,c:SDD});
-    s+=down(312,318)+sdTx(x0-4,306,'U1',{a:'end',s:8})+sdTx(x0+22,306,'V1',{a:'end',s:8})+sdTx(x0+48,306,'W1',{a:'end',s:8});
-    const ml=[[x0+8,'U2'],[x0+26,'V2'],[x0+44,'W2']];ml.forEach(([mx,l])=>{s+=pwL(mx,366,390)+sdTx(mx+3,378,l,{a:'start',s:8});});
-    [[T[1],x0+8,392],[T[2],x0+26,398],[T[0],x0+44,404]].forEach(([tx,mx,yy])=>{s+=pwL(tx,354,yy)+sdL(tx,yy,mx,yy)+pwL(mx,390,yy)+sdDot(mx,yy);});
-    [0,1,2].forEach(i=>{const y=366+i*5;s+=sdDot(T[i],y)+sdL(T[i],y,T2[i],y)+pwL(T2[i],y,376);});
-    s+=pw3('km',x2,376,'K2',['1','3','5'],['2','4','6'],'نجمة')+`<path d="M${x2} 436V444H${x2+52}V436M${x2+26} 436V444" fill="none" stroke="${SDK}" stroke-width="1.8"/>`+sdTx(x2+26,458,'2-4-6 موصولة معًا',{s:8.5});
-    s+=sdTx(x1+80,362,'X1 (W2 U2 V2)',{a:'start',s:8.5,c:SDD});w=440;h=470;}
+  if(v==='sd'){/* K1, K3, K2 side by side on one row; K3 is fed from F2's output and K2 from K3's output by wires rising to their tops */
+    const x1=250,T=[x1,x1+26,x1+52],x2=430,T2=[x2,x2+26,x2+52],R=110,cy=356;
+    const up=(src,tap,ris,top,dst)=>[0,1,2].map(i=>sdDot(src[i],tap[i])+sdL(src[i],tap[i],ris[i],tap[i])+pwL(ris[i],top[i],tap[i])+sdL(ris[i],top[i],dst[i],top[i])+pwL(dst[i],top[i],R)).join('');
+    s+=Q+down(84,R)+pw3('km',x0,R,'K1',['1','3','5'],['2','4','6'],'رئيسي')+pw3('km',x1,R,'K3',['1','3','5'],['2','4','6'],'دلتا')+pw3('km',x2,R,'K2',['1','3','5'],['2','4','6'],'نجمة');
+    s+=down(170,186)+pw3('fr',x0,186,'F2',['1','3','5'],['2','4','6'],'أوفرلود')+down(246,296)+pwX1(x0,300,['1','2','3'],'X1')+down(304,cy-22);
+    s+=up([x0,x0+26,x0+52],[264,258,252],[212,204,196],[104,98,92],T);
+    s+=down(170,206,T)+pwX1(x1,210,['6','4','5'])+sdTx(x1+72,213,'X1 (W2 U2 V2)',{a:'start',s:8.5,c:SDD});
+    s+=up(T,[188,182,176],[404,396,388],[104,98,92],T2);
+    s+=`<path d="M${x2} 170V178H${x2+52}V170M${x2+26} 170V178" fill="none" stroke="${SDK}" stroke-width="1.8"/>`+sdTx(x2+26,192,'2-4-6 موصولة معًا',{s:8.5});
+    s+=`<circle cx="${x0+26}" cy="${cy}" r="28" fill="#fff" stroke="${SDK}" stroke-width="1.8"/>`+sdTx(x0+26,cy-2,'M',{s:15,w:700,c:SDK})+sdTx(x0+26,cy+13,'3~',{s:10,w:700,c:SDK})+sdTx(x0-20,cy+4,'M1',{a:'end',s:12,w:700,c:SDD});
+    s+=sdTx(x0-4,cy-34,'U1',{a:'end',s:8})+sdTx(x0+22,cy-34,'V1',{a:'end',s:8})+sdTx(x0+48,cy-34,'W1',{a:'end',s:8});
+    [[x0+8,'U2'],[x0+26,'V2'],[x0+44,'W2']].forEach(([mx,l])=>{s+=pwL(mx,cy+26,cy+50)+sdTx(mx+3,cy+38,l,{a:'start',s:8});});
+    [[T[0],x0+44,cy+52],[T[2],x0+26,cy+58],[T[1],x0+8,cy+64]].forEach(([tx,mx,yy])=>{s+=pwL(tx,214,yy)+sdL(tx,yy,mx,yy)+pwL(mx,cy+50,yy)+sdDot(mx,yy);});
+    w=560;h=440;}
   return {w,h,svg:s};}
 function sdRender(){const V=document.getElementById('sdIn');if(!V)return;const d=SD.tab==='pw'?sdPower(SD.ex):sdCtrl(SD.ex);
   const VW=document.getElementById('sdView'),fit=Math.max(0.3,((VW&&VW.clientWidth)||320)-6)/d.w,sc=Math.min(fit*SD.z,4);
@@ -3199,7 +3213,7 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
   if(bI)bI.onclick=async()=>{if(dp){dp.prompt();try{await dp.userChoice;}catch(_){}dp=null;upd();}
     else alert('لتثبيت التطبيق على الآيفون أو الآيباد:\n\n١) افتح الموقع في متصفح Safari\n٢) اضغط زر المشاركة ⬆ أسفل الشاشة\n٣) اختر «إضافة إلى الشاشة الرئيسية»\n٤) اضغط «إضافة»');};
   upd();}
-measureTop();measureDock();
+measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());addEventListener("load",()=>{measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());});
 })();
 </script>
 </body>
