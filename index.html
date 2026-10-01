@@ -184,6 +184,9 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .msg.err{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn);font-weight:500}
 .msg.wn{background:color-mix(in srgb,var(--amber) 18%,transparent)}
 .wrap{overflow-x:auto;background:#0c2753;position:relative;direction:ltr;touch-action:pan-x pan-y}
+/* fill the screen down to the dock so no light page shows under a short board */
+.wrap{min-height:calc(100vh - var(--toph,0px) - var(--dockh,120px) - env(safe-area-inset-top,0px));min-height:calc(100dvh - var(--toph,0px) - var(--dockh,120px) - env(safe-area-inset-top,0px))}
+body.fs .wrap{min-height:0}
 body.fs{overflow:hidden}
 body.fs .top{display:none}
 body.fs .wrap{position:fixed;left:0;right:0;top:0;bottom:var(--dockh,120px);overflow:auto;overscroll-behavior:contain;padding-top:env(safe-area-inset-top,0px)}
