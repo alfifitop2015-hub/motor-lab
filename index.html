@@ -2923,8 +2923,9 @@ const SDW=78,SDH=66,SDB=9,SDK='#16202a',SDT='#394650',SDD='#0b3d91';
 const sdTx=(x,y,t,o)=>{o=o||{};const ar=/[\u0600-\u06FF]/.test(t),a0=o.a||'middle',an=ar?(a0==='start'?'end':a0==='end'?'start':a0):a0;return `<text x="${x}" y="${y}"${ar?' direction="rtl"':''} text-anchor="${an}" style="font:${o.w||600} ${o.s||9.5}px sans-serif;fill:${o.c||SDT}">${t}</text>`;};
 const sdL=(x1,y1,x2,y2,dash)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${SDK}" stroke-width="1.6"${dash?' stroke-dasharray="3 3"':''}/>`;
 const sdDot=(x,y)=>`<circle cx="${x}" cy="${y}" r="2.8" fill="${SDK}"/>`;
-function sdLay(n){if(n.e)return n.L={w:1,h:SDH};if(n.s){const c=n.s.map(sdLay);return n.L={w:Math.max(...c.map(l=>l.w)),h:c.reduce((a,l)=>a+l.h,0)};}
-  const c=n.p.map(sdLay);return n.L={w:c.reduce((a,l)=>a+l.w,0),h:Math.max(...c.map(l=>l.h))+2*SDB};}
+function sdLay(n){if(n.e)return n.L={w:1,h:SDH,st:[0],en:[0]};if(n.s){const c=n.s.map(sdLay);return n.L={w:Math.max(...c.map(l=>l.w)),h:c.reduce((a,l)=>a+l.h,0),st:c[0].st,en:c[c.length-1].en};}
+  const c=n.p.map(sdLay);let o=0;const st=[],en=[];c.forEach(l=>{l.st.forEach(v=>st.push(o+v));l.en.forEach(v=>en.push(o+v));o+=l.w;});
+  return n.L={w:o,h:Math.max(...c.map(l=>l.h)),st,en};}
 const sdX=c=>30+c*SDW+SDW/2;
 function sdEl(n,cx,y){let s=sdL(cx,y,cx,y+14)+sdL(cx,y+SDH-14,cx,y+SDH);const t=n.t,k=n.k,m1=y+14,m2=y+SDH-14,mid=(m1+m2)/2;
   const lblR=(t1,t2)=>sdTx(cx+14,mid+(t2?-2:4),t1,{a:'start',s:11.5,w:700,c:SDD})+(t2?sdTx(cx+14,mid+11,t2,{a:'start',s:8.5}):'');
@@ -2945,18 +2946,19 @@ function sdEl(n,cx,y){let s=sdL(cx,y,cx,y+14)+sdL(cx,y+SDH-14,cx,y+SDH);const t=
     +sdTx(cx-5,m1+2,'X1:'+n.a,{a:'end',s:8.5})+lblR(n.dev,'لمبة');}
   else if(k==='in'){s+=`<rect x="${cx-15}" y="${m1}" width="30" height="${m2-m1}" rx="3" fill="#eef4e6" stroke="${SDK}" stroke-width="1.6"/>`+sdTx(cx,mid+4,n.dev,{s:11,w:700,c:SDD})+sdTx(cx+19,mid+4,'دخل PLC',{a:'start',s:8.5});}
   return s;}
+/* one node = one horizontal bar: wires leaving the same point share a single trunk; dot only where 3+ wires meet */
+function sdJn(y,up,dn){const cs=[...new Set([...up,...dn])].sort((a,b)=>a-b);if(cs.length<2)return '';const a=cs[0],b=cs[cs.length-1];
+  let s=sdL(sdX(a),y,sdX(b),y);cs.forEach(c=>{if(up.includes(c)+dn.includes(c)+(c>a)+(c<b)>=3)s+=sdDot(sdX(c),y);});return s;}
 function sdDraw(n,c,y){if(n.e)return sdEl(n,sdX(c),y);let s='';
-  if(n.s){let yy=y;n.s.forEach(ch=>{s+=sdDraw(ch,c,yy);yy+=ch.L.h;});if(yy<y+n.L.h)s+=sdL(sdX(c),yy,sdX(c),y+n.L.h);return s;}
-  const H=n.L.h,top=y+SDB,bot=y+H-SDB;let cc=c;const xs=[];
-  s+=sdL(sdX(c),y,sdX(c),top)+sdL(sdX(c),bot,sdX(c),y+H);
-  n.p.forEach(ch=>{xs.push(sdX(cc));s+=sdDraw(ch,cc,top);if(top+ch.L.h<bot)s+=sdL(sdX(cc),top+ch.L.h,sdX(cc),bot);cc+=ch.L.w;});
-  s+=sdL(xs[0],top,xs[xs.length-1],top)+sdL(xs[0],bot,xs[xs.length-1],bot);xs.forEach((x,i)=>{if(i<xs.length-1||xs.length>1){s+=sdDot(x,top)+sdDot(x,bot);}});
+  if(n.s){let yy=y;n.s.forEach((ch,i)=>{s+=sdDraw(ch,c,yy);yy+=ch.L.h;const nx=n.s[i+1];if(nx)s+=sdJn(yy,ch.L.en.map(o=>c+o),nx.L.st.map(o=>c+o));});return s;}
+  let cc=c;n.p.forEach(ch=>{s+=sdDraw(ch,cc,y);if(ch.L.h<n.L.h)ch.L.en.forEach(o=>{s+=sdL(sdX(cc+o),y+ch.L.h,sdX(cc+o),y+n.L.h);});cc+=ch.L.w;});
   return s;}
 function sdCtrl(ex){const root=SDC[ex];if(!root)return '';sdLay(root);
   const kids=root.p||[root],W=Math.max(3,kids.reduce((a,k)=>a+k.L.w,0)),Hm=Math.max(...kids.map(k=>k.L.h)),rt=46,rb=rt+16+Hm+16;let s='',c=0;
   s+=sdL(20,rt,40+W*SDW,rt)+sdL(20,rb,40+W*SDW,rb);
   s+=sdTx(22,rt-8,'الطور L من F1 (الطرف 2)',{a:'start',s:10,w:700,c:'#b3261e'})+sdTx(22,rb+16,'التعادل N (الشعب X1: 33-36)',{a:'start',s:10,w:700,c:'#1f5fd1'});
-  kids.forEach(k=>{const x=sdX(c);s+=sdDot(x,rt)+sdL(x,rt,x,rt+16)+sdDraw(k,c,rt+16);const e=rt+16+k.L.h;s+=sdL(x,e,x,rb)+sdDot(x,rb);c+=k.L.w;});
+  kids.forEach(k=>{const e=rt+16+k.L.h;k.L.st.forEach(o=>{const x=sdX(c+o);s+=sdDot(x,rt)+sdL(x,rt,x,rt+16);});s+=sdDraw(k,c,rt+16);
+    k.L.en.forEach(o=>{const x=sdX(c+o);s+=sdL(x,e,x,rb)+sdDot(x,rb);});c+=k.L.w;});
   const plc=/^p(8|9|1[0-4])$/.test(ex);
   const note=plc?'المداخل I تُغذّى من F1 عبر الضواغط، ومخارج Q تشغّل الملفات. البرنامج يُكتب في جهاز easy.':'أرقام الضواغط واللمبات هي أرقام الشعب X1. طرف A2 لكل ملف يذهب إلى التعادل N.';
   s+=sdTx(20+ (40+W*SDW-20)/2,rb+38,note,{s:9.5,c:'#555'});
