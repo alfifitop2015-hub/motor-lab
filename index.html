@@ -2388,11 +2388,13 @@ function gradeLamps(ex,W,D){const R=[...PRESETS[ex],...presetExtra(ex)].map(([a,
     if(vars.some((v,i)=>/^F/.test(v)&&st>>i&1)&&vars.some((v,i)=>/^K/.test(v)&&st>>i&1))continue; // a tripped overload drops every contactor
     const a=lampLit(R,D,vars,st,lamps),b=lampLit(W,D,vars,st,lamps);a.forEach((x,i)=>{if(!x&&!b[i])return;n++;if(x===b[i])ok++;});}
   return{lr:n?ok/n:0,lamps:lamps.length};}
+/* every fraction is rounded up in the trainee's favour; the final score is a whole number */
+const gUp=(v,k)=>Math.ceil(v*k-1e-9)/k;
 function gradeNow(ex,W,D,PG){W=W||S.wires.map(w=>[w.a,w.b]);D=D||S.devs;
-  const b=gradeWiring(ex,W,D),{ok,tot,bad,miss,wrongW,wr}=b.r,L=gradeLamps(ex,W,D),lb=L?Math.round(LAMP_BONUS*L.lr*10)/10:0;
-  const fin=sm=>{sm=Math.round(sm*10)/10;return{s:Math.min(20,Math.round((sm+lb)*10)/10),sm,lb,lr:L?Math.round(100*L.lr):null};};
+  const b=gradeWiring(ex,W,D),{ok,tot,bad,miss,wrongW,wr}=b.r,L=gradeLamps(ex,W,D),lb=L?gUp(LAMP_BONUS*L.lr,10):0;
+  const fin=sm=>{const s=Math.min(20,gUp(sm+(L?LAMP_BONUS*L.lr:0),1));sm=gUp(sm,10);return{s,sm,lb,lr:L?gUp(100*L.lr,1):null};};
   if(PLCX.has(ex)&&PTEST[ex]){const pg=PG||S.plc,gp=gradeProg(ex,pg.prog,pg.tm);
-    return{...fin(10*wr+10*gp.r),ok,tot,bad,miss,wrongW,ws:Math.round(100*wr)/10,ps:Math.round(100*gp.r)/10,pOk:gp.ok,pRel:gp.rel,pBad:gp.bad};}
+    return{...fin(10*wr+10*gp.r),ok,tot,bad,miss,wrongW,ws:gUp(10*wr,10),ps:gUp(10*gp.r,10),pOk:gp.ok,pRel:gp.rel,pBad:gp.bad};}
   return{...fin(20*wr),ok,tot,bad,miss,wrongW};}
 /* program check: run the trainee's ladder program and the model program through the same input sequence and compare Q1-Q4 */
 const PTEST={
@@ -2422,7 +2424,7 @@ async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn
   try{applyObj(G.w);update();return await fn();}finally{applyObj(cur);update();}}
 const gM=$('gradeModal');let GV={ex:''};
 const wl=L=>L.map(([a,b])=>`<li><span dir="ltr">${esc(a)} ⟷ ${esc(b)}</span></li>`).join('');
-const gLampTxt=G=>G.sm==null?'. المجموع = '+G.s+' من 20.':`. لمبات البيان درجة إضافية حتى ${LAMP_BONUS}: تُضاف ${G.lb} إذا كانت الدرجة أقل من 20، ولا تتجاوز الدرجة 20. المجموع = ${G.s} من 20. يُقبل أي تلامس مساعد مكافئ، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.`;
+const gLampTxt=G=>G.sm==null?'. المجموع = '+G.s+' من 20.':`. لمبات البيان درجة إضافية حتى ${LAMP_BONUS}: تُضاف ${G.lb} إذا كانت الدرجة أقل من 20، ولا تتجاوز الدرجة 20. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب). يُقبل أي تلامس مساعد مكافئ، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.`;
 function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)';
   return `<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <p style="margin:0 0 6px;font-weight:700">${esc(PNAME[G.ex])}</p>
