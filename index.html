@@ -594,6 +594,8 @@ const GROUPS=[
  {name:'تعادل N',tags:['N','N','N','N'],to:'N'}];
 const SX=50,SW=25,SY=950,TN=36,MB=[1,2,3,4,5,6];
 let tn=1;GROUPS.forEach(g=>{g.from=tn;tn+=g.tags.length;g.to2=tn-1;});
+/* gap left of a rail device: the user can widen or narrow it by dragging the device sideways */
+const GAP=30,GAPMIN=6,devGap=(dv,first)=>dv.gap!=null?dv.gap:first?0:GAP;
 function relayout(){
   devices=[];T={};
   mk('Q1','mcb',60,110,132,150,[tu('1',22,18),tu('3',66,18),tu('5',110,18),td('2',22,132),td('4',66,132),td('6',110,132)],{poles:3,rating:'C16'});
@@ -611,8 +613,8 @@ function relayout(){
     if(FB.y>=top-40&&FB.y<top+rh+38)rh=Math.max(rh,FB.y+FB.h+10-38-top);
     let st=45,en=955;if(FB.y<top+devH&&FB.y+FB.h>top){if(FB.x+FB.w/2>500)en=FB.x-12;else st=FB.x+FB.w+12;}
     S.rowFree[r]=[st,en];x=st;S.rowTop[r]=top;S.rowH[r]=rh;
-    S.devs.filter(d=>d.rail===r&&!d.host).forEach(dv=>{const D=DEFS[dv.type];if(x+D.w>en&&x>st){dv.rail=r+1;S.devs.forEach(q=>{if(q.host===dv.id)q.rail=r+1;});if(r+1>=S.rows){S.rows=r+2;S.railCount=S.rows;}return;}mk(dv.id,dv.type,x,top,D.w,D.h,D.terms);
-      S.devs.filter(h=>h.host===dv.id).forEach(h=>{if(h.type==='aux'){const A=DEFS.aux;mk(h.id,'aux',x+7,top+44,A.w,A.h,A.terms);return;}const E=DEFS.olh;mk(h.id,'olh',x,top+196,E.w,E.h,E.terms);});x+=D.w+14;});
+    let first=true;S.devs.filter(d=>d.rail===r&&!d.host).forEach(dv=>{const D=DEFS[dv.type],g=devGap(dv,first);if(x+g+D.w>en&&!first){dv.rail=r+1;S.devs.forEach(q=>{if(q.host===dv.id)q.rail=r+1;});if(r+1>=S.rows){S.rows=r+2;S.railCount=S.rows;}return;}x+=g;first=false;mk(dv.id,dv.type,x,top,D.w,D.h,D.terms);
+      S.devs.filter(h=>h.host===dv.id).forEach(h=>{if(h.type==='aux'){const A=DEFS.aux;mk(h.id,'aux',x+7,top+44,A.w,A.h,A.terms);return;}const E=DEFS.olh;mk(h.id,'olh',x,top+196,E.w,E.h,E.terms);});x+=D.w;});
     S.trunkY[r]=top+rh+38;top=S.trunkY[r]+52;}
   mk('FB','fboard',FB.x,FB.y,FB.w,FB.h,[]);
   devices.forEach(dv=>{});
@@ -1816,7 +1818,7 @@ function scrSVG(){const now=performance.now();for(let i=SCR.length-1;i>=0;i--)if
 <rect x="-5" y="-40" width="10" height="5" rx="1.5" fill="#222"/><g class="scdTw" style="${tws}"><rect x="-7" y="-74" width="14" height="35" rx="6" fill="#d8322b" stroke="#7a1712" stroke-width="1"/><rect x="-7" y="-58" width="14" height="6" fill="#ffd21a"/><path d="M-3 -71V-60M0 -71V-60M3 -71V-60M-3 -50V-42M0 -50V-42M3 -50V-42" stroke="#7a1712" stroke-width="1.1"/><rect x="-5" y="-72" width="3" height="30" rx="1.5" fill="#fff" opacity=".35"/></g></g></g></g>`;}).join('');}
 function render(){
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);try{xsPrep();}catch(e){console.warn(e);}
-  NODEL=true;let s=bg();devices.forEach(d=>{const sel=['k','timer','ol','olh','aux'].includes(d.type);const body=D3T.includes(d.type)?`<g filter="url(#ds)">${ext3(d)}${drawDev(d)}${GLT.includes(d.type)?gloss3(d):''}</g>`:drawDev(d);s+=sel?`<g data-dev="${d.id}" style="cursor:pointer">${body}</g>`:body;if(sel&&S.selDev===d.id)s+=`<rect x="${d.x-5}" y="${d.y-5}" width="${d.w+10}" height="${d.h+10}" rx="10" fill="none" stroke="#ffb300" stroke-width="4" stroke-dasharray="10 6" pointer-events="none"/>`;});s+=xrDevs();s+=`<g transform="translate(0 ${DY})">${drawField()}</g>`;
+  NODEL=true;let s=bg();devices.forEach(d=>{const sel=['k','timer','ol','olh','aux'].includes(d.type);const body=D3T.includes(d.type)?`<g filter="url(#ds)">${ext3(d)}${drawDev(d)}${GLT.includes(d.type)?gloss3(d):''}</g>`:drawDev(d);s+=sel?`<g data-dev="${d.id}" style="cursor:ew-resize${S.selDev&&(S.selDev===d.id||(S.devs.find(q=>q.id===d.id)||{}).host===S.selDev)?';touch-action:none':''}"><title>${d.id}: اضغط لتحديده، واسحبه يمينًا أو يسارًا لتغيير المسافة</title>${body}</g>`:body;if(sel&&S.selDev===d.id)s+=`<rect x="${d.x-5}" y="${d.y-5}" width="${d.w+10}" height="${d.h+10}" rx="10" fill="none" stroke="#ffb300" stroke-width="4" stroke-dasharray="10 6" pointer-events="none"/>`;});s+=xrDevs();s+=`<g transform="translate(0 ${DY})">${drawField()}</g>`;
   const PATHS=routeAll();
   const isFxW=w=>(T[w.a]&&T[w.a].zone==='z')||(T[w.b]&&T[w.b].zone==='z');
   const wSVG=w=>{const d=PATHS[w.id];if(!d)return '';return `<g class="wire${S.sel===w.id?' sel':''}"><path d="${d}" class="wsd"/><path d="${d}" class="wsh" stroke="${shade(w.c,-.5)}"/><path d="${d}" class="wcore" stroke="${w.c}"/><path d="${d}" class="wlt" stroke="${shade(w.c,.42)}"/><path d="${d}" class="whl"/>${isLive(w.a)?`<path d="${d}" class="flowb"/><path d="${d}" class="flow"/>`:''}<path d="${d}" class="whit" data-wire="${w.id}"/></g>`;};
@@ -1927,12 +1929,12 @@ function update(){solve();render();}
 
 /* ---------- actions ---------- */
 function snap(){S.ran=false;S.power=true;S.fault=null;S.hist.push(JSON.stringify(serial()));if(S.hist.length>60)S.hist.shift();}
-function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c]),plc:{prog:S.plc.prog,tm:S.plc.tm,run:S.plc.run},...(S.pex?{px:S.pex}:{}),...(S.fx&&S.fx.length?{fx:S.fx.map(f=>({...f}))}:{})};}
+function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.gap!=null)o.gap=d.gap;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c]),plc:{prog:S.plc.prog,tm:S.plc.tm,run:S.plc.run},...(S.pex?{px:S.pex}:{}),...(S.fx&&S.fx.length?{fx:S.fx.map(f=>({...f}))}:{})};}
 const railEnd=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][1]:955,railStart=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][0]:45;
-function railUsed(r,skip){return S.devs.filter(d=>d.rail===r&&!d.host&&d.id!==skip).reduce((a,d)=>a+DEFS[d.type].w+14,railStart(r));}
-const fits=(r,type,skip)=>railUsed(r,skip)+DEFS[type].w<=railEnd(r);
-function packRails(list){let r=0,x=railStart(0);list.filter(d=>!d.host).forEach(d=>{const w=DEFS[d.type].w;if(x+w>railEnd(r)){r++;x=railStart(r);}d.rail=r;x+=w+14;});list.filter(d=>d.host).forEach(d=>{const h=list.find(q=>q.id===d.host);d.rail=h?h.rail:0;});return list;}
-function addDevRaw(type,id,opt){opt=opt||{};S.devs.push({id,type,rail:opt.rail!=null?opt.rail:S.target,host:opt.host||null});if(type==='timer')S.tm[id]={delay:opt.delay||5,start:null};if(type==='ol')S.ol[id]={iset:opt.iset||5.4,heat:0,trip:false,I:0,m1:false,m2:false};}
+function railUsed(r,skip){let x=railStart(r),first=true;S.devs.filter(d=>d.rail===r&&!d.host&&d.id!==skip).forEach(d=>{x+=devGap(d,first)+DEFS[d.type].w;first=false;});return x;}
+const fits=(r,type,skip)=>railUsed(r,skip)+(S.devs.some(d=>d.rail===r&&!d.host&&d.id!==skip)?GAP:0)+DEFS[type].w<=railEnd(r);
+function packRails(list){let r=0,x=railStart(0),first=true;list.filter(d=>!d.host).forEach(d=>{const w=DEFS[d.type].w;if(!first&&x+devGap(d,false)+w>railEnd(r)){r++;x=railStart(r);first=true;}x+=devGap(d,first)+w;d.rail=r;first=false;});list.filter(d=>d.host).forEach(d=>{const h=list.find(q=>q.id===d.host);d.rail=h?h.rail:0;});return list;}
+function addDevRaw(type,id,opt){opt=opt||{};S.devs.push({id,type,rail:opt.rail!=null?opt.rail:S.target,host:opt.host||null,...(opt.gap!=null&&isFinite(opt.gap)?{gap:Math.max(0,+opt.gap)}:{})});if(type==='timer')S.tm[id]={delay:opt.delay||5,start:null};if(type==='ol')S.ol[id]={iset:opt.iset||5.4,heat:0,trip:false,I:0,m1:false,m2:false};}
 function nextId(type){const p=PREFIX[type],ids=new Set(S.devs.map(d=>d.id));let n=type==='ol'?2:1;while(ids.has(p+n))n++;return p+n;}
 function setDevs(list){if(list.some(d=>d.rail==null))packRails(list);S.devs=[];S.tm={};S.ol={};S.railCount=Math.max(1,list.reduce((m,d)=>Math.max(m,d.rail+1),1));S.target=0;list.forEach(d=>addDevRaw(d.type,d.id,d));relayout();}
 function devsFromWires(w,o){const ids=new Set();w.forEach(([a,b])=>[a,b].forEach(k=>{const id=k.split('.')[0];if(/^(KT\d+|K\d+|K\d+A|F([2-9]|\d{2,}))$/.test(id))ids.add(id);const ma=/^(K\d+)A$/.exec(id);if(ma)ids.add(ma[1]);}));
@@ -2041,6 +2043,22 @@ svg.addEventListener('pointermove',e=>{if(!fdrag)return;const p=svgPt(e),dx=p.x-
   if(!fraf)fraf=requestAnimationFrame(()=>{fraf=0;render();});});
 function endFDrag(){if(!fdrag)return;const d=fdrag;fdrag=null;if(d.moved)say('نُقل '+d.f.id);else{S.selDev=d.f.id;S.sel=null;S.pending=null;}render();}
 svg.addEventListener('pointerup',endFDrag);svg.addEventListener('pointercancel',endFDrag);
+/* drag a rail device sideways: changes the gap to its left neighbour, the devices to its right follow.
+   mouse drags straight away; on touch the device is tapped (selected) first so the panel still scrolls */
+let ddrag=null,draf=0;
+svg.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-dev]');if(!g||e.target.closest('[data-press],[data-act],[data-term],[data-wh]'))return;
+  let d=S.devs.find(x=>x.id===g.dataset.dev);if(d&&d.host)d=S.devs.find(x=>x.id===d.host);if(!d)return;
+  if(e.pointerType!=='mouse'&&S.selDev!==g.dataset.dev&&S.selDev!==d.id)return;
+  const L=S.devs.filter(q=>q.rail===d.rail&&!q.host),i=L.indexOf(d),pv=i>0?devices.find(q=>q.id===L[i-1].id):null;
+  const prevEnd=pv?pv.x+pv.w:railStart(d.rail);let rest=0;L.slice(i).forEach((q,j)=>{rest+=DEFS[q.type].w+(j?devGap(q,false):0);});
+  const g0=devGap(d,i===0);ddrag={d,p0:svgPt(e),g0,min:i?GAPMIN:0,max:Math.max(g0,railEnd(d.rail)-prevEnd-rest),moved:false};
+  try{svg.setPointerCapture(e.pointerId);}catch(_){}});
+svg.addEventListener('pointermove',e=>{if(!ddrag)return;const dx=svgPt(e).x-ddrag.p0.x;
+  if(!ddrag.moved){if(Math.abs(dx)<5)return;ddrag.moved=true;snap();}
+  const g=Math.round(clampN(ddrag.g0+dx,ddrag.min,ddrag.max));if(g===ddrag.d.gap)return;ddrag.d.gap=g;
+  if(!draf)draf=requestAnimationFrame(()=>{draf=0;relayout();render();});});
+function endDDrag(){if(!ddrag)return;const d=ddrag;ddrag=null;if(d.moved){d.d.gap=Math.round(clampN(d.d.gap,d.min,d.max));relayout();say('المسافة قبل '+d.d.id+' صارت '+d.d.gap);update();}}
+svg.addEventListener('pointerup',endDDrag);svg.addEventListener('pointercancel',endDDrag);
 {const fm=document.getElementById('fxModal'),grid=document.getElementById('fxGrid');
   const L=[['no','green','ضاغط تشغيل NO'],['nc','red','ضاغط إيقاف NC'],['nonc','black','ضاغط مزدوج NO+NC'],['es','red','زر طوارئ (يثبت)'],['sel','black','مفتاح اختيار 0-I'],
     ['lamp','red','لمبة حمراء'],['lamp','green','لمبة خضراء'],['lamp','yellow','لمبة صفراء'],['lamp','blue','لمبة زرقاء'],['lamp','white','لمبة بيضاء']];
