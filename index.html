@@ -816,7 +816,7 @@ const motorI=()=>S.motor.state==='run'?({star:IN_STAR,low:2.6,high:3.0}[S.motor.
 const isLive=k=>S.showV&&S.R&&phasesOf(S.R.srcOf(k)).length>0;
 function txt(x,y,s,sz,fill,w){return `<text x="${x}" y="${y}" class="dl" style="font-size:${sz||12}px${fill?';fill:'+fill:''}${w?';font-weight:'+w:''}">${s}</text>`;}
 function smallBtn(x,y,label,act,col){return `<g class="act" data-act="${act}"><rect x="${x-11}" y="${y-11}" width="22" height="22" rx="5" fill="${col||'#39424b'}"/>${txt(x,y+5,label,15,'#fff',700)}</g>`;}
-function band(d){return `<rect x="${d.x+3}" y="${d.y+4}" width="${d.w-6}" height="28" rx="4" fill="#c4c6c2"/><rect x="${d.x+3}" y="${d.y+d.h-32}" width="${d.w-6}" height="28" rx="4" fill="#c4c6c2"/>`;}
+function band(d){return `<rect x="${d.x+3}" y="${d.y+5}" width="${d.w-6}" height="25" rx="4" fill="url(#gDrk)"/><rect x="${d.x+3}" y="${d.y+d.h-28}" width="${d.w-6}" height="25" rx="4" fill="url(#gDrk)"/><rect x="${d.x+3}" y="${d.y+5}" width="${d.w-6}" height="2" rx="1" fill="#fff" opacity=".2"/><rect x="${d.x+3}" y="${d.y+d.h-28}" width="${d.w-6}" height="2" rx="1" fill="#fff" opacity=".2"/>`+d.terms.map(t=>cav(d.x+t.dx,d.y+t.dy,9)).join('');}
 let NODEL=false;
 function delBtn(d){if(NODEL)return '';if(d.type==='olh'||d.type==='aux'){const cx=d.type==='aux'?d.x+d.w+4:d.x+d.w-4,cy=d.type==='aux'?d.y+d.h/2:d.y+d.h+12;return `<g class="act" data-act="del:${d.id}"><title>حذف ${d.id}</title><circle cx="${cx}" cy="${cy}" r="12" fill="transparent"/><circle cx="${cx}" cy="${cy}" r="8.5" fill="#d8322b" stroke="#fff" stroke-width="1.5"/><path d="M${cx-3.5} ${cy-3.5}l7 7m0-7l-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`;}
   const isK=d.type==='k',cx=isK?d.x+118:d.x+d.w-4,cy=isK?d.y-44:d.y-12;const mv=(dx,sg,lab,t)=>`<g class="act" data-act="mv:${d.id}:${sg}"><title>${t}</title><circle cx="${cx-dx}" cy="${cy}" r="12" fill="transparent"/><circle cx="${cx-dx}" cy="${cy}" r="8.5" fill="#39424b" stroke="#fff" stroke-width="1.5"/><path d="${sg<0?`M${cx-dx-4} ${cy+2}l4-4.5l4 4.5`:`M${cx-dx-4} ${cy-2}l4 4.5l4-4.5`}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
@@ -840,6 +840,16 @@ function bg(){const trunks=[[48,34],[298,36]],rails=[185];
 <radialGradient id="gScrew" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#cfd3d7"/><stop offset="1" stop-color="#5f666c"/></radialGradient>
 <radialGradient id="gDome" cx=".35" cy=".28" r=".75"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".3" stop-color="#fff" stop-opacity=".2"/><stop offset=".75" stop-color="#000" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></radialGradient>
 <linearGradient id="gDown" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+<linearGradient id="gWht" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dfe3e6"/><stop offset=".12" stop-color="#fbfcfc"/><stop offset=".7" stop-color="#eef1f3"/><stop offset="1" stop-color="#c9cfd4"/></linearGradient>
+<linearGradient id="gGry" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9cdd0"/><stop offset=".15" stop-color="#eceeef"/><stop offset=".75" stop-color="#dfe2e4"/><stop offset="1" stop-color="#b3b8bc"/></linearGradient>
+<linearGradient id="gShd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ecee"/><stop offset="1" stop-color="#cdd2d6"/></linearGradient>
+<linearGradient id="gDrk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a5f65"/><stop offset=".18" stop-color="#3d4146"/><stop offset="1" stop-color="#26292d"/></linearGradient>
+<linearGradient id="gCav" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0f11"/><stop offset=".6" stop-color="#25282c"/><stop offset="1" stop-color="#4a4f55"/></linearGradient>
+<linearGradient id="gLev" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2f74d8"/><stop offset=".35" stop-color="#5c9bf0"/><stop offset=".7" stop-color="#2463c8"/><stop offset="1" stop-color="#143f8a"/></linearGradient>
+<linearGradient id="gBlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a8fe6"/><stop offset=".5" stop-color="#1f63c6"/><stop offset="1" stop-color="#174d9e"/></linearGradient>
+<linearGradient id="gRec" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa2a9"/><stop offset=".25" stop-color="#cdd2d6"/><stop offset="1" stop-color="#e4e7ea"/></linearGradient>
+<linearGradient id="gWin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121417"/><stop offset="1" stop-color="#3b4046"/></linearGradient>
+<radialGradient id="gKnob" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="#7fb4ff"/><stop offset=".55" stop-color="#1f63c6"/><stop offset="1" stop-color="#0f3a7c"/></radialGradient>
 <linearGradient id="gRail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3e3a6"/><stop offset=".25" stop-color="#d4bd72"/><stop offset=".55" stop-color="#b09a55"/><stop offset=".56" stop-color="#8e7a3e"/><stop offset=".8" stop-color="#c8b06a"/><stop offset="1" stop-color="#7e6b35"/></linearGradient>
 </defs>
 <rect width="${W}" height="${1112+DY}" fill="url(#holes)"/>
@@ -850,17 +860,19 @@ ${rails.map((y,i)=>{const r=i-1,dev=r>=0&&r<S.rows,sel=dev&&r===S.target;
   (dev?`<g class="act" data-act="rail:${r}"><rect id="railTag${r}" x="9" y="${y-44}" width="26" height="88" rx="5" fill="${sel?'#ffb300':'#34414d'}" stroke="#111"/><text x="22" y="${y}" transform="rotate(-90 22 ${y})" class="dl" style="font-size:11px;fill:${sel?'#111':'#fff'};dominant-baseline:middle">سكة ${r+1}</text></g>`:'');}).join('')}
 ${S.devs.length?'':`<rect x="150" y="440" width="700" height="50" rx="8" fill="rgba(10,20,35,.85)"/>${txt(500,471,'اللوحة جاهزة: أضف الكونتاكتورات والمؤقتات والأوفرلودات من «أضف إلى اللوحة» بالأعلى',13,'#fff',700)}`}`;}
 const hole=(cx,cy)=>`<circle cx="${cx}" cy="${cy}" r="8.5" fill="#c9cdd1" stroke="#7f868c"/><circle cx="${cx}" cy="${cy}" r="6.8" fill="#5d646a"/>`;
+/* recessed screw pocket like a real terminal: dark square cavity around the hole */
+const cav=(cx,cy,r)=>{r=r||10;return `<rect x="${cx-r}" y="${cy-r}" width="${2*r}" height="${2*r}" rx="2.5" fill="url(#gCav)" stroke="#0b0c0e" stroke-width=".8"/><rect x="${cx-r+1}" y="${cy+r-2.5}" width="${2*r-2}" height="1.5" fill="#fff" opacity=".18"/>`+hole(cx,cy);};
 
 function olFace(d,L){const {x,y,w,h}=d,id=d.id,o=S.ol[id],tr=o.trip;
-  let s=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#3e4247" stroke="#25282b"/>
-  <rect x="${x+3}" y="${y+L.top}" width="${w-6}" height="${h-L.top-26}" rx="5" fill="#dcdfe2" stroke="#9aa1a7"/>
-  <rect x="${x+3}" y="${y+h-25}" width="${w-6}" height="22" rx="4" fill="#26292c"/>`;
-  d.terms.forEach(t=>{const dark=t.s==='u'||t.dy>h-36;s+=`<circle cx="${x+t.dx}" cy="${y+t.dy}" r="8.5" fill="${dark?'#4a5056':'#c9cdd1'}" stroke="${dark?'#15181a':'#7f868c'}"/><circle cx="${x+t.dx}" cy="${y+t.dy}" r="6.8" fill="#2f3438"/>`;});
+  let s=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="url(#gDrk)" stroke="#25282b"/><rect x="${x+2}" y="${y+1}" width="${w-4}" height="3" rx="1.5" fill="#fff" opacity=".18"/>
+  <rect x="${x+3}" y="${y+L.top}" width="${w-6}" height="${h-L.top-26}" rx="5" fill="url(#gWht)" stroke="#9aa1a7"/><rect x="${x+5}" y="${y+L.top+1}" width="${w-10}" height="4" rx="2" fill="#fff" opacity=".7"/>
+  <rect x="${x+3}" y="${y+h-25}" width="${w-6}" height="22" rx="4" fill="url(#gWin)"/>`;
+  d.terms.forEach(t=>{const dark=t.s==='u'||t.dy>h-36;s+=dark?cav(x+t.dx,y+t.dy,10):`<circle cx="${x+t.dx}" cy="${y+t.dy}" r="10.5" fill="url(#gRec)" stroke="#9aa1a7" stroke-width=".8"/><circle cx="${x+t.dx}" cy="${y+t.dy}" r="8.5" fill="#c9cdd1" stroke="#7f868c"/><circle cx="${x+t.dx}" cy="${y+t.dy}" r="6.8" fill="#2f3438"/>`;});
   s+=`<rect x="${x+6}" y="${y+L.top+4}" width="${w-12}" height="15" rx="2" fill="#fff" stroke="#b5bbc0"/>${txt(x+20,y+L.top+15,id,10,'#1c2126',700)}<text id="iTxt-${id}" x="${x+w-40}" y="${y+L.top+15}" class="dl" style="font-size:9px">I = ${o.I.toFixed(1)} A</text>
-  <circle cx="${x+L.dx}" cy="${y+L.dy}" r="${L.dr}" fill="#f4f5f6" stroke="#7d848a"/>`;
+  <circle cx="${x+L.dx}" cy="${y+L.dy}" r="${L.dr+3}" fill="url(#gKnob)" stroke="#0f3a7c"/><circle cx="${x+L.dx}" cy="${y+L.dy}" r="${L.dr}" fill="#f4f5f6" stroke="#0f3a7c"/>`;
   for(let i=0;i<9;i++){const a=(-135+i*33.75)*Math.PI/180;s+=`<line x1="${x+L.dx+Math.sin(a)*(L.dr-2)}" y1="${y+L.dy-Math.cos(a)*(L.dr-2)}" x2="${x+L.dx+Math.sin(a)*(L.dr-6)}" y2="${y+L.dy-Math.cos(a)*(L.dr-6)}" stroke="#555" stroke-width="1"/>`;}
   const an=(-135+270*(o.iset-1)/9)*Math.PI/180;
-  s+=`<line x1="${x+L.dx}" y1="${y+L.dy}" x2="${x+L.dx+Math.sin(an)*(L.dr-5)}" y2="${y+L.dy-Math.cos(an)*(L.dr-5)}" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/><circle cx="${x+L.dx}" cy="${y+L.dy}" r="4" fill="#666"/>
+  s+=`<line x1="${x+L.dx}" y1="${y+L.dy}" x2="${x+L.dx+Math.sin(an)*(L.dr-5)}" y2="${y+L.dy-Math.cos(an)*(L.dr-5)}" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round"/><circle cx="${x+L.dx}" cy="${y+L.dy}" r="5" fill="url(#gKnob)" stroke="#0f3a7c" stroke-width=".8"/><path d="M${x+L.dx-2.6} ${y+L.dy}h5.2M${x+L.dx} ${y+L.dy-2.6}v5.2" stroke="#fff" stroke-width="1.2"/>
   ${txt(x+L.dx,y+L.dy+L.dr-3,o.iset.toFixed(1)+'A',7.5,'#1c2126',700)}
   ${smallBtn(x+L.px,y+L.py,'+','ol:'+id+':+')}${smallBtn(x+L.px,y+L.py+26,'−','ol:'+id+':-')}
   <g class="act" data-act="trp:${id}"><title>TEST</title><circle cx="${x+L.tx}" cy="${y+L.ty}" r="10" fill="#d8322b" stroke="#8a1c17"/><circle cx="${x+L.tx}" cy="${y+L.ty}" r="10" fill="url(#gDome)"/></g>${txt(x+L.tx,y+L.ty-13,'TEST',6.5,'#333',700)}
@@ -872,15 +884,17 @@ function olFace(d,L){const {x,y,w,h}=d,id=d.id,o=S.ol[id],tr=o.trip;
 function drawDev(d){const {x,y,w,h}=d;
   switch(d.type){
   case'mcb':{const on=S[d.id],P=d.poles,pw=w/P;let s=`<g class="act" data-act="${d.id}"><title>${d.id} (اضغط للفتح والإغلاق)</title>
-    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="#eef0f2" stroke="#9aa3aa"/>
-    <rect x="${x+2}" y="${y+2}" width="${w-4}" height="38" rx="4" fill="#e1e5e8"/><rect x="${x+2}" y="${y+h-40}" width="${w-4}" height="38" rx="4" fill="#e1e5e8"/>`;
-    for(let i=1;i<P;i++)s+=`<line x1="${x+pw*i}" y1="${y+2}" x2="${x+pw*i}" y2="${y+h-2}" stroke="#c3c9ce"/>`;
-    for(let i=0;i<P;i++){const cx=x+pw*i+pw/2;s+=hole(cx,y+18)+hole(cx,y+h-18);}
-    s+=`<rect x="${x+5}" y="${y+44}" width="${w-10}" height="2.5" fill="#1f8fd1"/>${txt(x+w/2,y+57,d.id+' '+d.rating,P>1?10:8.5,'#1c2b38',700)}`;
-    for(let i=0;i<P;i++){const cx=x+pw*i+pw/2;s+=`<rect x="${cx-4}" y="${y+62}" width="8" height="6" rx="1" fill="${on?'#1fa34a':'#c0392b'}"/>`;}
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="url(#gWht)" stroke="#9aa3aa"/>
+    <rect x="${x+2}" y="${y+2}" width="${w-4}" height="38" rx="4" fill="url(#gShd)"/><rect x="${x+2}" y="${y+h-40}" width="${w-4}" height="38" rx="4" fill="url(#gShd)"/>
+    <rect x="${x+2}" y="${y+39}" width="${w-4}" height="2" fill="#a9b1b7" opacity=".7"/><rect x="${x+2}" y="${y+h-41}" width="${w-4}" height="2" fill="#a9b1b7" opacity=".7"/>`;
+    for(let i=1;i<P;i++)s+=`<line x1="${x+pw*i}" y1="${y+2}" x2="${x+pw*i}" y2="${y+h-2}" stroke="#c3c9ce"/><line x1="${x+pw*i+1}" y1="${y+2}" x2="${x+pw*i+1}" y2="${y+h-2}" stroke="#fff" opacity=".8"/>`;
+    for(let i=0;i<P;i++){const cx=x+pw*i+pw/2;s+=cav(cx,y+18)+cav(cx,y+h-18);}
+    s+=`<rect x="${x+4}" y="${y+44}" width="${w-8}" height="16" rx="2" fill="url(#gBlu)"/><rect x="${x+4}" y="${y+44}" width="${w-8}" height="4" rx="2" fill="#fff" opacity=".22"/>${txt(x+w/2,y+56,d.id+' '+d.rating,P>1?10:8.5,'#fff',700)}`;
+    for(let i=0;i<P;i++){const cx=x+pw*i+pw/2;s+=`<rect x="${cx-4}" y="${y+62}" width="8" height="6" rx="1" fill="${on?'#1fa34a':'#c0392b'}" stroke="rgba(0,0,0,.35)" stroke-width=".6"/>`;}
     const ly=on?y+72:y+86;
-    for(let i=0;i<P;i++){const cx=x+pw*i+pw/2,lw=Math.min(26,pw-10);s+=`<rect x="${cx-lw/2}" y="${ly}" width="${lw}" height="24" rx="4" fill="#1f5fc4" stroke="#123f86"/><rect x="${cx-lw/2}" y="${ly}" width="${lw}" height="7" rx="3" fill="#fff" opacity=".25"/>${txt(cx,ly+17,on?'I':'O',10,'#fff',700)}`;}
-    if(P>1)s+=`<rect x="${x+6}" y="${ly+20}" width="${w-12}" height="9" rx="4" fill="#2466cf" stroke="#123f86"/>`;
+    for(let i=0;i<P;i++){const cx=x+pw*i+pw/2,lw=Math.min(26,pw-10);s+=`<rect x="${cx-lw/2-3}" y="${y+69}" width="${lw+6}" height="44" rx="4" fill="url(#gRec)" stroke="#9aa3aa" stroke-width=".8"/>`;}
+    for(let i=0;i<P;i++){const cx=x+pw*i+pw/2,lw=Math.min(26,pw-10);s+=`<rect x="${cx-lw/2}" y="${ly}" width="${lw}" height="24" rx="4" fill="url(#gLev)" stroke="#123f86"/><rect x="${cx-lw/2+2}" y="${ly+1}" width="${lw-4}" height="6" rx="3" fill="#fff" opacity=".3"/><path d="M${cx-lw/2+4} ${ly+20}h${lw-8}M${cx-lw/2+4} ${ly+22.5}h${lw-8}" stroke="#0f3a7c" stroke-width=".8" opacity=".7"/>${txt(cx,ly+17,on?'I':'O',10,'#fff',700)}`;}
+    if(P>1)s+=`<rect x="${x+6}" y="${ly+20}" width="${w-12}" height="9" rx="4" fill="url(#gBlu)" stroke="#123f86"/><rect x="${x+8}" y="${ly+21}" width="${w-16}" height="2.5" rx="1" fill="#fff" opacity=".3"/>`;
     return s+`</g>`;}
   case'station':{let s=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#d3d6d9" stroke="#555"/><line x1="${x+92}" y1="${y+44}" x2="${x+92}" y2="${y+h-10}" stroke="#aaa"/>${txt(x+w/2,y+20,'الأزرار ولمبات البيان',11,'#222',700)}${txt(x+w/2,y+35,'موصولة داخليًا بالشعب 7 إلى 32',8.5,'#555')}`;
     [['S0','#d8322b','إيقاف 1 NC'],['S1','#2aa84a','تشغيل 1'],['S2','#2aa84a','تشغيل 2'],['S3','#d8322b','إيقاف 2 NC'],['S4','#2aa84a','تشغيل 3 NO']].forEach(([id,c,cap],i)=>{const bx=x+46,by=y+72+i*66,pz=S.pressed.has(id);
@@ -949,26 +963,30 @@ function drawDev(d){const {x,y,w,h}=d;
   case'k':{const on=S.coils[d.id];let s='';
     for(let i=0;i<6;i++)s+=`<rect x="${x+6+i*21.5}" y="${y-6}" width="15" height="10" rx="2" fill="#2e3134"/>`;
     for(let i=0;i<6;i++)s+=`<rect x="${x+6+i*21.5}" y="${y+h-4}" width="15" height="10" rx="2" fill="#2e3134"/>`;
-    s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#eceeed" stroke="#8f959a"/>
-    <rect x="${x}" y="${y}" width="${w}" height="9" rx="4" fill="#383b3e"/><rect x="${x}" y="${y+h-9}" width="${w}" height="9" rx="4" fill="#383b3e"/>`;
-    DEFS.k.terms.forEach(t=>{if(t.dy>0)s+=hole(x+t.dx,y+t.dy);});
+    s+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="url(#gGry)" stroke="#8f959a"/>
+    <rect x="${x}" y="${y}" width="${w}" height="30" rx="5" fill="url(#gDrk)"/><rect x="${x}" y="${y+h-27}" width="${w}" height="27" rx="5" fill="url(#gDrk)"/>
+    <rect x="${x+2}" y="${y+1}" width="${w-4}" height="2" rx="1" fill="#fff" opacity=".18"/><rect x="${x}" y="${y+30}" width="${w}" height="3" fill="url(#gDown)" opacity=".6"/>`;
+    DEFS.k.terms.forEach(t=>{if(t.dy>0)s+=cav(x+t.dx,y+t.dy,8.5);});
     s+=`<path d="M${x+2} ${y-27}l6 -5h${w-4}l-6 5z" fill="#6a7076"/><path d="M${x+w-2} ${y-27}l6 -5v26l-6 5z" fill="#26292c"/>
-    <rect x="${x+2}" y="${y-27}" width="${w-4}" height="31" rx="3" fill="#3a3e42" stroke="#1d2023"/><rect x="${x+2}" y="${y-27}" width="${w-4}" height="5" rx="2" fill="#fff" opacity=".12"/>
-    ${hole(x+14,y-12)}${hole(x+90,y-12)}`;
-    s+=`<rect x="${x+w-34}" y="${y+44}" width="30" height="104" rx="3" fill="#dfe2e4" stroke="#aab0b4"/>${txt(x+w-19,y+62,'NO',8,'#333')}${txt(x+w-19,y+76,'13-14',7,'#333')}
-    <rect x="${x+w-29}" y="${y+96}" width="20" height="15" rx="2" fill="${on?'#2fbf5b':'#3a3f44'}"/>${txt(x+w-19,y+107,on?'I':'O',10,'#fff',700)}
-    <rect x="${x+26}" y="${y+46}" width="${w-66}" height="98" rx="5" fill="#474c51"/>
-    <rect x="${x+40}" y="${y+54}" width="${w-94}" height="58" rx="3" fill="#5c6269"/>
+    <rect x="${x+2}" y="${y-27}" width="${w-4}" height="31" rx="3" fill="url(#gDrk)" stroke="#1d2023"/><rect x="${x+2}" y="${y-27}" width="${w-4}" height="5" rx="2" fill="#fff" opacity=".14"/>
+    ${cav(x+14,y-12,9.5)}${cav(x+90,y-12,9.5)}`;
+    s+=`<rect x="${x+w-34}" y="${y+44}" width="30" height="104" rx="3" fill="url(#gShd)" stroke="#aab0b4"/>${txt(x+w-19,y+62,'NO',8,'#333')}${txt(x+w-19,y+76,'13-14',7,'#333')}
+    <rect x="${x+w-30}" y="${y+94}" width="22" height="19" rx="3" fill="url(#gWin)"/><rect x="${x+w-29}" y="${y+96}" width="20" height="15" rx="2" fill="${on?'#2fbf5b':'#3a3f44'}"/>${txt(x+w-19,y+107,on?'I':'O',10,'#fff',700)}
+    <rect x="${x+26}" y="${y+46}" width="${w-66}" height="98" rx="5" fill="url(#gWht)" stroke="#a3aab0"/>
+    <rect x="${x+26}" y="${y+46}" width="${w-66}" height="6" rx="3" fill="#fff" opacity=".6"/>
+    <rect x="${x+30}" y="${y+113}" width="${w-74}" height="3" rx="1" fill="#3dcd58"/>
+    <rect x="${x+38}" y="${y+52}" width="${w-90}" height="58" rx="3" fill="url(#gWin)" stroke="#0e1012"/>
     <rect x="${x+44}" y="${y+(on?70:60)}" width="${(w-102)/2}" height="30" rx="2" fill="#7f9fcf"/><rect x="${x+48+(w-102)/2}" y="${y+(on?70:60)}" width="${(w-102)/2}" height="30" rx="2" fill="#7f9fcf"/>
-    <rect x="${x+44}" y="${y+(on?70:60)}" width="${w-102+4}" height="6" fill="#fff" opacity=".18"/>
-    ${txt(x+26+(w-66)/2,y+133,d.id,18,'#fff',700)}
-    <rect x="${x+6}" y="${y+48}" width="16" height="60" rx="2" fill="#1f6fd1"/><text x="${x+14}" y="${y+78}" transform="rotate(-90 ${x+14} ${y+78})" class="dl" style="font-size:7px;fill:#fff;dominant-baseline:middle">230V 50Hz</text>`;
+    <rect x="${x+44}" y="${y+(on?70:60)}" width="${w-102+4}" height="6" fill="#fff" opacity=".25"/>
+    <rect x="${x+40}" y="${y+53}" width="${w-94}" height="10" rx="2" fill="#fff" opacity=".07"/>
+    ${txt(x+26+(w-66)/2,y+136,d.id,18,'#1f2a33',700)}
+    <rect x="${x+6}" y="${y+48}" width="16" height="60" rx="2" fill="url(#gBlu)"/><text x="${x+14}" y="${y+78}" transform="rotate(-90 ${x+14} ${y+78})" class="dl" style="font-size:7px;fill:#fff;dominant-baseline:middle">230V 50Hz</text>`;
     return s+delBtn(d);}
   case'timer':{const id=d.id,tm=S.tm[id],on=S.coils[id],dn=S.done[id],cx=x+52,cy=y+92,C=2*Math.PI*26;
     const frac=tm.start!=null?Math.min(1,(performance.now()-tm.start)/(tm.delay*1000)):(dn?1:0);
     const ang=-135+270*Math.min(1,(tm.delay-1)/59);
-    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="#f1f0ea" stroke="#8a8d90"/>${band(d)}
-    <circle cx="${cx}" cy="${cy}" r="31" fill="#fff" stroke="#999"/>
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="url(#gGry)" stroke="#8a8d90"/>${band(d)}
+    <circle cx="${cx}" cy="${cy}" r="34" fill="url(#gDrk)"/><circle cx="${cx}" cy="${cy}" r="31" fill="#fff" stroke="#999"/>
     <circle id="ktArc-${id}" cx="${cx}" cy="${cy}" r="26" fill="none" stroke="#ff9f1a" stroke-width="5" stroke-dasharray="${frac*C} ${C}" transform="rotate(-90 ${cx} ${cy})"/>
     <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-20}" stroke="#333" stroke-width="3" stroke-linecap="round" transform="rotate(${ang} ${cx} ${cy})"/>
     <text id="ktTxt-${id}" x="${cx}" y="${cy+48}" class="dl" style="font-size:13px">${tm.delay} ث</text>
@@ -978,8 +996,9 @@ function drawDev(d){const {x,y,w,h}=d;
     <circle cx="${x+128}" cy="${y+124}" r="6" fill="${dn?'#ffb000':'#bbb'}"/>${txt(x+128,y+142,'R',9)}${delBtn(d)}`;}
   case'ol':return olFace(d,{top:44,dx:34,dy:88,dr:19,px:70,py:66,tx:104,rx:140,ty:76,fx:160,fy:64,fw:44});
   case'aux':{const hd=(S.devs.find(q=>q.id===d.id)||{}).host,on=S.coils[hd];let s=`<rect x="${x-3}" y="${y+2}" width="8" height="${h-4}" rx="2" fill="#222"/><rect x="${x+w-5}" y="${y+2}" width="8" height="${h-4}" rx="2" fill="#222"/>
-    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="#f5f6f5" stroke="#8a8f93"/>`;
-    d.terms.forEach(t=>{s+=hole(x+t.dx,y+t.dy);});
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="url(#gWht)" stroke="#8a8f93"/>
+    <rect x="${x+1}" y="${y+1}" width="${w-2}" height="23" rx="4" fill="url(#gDrk)"/><rect x="${x+1}" y="${y+h-24}" width="${w-2}" height="23" rx="4" fill="url(#gDrk)"/>`;
+    d.terms.forEach(t=>{s+=cav(x+t.dx,y+t.dy,9.5);});
     s+=`<line x1="${x+4}" y1="${y+38}" x2="${x+w-4}" y2="${y+38}" stroke="#2f8fd1" stroke-width="1.4"/><line x1="${x+4}" y1="${y+68}" x2="${x+w-4}" y2="${y+68}" stroke="#2f8fd1" stroke-width="1.4"/>
     <rect x="${x+w/2-8}" y="${y+(on?47:42)}" width="16" height="20" rx="2" fill="#f6a01a" stroke="#a8600a"/><rect x="${x+w/2-8}" y="${y+(on?47:42)}" width="16" height="5" rx="2" fill="#fff" opacity=".35"/>
     <rect x="${x+w/2+14}" y="${y+46}" width="40" height="16" rx="2" fill="#fff" stroke="#d0d4d7"/>
