@@ -159,6 +159,11 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .gsel{width:100%;height:42px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);padding:0 8px;font-size:.95rem}
 .greq{background:var(--chip);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.88rem;line-height:1.7}
 .glock{background:color-mix(in srgb,var(--amber) 16%,transparent);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.86rem}
+.rvimgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin:8px 0}.rvimg{position:relative;border-radius:10px;overflow:hidden;background:#0c2753;line-height:0}
+.rvimg img{width:100%;height:auto;display:block}.rvimg svg{position:absolute;inset:0;width:100%;height:100%}.rvno{position:absolute;top:6px;inset-inline-start:6px;background:#000a;color:#fff;border-radius:8px;padding:2px 8px;font:700 .85rem/1.4 sans-serif}
+.rvdel{position:absolute;top:6px;inset-inline-end:6px;width:30px;height:30px;border-radius:50%;border:0;background:#d8322b;color:#fff;font-weight:700;cursor:pointer}
+.rvlist li{align-items:center}.rvlist li.rvu{background:color-mix(in srgb,var(--amber) 12%,transparent)}.rvlist li.hl{outline:3px solid var(--accent);outline-offset:-3px}
+.rvsel{height:34px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;font-size:.85rem;flex:none}
 .gscore{display:flex;align-items:center;gap:14px;margin:6px 0 10px}
 .gscore .big{font-size:2.3rem;font-weight:700;line-height:1;direction:ltr}
 .gscore .big small{font-size:1.1rem;color:var(--muted)}
@@ -346,6 +351,7 @@ body.fs{padding-bottom:0}
     <details class="more"><summary class="ib" title="المزيد" aria-label="المزيد">⋯</summary>
       <div class="menu">
         <button class="mi trainer-only" id="bResults">📋 نتائج المتدربين</button>
+        <button class="mi trainer-only" id="bReal">📷 تقييم لوحة حقيقية بالصور</button>
         <button class="mi trainer-only" id="bClrGrades">🧹 مسح الدرجات من هذا الجهاز</button>
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <a class="mi" id="bPneu2" style="text-decoration:none;color:inherit"><svg class="cylIc" viewBox="0 0 34 20" width="24" height="14" aria-hidden="true" style="direction:ltr;flex:none;vertical-align:middle" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="3" width="20" height="12"/><line x1="8" y1="3" x2="8" y2="15" stroke-width="3"/><line x1="8" y1="9" x2="32.5" y2="9" stroke-width="2.2"/><polyline points="9.5,9 11,4.5 13,13.5 15,4.5 17,13.5 19,4.5 20.5,9" stroke-width="1.1"/><line x1="4.5" y1="15" x2="4.5" y2="19"/></svg> ورشة التحكم الهوائي</a>
@@ -443,6 +449,12 @@ body.fs{padding-bottom:0}
     <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
+  </div>
+</div>
+<div class="modal" id="realModal" role="dialog" aria-modal="true" aria-labelledby="rvT">
+  <div class="box appbox" style="max-width:760px">
+    <div class="ah"><h2 id="rvT">📷 تقييم لوحة حقيقية بالصور</h2><button class="btn" id="rvClose">إغلاق</button></div>
+    <div id="rvBody"></div>
   </div>
 </div>
 <div class="modal" id="plcModal" role="dialog" aria-modal="true" aria-labelledby="plcT">
@@ -2595,7 +2607,7 @@ $('imgDl').onclick=async()=>{if(!IMG.b){$('imgMsg').textContent='انتظر اك
 $('rList').addEventListener('click',async e=>{const im=e.target.closest('[data-rimg]');if(im){const r=RS.rows.find(x=>x.uid===im.dataset.rimg);if(r)showImg(r);return;}
   const o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
   if(d)return arm(d,()=>rDelete([d.dataset.rdel]));
-  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);if(!r)return;try{const ob=await decodeCode(r.code);snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);rM.classList.remove('open');update();}catch(_){$('rMsg').textContent='تعذّر فتح هذه التجربة.';}}});
+  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);if(!r)return;if(!r.code)return showImg(r);try{const ob=await decodeCode(r.code);snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);rM.classList.remove('open');update();}catch(_){$('rMsg').textContent='تعذّر فتح هذه التجربة.';}}});
 $('rCsv').onclick=async()=>{if(!RS.rows.length){$('rMsg').textContent='حمّل النتائج أولًا.';return;}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const csv='﻿'+[['الاسم','الرقم التدريبي','التمرين','الدرجة من 20','إعادة الفحص','الوقت'].map(q).join(',')].concat(RS.rows.map(r=>[r.n,r.id,exName(r.ex),r.s,RS.chk[r.uid]==null?'':RS.chk[r.uid],fmtT(r.t)].map(q).join(','))).join('\r\n');
@@ -3258,6 +3270,163 @@ function sdOpen(on,ex){SD.open=on;if(ex)SD.ex=ex;const W=document.getElementById
   H.addEventListener('pointerdown',e=>{if(SD.big||e.target.closest('button,select'))return;const r=W.getBoundingClientRect();dg={dx:e.clientX-r.left,dy:e.clientY-r.top};try{H.setPointerCapture(e.pointerId);}catch(_){}});
   H.addEventListener('pointermove',e=>{if(!dg)return;SD.x=e.clientX-dg.dx;SD.y=e.clientY-dg.dy;W.style.left=Math.max(0,Math.min(innerWidth-120,SD.x))+'px';W.style.top=Math.max(0,Math.min(innerHeight-80,SD.y))+'px';W.style.bottom='auto';});
   const hu=()=>{if(dg){dg=null;sdSave();}};H.addEventListener('pointerup',hu);H.addEventListener('pointercancel',hu);}
+
+/* ===== real panel evaluator (trainer): photos of a real panel -> Claude reads the wiring -> same grading idea as the simulator ===== */
+{const RV={imgs:[],res:null,dec:{},xdec:{},busy:false,ex:''},rvM=$('realModal'),AIK='wsAiKey',SDK_URL='https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.131.0/+esm';
+  let SDK=null;const sdk=async()=>SDK||(SDK=(await import(SDK_URL)).default);
+  const aiKey=()=>{try{return localStorage.getItem(AIK)||'';}catch(_){return '';}};
+  const GRPN=n=>{const g=GROUPS.find(g=>n>=g.from&&n<=g.to2);return g?g.name+' '+g.tags[n-g.from]:'';};
+  /* terminal name a trainer would read on the real panel */
+  function rvDesc(k){const i=k.indexOf('.'),id=k.slice(0,i),t=k.slice(i+1);let m;
+    if(id==='Q1')return 'القاطع الرئيسي Q1 طرف '+t;if(id==='F1')return 'قاطع التحكم F1 طرف '+t;
+    if(id==='X1'){m=/^(\d+)(b?)$/.exec(t);if(m){const n=+m[1];return 'ترمنال X1 رقم '+n+(m[2]?' (الجهة السفلية نحو المحرك)':'')+' ['+(n<=6&&DAHLX.has(RV.ex)?'المحرك '+DLN[['U1','V1','W1','U2','V2','W2'][n-1]]:GRPN(n))+']';}}
+    if(id==='M1'||id==='M2')return 'علبة أطراف المحرك '+id+' الطرف '+(id==='M1'&&DAHLX.has(RV.ex)?DLN[t]||t:t);
+    if(id==='XP'){if(/^I\d$/.test(t))return 'جهاز easy المدخل '+t;m=/^Q(\d)_(\d)$/.exec(t);if(m)return 'جهاز easy المخرج Q'+m[1]+' الطرف '+m[2];}
+    if(/^K\d+A$/.test(id))return 'الكتلة المساعدة المركبة على '+id.slice(0,-1)+' الطرف '+t+(/^(53|54|83|84)$/.test(t)?' (NO)':' (NC)');
+    if(/^KT\d+$/.test(id))return 'المؤقت '+id+' الطرف '+t;
+    if(/^K\d+$/.test(id))return 'الكونتاكتور '+id+(t==='A1'||t==='A2'?' طرف الملف '+t:/^(13|14)$/.test(t)?' التلامس المساعد NO '+t:/^(21|22)$/.test(t)?' التلامس المساعد NC '+t:' طرف القوى '+t);
+    if(/^F\d+$/.test(id))return 'الأوفرلود '+id+' الطرف '+t;
+    return k;}
+  /* approved connections of the exercise, as the simulator grades them (duplicates and pre-wired links removed) */
+  function rvRef(ex){const all=[...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21k(a),m21k(b)]),D=devsFromWires(all,{d:5}),u=makeUF(),seen=new Set(),L=[];
+    staticLinks(D).forEach(([a,b])=>u.union(a,b));
+    all.forEach(([a,b])=>{if(a===b||u.find(a)===u.find(b))return;const k=[a,b].sort().join('|');if(seen.has(k))return;seen.add(k);L.push({a,b,lamp:isLampW([a,b],ex)});});
+    return L.map((w,i)=>({...w,n:i+1}));}
+  const SPOT={type:'object',additionalProperties:false,required:['img','x','y','r'],properties:{img:{type:'integer',description:'رقم الصورة يبدأ من 1'},x:{type:'number',description:'0..1 من عرض الصورة'},y:{type:'number',description:'0..1 من ارتفاع الصورة'},r:{type:'number',description:'نصف القطر 0..1 من عرض الصورة'}}};
+  const SCHEMA={type:'object',additionalProperties:false,required:['summary','items','extras'],properties:{
+    summary:{type:'string'},
+    items:{type:'array',items:{type:'object',additionalProperties:false,required:['n','status','note','spots'],properties:{n:{type:'integer'},status:{type:'string',enum:['ok','missing','wrong','unclear']},note:{type:'string'},spots:{type:'array',items:SPOT}}}},
+    extras:{type:'array',items:{type:'object',additionalProperties:false,required:['desc','spots'],properties:{desc:{type:'string'},spots:{type:'array',items:SPOT}}}}}};
+  const ZOOM={name:'zoom',description:'يقص جزءًا من إحدى الصور بالدقة الكاملة ويعيده مكبرًا، لقراءة أرقام الأطراف ومسار الأسلاك. الإحداثيات من 0 إلى 1 نسبة إلى عرض الصورة وارتفاعها.',strict:true,
+    input_schema:{type:'object',additionalProperties:false,required:['img','x0','y0','x1','y1'],properties:{img:{type:'integer'},x0:{type:'number'},y0:{type:'number'},x1:{type:'number'},y1:{type:'number'}}}};
+  function rvPrompt(ex,ref){const plc=PLCX.has(ex);
+    return `أنت مدرب كهرباء خبير تقيّم لوحة تحكم حقيقية نفّذها متدرب، من الصور المرفقة (${RV.imgs.length} صورة، مرقمة من 1).
+التمرين: ${PNAME[ex]}.
+المطلوب في التمرين: ${GREQ[ex]}
+
+اللوحة مثل لوحة المحاكي: قاطع رئيسي Q1، وقاطع تحكم F1، وكونتاكتورات K1 وK2 ...، وكتلة نقاط مساعدة تُركّب على الكونتاكتور (اسمها في القائمة Kn A، وأطرافها 53-54 و83-84 مفتوحة NO و61-62 و71-72 مغلقة NC)، وأوفرلودات F تُركّب أسفل الكونتاكتور مباشرة، ومؤقتات KT، وترمنال سفلي X1 مرقم من 1 إلى 36 تصل إليه الضواغط واللمبات والمحرك من الداخل (المجموعات: ${GROUPS.map(g=>g.name+' '+g.from+'-'+g.to2).join('، ')}).${plc?' وجهاز easy له مداخل I1-I8 ومخارج Q1-Q4 بطرفين (1 و2).':''}${DAHLX.has(ex)?' المحرك M1 محرك دالندر بأطراف 1U 1V 1W و2U 2V 2W.':''}
+توصيلات مسبقة لا تُقيّم: Q1.5 مع F1.1، والجهتان العلوية والسفلية لنفس ترمنال X1، وشعب التعادل 33-36 فيما بينها، والأوفرلود المركب على كونتاكتور يتصل بأطراف خرجه من الداخل.
+
+قائمة التوصيلات المعتمدة (كل سطر سلك واحد في المخطط المعتمد)، وما عليه [لمبة] درجة إضافية:
+${ref.map(w=>`#${w.n}: ${rvDesc(w.a)}  ⟷  ${rvDesc(w.b)}${w.lamp?' [لمبة]':''}`).join('\n')}
+
+طريقة التقييم:
+- لكل توصيلة في القائمة حدد الحالة: ok إذا رأيت أن النقطتين موصولتان كهربائيًا فعلًا، وmissing إذا كانت غير موصولة، وwrong إذا وُصلت إحداهما بمكان خطأ، وunclear إذا لم تستطع التأكد (سلك مخفي أو متشابك، رقم طرف غير مقروء، صورة غير واضحة، أو الجزء خارج الصور).
+- لا تخمّن. عند أي شك اختر unclear. التقييم يعتمد عليك، والمدرب سيراجع النقاط غير الواضحة بنفسه.
+- التوصيلة صحيحة إذا كانت النقطتان على نفس العقدة الكهربائية ولو بترتيب أسلاك مختلف (مثلًا جسر متسلسل بترتيب آخر). ويُقبل أي تلامس مساعد حر من نفس النوع على نفس الكونتاكتور (NO: 13-14 أو 53-54 أو 83-84، وNC: 21-22 أو 61-62 أو 71-72).
+- استخدم أداة zoom بكثرة لتكبير الكونتاكتورات والترمنال وقراءة أرقام الأطراف ومتابعة الأسلاك قبل الحكم.
+- spots: لكل توصيلة unclear أو wrong أو missing ضع دائرة واحدة على الأقل في مكان المشكلة في الصورة (مركز الدائرة x وy من 0 إلى 1، ونصف القطر r بين 0.02 و0.08 من عرض الصورة). للتوصيلة ok اترك spots فارغة.
+- extras: أي سلك موجود في اللوحة وليس في القائمة ولا يكافئ توصيلة منها (سلك زائد أو خاطئ)، مع وصف قصير ودائرة على مكانه. لا تذكر أسلاكًا لست متأكدًا أنها زائدة.
+- note: ملاحظة قصيرة جدًا بالعربية لكل توصيلة (فارغة إذا كانت ok وواضحة).
+- summary: ملخص بالعربية في سطرين عن جودة التنفيذ وأهم الأخطاء.
+أعد عنصرًا واحدًا لكل رقم من 1 إلى ${ref.length}.`;}
+  /* photos: a downscaled copy goes to the model; zoom crops come from the full-resolution photo */
+  const loadImg=f=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>res({im:i,url:u,name:f.name});i.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'));};i.src=u;});
+  function jpeg(im,sx,sy,sw,sh,max){const k=Math.min(1,max/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw*k));c.height=Math.max(1,Math.round(sh*k));
+    c.getContext('2d').drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.85).split(',')[1];}
+  const imgBlock=b64=>({type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}});
+  function zoomRes(inp){const P=RV.imgs[(inp.img|0)-1];if(!P)return [{type:'text',text:'رقم صورة غير موجود'}];
+    const cl=v=>Math.min(1,Math.max(0,+v||0)),W=P.im.naturalWidth,H=P.im.naturalHeight;let x0=cl(Math.min(inp.x0,inp.x1)),x1=cl(Math.max(inp.x0,inp.x1)),y0=cl(Math.min(inp.y0,inp.y1)),y1=cl(Math.max(inp.y0,inp.y1));
+    if(x1-x0<.02){x0=Math.max(0,x0-.01);x1=Math.min(1,x1+.01);}if(y1-y0<.02){y0=Math.max(0,y0-.01);y1=Math.min(1,y1+.01);}
+    return [imgBlock(jpeg(P.im,x0*W,y0*H,(x1-x0)*W,(y1-y0)*H,1200)),{type:'text',text:`صورة ${inp.img}، المنطقة x ${x0.toFixed(2)}-${x1.toFixed(2)}، y ${y0.toFixed(2)}-${y1.toFixed(2)}`}];}
+  async function rvRun(){const ex=RV.ex,key=aiKey();const msg=t=>{$('rvMsg').textContent=t;};
+    if(!ex)return msg('اختر التمرين أولًا.');if(!RV.imgs.length)return msg('أضف صورة واحدة على الأقل للوحة.');if(!key){$('rvSet').open=true;$('rvKey').focus();return msg('اكتب مفتاح Claude API أولًا.');}
+    RV.busy=true;rvRender();const ref=rvRef(ex);
+    try{msg('جارٍ تحميل أداة الذكاء الاصطناعي…');const Anthropic=await sdk();const client=new Anthropic({apiKey:key,dangerouslyAllowBrowser:true});
+      const content=[];RV.imgs.forEach((P,i)=>{content.push({type:'text',text:'الصورة '+(i+1)+':'},imgBlock(jpeg(P.im,0,0,P.im.naturalWidth,P.im.naturalHeight,1568)));});
+      content.push({type:'text',text:rvPrompt(ex,ref)});
+      const messages=[{role:'user',content}];let final=null,zooms=0;
+      for(let turn=0;turn<25&&!final;turn++){msg(zooms?`يفحص Claude تفاصيل اللوحة… (تكبير ${zooms})`:'يفحص Claude صور اللوحة… قد يستغرق دقيقة أو أكثر.');
+        const r=await client.beta.messages.stream({model:'claude-opus-5-5',max_tokens:32000,thinking:{type:'adaptive'},output_config:{effort:'high',format:{type:'json_schema',schema:SCHEMA}},
+          betas:['server-side-fallback-2026-07-01'],fallbacks:'default',tools:[ZOOM],messages}).finalMessage();
+        if(r.stop_reason==='refusal')throw new Error('refusal');
+        if(r.stop_reason==='max_tokens')throw new Error('long');
+        messages.push({role:'assistant',content:r.content});
+        const uses=r.content.filter(b=>b.type==='tool_use');
+        if(r.stop_reason==='tool_use'&&uses.length){zooms+=uses.length;messages.push({role:'user',content:uses.map(u=>({type:'tool_result',tool_use_id:u.id,content:u.name==='zoom'?zoomRes(u.input||{}):[{type:'text',text:'أداة غير معروفة'}]}))});continue;}
+        if(r.stop_reason==='pause_turn')continue;
+        const txt=r.content.filter(b=>b.type==='text').map(b=>b.text).join('');final=JSON.parse(txt);}
+      if(!final)throw new Error('long');
+      const byN={};(final.items||[]).forEach(it=>{if(it&&ref[it.n-1])byN[it.n]=it;});
+      const spots=a=>(Array.isArray(a)?a:[]).filter(s=>s&&RV.imgs[(s.img|0)-1]).map(s=>({img:s.img|0,x:Math.min(1,Math.max(0,+s.x||0)),y:Math.min(1,Math.max(0,+s.y||0)),r:Math.min(.15,Math.max(.012,+s.r||.04))}));
+      RV.res={ex,ref,summary:String(final.summary||''),items:ref.map(w=>{const it=byN[w.n]||{status:'unclear',note:'لم يُذكر في الرد',spots:[]};return{...w,st:['ok','missing','wrong','unclear'].includes(it.status)?it.status:'unclear',note:String(it.note||''),spots:spots(it.spots)};}),
+        extras:(final.extras||[]).map((x,i)=>({i:i+1,desc:String(x.desc||''),spots:spots(x.spots)})),t:Date.now()};
+      RV.dec={};RV.xdec={};msg('');}
+    catch(e){const A=SDK;msg(e.message==='refusal'?'رفض النموذج إكمال الطلب. جرّب صورًا أخرى.':e.message==='long'?'لم يكتمل التقييم (الرد طويل جدًا). قلّل عدد الصور أو قرّبها.':
+      A&&e instanceof A.AuthenticationError?'مفتاح Claude API غير صحيح.':A&&e instanceof A.RateLimitError?'تجاوزت حد الاستخدام. انتظر قليلًا ثم أعد المحاولة.':A&&e instanceof A.APIConnectionError?'تعذّر الاتصال بخادم Claude. تأكد من الإنترنت.':
+      A&&e instanceof A.APIError?'خطأ من خادم Claude ('+(e.status||'')+'): '+(e.message||''):e instanceof SyntaxError?'رد غير مفهوم من النموذج. أعد المحاولة.':String(e&&e.message||e).includes('import')||String(e).includes('fetch')?'تعذّر تحميل أداة Claude. تأكد من الإنترنت.':'تعذّر التقييم: '+(e&&e.message||e));}
+    finally{RV.busy=false;rvRender();}}
+  /* decisions: AI status gives the default, the trainer can change any line; "skip" leaves it out of the total */
+  const defDec=it=>it.st==='ok'?'ok':it.st==='unclear'?'skip':'bad',dec=it=>RV.dec[it.n]||defDec(it),xd=x=>RV.xdec[x.i]||'bad';
+  function rvScore(){const R=RV.res;if(!R)return null;const plc=PLCX.has(R.ex),main=R.items.filter(i=>!i.lamp&&dec(i)!=='skip'),lamps=R.items.filter(i=>i.lamp&&dec(i)!=='skip');
+    const ok=main.filter(i=>dec(i)==='ok').length,tot=main.length,bad=R.extras.filter(x=>xd(x)==='bad').length,wr=tot+bad?ok/(tot+bad):0;
+    const lr=lamps.length?lamps.filter(i=>dec(i)==='ok').length/lamps.length:null,lb=lr==null?0:LAMP_BONUS*lr;
+    const pv=String(RV.pv||'').trim(),pg=Math.min(10,Math.max(0,+pv||0));
+    const s=Math.min(20,gUp((plc?10*wr+pg:20*wr)+lb,1));
+    return{s,ok,tot,bad,wr,lr,lb:gUp(lb,10),plc,pg,pv,skip:R.items.filter(i=>dec(i)==='skip').length};}
+  const COL={ok:'#1a8a42',bad:'#d8322b',skip:'#d99000'};
+  function circles(i){const R=RV.res;if(!R)return '';let s='';
+    R.items.forEach(it=>it.spots.filter(p=>p.img===i+1).forEach(p=>{const d=dec(it),c=COL[d];s+=`<g data-rvgo="n${it.n}" style="cursor:pointer"><circle cx="${p.x*1000}" cy="${p.y*1000*RV.imgs[i].ar}" r="${p.r*1000}" fill="none" stroke="${c}" stroke-width="6"${d==='skip'?' stroke-dasharray="14 9"':''}/><text x="${p.x*1000+p.r*1000+4}" y="${p.y*1000*RV.imgs[i].ar-p.r*700}" style="font:700 30px sans-serif;fill:${c};paint-order:stroke;stroke:#fff;stroke-width:6px">${it.n}</text></g>`;}));
+    R.extras.forEach(x=>x.spots.filter(p=>p.img===i+1).forEach(p=>{const d=xd(x),c=d==='skip'?COL.skip:COL.bad;s+=`<g data-rvgo="x${x.i}" style="cursor:pointer"><circle cx="${p.x*1000}" cy="${p.y*1000*RV.imgs[i].ar}" r="${p.r*1000}" fill="none" stroke="${c}" stroke-width="6"${d==='skip'?' stroke-dasharray="14 9"':''}/><text x="${p.x*1000+p.r*1000+4}" y="${p.y*1000*RV.imgs[i].ar-p.r*700}" style="font:700 30px sans-serif;fill:${c};paint-order:stroke;stroke:#fff;stroke-width:6px">+${x.i}</text></g>`;}));
+    return s;}
+  const ST={ok:'✔',missing:'✖ ناقصة',wrong:'✖ خاطئة',unclear:'◯ غير واضحة'};
+  const sel=(attr,v)=>`<select ${attr} class="rvsel"><option value="ok"${v==='ok'?' selected':''}>صحيحة</option><option value="bad"${v==='bad'?' selected':''}>خاطئة</option><option value="skip"${v==='skip'?' selected':''}>تجاوز</option></select>`;
+  function rvRender(){const R=RV.res,G=rvScore(),tr=document.body.classList.contains('trainer');let h='';
+    h+=`<label style="font-size:.88rem;color:var(--muted)">التمرين المنفذ<select class="gsel" id="rvEx"${RV.busy?' disabled':''}><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===RV.ex?' selected':''}>${i+1}. ${PNAME[k]}</option>`).join('')}</select></label>`;
+    h+=`<div class="rvimgs">${RV.imgs.map((P,i)=>`<div class="rvimg"><img src="${P.url}" alt="صورة ${i+1}"><svg viewBox="0 0 1000 ${Math.round(1000*P.ar)}" preserveAspectRatio="none">${circles(i)}</svg><span class="rvno">${i+1}</span>${RV.busy?'':`<button class="rvdel" data-rvdel="${i}" title="حذف الصورة" aria-label="حذف الصورة ${i+1}">✕</button>`}</div>`).join('')}</div>`;
+    if(!R)h+=`<div class="sbtns"><button class="btn" id="rvCam"${RV.busy||RV.imgs.length>=4?' disabled':''}>📷 التقاط صورة</button><button class="btn" id="rvPick"${RV.busy||RV.imgs.length>=4?' disabled':''}>🖼 تحميل صور</button></div>
+      <p class="greq">صوّر اللوحة كاملة بوضوح، ثم صورًا قريبة للكونتاكتورات والترمنال X1 (حتى 4 صور). يقرأ Claude التوصيلات ويقارنها بتوصيلات المخطط المعتمد مثل تقييم المحاكي، ويضع دائرة على كل نقطة لم يتأكد منها.</p>`;
+    if(RV.ex&&PLCX.has(RV.ex))h+=`<div class="fld"><label>درجة البرنامج في جهاز easy (يقدّرها المدرب من 10)<input id="rvProg" type="number" min="0" max="10" step="0.5" inputmode="decimal" value="${esc(G?G.pv:RV.pv||'')}"></label></div>`;
+    h+=`<details id="rvSet"${aiKey()?'':' open'}><summary style="cursor:pointer;font-size:.88rem;color:var(--muted)">⚙ مفتاح Claude API ${aiKey()?'(محفوظ على هذا الجهاز)':''}</summary><div class="fld" style="margin-top:6px"><label>المفتاح يُحفظ على هذا الجهاز فقط ويُرسل مباشرة إلى Claude<input id="rvKey" type="password" autocomplete="off" placeholder="sk-ant-..." value="${esc(aiKey())}"></label></div></details>`;
+    if(!R)h+=`<div class="sbtns"><button class="btn prim" id="rvGo"${RV.busy?' disabled':''}>${RV.busy?'⏳ جارٍ التقييم…':'🤖 قيّم اللوحة'}</button></div>`;
+    h+=`<p id="rvMsg" class="astat" aria-live="polite">${esc($('rvMsg')?$('rvMsg').textContent:'')}</p>`;
+    if(R&&G){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)';
+      h+=`<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
+      ${R.summary?`<div class="greq">${esc(R.summary)}</div>`:''}
+      <p class="gmeta">التوصيل: ${G.plc?'10':'20'} × ${G.ok} صحيحة ÷ (${G.tot} محسوبة + ${G.bad} زائدة)${G.plc?` + البرنامج ${G.pg}${G.pv===''?' (لم تُكتب درجته)':''}`:''}${G.lr!=null?` + لمبات ${G.lb}`:''} = ${G.s} من 20. النقاط المتجاوزة (${G.skip}) لا تدخل في الحساب. الدوائر البرتقالية المتقطعة نقاط غير واضحة متجاوزة، غيّر حالتها من القائمة بعد التحقق بنفسك.</p>
+      <ul class="glist rvlist">${R.items.map(it=>{const d=dec(it);return `<li id="rvn${it.n}" class="${d==='bad'?'no':''}${it.st==='unclear'?' rvu':''}"><span dir="ltr" style="min-width:2.2em;font-weight:700">#${it.n}</span><span style="flex:1">${esc(rvDesc(it.a))} ⟷ ${esc(rvDesc(it.b))}${it.lamp?' <small>(لمبة)</small>':''}<br><small style="color:var(--muted)">${ST[it.st]}${it.note?' · '+esc(it.note):''}</small></span>${sel(`data-rvn="${it.n}"`,d)}</li>`;}).join('')}
+      ${R.extras.map(x=>`<li id="rvx${x.i}" class="${xd(x)==='bad'?'no':''}"><span dir="ltr" style="min-width:2.2em;font-weight:700">+${x.i}</span><span style="flex:1">سلك زائد أو خاطئ: ${esc(x.desc)}</span><select data-rvx="${x.i}" class="rvsel"><option value="bad"${xd(x)==='bad'?' selected':''}>خاطئ</option><option value="skip"${xd(x)==='skip'?' selected':''}>تجاوز</option></select></li>`).join('')}</ul>
+      <div class="fld" style="margin-top:10px"><label>اسم المتدرب<input id="rvN" value="${esc(RV.n||'')}"></label><label>الرقم التدريبي<input id="rvId" inputmode="numeric" value="${esc(RV.id||'')}"></label></div>
+      <div class="sbtns"><button class="btn" id="rvDl">⬇ تنزيل التقرير</button>${CLOUD_ON?'<button class="btn" id="rvSave">📤 حفظ في نتائج المتدربين</button>':''}<button class="btn" id="rvNew" style="grid-column:1/-1">↺ تقييم لوحة أخرى</button></div>`;}
+    $('rvBody').innerHTML=h;}
+  /* report image: photos with the circles, score and the list of problems */
+  async function rvReport(){const R=RV.res,G=rvScore(),W=1100,pad=24,ims=RV.imgs.map(P=>({P,h:Math.round(W*P.ar)}));
+    const probs=R.items.filter(i=>dec(i)!=='ok').map(i=>(dec(i)==='skip'?'◯ ':'✖ ')+'#'+i.n+' '+rvDesc(i.a)+' ⟷ '+rvDesc(i.b)).concat(R.extras.filter(x=>xd(x)==='bad').map(x=>'✖ +'+x.i+' '+x.desc));
+    const c=document.createElement('canvas'),g=c.getContext('2d');c.width=W+2*pad;c.height=150+ims.reduce((a,b)=>a+b.h+pad,0)+probs.length*30+40;
+    g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.direction='rtl';g.textAlign='right';g.fillStyle='#15202b';g.font='700 30px "IBM Plex Sans Arabic",sans-serif';
+    g.fillText('تقييم لوحة حقيقية: '+PNAME[R.ex],c.width-pad,50);g.font='500 24px "IBM Plex Sans Arabic",sans-serif';
+    g.fillText((RV.n?RV.n+' · '+(RV.id||'')+' · ':'')+'الدرجة '+G.s+' من 20 · '+new Date(R.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'}),c.width-pad,95);
+    let y=130;for(const [i,{P,h}] of ims.entries()){g.drawImage(P.im,pad,y,W,h);const s=W/1000,draw=(p,col,dash,lb)=>{g.save();g.strokeStyle=col;g.lineWidth=5;g.setLineDash(dash?[14,9]:[]);g.beginPath();g.arc(pad+p.x*W,y+p.y*W*P.ar,p.r*W,0,7);g.stroke();g.restore();
+        g.font='700 28px sans-serif';g.textAlign='left';g.lineWidth=6;g.strokeStyle='#fff';g.strokeText(lb,pad+p.x*W+p.r*W+4,y+p.y*W*P.ar-p.r*W*.7);g.fillStyle=col;g.fillText(lb,pad+p.x*W+p.r*W+4,y+p.y*W*P.ar-p.r*W*.7);g.textAlign='right';};
+      R.items.forEach(it=>it.spots.filter(p=>p.img===i+1).forEach(p=>draw(p,COL[dec(it)],dec(it)==='skip',String(it.n))));
+      R.extras.forEach(x=>x.spots.filter(p=>p.img===i+1).forEach(p=>draw(p,xd(x)==='skip'?COL.skip:COL.bad,xd(x)==='skip','+'+x.i)));y+=h+pad;void s;}
+    g.fillStyle='#15202b';g.font='500 21px "IBM Plex Sans Arabic",sans-serif';probs.forEach(t=>{g.fillText(t,c.width-pad,y+20);y+=30;});
+    return new Promise(r=>c.toBlob(r,'image/jpeg',.85));}
+  async function rvSave(){const n=($('rvN').value||'').trim(),id=($('rvId').value||'').trim(),msg=t=>{$('rvMsg').textContent=t;};
+    if(!n||!id)return msg('اكتب اسم المتدرب ورقمه التدريبي أولًا.');RV.n=n;RV.id=id;const G=rvScore();msg('جارٍ الحفظ…');
+    try{const b=await rvReport(),u=URL.createObjectURL(b),im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});URL.revokeObjectURL(u);
+      const j=await cloud({action:'submit',n,id,ex:RV.res.ex,s:G.s,code:'',rv:1,img:jpeg(im,0,0,im.naturalWidth,im.naturalHeight,1000),th:jpeg(im,0,0,im.naturalWidth,im.naturalHeight,220)});
+      msg('✔ حُفظ التقييم في نتائج المتدربين. رقم المرجع: '+j.uid);}
+    catch(e){msg(e.message==='net'?'لا يوجد اتصال بالإنترنت. نزّل التقرير بدلًا من ذلك.':'تعذّر الحفظ في خادم Google'+(e.srv?': '+e.srv:'')+'.');}}
+  const pickIn=document.createElement('input'),camIn=document.createElement('input');[pickIn,camIn].forEach(x=>{x.type='file';x.accept='image/*';x.hidden=true;document.body.appendChild(x);});pickIn.multiple=true;camIn.setAttribute('capture','environment');
+  const addFiles=async fl=>{for(const f of [...fl].slice(0,4-RV.imgs.length)){try{const P=await loadImg(f);P.ar=P.im.naturalHeight/P.im.naturalWidth;RV.imgs.push(P);}catch(_){$('rvMsg').textContent='تعذّر فتح إحدى الصور.';}}rvRender();};
+  [pickIn,camIn].forEach(x=>x.onchange=()=>{addFiles(x.files);x.value='';});
+  $('bReal').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;if(!RV.ex&&S.pex&&PNAME[S.pex])RV.ex=S.pex;rvM.classList.add('open');rvRender();};
+  $('rvClose').onclick=()=>rvM.classList.remove('open');rvM.addEventListener('click',e=>{if(e.target===rvM&&!RV.busy)rvM.classList.remove('open');});
+  rvM.addEventListener('change',e=>{const t=e.target;
+    if(t.id==='rvEx'){RV.ex=t.value;if(RV.res&&RV.res.ex!==RV.ex)RV.res=null;rvRender();}
+    else if(t.id==='rvKey'){try{const v=t.value.trim();v?localStorage.setItem(AIK,v):localStorage.removeItem(AIK);}catch(_){}}
+    else if(t.dataset.rvn){RV.dec[t.dataset.rvn]=t.value;rvRender();const el=$('rvn'+t.dataset.rvn);if(el)el.scrollIntoView({block:'nearest'});}
+    else if(t.dataset.rvx){RV.xdec[t.dataset.rvx]=t.value;rvRender();}
+    else if(t.id==='rvProg'){RV.pv=t.value;rvRender();}
+    else if(t.id==='rvN')RV.n=t.value;else if(t.id==='rvId')RV.id=t.value;});
+  rvM.addEventListener('click',async e=>{const b=e.target.closest('button,[data-rvgo]');if(!b||RV.busy&&b.id!=='rvClose')return;
+    if(b.dataset.rvgo){const el=$('rv'+b.dataset.rvgo);if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('hl');setTimeout(()=>el.classList.remove('hl'),1500);}return;}
+    if(b.dataset.rvdel){const P=RV.imgs.splice(+b.dataset.rvdel,1)[0];if(P)URL.revokeObjectURL(P.url);RV.res=null;rvRender();return;}
+    if(b.id==='rvPick')pickIn.click();else if(b.id==='rvCam')camIn.click();else if(b.id==='rvGo')rvRun();else if(b.id==='rvSave')rvSave();
+    else if(b.id==='rvNew'){RV.imgs.forEach(P=>URL.revokeObjectURL(P.url));Object.assign(RV,{imgs:[],res:null,dec:{},xdec:{},n:'',id:'',pv:''});rvRender();}
+    else if(b.id==='rvDl'){RV.n=($('rvN').value||'').trim();RV.id=($('rvId').value||'').trim();const r=await saveBlob(await rvReport(),'تقييم-لوحة-'+(RV.id||RV.res.ex)+'.jpg');$('rvMsg').textContent=r==='saved'?'نُزّل التقرير.':r==='declined'?'':'التنزيل غير متاح هنا.';}});
+}
 
 /* ===== تطبيق قابل للتثبيت + طابور إرسال دون إنترنت ===== */
 let _qP=null;
