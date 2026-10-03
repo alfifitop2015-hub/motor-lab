@@ -391,6 +391,7 @@ body.fs{padding-bottom:0}
         <option value="p6">6. نجمة / دلتا يدوي</option>
         <option value="p7">7. نجمة / دلتا بمؤقت</option>
         <option value="p15">15. عكس حركة مع نهايتي مشوار</option>
+        <option value="p16">16. محرك دالندر بسرعتين (تحكم تقليدي)</option>
         <optgroup label="مع جهاز التحكم المبرمج easy">
         <option value="p8">8. تشغيل محرك من مكان واحد (easy)</option>
         <option value="p9">9. تشغيل محرك من مكانين (easy)</option>
@@ -399,6 +400,7 @@ body.fs{padding-bottom:0}
         <option value="p12">12. عكس حركة سريع (easy)</option>
         <option value="p13">13. نجمة / دلتا يدوي (easy)</option>
         <option value="p14">14. نجمة / دلتا بمؤقت (easy)</option>
+        <option value="p17">17. محرك دالندر بسرعتين (easy)</option>
         </optgroup>
         </select>
     <span class="dsep full"></span>
@@ -628,13 +630,19 @@ function relayout(){
   devices.forEach(dv=>{});
   DY=S.trunkY[S.rows-1]-878;H=1640+DY;
   const st=[];for(let n=1;n<=TN;n++)st.push(tu(String(n),(n-1)*SW+SW/2,14,''));
-  MB.forEach(n=>st.push(td(n+'b',(n-1)*SW+SW/2,60,['U1','V1','W1','U2','V2','W2'][(n-1)%6])));
+  MB.forEach(n=>st.push(td(n+'b',(n-1)*SW+SW/2,60,(S.dahl?['1U','1V','1W','2U','2V','2W']:['U1','V1','W1','U2','V2','W2'])[(n-1)%6])));
   mk('X1','strip',SX,SY+DY,TN*SW,72,st);
   MB.forEach(n=>Object.assign(T['X1.'+n+'b'],{zone:'f'}));
   [['U1',86,16,'d'],['V1',142,16,'d'],['W1',198,16,'d'],['W2',86,62,'u'],['U2',142,62,'u'],['V2',198,62,'u']].forEach(([n,x,y,sd])=>{T['M1.'+n]={x:MO1[0]+x,y:MO1[1]+y+DY,side:sd,label:'',zone:'f',stud:true};});
   [['U1',86,16,'d'],['V1',142,16,'d'],['W1',198,16,'d'],['W2',86,62,'u'],['U2',142,62,'u'],['V2',198,62,'u']].forEach(([n,x,y,sd])=>{T['M2.'+n]={x:MO2[0]+x,y:MO2[1]+y+DY,side:sd,label:'',zone:'f',stud:true,m2:true};});fxTerms();}
 const MO1=[580,1200],MO2=[110,1200];
 const M={U1:'M1.U1',V1:'M1.V1',W1:'M1.W1',U2:'M1.U2',V2:'M1.V2',W2:'M1.W2'},M2K={U1:'M2.U1',V1:'M2.V1',W1:'M2.W1',U2:'M2.U2',V2:'M2.V2',W2:'M2.W2'};
+/* Dahlander two-speed motor: in the Dahlander exercises M1 becomes a 1U 1V 1W / 2U 2V 2W motor.
+   The terminal keys stay M1.U1 ... M1.W2 (U1 V1 W1 = 1U 1V 1W, U2 V2 W2 = 2U 2V 2W); only the names shown change. */
+const DAHLX=new Set(['p16','p17']),DLN={U1:'1U',V1:'1V',W1:'1W',U2:'2U',V2:'2V',W2:'2W'};
+const mtn=(id,t)=>id==='M1'&&S.dahl&&DLN[t]?DLN[t]:t,dk=k=>{const m=/^M1\.([UVW][12])$/.exec(k);return m&&S.dahl?'M1.'+DLN[m[1]]:k;};
+const slowM=m=>m.mode==='star'||m.mode==='low',modeTxt=m=>({star:'نجمة',delta:'دلتا',low:'سرعة بطيئة',high:'سرعة عالية'})[m.mode]||'';
+function setDahl(on){on=!!on;if(S.dahl===on)return false;S.dahl=on;relayout();return true;}
 
 /* ---------- free-moving pushbuttons & pilot lamps ---------- */
 const FXW=80,FXH=150;
@@ -650,7 +658,7 @@ const FXL={green:'#5dff7f',red:'#ff4a3d',yellow:'#ffe03a',blue:'#5cb0ff',white:'
 const FBW=250,FBH=364,FBDEF={x:705,y:348,sc:1};
 const S={plc:{run:true,prog:[],tm:{},q:[false,false,false,false,false],m:{},ts:{},prev:{},inp:{},pw:false,flow:[]},mm:{on:false,x:700,y:40,mode:'v',red:null,black:null},mmPick:null,fx:[],fbp:{...FBDEF},power:true,Q1:true,F1:true,devs:[],railCount:1,target:0,tm:{},ol:{},done:{},rows:2,motor2:{state:'off'},pressed:new Set(),coils:{},
   pos:0.5,ls1:false,ls2:false,
-  fault:null,wires:[],sel:null,pending:null,showV:true,last:'',hist:[],zoom:1,R:null,motor:{state:'off'},lamps:{},warn:[],osc:false,nextId:1};
+  fault:null,wires:[],sel:null,pending:null,showV:true,dahl:false,last:'',hist:[],zoom:1,R:null,motor:{state:'off'},lamps:{},warn:[],osc:false,nextId:1};
 const ofType=t=>S.devs.filter(d=>d.type===t).map(d=>d.id);
 relayout();
 let curColor='#e0342f';
@@ -755,13 +763,13 @@ function voice(k){if(VOX[k])return VOX[k];const o1=AC.createOscillator(),o2=AC.c
   return VOX[k]={o1,o2,g1,g2};}
 function updateSound(){if(!AC)return;const t=AC.currentTime;
   [['M1',S.motor,1],['M2',S.motor2,1.15]].forEach(([k,m,fk])=>{const v=voice(k);let hum=0,whine=0,wf=60;
-    const SND=SNDM[k];if(SND&&m.state==='run'){hum=m.mode==='star'?.035:.05;whine=m.mode==='star'?.025:.04;wf=(m.mode==='star'?260:430)*fk;}
+    const SND=SNDM[k];if(SND&&m.state==='run'){hum=slowM(m)?.035:.05;whine=slowM(m)?.025:.04;wf=(slowM(m)?260:430)*fk;}
     else if(SND&&m.state==='fault'&&m.hum){hum=.09;whine=0;}
     v.g1.gain.setTargetAtTime(hum,t,.15);v.g2.gain.setTargetAtTime(whine,t,.5);v.o2.frequency.setTargetAtTime(wf,t,.9);});}
 let QUIET=false;
 function clickSnd(on){if(QUIET||!anySnd()||!AC)return;try{const n=AC.sampleRate*.035,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);
   const src=AC.createBufferSource(),g=AC.createGain(),f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=on?1800:1200;g.gain.value=.5;src.buffer=b;src.connect(f);f.connect(g);g.connect(AC.destination);src.start();}catch(_){}}
-function motorEval(R,Mp){Mp=Mp||M;
+function motorEval(R,Mp){Mp=Mp||M;if(Mp===M&&S.dahl)return dahlEval(R);
   const P=t=>{const p=phasesOf(R.srcOf(Mp[t]));return p.length===1?p[0]:null;};
   const n=t=>R.uf.find(Mp[t]);
   const a=[P('U1'),P('V1'),P('W1')],b=[P('U2'),P('V2'),P('W2')];
@@ -775,8 +783,21 @@ function motorEval(R,Mp){Mp=Mp||M;
   return{state:'fault',hum:false,why:'ملفات المحرك غير مغلقة: اربط U2 وV2 وW2 معًا (نجمة) أو وصّلها دلتا.'};
 }
 function motor2Eval(R){return motorEval(R,M2K);}
+/* Dahlander: 1U 1V 1W fed, 2U 2V 2W open = low speed (delta). 2U 2V 2W fed with 1U 1V 1W shorted together = high speed (double star YY) */
+function dahlEval(R){const P=t=>{const p=phasesOf(R.srcOf(M[t]));return p.length===1?p[0]:null;},n=t=>R.uf.find(M[t]);
+  const a=[P('U1'),P('V1'),P('W1')],b=[P('U2'),P('V2'),P('W2')],anyA=a.some(Boolean),anyB=b.some(Boolean);
+  if(!anyA&&!anyB)return{state:'off'};
+  const distinct=arr=>arr.every(Boolean)&&new Set(arr).size===3;
+  const dir=arr=>{const i=arr.map(p=>PH.indexOf(p));return((i[1]-i[0]+3)%3===1&&(i[2]-i[1]+3)%3===1)?'cw':'ccw';};
+  if(anyA&&anyB)return{state:'fault',hum:true,why:'السرعتان معًا: وصلت الأطوار إلى 1U 1V 1W وإلى 2U 2V 2W في الوقت نفسه. لا يعمل كونتاكتور السرعة البطيئة مع كونتاكتور السرعة العالية أبدًا.'};
+  if(anyA){if(!distinct(a))return{state:'fault',hum:true,why:'فقد طور: أطراف 1U و1V و1W لا تستقبل ثلاثة أطوار مختلفة.'};
+    if(n('U2')===n('V2')||n('V2')===n('W2')||n('U2')===n('W2'))return{state:'fault',hum:true,why:'في السرعة البطيئة تبقى الأطراف 2U 2V 2W مفتوحة، وقصرها يقصر نصف الملفات.'};
+    return{state:'run',mode:'low',dir:dir(a)};}
+  if(!distinct(b))return{state:'fault',hum:true,why:'فقد طور: أطراف 2U و2V و2W لا تستقبل ثلاثة أطوار مختلفة.'};
+  if(n('U1')===n('V1')&&n('V1')===n('W1'))return{state:'run',mode:'high',dir:dir(b)};
+  return{state:'fault',hum:true,why:'السرعة العالية (نجمة مزدوجة YY) تحتاج قصر 1U 1V 1W معًا بكونتاكتور النجمة K3، وهي الآن مفتوحة.'};}
 const motor2I=()=>S.motor2.state==='run'?(S.motor2.mode==='delta'?5.2:3.0):(S.motor2.hum?4.5:0);
-const motorI=()=>S.motor.state==='run'?(S.motor.mode==='star'?IN_STAR:IN_DELTA):(S.motor.hum?I_FAULT:0);
+const motorI=()=>S.motor.state==='run'?({star:IN_STAR,low:2.6,high:3.0}[S.motor.mode]||IN_DELTA):(S.motor.hum?I_FAULT:0);
 
 /* ---------- drawing ---------- */
 const isLive=k=>S.showV&&S.R&&phasesOf(S.R.srcOf(k)).length>0;
@@ -975,10 +996,11 @@ function drawField(){
   s+=`<path d="M${bx1} 1119H988V${S.fb.y+S.fb.h+14-DY}H${S.fb.x+6*S.fbp.sc}V${S.fb.y+S.fb.h-12*S.fbp.sc-DY}" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>`;
   s+=`<rect x="30" y="1152" width="450" height="478" rx="10" fill="#39434d" stroke="#111"/><rect x="520" y="1152" width="440" height="478" rx="10" fill="#39434d" stroke="#111"/>`;
   const m=S.motor,run=m.state==='run';
-  s+=motorSVG('M1',MO1[0],MO1[1],1,[{x:86,y:16,l:'U1'},{x:142,y:16,l:'V1'},{x:198,y:16,l:'W1'},{x:86,y:62,l:'W2'},{x:142,y:62,l:'U2'},{x:198,y:62,l:'V2'}],m,['3~ MOTOR  M1','4 kW  400V Δ / 690V Y','5.0 A  1450 rpm  50 Hz']);
+  s+=S.dahl?motorSVG('M1',MO1[0],MO1[1],1,[{x:86,y:16,l:'1U'},{x:142,y:16,l:'1V'},{x:198,y:16,l:'1W'},{x:86,y:62,l:'2W'},{x:142,y:62,l:'2U'},{x:198,y:62,l:'2V'}],m,['DAHLANDER  M1','1.1/1.5 kW  400V Δ/YY','2.6/3.0 A  1420/2860 rpm'])
+    :motorSVG('M1',MO1[0],MO1[1],1,[{x:86,y:16,l:'U1'},{x:142,y:16,l:'V1'},{x:198,y:16,l:'W1'},{x:86,y:62,l:'W2'},{x:142,y:62,l:'U2'},{x:198,y:62,l:'V2'}],m,['3~ MOTOR  M1','4 kW  400V Δ / 690V Y','5.0 A  1450 rpm  50 Hz']);
   s+=motorSVG('M2',MO2[0],MO2[1],1,[{x:86,y:16,l:'U1'},{x:142,y:16,l:'V1'},{x:198,y:16,l:'W1'},{x:86,y:62,l:'W2'},{x:142,y:62,l:'U2'},{x:198,y:62,l:'V2'}],S.motor2,['3~ MOTOR  M2','1.5 kW  400V Y / 230V Δ','3.0 A  1400 rpm  50 Hz']);s+=xrMotor('M1',MO1[0],MO1[1],S.motor)+xrMotor('M2',MO2[0],MO2[1],S.motor2);
   const col=(st)=>st.state==='run'?'#7dff9e':st.state==='fault'?'#ff8a80':'#e8eef3';
-  const stTxt=run?(m.mode==='star'?'نجمة ':'دلتا ')+(m.dir==='cw'?'↻ للأمام':'↺ للخلف'):m.state==='fault'?'عطل':'متوقف';
+  const stTxt=run?modeTxt(m)+' '+(m.dir==='cw'?'↻ للأمام':'↺ للخلف'):m.state==='fault'?'عطل':'متوقف';
   const m2=S.motor2,st2=m2.state==='run'?(m2.mode==='star'?'نجمة ':'دلتا ')+(m2.dir==='cw'?'↻':'↺'):m2.state==='fault'?'عطل':'متوقف';
   const sndBtn=(k,bx)=>{const on=SNDM[k];return `<g class="act" data-act="snd:${k}" role="button" aria-label="صوت المحرك ${k}"><title>${on?'إيقاف':'تشغيل'} صوت المحرك ${k}</title><rect x="${bx}" y="1166" width="112" height="44" rx="12" fill="${on?'#1fa35a':'#2b3540'}" stroke="${on?'#7dff9e':'#6b7f8f'}" stroke-width="2"/>
     <path d="M${bx+16} 1181h7l9-8v30l-9-8h-7z" fill="#fff"/>${on?`<path d="M${bx+38} 1180q6 8 0 16M${bx+43} 1175q11 13 0 26" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>`:`<path d="M${bx+38} 1181l12 14M${bx+50} 1181l-12 14" stroke="#ff8a80" stroke-width="2.6" stroke-linecap="round"/>`}
@@ -1056,9 +1078,9 @@ function motorSVG(id,ox,oy,sc,studs,st,plate){
   let grille='';for(let x=256;x<=282;x+=4.5)grille+=`<line x1="${x.toFixed(1)}" y1="112" x2="${x.toFixed(1)}" y2="190" stroke="#0d2342" stroke-width="2" stroke-linecap="round"/>`;
   let rings='';[44,34,24,14].forEach(r=>{rings+=`<ellipse cx="290" cy="151" rx="${(r*.36).toFixed(1)}" ry="${r}" fill="none" stroke="#0d2342" stroke-width="2.2"/>`;});
   let bolts='';[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([i,j])=>{bolts+=`<circle cx="${52+i*15}" cy="${150+j*36}" r="3" fill="#c7cfd6" stroke="#22303c"/>`;});
-  const dur=st.mode==='star'?'0.7s':'0.35s',anim=run&&!RED_MOTION?`<animateTransform attributeName="transform" type="rotate" from="${st.dir==='cw'?0:360}" to="${st.dir==='cw'?360:0}" dur="${dur}" repeatCount="indefinite"/>`:'';
+  const dur=st.mode==='star'?'0.7s':st.mode==='high'?'0.2s':'0.35s',anim=run&&!RED_MOTION?`<animateTransform attributeName="transform" type="rotate" from="${st.dir==='cw'?0:360}" to="${st.dir==='cw'?360:0}" dur="${dur}" repeatCount="indefinite"/>`:'';
   let nuts='';
-  studs.forEach(t=>{const pc={U:'#7a4a22',V:'#1b1b1b',W:'#9aa0a6'}[t.l[0]];
+  studs.forEach(t=>{const pc={U:'#7a4a22',V:'#1b1b1b',W:'#9aa0a6'}[t.l.replace(/\d/g,'')[0]];
     nuts+=`<polygon points="${hexPts(t.x,t.y,10)}" fill="#d2ad52" stroke="#6d5418"/>
       <rect x="${t.x-46}" y="${t.y-10}" width="32" height="20" rx="4" fill="#fff" stroke="#111"/><rect x="${t.x-46}" y="${t.y-10}" width="4" height="20" rx="1" fill="${pc}"/>
       <text x="${t.x-29}" y="${t.y+5}" class="dl" style="font-size:13px;fill:#111">${t.l}</text>`;});
@@ -1445,9 +1467,9 @@ function termDesc(k){const i=k.indexOf('.'),id=k.slice(0,i),t=k.slice(i+1);
     if(ty==='ol'){if(t.length===1&&'135'.includes(t))return 'دخل الأوفرلود '+id+' الطرف '+t;if(t.length===1&&'246'.includes(t))return 'خرج الأوفرلود '+id+' الطرف '+t+' إلى المحرك';if(t==='95'||t==='96')return 'تلامس الأوفرلود '+id+' NC الطرف '+t+'، يُفتح عند زيادة الحمل';if(t==='97'||t==='98')return 'تلامس الأوفرلود '+id+' NO الطرف '+t+'، يُغلق عند الفصل';}}
   if(id==='X1'){const m=/^(\d+)(b?)$/.exec(t);if(m){const n=+m[1];if(m[2])return 'أسفل الشعبة '+n+' باتجاه المحرك';
       const g=GROUPS.find(g=>n>=g.from&&n<=g.to2);if(g){const tg=g.tags[n-g.from];
-        if(g.to==='M')return 'شعبة المحرك '+tg;if(g.to==='N')return 'شعبة التعادل N';if(g.to==='H')return 'شعبة لمبة البيان '+tg;
+        if(g.to==='M')return 'شعبة المحرك '+mtn('M1',tg);if(g.to==='N')return 'شعبة التعادل N';if(g.to==='H')return 'شعبة لمبة البيان '+tg;
         return 'شعبة '+xsDevName(DN[g.to]||g.to)+'، التلامس '+tg;}}}
-  if(id==='M1'||id==='M2')return 'طرف المحرك '+id+' '+t;
+  if(id==='M1'||id==='M2')return 'طرف المحرك '+id+' '+mtn(id,t);
   const f=fxOf(id);if(f)return FXT[f.t].n+' '+id+' الطرف '+t;
   return k;}
 function vwOn(){return VW.on&&document.body.classList.contains('trainer');}
@@ -1557,8 +1579,8 @@ function xsMotorSvg(m){const st=m==='M1'?S.motor:S.motor2,run=st.state==='run',c
   r+=`<circle cx="140" cy="126" r="12" fill="#cfd4d8" stroke="#555"/><rect x="137" y="114" width="6" height="6" fill="#555"/>`;
   s+=run?`<g class="xrot${ccw?' ccw':''}">${r}</g>`:r;
   s+=`<rect x="252" y="66" width="62" height="120" rx="6" fill="#e8e9e4" stroke="#7d7662"/>`+xt(283,82,'علبة الأطراف',{s:9,c:'#555'});
-  [['U1',264,104],['V1',283,104],['W1',302,104],['W2',264,150],['U2',283,150],['V2',302,150]].forEach(([n,x,y])=>{s+=`<circle cx="${x}" cy="${y}" r="6" fill="#c79a4a" stroke="#6b4a1a"/>`+xt(x,y+(y<120?-9:18),n,{s:8});});
-  const mode=st.mode;s+=xt(283,178,run?(mode==='star'?'نجمة':mode==='delta'?'دلتا':''):'',{s:10,c:'#1f5fd1'});
+  [['U1',264,104],['V1',283,104],['W1',302,104],['W2',264,150],['U2',283,150],['V2',302,150]].forEach(([n,x,y])=>{s+=`<circle cx="${x}" cy="${y}" r="6" fill="#c79a4a" stroke="#6b4a1a"/>`+xt(x,y+(y<120?-9:18),mtn(m,n),{s:8});});
+  s+=xt(283,178,run?modeTxt(st):'',{s:10,c:'#1f5fd1'});
   s+=xt(140,246,run?(ccw?'يدور عكس عقارب الساعة':'يدور مع عقارب الساعة'):st.state==='fault'?'عطل: لا يدور ويسخن':'متوقف',{s:11,c:run?'#1d7a36':st.state==='fault'?'#b3261e':'#666'});
   return xsSvg(320,254,s,'مقطع محرك');}
 function xsPLCSvg(F){const P=S.plc;let s=`<rect x="100" y="40" width="110" height="200" rx="10" fill="#1f2a33" stroke="#0c1216"/>`+xt(155,70,'المعالج',{s:12,c:'#fff'})+xt(155,90,P.pw?(P.run?'RUN':'STOP'):'بلا تغذية',{s:12,c:P.pw?(P.run?'#5dff7f':'#ffcf00'):'#ff8a80'})+xt(155,122,'يقرأ المداخل',{s:9,c:'#cfd8df'})+xt(155,138,'ينفّذ المخطط السلمي',{s:9,c:'#cfd8df'})+xt(155,154,'يشغّل المخارج',{s:9,c:'#cfd8df'});
@@ -1628,7 +1650,7 @@ function xsDevBody(d,A){const F=A.flow,fk=(a,b)=>F.has(xk(a,b)),li=[];let svg=''
   else if(d.k==='lampfb'||d.k==='lamp'){const lit=!!S.lamps[d.id],f=fxOf(d.id),col=f?f.c:({H1:'green',H2:'green',H3:'red',H4:'yellow'})[d.id];
     const fl=lit;svg=d.k==='lamp'?xsLampSvg(col,lit,fl,'X1','X2'):xsLampSvg(col,lit,fl,'X1.'+(28+ +d.id.slice(1)),'N');how=XHOW.lamp;now=lit?'مضاءة.':'مطفأة.';const r=reason(d.id);if(r)li.push(r);}
   else if(d.k==='motor'){svg=xsMotorSvg(d.id);how=XHOW.motor;const st=d.id==='M1'?S.motor:S.motor2;
-    now=st.state==='run'?'يدور '+(st.dir==='ccw'?'للخلف':'للأمام')+(st.mode?' بتوصيل '+(st.mode==='star'?'نجمة':'دلتا'):'')+'.':st.state==='fault'?'عطل: لا يصل له إلا طوران أو التوصيل خاطئ.':'متوقف.';const r=reason(d.id);if(r)li.push(r);}
+    now=st.state==='run'?'يدور '+(st.dir==='ccw'?'للخلف':'للأمام')+(st.mode==='low'?' بالسرعة البطيئة (دلتا)':st.mode==='high'?' بالسرعة العالية (نجمة مزدوجة YY)':st.mode?' بتوصيل '+modeTxt(st):'')+'.':st.state==='fault'?'عطل: لا يصل له إلا طوران أو التوصيل خاطئ.':'متوقف.';const r=reason(d.id);if(r)li.push(r);}
   else if(d.k==='plc'){const P=S.plc;svg=xsPLCSvg(F);how=XHOW.plc;const ins=[1,2,3,4,5,6,7,8].filter(i=>P.inp&&P.inp[i]).map(i=>'I'+i),qs=[1,2,3,4].filter(i=>P.q[i]).map(i=>'Q'+i);
     now=!P.pw?'بلا تغذية: وصّل L وN.':'يعمل ('+(P.run?'RUN':'STOP')+'). المداخل الفعّالة: '+(ins.join('، ')||'لا شيء')+'. المخارج المفعّلة: '+(qs.join('، ')||'لا شيء')+'.';}
   return {html:`${svg}<div class="xsnote"><b>الآن:</b> ${now}</div>${li.length?`<ul class="xsst">${li.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}<div class="xsnote xshow"><b>طريقة العمل:</b> ${how}</div>`,say:(xsDevTitle(d)+'. الآن: '+now+' '+li.join(' ')+' طريقة العمل: '+how)};}
@@ -1819,7 +1841,7 @@ function xrMotor(id,ox,oy,st){if(!xrOn())return '';try{if(!S.wires.some(w=>w.a.s
   s+=`<path d="M${86} 22V96M${142} 22V96M${198} 22V96M86 68V70M142 68V70M198 68V70" stroke="${XR.cu}" stroke-width="2" opacity=".85"/>`;
   if(run)s+=`<path d="M86 22V104M142 22V104M198 22V104" class="xfl" style="stroke-width:2.4px"/>`;
   let bars='';for(let i=-6;i<16;i++)bars+=`<line x1="80" y1="${122+i*10}" x2="226" y2="${132+i*10}" stroke="#d9a441" stroke-width="3"/>`;
-  const an=run&&!(typeof RED_MOTION!=='undefined'&&RED_MOTION)?`<animateTransform attributeName="transform" type="translate" from="0 ${ccw?0:-20}" to="0 ${ccw?-20:0}" dur="${st.mode==='star'?'0.5s':'0.3s'}" repeatCount="indefinite"/>`:'';
+  const an=run&&!(typeof RED_MOTION!=='undefined'&&RED_MOTION)?`<animateTransform attributeName="transform" type="translate" from="0 ${ccw?0:-20}" to="0 ${ccw?-20:0}" dur="${st.mode==='star'?'0.5s':st.mode==='high'?'0.18s':'0.3s'}" repeatCount="indefinite"/>`:'';
   s+=`<g clip-path="url(#xrRot-${id})"><rect x="78" y="122" width="150" height="58" fill="${XR.fe}"/><g>${bars}${an}</g></g><rect x="78" y="122" width="150" height="58" rx="6" fill="none" stroke="${XR.ln}"/>`;
   s+=`<rect x="228" y="146" width="44" height="10" fill="#9fb3c8" stroke="${XR.ln}"/><rect x="0" y="146" width="30" height="10" fill="#9fb3c8" stroke="${XR.ln}"/>`;
   s+=xrT(153,226,run?'العضو الدوار يدور':st.state==='fault'?'عطل':'متوقف',9,run?XR.gl:st.state==='fault'?'#ff8a80':XR.ln);
@@ -1866,7 +1888,7 @@ function syncDock(){document.getElementById('dMM').classList.toggle('on',S.mm.on
   document.getElementById('dDel').disabled=S.sel==null;document.getElementById('dDel').classList.toggle('hl',S.sel!=null);
   const m=S.motor,m2=S.motor2;let h='';
   if(S.fault)h+=`<span class="c bad">${S.fault}</span>`;
-  h+=`<span class="c ${m.state==='run'?'ok':m.state==='fault'?'bad':''}">M1: ${m.state==='run'?(m.mode==='star'?'نجمة ':'دلتا ')+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}</span>`;
+  h+=`<span class="c ${m.state==='run'?'ok':m.state==='fault'?'bad':''}">M1: ${m.state==='run'?modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}</span>`;
   if(m2.state!=='off')h+=`<span class="c ${m2.state==='run'?'ok':'bad'}">M2: ${m2.state==='run'?'يدور':'عطل'}</span>`;
   const on=coilIds().filter(k=>S.coils[k]);if(on.length)h+=`<span class="c ok">يعمل: ${on.join(' ')}</span>`;
   ofType('ol').forEach(f=>{if(S.ol[f].trip)h+=`<span class="c bad">${f} فصل</span>`;});
@@ -1923,7 +1945,7 @@ function renderTop(){
   const m=S.motor;
   let h=c(S.Q1&&S.power,'Q1')+c(S.F1&&S.power,'F1')+ofType('ol').map(f=>c(!S.ol[f].trip,f+' '+S.ol[f].iset.toFixed(1)+'A',S.ol[f].trip?'bad':'on')).join('')
     +coilIds().map(k=>c(S.coils[k],k,S.coils[k]?(k.startsWith('KT')&&!S.done[k]?'wait':'on'):'')).join('')
-    +c(m.state==='run','المحرك: '+(m.state==='run'?(m.mode==='star'?'نجمة ':'دلتا ')+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'),m.state==='fault'?'bad':'')+c(S.motor2.state==='run','M2: '+(S.motor2.state==='run'?'يدور':S.motor2.state==='fault'?'عطل':'متوقف'),S.motor2.state==='fault'?'bad':'');
+    +c(m.state==='run','المحرك: '+(m.state==='run'?modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'),m.state==='fault'?'bad':'')+c(S.motor2.state==='run','M2: '+(S.motor2.state==='run'?'يدور':S.motor2.state==='fault'?'عطل':'متوقف'),S.motor2.state==='fault'?'bad':'');
   h='';
   if(S.stu)h+=`<div class="msg info"><span>📥 تجربة المتدرب: <b>${esc(S.stu.n)}</b> · الرقم: <b dir="ltr">${esc(S.stu.id)}</b>${S.stu.g?` · الدرجة: <b>${+S.stu.g.s}/20</b> ${S.stu.gc==null?'':S.stu.gc===+S.stu.g.s?'<span title="أعاد المحاكي الفحص على التوصيل المرسل">✔ مطابقة</span>':`<span style="color:var(--warn)">⚠ إعادة الفحص: ${S.stu.gc}/20</span>`} <button class="btn" data-gshow style="padding:2px 8px">التفاصيل</button>`:''}${S.stu.t?' · '+new Date(S.stu.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'}):''}</span><button class="btn" data-stux style="margin-inline-start:auto">إغلاق</button></div>`;
   if(S.fault)h+=`<div class="msg err">${S.fault}</div>`;
@@ -1949,7 +1971,7 @@ function update(){solve();render();}
 
 /* ---------- actions ---------- */
 function snap(){S.ran=false;S.power=true;S.fault=null;S.hist.push(JSON.stringify(serial()));if(S.hist.length>60)S.hist.shift();}
-function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.gap!=null)o.gap=d.gap;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c]),plc:{prog:S.plc.prog,tm:S.plc.tm,run:S.plc.run},...(S.pex?{px:S.pex}:{}),...(S.fx&&S.fx.length?{fx:S.fx.map(f=>({...f}))}:{})};}
+function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.gap!=null)o.gap=d.gap;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c]),plc:{prog:S.plc.prog,tm:S.plc.tm,run:S.plc.run},...(S.pex?{px:S.pex}:{}),...(S.dahl?{mt:'d'}:{}),...(S.fx&&S.fx.length?{fx:S.fx.map(f=>({...f}))}:{})};}
 const railEnd=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][1]:955,railStart=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][0]:45;
 function railUsed(r,skip){let x=railStart(r),first=true;S.devs.filter(d=>d.rail===r&&!d.host&&d.id!==skip).forEach(d=>{x+=devGap(d,first)+DEFS[d.type].w;first=false;});return x;}
 const fits=(r,type,skip)=>railUsed(r,skip)+(S.devs.some(d=>d.rail===r&&!d.host&&d.id!==skip)?GAP:0)+DEFS[type].w<=railEnd(r);
@@ -1972,7 +1994,7 @@ function applyObj(o){if(!o||!Array.isArray(o.w))throw 0;
     const devs=[...o.devs];need.forEach(h=>{if(!devs.some(d=>d.id===h+'A')){const hd=devs.find(d=>d.id===h);if(hd)devs.push({id:h+'A',type:'aux',host:h,rail:hd.rail});}});o={...o,devs};}
   o={...o,w:o.w.filter(([a,b])=>!((a==='F1.1'&&/^Q1\.[246]$/.test(b))||(b==='F1.1'&&/^Q1\.[246]$/.test(a))))};
   if(!(o.v>=5)&&!o.w.some(x=>/^M[12]\./.test(x[0])||/^M[12]\./.test(x[1]))){o={...o,w:[...o.w,...motorCable,...(o.w.some(x=>/^X2\./.test(x[0])||/^X2\./.test(x[1]))?m2Cable:[])]};}if(!(o.v>=6)&&o.w.some(x=>/^M2\./.test(x[0])||/^M2\./.test(x[1])))o={...o,w:[...o.w,...m2Star]};
-  S.fbp=o.fb?{...FBDEF,...o.fb}:{...FBDEF};S.pex=typeof o.px==='string'&&/^p\d{1,2}$/.test(o.px)?o.px:null;
+  S.fbp=o.fb?{...FBDEF,...o.fb}:{...FBDEF};S.pex=typeof o.px==='string'&&/^p\d{1,2}$/.test(o.px)?o.px:null;S.dahl=o.mt==='d'||DAHLX.has(S.pex);
   S.fx=Array.isArray(o.fx)?o.fx.filter(f=>f&&FXT[f.t]&&/^[SH]\d{1,3}$/.test(f.id)&&FXC[f.c]&&!(f.t==='lamp'&&!FXL[f.c])).map(f=>({id:f.id,t:f.t,c:f.c,x:+f.x||0,y:+f.y||0,on:!!f.on})):[];
   setDevs(o.devs||devsFromWires(o.w,o));setWires(o.w);}
 function addWire(a,b,c){if(a===b)return;if(S.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))return;S.wires.push({id:S.nextId++,a,b,c:c||curColor});}
@@ -1986,7 +2008,7 @@ function termClick(k){
   if(!S.pending){S.pending=k;S.sel=null;scrAdd(k,0,-1,true);if(vwOn())speak('من '+termDesc(k));}
   else if(S.pending===k)S.pending=null;
   else if(T[S.pending].zone!=='z'&&T[k].zone!=='z'&&(T[S.pending].zone||'p')!==(T[k].zone||'p')&&!((T[S.pending].m2&&!T[k].zone)||(T[k].m2&&!T[S.pending].zone))){say('لا يمكن توصيل طرف داخل اللوحة بالمحرك M1 مباشرة. وصّله من أسفل الشعب 1 إلى 6. أما M2 فيوصَّل مباشرة من الأوفرلود أو الكونتاكتور.');S.pending=null;}
-  else{const _v=vwBefore(),_a=S.pending;snap();addWire(S.pending,k);say('سلك '+S.pending+' ⟷ '+k);S.pending=null;vwAfter(_v,_a,k);scrAdd(k,0,1);scrAdd(_a,380,1);}
+  else{const _v=vwBefore(),_a=S.pending;snap();addWire(S.pending,k);say('سلك '+dk(S.pending)+' ⟷ '+dk(k));S.pending=null;vwAfter(_v,_a,k);scrAdd(k,0,1);scrAdd(_a,380,1);}
   update();}
 function delWire(id){{const w0=S.wires.find(w=>w.id===id);if(w0){scrAdd(w0.a,0,-1);scrAdd(w0.b,300,-1);}if(w0&&vwOn())speak('حُذف السلك بين '+termDesc(w0.a)+' و'+termDesc(w0.b));}snap();S.wires=S.wires.filter(w=>w.id!==id);if(S.sel===id)S.sel=null;update();}
 function act(a){const [k,id,sg]=a.split(':');
@@ -2039,7 +2061,7 @@ svg.addEventListener('pointermove',e=>{if(!wdrag)return;const p=svgPt(e),dx=p.x-
   const w=wdrag.w,b=wdrag.base,i=wdrag.seg,hor=Math.abs(b[i][1]-b[i+1][1])<.5;
   if(hor){const ny=Math.round((b[i][1]+dy)/2)*2;w.man[i][1]=ny;w.man[i+1][1]=ny;}else{const nx=Math.round((b[i][0]+dx)/2)*2;w.man[i][0]=nx;w.man[i+1][0]=nx;}
   if(!wraf)wraf=requestAnimationFrame(()=>{wraf=0;render();});});
-function endWDrag(){if(!wdrag)return;const d=wdrag;wdrag=null;if(d.moved){d.w.man=S.wpts[d.w.id]?S.wpts[d.w.id].map(q=>[q[0],q[1]]):d.w.man;say('غُيّر مسار السلك '+d.w.a+' ⟷ '+d.w.b);render();}}
+function endWDrag(){if(!wdrag)return;const d=wdrag;wdrag=null;if(d.moved){d.w.man=S.wpts[d.w.id]?S.wpts[d.w.id].map(q=>[q[0],q[1]]):d.w.man;say('غُيّر مسار السلك '+dk(d.w.a)+' ⟷ '+dk(d.w.b));render();}}
 svg.addEventListener('pointerup',endWDrag);svg.addEventListener('pointercancel',endWDrag);
 let drag=null;
 function svgPt(e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse());}
@@ -2192,6 +2214,10 @@ const plcLamps1=[['F1.2','K1.13',RD],['K1.14','X1.29',OR],['F1.2','K1.21',RD],['
 const plcOutRev=[['F1.2','F2.95',RD],['F2.96','XP.Q1_1',RD],['XP.Q1_1','XP.Q2_1',RD],['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['K1.A2','X1.33',BL],['K2.A2','X1.34',BL]];
 const plcOutSD=[['F1.2','F2.95',RD],['F2.96','XP.Q1_1',RD],['XP.Q1_1','XP.Q2_1',RD],['XP.Q2_1','XP.Q3_1',RD],['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['XP.Q3_2','K3.A1',RD],['K1.A2','X1.33',BL],['K2.A2','X1.34',BL],['K3.A2','X1.35',BL]];
 const plcLampsSD=[['K2.A1','X1.29',OR],['K3.A1','X1.30',OR],['F1.2','K1.21',RD],['K1.22','X1.31',OR],['F1.2','F2.97',RD],['F2.98','X1.32',OR]];
+/* Dahlander power: K1 low speed (Δ) feeds 1U 1V 1W through F2; K2 high speed (YY) feeds 2U 2V 2W through F3; K3 shorts 1U 1V 1W together for YY */
+const dahlPow=[...feed,...k1pow,...toMotor,...k2pow,['K2.2','F3.1',BR],['K2.4','F3.3',BK],['K2.6','F3.5',GR],['F3.2','X1.4',BR],['F3.4','X1.5',BK],['F3.6','X1.6',GR],
+   ['X1.1','K3.1',BK],['X1.2','K3.3',BK],['X1.3','K3.5',BK],['K3.2','K3.4',GR],['K3.4','K3.6',GR]];
+const dahlLamps=[['K1.A1','X1.29',OR],['K2.A1','X1.30',OR],['F1.2','K1.21',RD],['K1.22','K3A.71',OR],['K3A.72','X1.31',OR],['F1.2','F2.97',RD],['F2.97','F3.97',RD],['F2.98','X1.32',OR],['F3.98','X1.32',OR]];
 const PRESETS={
  p1:[...feed,...k1pow,...toMotor,...deltaJump,...ctrlHead,
    ['X1.8','X1.11',RD],['X1.12','K1.A1',RD],['X1.8','K1.13',RD],['K1.14','K1.A1',RD],['K1.A2','X1.33',BL],...lampsStd],
@@ -2226,14 +2252,22 @@ const PRESETS={
  p14:[...sdPow,...plcIn([8,12]),...plcOutSD,...plcLampsSD],
  p15:[...revPow,...ctrlHead,
    ['X1.8','X1.11',RD],['X1.12','X1.25',RD],['X1.26','K2.21',RD],['K2.22','K1.A1',RD],['X1.8','K1.13',RD],['K1.14','X1.12',RD],
-   ['X1.8','X1.15',RD],['X1.16','X1.21',RD],['X1.22','K1.21',RD],['K1.22','K2.A1',RD],['X1.8','K2.13',RD],['K2.14','X1.16',RD],...revLamps]};
-const PNAME={p1:'تشغيل محرك من مكان واحد مع لمبات بيان',p2:'تشغيل محرك من مكانين مع لمبات بيان',p3:'تشغيل محركين بالتتابع مع لمبات بيان',p4:'عكس حركة بطيء (مع توقف)',p5:'عكس حركة سريع (بدون توقف)',p6:'نجمة / دلتا يدوي',p7:'نجمة / دلتا بمؤقت',p8:'تشغيل محرك من مكان واحد بجهاز easy',p9:'تشغيل محرك من مكانين بجهاز easy',p10:'تشغيل محركين بالتتابع بجهاز easy',p11:'عكس حركة بطيء بجهاز easy',p12:'عكس حركة سريع بجهاز easy',p13:'نجمة / دلتا يدوي بجهاز easy',p14:'نجمة / دلتا بمؤقت easy',p15:'عكس حركة مع نهايتي مشوار'};
-const PLCX=new Set(['p8','p9','p10','p11','p12','p13','p14']);
-function presetExtra(v){const sd=['p6','p7','p13','p14'].includes(v),m2=['p3','p10'].includes(v);return[...(sd?motorCable:motorCable.slice(0,3)),...(m2?m2Cable:[])];}
+   ['X1.8','X1.15',RD],['X1.16','X1.21',RD],['X1.22','K1.21',RD],['K1.22','K2.A1',RD],['X1.8','K2.13',RD],['K2.14','X1.16',RD],...revLamps],
+ p16:[...dahlPow,['F1.2','F2.95',RD],['F2.96','F3.95',RD],['F3.96','X1.7',RD],
+   ['X1.8','X1.11',RD],['X1.12','K3.21',RD],['K3.22','K1.A1',RD],['X1.8','K1.13',RD],['K1.14','X1.12',RD],
+   ['X1.8','X1.15',RD],['X1.16','K1A.71',RD],['K1A.72','K3.A1',RD],['X1.8','K3.13',RD],['K3.14','X1.16',RD],['K1A.72','K3A.53',RD],['K3A.54','K2.A1',RD],
+   ['K1.A2','X1.33',BL],['K2.A2','X1.34',BL],['K3.A2','X1.35',BL],...dahlLamps],
+ p17:[...dahlPow,...plcIn([8,12,16]),['F1.2','F2.95',RD],['F2.96','F3.95',RD],['F3.96','XP.Q1_1',RD],['XP.Q1_1','XP.Q2_1',RD],['XP.Q2_1','XP.Q3_1',RD],
+   ['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['XP.Q3_2','K3.A1',RD],['K1.A2','X1.33',BL],['K2.A2','X1.34',BL],['K3.A2','X1.35',BL],...dahlLamps]};
+const PNAME={p1:'تشغيل محرك من مكان واحد مع لمبات بيان',p2:'تشغيل محرك من مكانين مع لمبات بيان',p3:'تشغيل محركين بالتتابع مع لمبات بيان',p4:'عكس حركة بطيء (مع توقف)',p5:'عكس حركة سريع (بدون توقف)',p6:'نجمة / دلتا يدوي',p7:'نجمة / دلتا بمؤقت',p8:'تشغيل محرك من مكان واحد بجهاز easy',p9:'تشغيل محرك من مكانين بجهاز easy',p10:'تشغيل محركين بالتتابع بجهاز easy',p11:'عكس حركة بطيء بجهاز easy',p12:'عكس حركة سريع بجهاز easy',p13:'نجمة / دلتا يدوي بجهاز easy',p14:'نجمة / دلتا بمؤقت easy',p15:'عكس حركة مع نهايتي مشوار',p16:'محرك دالندر بسرعتين (تحكم تقليدي)',p17:'محرك دالندر بسرعتين بجهاز easy'};
+const PLCX=new Set(['p8','p9','p10','p11','p12','p13','p14','p17']);
+function presetExtra(v){const sd=['p6','p7','p13','p14','p16','p17'].includes(v),m2=['p3','p10'].includes(v);return[...(sd?motorCable:motorCable.slice(0,3)),...(m2?m2Cable:[])];}
 document.getElementById('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';loadPreset(v);};
-function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,plc:PPROG[v]?{prog:PPROG[v].prog,tm:PPROG[v].tm,run:true}:undefined});
+function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,...(DAHLX.has(v)?{mt:'d'}:{}),plc:PPROG[v]?{prog:PPROG[v].prog,tm:PPROG[v].tm,run:true}:undefined});
   S.pex=v;try{if(SD.open){SD.ex=v;sdRender();}else SD.ex=v;}catch(_){}Object.assign(S,{power:true,Q1:true,F1:true,fault:null,coils:{},sel:null,pending:null,pos:0.5});
-  S.selDev=null;say('حُمّل مثال: '+PNAME[v]+' (أُضيفت القطع اللازمة تلقائيًا)');update();}
+  S.selDev=null;say('حُمّل مثال: '+PNAME[v]+' (أُضيفت القطع اللازمة تلقائيًا'+(S.dahl?'، والمحرك M1 أصبح محرك دالندر بسرعتين':'')+')');update();}
+/* picking an exercise (grading or schematic window) makes M1 the motor that exercise needs */
+function exMotor(ex){if(!ex||!PNAME[ex]||!setDahl(DAHLX.has(ex)))return;say(S.dahl?'المحرك M1 أصبح محرك دالندر بسرعتين (1U 1V 1W للسرعة البطيئة، 2U 2V 2W للسرعة العالية) ليناسب التمرين':'المحرك M1 عاد محركًا عاديًا (U1 V1 W1 / U2 V2 W2) ليناسب التمرين');update();}
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addDevice(b.dataset.add));
 document.getElementById('dRail').onchange=e=>railChange(e.target.value);
 function railChange(v){
@@ -2298,7 +2332,7 @@ function panelBlob(nm,id){return new Promise(res=>{let done=false;const fin=b=>{
       g.drawImage(img,0,hh,vb[2]*sc,vb[3]*sc);c.toBlob(b=>fin(b),'image/png');}catch(_){fin(null);}};
     img.onerror=()=>fin(null);img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(x);}catch(_){fin(null);}});}
 function sendSummary(){const m=S.motor,ks=S.devs.filter(d=>d.type!=='aux'&&!d.host).length;
-  return `الأسلاك: ${S.wires.length} · القطع على اللوحة: ${S.devs.length} · المحرك M1: ${m.state==='run'?(m.mode==='star'?'نجمة':'دلتا')+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}${S.fault?' · يوجد قصر في الدائرة':''}`+gradeLine();}
+  return `الأسلاك: ${S.wires.length} · القطع على اللوحة: ${S.devs.length} · المحرك M1: ${m.state==='run'?modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}${S.fault?' · يوجد قصر في الدائرة':''}`+gradeLine();}
 function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();
   if(!n||!id){[['stName','stName2',n],['stId','stId2',id]].forEach(([a,b,v])=>{if(!v){$(a).classList.add('bad');$(b).classList.add('bad');}});
     const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='اكتب اسمك ورقمك التدريبي أولًا.';(n?$('stId2'):$('stName2')).focus();return null;}
@@ -2353,9 +2387,12 @@ const GREQ={p1:'S1 تشغيل مع تثبيت ذاتي، S0 إيقاف. المح
  p12:'مثل التمرين 11، لكن البرنامج يسمح بالعكس المباشر، مع الإعاقة بين الاتجاهين في البرنامج.',
  p13:'بجهاز easy: S0 إلى I1، وS1 (بدء) إلى I2، وS2 (دلتا) إلى I3. Q1 رئيسي K1، وQ2 نجمة K2، وQ3 دلتا K3، والإعاقة بين النجمة والدلتا في البرنامج.',
  p14:'بجهاز easy: S0 إلى I1، وS1 إلى I2. Q1 رئيسي، وQ2 نجمة، وQ3 دلتا. المؤقت T1 في البرنامج (تأخير تشغيل 5 ث) يحوّل من النجمة إلى الدلتا.',
+ p16:'محرك دالندر بسرعتين: S1 سرعة بطيئة (K1 دلتا على 1U 1V 1W)، وS2 سرعة عالية (K3 يقصر 1U 1V 1W ثم يعمل K2 على 2U 2V 2W بنقطة 53-54 لـ K3)، وS0 إيقاف، مع تثبيت ذاتي. إعاقة كهربائية: 61-62 لـ K3 في مسار K1، و71-72 لـ K1 في مسار K3، فلا تتغير السرعة إلا بعد الإيقاف. الأوفرلودان F2 وF3 على التوالي. H1 بطيئة، H2 عالية، H3 إيقاف، H4 عطل.',
+ p17:'بجهاز easy: S0 إلى I1، وS1 (بطيئة) إلى I2، وS2 (عالية) إلى I3. Q1 يشغّل K1 (بطيئة)، وQ2 يشغّل K2 (عالية)، وQ3 يشغّل K3 (قصر 1U 1V 1W). الإعاقة بين السرعتين في البرنامج، والأوفرلودان F2 وF3 على التوالي في تغذية المخارج.',
  p15:'مثل العكس البطيء (S1 أمامي، S2 عكسي، S0 إيقاف، تثبيت ذاتي وإعاقة كهربائية)، مع نهايتي مشوار: النقطة المغلقة لـ SQ2 (25-26) في مسار K1 توقف الحركة الأمامية عند وصول العربة إليها، والنقطة المغلقة لـ SQ1 (21-22) في مسار K2 توقف العكسية. H1 أمامي، H2 عكسي، H4 عطل.'};
 /* compare the trainee's wiring with the approved diagram, net by net (running is not required) */
-const isLampW=([a,b],ex)=>{const t=k=>/^H\d+\.X[12]$/.test(k)||/^X1\.(29|30|31|32)$/.test(k)||/^F\d+\.(97|98)$/.test(k)||(PLCX.has(ex)&&/^K\d+\.(13|14)$/.test(k));return t(a)||t(b)||(a==='F1.2'&&/^K\d+A\.61$/.test(b))||(b==='F1.2'&&/^K\d+A\.61$/.test(a));};
+const LAMPX={p16:'K1A.62|K3A.71',p17:'K1A.62|K3A.71'};
+const isLampW=([a,b],ex)=>{if(LAMPX[ex]&&[a,b].sort().join('|')===LAMPX[ex])return true;const t=k=>/^H\d+\.X[12]$/.test(k)||/^X1\.(29|30|31|32)$/.test(k)||/^F\d+\.(97|98)$/.test(k)||(PLCX.has(ex)&&/^K\d+\.(13|14)$/.test(k));return t(a)||t(b)||(a==='F1.2'&&/^K\d+A\.61$/.test(b))||(b==='F1.2'&&/^K\d+A\.61$/.test(a));};
 function refWires(ex){const m21=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
   return [...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21(a),m21(b)]).filter(w=>!isLampW(w,ex));}
 function staticLinks(D){D=D||S.devs;const L=[['Q1.5','F1.1']];for(let i=34;i<=36;i++)L.push(['X1.'+i,'X1.33']);MB.forEach(n=>L.push(['X1.'+n,'X1.'+n+'b']));
@@ -2370,7 +2407,7 @@ const CGRP=[[['','13','14'],['A','53','54'],['A','83','84']],[['A','61','62'],['
 const NCREST=[[7,8],[9,10],[13,14],[17,18],[21,22],[25,26]];
 const m21k=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
 function refVariants(ex){const base=refWires(ex),V=[base];
-  if(!['p3','p10','p6','p7','p13','p14'].includes(ex)&&base.some(w=>w.some(k=>/^M1\./.test(k)))){
+  if(!['p3','p10','p6','p7','p13','p14','p16','p17'].includes(ex)&&base.some(w=>w.some(k=>/^M1\./.test(k)))){
     V.push([...base.filter(([a,b])=>!(/^M1\./.test(a)&&/^M1\./.test(b))).map(w=>w.map(k=>k.replace(/^M1\./,'M2.'))),...m2Star.map(([a,b])=>[a,b])]);}
   return V;}
 function gCmp(ex,W,ref0,D){const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
@@ -2427,7 +2464,8 @@ const PTEST={
  p11:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I3:1},{I3:0},{I1:0},{I1:1},{I3:1},{I3:0},{I2:1},{I2:0},{I1:0},{I1:1}]},
  p12:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I3:1},{I3:0},{I2:1},{I2:0},{I1:0},{I1:1},{I3:1},{I3:0},{I1:0},{I1:1}]},
  p13:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I3:1},{I3:0},{I1:0},{I1:1},{I2:1},{I2:0},{I1:0},{I1:1}]},
- p14:{base:{I1:1},steps:[{},{I2:1},{I2:0},{t:2000},{t:3500},{I1:0},{I1:1},{I2:1},{I2:0},{t:1000}]}};
+ p14:{base:{I1:1},steps:[{},{I2:1},{I2:0},{t:2000},{t:3500},{I1:0},{I1:1},{I2:1},{I2:0},{t:1000}]},
+ p17:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I3:1},{I3:0},{I1:0},{I1:1},{I3:1},{I3:0},{I2:1},{I2:0},{I1:0},{I1:1}]}};
 function progSim(prog,tm,base,steps){const P={prog:Array.isArray(prog)?prog:[],tm:tm||{},q:[false,false,false,false,false],m:{},ts:{},prev:{},flow:[]},inp={};let now=0;
   Object.entries(base).forEach(([k,v])=>inp[+k.slice(1)]=!!v);
   const key=()=>P.q.join()+JSON.stringify(P.m)+Object.values(P.ts).map(t=>t.out).join();
@@ -2462,7 +2500,7 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}${view?'':' · 🔒 الدرجة مقفلة'}</p>`;}
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
   let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+A[k].s+'/20 🔒':''}</option>`).join('')}</select></label>`;
-  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يقارن المحاكي كل توصيلة في لوحتك بتوصيلات المخطط المعتمد للتمرين، وتُحسب الدرجة بنسبة التوصيلات الصحيحة، سواء اشتغلت الدائرة أم لا. التوصيلات الخاطئة أو الزائدة تُنقص الدرجة. في تمارين easy (8 إلى 14): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
+  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يقارن المحاكي كل توصيلة في لوحتك بتوصيلات المخطط المعتمد للتمرين، وتُحسب الدرجة بنسبة التوصيلات الصحيحة، سواء اشتغلت الدائرة أم لا. التوصيلات الخاطئة أو الزائدة تُنقص الدرجة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
   else if(G){h+=`<div class="glock">🔒 قُيّم هذا التمرين من قبل، والدرجة مقفلة ولا تتغير حتى لو عدّلت التوصيل. التوصيل الذي قُيّم هو الذي يُرسل للمدرب.</div>`+gResHTML(G)+
     `<div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button>${tr?'<button class="btn trainer-only" id="gRedo" style="grid-column:1/-1">🔓 مسح الدرجة وإعادة التقييم (للمدرب)</button>':''}</div>`;}
   else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}${PLCX.has(ex)?'<br><b>التقييم:</b> التوصيل 10 درجات، والبرنامج 10 درجات (يُختبر تشغيله آليًا).':''}</div>
@@ -2473,7 +2511,7 @@ function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classLis
 function openGrade(){if(document.body.classList.contains('fs'))exitFS();const A=gAll();GV.ex=GV.ex||A._cur||'';gRender();gM.classList.add('open');}
 $('bGrade').onclick=openGrade;
 $('gClose').onclick=()=>gM.classList.remove('open');gM.addEventListener('click',e=>{if(e.target===gM)gM.classList.remove('open');});
-$('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'){GV.ex=e.target.value;gRender();}});
+$('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'){GV.ex=e.target.value;exMotor(GV.ex);gRender();}});
 $('gBody').addEventListener('click',e=>{const id=e.target.id;
   if(id==='gGo'){const n=$('stName').value.trim(),sid=$('stId').value.trim();
     if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return;}
@@ -2665,7 +2703,9 @@ const PPROG={
  p13:{prog:[LN([K('I2'),K('I1'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('Q1'),K('M1',1),K('Q3',1)],{f:'C',op:'Q2'}),
    LN([K('I3'),K('Q1'),WL],{f:'C',op:'M1'},[true,false,false]),LN([K('M1'),null,null]),LN([K('M1'),K('Q2',1),K('Q1')],{f:'C',op:'Q3'})],tm:{}},
  p14:{prog:[LN([K('I2'),K('I1'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null]),LN([K('Q1'),K('T1',1),K('Q3',1)],{f:'C',op:'Q2'}),
-   LN([K('Q1'),WL,WL],{f:'T',op:'T1'}),LN([K('T1'),K('Q2',1),K('Q1')],{f:'C',op:'Q3'})],tm:{1:{mode:'X',t:5}}}};
+   LN([K('Q1'),WL,WL],{f:'T',op:'T1'}),LN([K('T1'),K('Q2',1),K('Q1')],{f:'C',op:'Q3'})],tm:{1:{mode:'X',t:5}}},
+ p17:{prog:[LN([K('I2'),K('I1'),K('Q3',1)],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null]),
+   LN([K('I3'),K('I1'),K('Q1',1)],{f:'C',op:'Q3'},[true,false,false]),LN([K('Q3'),null,null]),LN([K('Q3'),K('Q1',1),WL],{f:'C',op:'Q2'})],tm:{}}};
 const PLCEX=[
  {n:'تشغيل/إيقاف مع تثبيت',p:[LN([K('I1'),K('I2'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null])],tm:{},
   h:'I1 = ضاغط تشغيل (NO)، I2 = ضاغط إيقاف (NC لذلك يبقى المدخل فعالًا)، Q1 يشغّل الكونتاكتور K1. السطر الثاني Q1 موصول رأسيًا بالسطر الأول = تثبيت ذاتي.'},
@@ -2686,7 +2726,7 @@ function mmAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContex
 function mmBeep(){if(!AC||QUIET)return;try{const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=2700;g.gain.value=.05;o.connect(g);g.connect(AC.destination);const t=AC.currentTime;o.start(t);g.gain.setTargetAtTime(0,t+.16,.02);o.stop(t+.25);}catch(_){}}
 function mmLoads(){const L=[];coilIds().forEach(k=>L.push([k+'.A1',k+'.A2',k.startsWith('KT')?3300:580]));
   [29,30,31,32].forEach(t=>L.push(['X1.'+t,'X1.33',2000]));
-  [['M1',6.8],['M2',18]].forEach(([m,w])=>[['U1','U2'],['V1','V2'],['W1','W2']].forEach(([a,b])=>L.push([m+'.'+a,m+'.'+b,w])));return L;}
+  [['M1',6.8],['M2',18]].forEach(([m,w])=>(m==='M1'&&S.dahl?[['U1','U2'],['U2','V1'],['V1','V2'],['V2','W1'],['W1','W2'],['W2','U1']]:[['U1','U2'],['V1','V2'],['W1','W2']]).forEach(([a,b])=>L.push([m+'.'+a,m+'.'+b,m==='M1'&&S.dahl?4.2:w])));return L;}
 function mmGraph(){const R=S.R,adj=new Map(),add=(a,b,w)=>{if(!adj.has(a))adj.set(a,[]);adj.get(a).push([b,w]);};
   mmLoads().forEach(([a,b,w])=>{if(!T[a]||!T[b])return;const na=R.uf.find(a),nb=R.uf.find(b);if(na!==nb){add(na,nb,w);add(nb,na,w);}});return adj;}
 function mmPot(net,adj){const R=S.R,own=R.src.get(net);if(own&&own.size)return own;const seen=new Set([net]);let q=[net];
@@ -2838,7 +2878,15 @@ const CIRCS={
  p15:{n:'عكس حركة مع نهايتي مشوار',idea:'إيقاف المحرك تلقائيًا عندما يصل الجزء المتحرك (العربة، البوابة، الخطاف) إلى نهاية مساره، دون أن يضغط أحد على S0.',
   power:['نفس دائرة قوى العكس البطيء: K1 للأمام، وK2 للخلف بتبديل الطورين L1 وL3.'],
   ctrl:['نفس دائرة العكس البطيء: S1 يشغّل K1 وS2 يشغّل K2، مع تثبيت ذاتي وإعاقة كهربائية.','النقطة المغلقة لـ SQ2 (25-26) على التوالي في مسار ملف K1: عندما تصل العربة إلى SQ2 تنفتح فيفصل K1 وتتوقف الحركة الأمامية.','النقطة المغلقة لـ SQ1 (21-22) على التوالي في مسار ملف K2: توقف الحركة العكسية عند SQ1.','بعد التوقف عند نهاية يمكن التشغيل في الاتجاه المعاكس فقط، لأن نهاية الاتجاه الآخر ما زالت مغلقة.','توضع نهاية المشوار بعد التقاء ضاغط التشغيل مع نقطة التثبيت 13-14، فتفصل الملف حتى لو بقي ضاغط التشغيل مضغوطًا.'],
-  lamps:'H1 للأمام، H2 للخلف، H4 للعطل.',err:['تبديل النهايتين (SQ1 في مسار K1): الضغط على S1 لا يتوقف عند SQ2 فتصطدم العربة بالنهاية.','وضع نهاية المشوار في فرع ضاغط التشغيل وحده: التثبيت الذاتي 13-14 يتجاوزها فتستمر الحركة بعد وصول العربة للنهاية.']}};
+  lamps:'H1 للأمام، H2 للخلف، H4 للعطل.',err:['تبديل النهايتين (SQ1 في مسار K1): الضغط على S1 لا يتوقف عند SQ2 فتصطدم العربة بالنهاية.','وضع نهاية المشوار في فرع ضاغط التشغيل وحده: التثبيت الذاتي 13-14 يتجاوزها فتستمر الحركة بعد وصول العربة للنهاية.']},
+ p16:{n:'محرك دالندر بسرعتين (تحكم تقليدي)',idea:'محرك دالندر له ملف واحد بأطراف وسطية، ويعمل بسرعتين بتغيير عدد الأقطاب: سرعة بطيئة بتوصيل دلتا، وسرعة عالية (ضعف البطيئة تقريبًا) بتوصيل نجمة مزدوجة YY. يُستخدم في المراوح والمخارط والروافع. عند اختيار هذا التمرين يتحول المحرك M1 إلى محرك دالندر بأطراف 1U 1V 1W و2U 2V 2W.',
+  power:['K1 (السرعة البطيئة) يغذي 1U 1V 1W عبر الأوفرلود F2 والشعب X1: 1 2 3، وتبقى 2U 2V 2W مفتوحة: توصيل دلتا.','K2 (السرعة العالية) يغذي 2U 2V 2W عبر الأوفرلود F3 والشعب X1: 4 5 6.','K3 (النجمة) يقصر 1U 1V 1W معًا (الأطراف 2-4-6 موصولة ببعضها)، فيصبح التوصيل نجمة مزدوجة YY.','لكل سرعة أوفرلود خاص لأن تيار كل سرعة مختلف.'],
+  ctrl:['F1 ← 95-96 لـ F2 ← 95-96 لـ F3 ← S0، فأي عطل يوقف المحرك في السرعتين.','S1 يشغّل K1 ويثبته بالنقطة 13-14، وفي مساره النقطة المغلقة 61-62 لـ K3.','S2 يشغّل K3 ويثبته بالنقطة 13-14، وفي مساره النقطة المغلقة 71-72 لـ K1.','النقطة المفتوحة 53-54 لـ K3 تغذي ملف K2، فلا يصل التيار إلى 2U 2V 2W إلا بعد قصر 1U 1V 1W.','لتغيير السرعة اضغط S0 أولًا، لأن كل سرعة تعيق الأخرى.'],
+  lamps:'H1 سرعة بطيئة (مع ملف K1)، H2 سرعة عالية (مع ملف K2)، H3 إيقاف عبر 61-62 لـ K1 و71-72 لـ K3 على التوالي، H4 عطل أي أوفرلود.',
+  err:['عمل K1 مع K3: الأطوار الثلاثة تُقصر عند 1U 1V 1W = قصر دائرة، لذلك الإعاقة الكهربائية بينهما شرط أساسي.','تشغيل K2 دون K3: تصل الأطوار إلى 2U 2V 2W و1U 1V 1W مفتوحة، فلا يعمل المحرك بالسرعة العالية.','توصيل 2U 2V 2W بالأطوار نفسها بترتيب مختلف عن 1U 1V 1W: ينعكس اتجاه الدوران عند التحويل للسرعة العالية.']},
+ p17:{n:'محرك دالندر بسرعتين بجهاز easy',idea:'نفس التمرين 16، لكن التثبيت الذاتي والإعاقة وترتيب تشغيل K3 ثم K2 تُكتب في البرنامج.',power:['نفس دائرة القوى في التمرين 16.'],
+  ctrl:['S0 إلى I1، وS1 إلى I2، وS2 إلى I3. المخارج مباشرة: Q1 ← K1 (بطيئة)، وQ2 ← K2 (عالية)، وQ3 ← K3 (قصر 1U 1V 1W).','تغذية المخارج تمر بالأوفرلودين F2 وF3 على التوالي.','البرنامج: Q1 = (I2 أو Q1) و I1 و(Q3 مغلق). Q3 = (I3 أو Q3) و I1 و(Q1 مغلق). Q2 = Q3 و(Q1 مغلق).'],
+  lamps:'H1 مع ملف K1، وH2 مع ملف K2، وH3 إيقاف، وH4 عطل.',err:['نسيان Q3 مغلقًا في سطر Q1 أو Q1 مغلقًا في سطر Q3: تعمل السرعتان معًا = قصر عند 1U 1V 1W.','تشغيل Q2 مباشرة من I3 دون Q3: يصل التيار إلى 2U 2V 2W قبل قصر 1U 1V 1W.']}};
 const exM=$('exModal');let EX={tab:'now',circ:'p1',hl:null};
 function nowHTML(){const L=[],add=(c,t)=>L.push(`<li class="${c}">${t}</li>`);
   if(!S.wires.length)return '<div class="note">لا توجد توصيلات بعد. ابدأ التوصيل أو اطلب من المدرب تمرينًا، ثم افتح هذا القسم لترى شرح ما يحدث في دائرتك.</div>';
@@ -2849,7 +2897,7 @@ function nowHTML(){const L=[],add=(c,t)=>L.push(`<li class="${c}">${t}</li>`);
   ofType('k').forEach(k=>add(S.coils[k]?'on':'',S.coils[k]?`${k} يعمل: ملفه A1-A2 عليه 230V، فانغلقت نقاط القوى ونقطة 13-14${S.devs.some(d=>d.host===k&&d.type==='aux')?'، وتغيرت نقاط كتلته المساعدة':''}.`:`${k} لا يعمل: لا يصل جهد لملفه، فتحقق من ضاغط التشغيل والإيقاف والإعاقة في مساره.`));
   ofType('timer').forEach(t=>{const on=S.coils[t],dn=S.done[t],tm=S.tm[t];add(on?'on':'',!on?`${t} لا يعمل.`:dn?`${t} انتهى عده (${tm.delay} ث): انفتحت 15-16 وانغلقت 15-18.`:`${t} يعد الآن (${tm.delay} ث): النقطة 15-16 ما زالت مغلقة.`);});
   [['M1',S.motor],['M2',S.motor2]].forEach(([k,m])=>{if(m.state==='off'&&k==='M2')return;
-    add(m.state==='run'?'on':m.state==='fault'?'bad':'',m.state==='run'?`المحرك ${k} يدور ${m.mode==='star'?'نجمة (النهايات U2 V2 W2 مقصورة معًا، تيار أقل)':'دلتا (كل ملف بين طورين، قدرة كاملة)'} ${m.dir==='cw'?'للأمام':'للخلف (طوران مبدّلان)'}.`:m.state==='fault'?`المحرك ${k}: ${esc(m.why)}`:`المحرك ${k} متوقف: لا تصل الأطوار لأطرافه.`);});
+    add(m.state==='run'?'on':m.state==='fault'?'bad':'',m.state==='run'?`المحرك ${k} يدور ${m.mode==='low'?'محرك دالندر بالسرعة البطيئة: دلتا (الأطوار على 1U 1V 1W، و2U 2V 2W مفتوحة)':m.mode==='high'?'محرك دالندر بالسرعة العالية: نجمة مزدوجة YY (الأطوار على 2U 2V 2W، و1U 1V 1W مقصورة معًا)':m.mode==='star'?'نجمة (النهايات U2 V2 W2 مقصورة معًا، تيار أقل)':'دلتا (كل ملف بين طورين، قدرة كاملة)'} ${m.dir==='cw'?'للأمام':'للخلف (طوران مبدّلان)'}.`:m.state==='fault'?`المحرك ${k}: ${esc(m.why)}`:`المحرك ${k} متوقف: لا تصل الأطوار لأطرافه.`);});
   const LN={H1:'H1 تشغيل 1',H2:'H2 تشغيل 2',H3:'H3 إيقاف',H4:'H4 عطل'},lit=Object.keys(LN).filter(h=>S.lamps[h]);
   add(lit.length?'on':'',lit.length?'اللمبات المضيئة: '+lit.map(h=>LN[h]).join('، ')+'.':'لا توجد لمبة بيان مضيئة.');
   {const P=S.plc,used=S.wires.some(w=>/^(PLC|XP)\./.test(w.a)||/^(PLC|XP)\./.test(w.b));
@@ -2970,7 +3018,7 @@ function posOf(dt,sp,st){const k=AP.app;let p;
   return p;}
 function apMotor(){if(AP.mode==='demo'){const d=AP.demo;return{run:d.run,sp:d.run?(d.mode==='star'?.55:1)*d.dir:0,txt:d.run?'تشغيل تجريبي: '+(d.mode==='star'?'نجمة':'دلتا')+' '+(d.dir>0?'للأمام':'للخلف'):'تشغيل تجريبي متوقف. اضغط ▶ تشغيل.'};}
   const m=AP.m==='M1'?S.motor:S.motor2;
-  if(m.state==='run')return{run:true,sp:(m.mode==='star'?.55:1)*(m.dir==='cw'?1:-1),txt:'يتبع المحرك '+AP.m+': '+(m.mode==='star'?'نجمة':'دلتا')+' '+(m.dir==='cw'?'للأمام':'للخلف')};
+  if(m.state==='run')return{run:true,sp:(slowM(m)?.55:1)*(m.dir==='cw'?1:-1),txt:'يتبع المحرك '+AP.m+': '+modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف')};
   if(m.state==='fault')return{run:false,sp:0,fault:true,txt:'المحرك '+AP.m+' في حالة عطل: '+m.why};
   return{run:false,sp:0,txt:'المحرك '+AP.m+' متوقف. شغّله من اللوحة، أو اختر «تجربة».'};}
 function apAudio(sp){if(!AP.sound){if(AP.au){const t=AC.currentTime;['nG','hG','wG','bG'].forEach(k=>AP.au[k].gain.setTargetAtTime(0,t,.1));}return;}
@@ -3014,7 +3062,7 @@ let last=performance.now();
 setInterval(()=>{const now=performance.now(),dt=Math.min(0.5,(now-last)/1000);last=now;let need=false;
   if(ofType('timer').some(t=>S.tm[t].start!=null&&timerDone(t)!==!!S.done[t]))need=true;
   const m=S.motor;
-  if(m.state==='run'){const v=(m.mode==='star'?0.05:0.1)*(m.dir==='cw'?1:-1);S.pos=Math.min(1,Math.max(0,S.pos+v*dt));}
+  if(m.state==='run'){const v=(slowM(m)?0.05:0.1)*(m.dir==='cw'?1:-1);S.pos=Math.min(1,Math.max(0,S.pos+v*dt));}
   const l1=S.pos<=0.01,l2=S.pos>=0.99;
   if(l1!==S.ls1||l2!==S.ls2){S.ls1=l1;S.ls2=l2;if((l1||l2)&&lsShown())say((l1?'SQ1':'SQ2')+' اشتغل: العربة وصلت النهاية');need=true;}
   ofType('ol').forEach(f=>{const o=S.ol[f];o.I=(o.m1?motorI():0)+(o.m2?motor2I():0);const r=o.I/o.iset;
@@ -3052,8 +3100,11 @@ const SDC={
  p13:sP(sS(cS0,cI(1)),sS(cS1,cI(2)),sS(cS2,cI(3)),sS(cOL('F2','NC'),sP(sS(cQ(1),cCoil(1)),sS(cQ(2),sP(cCoil(2),cH(1,29))),sS(cQ(3),sP(cCoil(3),cH(2,30))))),sS(cKA(1),cH(3,31)),sS(cOL('F2','NO'),cH(4,32))),
  p14:sP(sS(cS0,cI(1)),sS(cS1,cI(2)),sS(cOL('F2','NC'),sP(sS(cQ(1),cCoil(1)),sS(cQ(2),sP(cCoil(2),cH(1,29))),sS(cQ(3),sP(cCoil(3),cH(2,30))))),sS(cKA(1),cH(3,31)),sS(cOL('F2','NO'),cH(4,32)))};
 SDC.p12=SDC.p11;
+{const k1o=sE('c','NC','K1A','71','72'),k3a=sE('c','NO','K3A','53','54'),k3o=sE('c','NC','K3A','71','72'),h3=sS(cKA(1),k3o,cH(3,31)),h4=sS(sP(cOL('F2','NO'),cOL('F3','NO')),cH(4,32));
+  SDC.p16=sP(sS(cOL('F2','NC'),cOL('F3','NC'),cS0,sP(sS(sP(cS1,cK(1)),cKA(3),sP(cCoil(1),cH(1,29))),sS(sP(cS2,cK(3)),k1o,sP(cCoil(3),sS(k3a,sP(cCoil(2),cH(2,30))))))),h3,h4);
+  SDC.p17=sP(sS(cS0,cI(1)),sS(cS1,cI(2)),sS(cS2,cI(3)),sS(cOL('F2','NC'),cOL('F3','NC'),sP(sS(cQ(1),sP(cCoil(1),cH(1,29))),sS(cQ(2),sP(cCoil(2),cH(2,30))),sS(cQ(3),cCoil(3)))),h3,h4);}
 SDC.p15=sP(sS(cOL('F2','NC'),cS0,sP(sS(sP(cS1,cK(1)),cSQ2,cKA(2),sP(cCoil(1),cH(1,29))),sS(sP(cS2,cK(2)),cSQ1,cKA(1),sP(cCoil(2),cH(2,30))))),sS(cOL('F2','NO'),cH(4,32)));
-const SDPW={p1:'dol',p2:'dol',p8:'dol',p9:'dol',p3:'two',p10:'two',p4:'rev',p5:'rev',p11:'rev',p12:'rev',p6:'sd',p7:'sd',p13:'sd',p14:'sd',p15:'rev'};
+const SDPW={p1:'dol',p2:'dol',p8:'dol',p9:'dol',p3:'two',p10:'two',p4:'rev',p5:'rev',p11:'rev',p12:'rev',p6:'sd',p7:'sd',p13:'sd',p14:'sd',p15:'rev',p16:'dahl',p17:'dahl'};
 /* ---- ladder renderer ---- */
 const SDW=78,SDH=66,SDB=9,SDK='#16202a',SDT='#394650',SDD='#0b3d91';
 const sdTx=(x,y,t,o)=>{o=o||{};const ar=/[\u0600-\u06FF]/.test(t),a0=o.a||'middle',an=ar?(a0==='start'?'end':a0==='end'?'start':a0):a0;return `<text x="${x}" y="${y}"${ar?' direction="rtl"':''} text-anchor="${an}" style="font:${o.w||600} ${o.s||9.5}px sans-serif;fill:${o.c||SDT}">${t}</text>`;};
@@ -3100,7 +3151,7 @@ function sdCtrl(ex){const root=SDC[ex];if(!root)return '';sdLay(root);
   s+=sdTx(22,rt-8,'الطور L من F1 (الطرف 2)',{a:'start',s:10,w:700,c:'#b3261e'})+sdTx(22,rb+16,'التعادل N (الشعب X1: 33-36)',{a:'start',s:10,w:700,c:'#1f5fd1'});
   kids.forEach(k=>{const e=rt+16+Hm;k.L.st.forEach(o=>{const x=sdX(c+o);s+=sdDot(x,rt)+sdL(x,rt,x,rt+16);});s+=sdDraw(k,c,rt+16,Hm);
     k.L.en.forEach(o=>{const x=sdX(c+o);s+=sdL(x,e,x,rb)+sdDot(x,rb);});c+=k.L.w;});
-  const plc=/^p(8|9|1[0-4])$/.test(ex);
+  const plc=PLCX.has(ex);
   const note=plc?'المداخل I تُغذّى من F1 عبر الضواغط، ومخارج Q تشغّل الملفات. البرنامج يُكتب في جهاز easy.':'أرقام الضواغط واللمبات هي أرقام الشعب X1. طرف A2 لكل ملف يذهب إلى التعادل N.';
   s+=sdTx(20+ (40+W*SDW-20)/2,rb+38,note,{s:9.5,c:'#555'});
   const w=Math.max(60+W*SDW,380);return {w,h:rb+50,svg:s};}
@@ -3150,6 +3201,19 @@ function sdPower(ex){const v=SDPW[ex],x0=60;let s=pwHead(x0),w=300,h=420;
     [[x0+8,'U2'],[x0+26,'V2'],[x0+44,'W2']].forEach(([mx,l])=>{s+=pwL(mx,cy+26,cy+50)+sdTx(mx+3,cy+38,l,{a:'start',s:8});});
     [[T[0],x0+44,cy+52],[T[2],x0+26,cy+58],[T[1],x0+8,cy+64]].forEach(([tx,mx,yy])=>{s+=pwL(tx,214,yy)+sdL(tx,yy,mx,yy)+pwL(mx,cy+50,yy)+sdDot(mx,yy);});
     w=560;h=440;}
+  if(v==='dahl'){/* K1 low speed -> F2 -> X1 1-3 -> 1U 1V 1W; K2 high speed -> F3 -> X1 4-6 -> 2U 2V 2W; K3 (right) shorts 1U 1V 1W, fed by wires rising from the motor leads */
+    const x1=250,T=[x1,x1+26,x1+52],x2=430,T2=[x2,x2+26,x2+52],R=110,my=344;
+    s+=Q+down(84,R);[0,1,2].forEach(i=>{const y=92+i*6;s+=sdDot(x0+26*i,y)+sdL(x0+26*i,y,T[i],y)+pwL(T[i],y,R);});
+    s+=pw3('km',x0,R,'K1',['1','3','5'],['2','4','6'],'سرعة بطيئة')+pw3('km',x1,R,'K2',['1','3','5'],['2','4','6'],'سرعة عالية')+pw3('km',x2,R,'K3',['1','3','5'],['2','4','6'],'نجمة YY');
+    s+=down(170,186)+down(170,186,T)+pw3('fr',x0,186,'F2',['1','3','5'],['2','4','6'],'أوفرلود')+pw3('fr',x1,186,'F3',['1','3','5'],['2','4','6'],'أوفرلود');
+    s+=down(246,296)+down(246,296,T)+pwX1(x0,300,['1','2','3'],'X1')+pwX1(x1,300,['4','5','6'],'X1')+down(304,my)+down(304,my,T);
+    const ris=[404,396,388],top=[104,98,92],tap=[330,324,318];
+    [0,1,2].forEach(i=>{const sx=x0+26*i;s+=sdDot(sx,tap[i])+sdL(sx,tap[i],ris[i],tap[i])+pwL(ris[i],top[i],tap[i])+sdL(ris[i],top[i],T2[i],top[i])+pwL(T2[i],top[i],R);});
+    s+=`<path d="M${x2} 170V178H${x2+52}V170M${x2+26} 170V178" fill="none" stroke="${SDK}" stroke-width="1.8"/>`+sdTx(x2+26,192,'2-4-6 موصولة معًا',{s:8.5});
+    s+=`<rect x="${x0-18}" y="${my}" width="${x1+88-x0}" height="62" rx="12" fill="#fff" stroke="${SDK}" stroke-width="1.8"/>`;
+    [[x0,'1U'],[x0+26,'1V'],[x0+52,'1W'],[T[0],'2U'],[T[1],'2V'],[T[2],'2W']].forEach(([x,l])=>{s+=sdDot(x,my)+sdTx(x,my+14,l,{s:8.5,w:700});});
+    s+=sdTx((x0+x1+60)/2,my+24,'M 3~',{s:13,w:700,c:SDK})+sdTx((x0+x1+60)/2,my+38,'M1 محرك دالندر',{s:10,w:700,c:SDD})+sdTx((x0+x1+60)/2,my+52,'بطيئة: K1 دلتا Δ · عالية: K3 + K2 نجمة مزدوجة YY',{s:8.5});
+    w=560;h=420;}
   return {w,h,svg:s};}
 function sdRender(){const V=document.getElementById('sdIn');if(!V)return;const d=SD.tab==='pw'?sdPower(SD.ex):sdCtrl(SD.ex);
   const VW=document.getElementById('sdView'),fit=Math.max(0.3,((VW&&VW.clientWidth)||320)-6)/d.w,sc=Math.min(fit*SD.z,4);
@@ -3164,7 +3228,7 @@ function sdOpen(on,ex){SD.open=on;if(ex)SD.ex=ex;const W=document.getElementById
   document.getElementById('sdEx').innerHTML=Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${PNAME[k]}</option>`).join('');
   document.getElementById('dSd').onclick=()=>sdOpen(!SD.open,SD.open?null:(S.pex&&PNAME[S.pex]?S.pex:null));
   document.getElementById('sdX').onclick=()=>sdOpen(false);
-  document.getElementById('sdEx').onchange=e=>{SD.ex=e.target.value;sdRender();sdSave();};
+  document.getElementById('sdEx').onchange=e=>{SD.ex=e.target.value;exMotor(SD.ex);sdRender();sdSave();};
   document.getElementById('sdZi').onclick=()=>{SD.z=Math.min(3,+(SD.z+0.2).toFixed(2));sdRender();sdSave();};
   document.getElementById('sdZo').onclick=()=>{SD.z=Math.max(0.4,+(SD.z-0.2).toFixed(2));sdRender();sdSave();};
   document.getElementById('sdBig').onclick=()=>{SD.big=!SD.big;SD.z=1;sdRender();requestAnimationFrame(sdRender);};
