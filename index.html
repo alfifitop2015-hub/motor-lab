@@ -996,9 +996,8 @@ function drawDev(d){const {x,y,w,h}=d;
     <circle cx="${x+128}" cy="${y+124}" r="6" fill="${dn?'#ffb000':'#bbb'}"/>${txt(x+128,y+142,'R',9)}${delBtn(d)}`;}
   case'ol':return olFace(d,{top:44,dx:34,dy:88,dr:19,px:70,py:66,tx:104,rx:140,ty:76,fx:160,fy:64,fw:44});
   case'aux':{const hd=(S.devs.find(q=>q.id===d.id)||{}).host,on=S.coils[hd];let s=`<rect x="${x-3}" y="${y+2}" width="8" height="${h-4}" rx="2" fill="#222"/><rect x="${x+w-5}" y="${y+2}" width="8" height="${h-4}" rx="2" fill="#222"/>
-    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="url(#gWht)" stroke="#8a8f93"/>
-    <rect x="${x+1}" y="${y+1}" width="${w-2}" height="23" rx="4" fill="url(#gDrk)"/><rect x="${x+1}" y="${y+h-24}" width="${w-2}" height="23" rx="4" fill="url(#gDrk)"/>`;
-    d.terms.forEach(t=>{s+=cav(x+t.dx,y+t.dy,9.5);});
+    <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" fill="#f5f6f5" stroke="#8a8f93"/>`;
+    d.terms.forEach(t=>{s+=hole(x+t.dx,y+t.dy);});
     s+=`<line x1="${x+4}" y1="${y+38}" x2="${x+w-4}" y2="${y+38}" stroke="#2f8fd1" stroke-width="1.4"/><line x1="${x+4}" y1="${y+68}" x2="${x+w-4}" y2="${y+68}" stroke="#2f8fd1" stroke-width="1.4"/>
     <rect x="${x+w/2-8}" y="${y+(on?47:42)}" width="16" height="20" rx="2" fill="#f6a01a" stroke="#a8600a"/><rect x="${x+w/2-8}" y="${y+(on?47:42)}" width="16" height="5" rx="2" fill="#fff" opacity=".35"/>
     <rect x="${x+w/2+14}" y="${y+46}" width="40" height="16" rx="2" fill="#fff" stroke="#d0d4d7"/>
