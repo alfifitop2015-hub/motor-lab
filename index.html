@@ -2266,7 +2266,7 @@ document.getElementById('dPreset').onchange=e=>{const v=e.target.value;e.target.
 function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,...(DAHLX.has(v)?{mt:'d'}:{}),plc:PPROG[v]?{prog:PPROG[v].prog,tm:PPROG[v].tm,run:true}:undefined});
   S.pex=v;try{if(SD.open){SD.ex=v;sdRender();}else SD.ex=v;}catch(_){}Object.assign(S,{power:true,Q1:true,F1:true,fault:null,coils:{},sel:null,pending:null,pos:0.5});
   S.selDev=null;say('حُمّل مثال: '+PNAME[v]+' (أُضيفت القطع اللازمة تلقائيًا'+(S.dahl?'، والمحرك M1 أصبح محرك دالندر بسرعتين':'')+')');update();}
-/* picking an exercise (grading or schematic window) makes M1 the motor that exercise needs */
+/* picking an exercise for grading makes M1 the motor that exercise needs */
 function exMotor(ex){if(!ex||!PNAME[ex]||!setDahl(DAHLX.has(ex)))return;say(S.dahl?'المحرك M1 أصبح محرك دالندر بسرعتين (1U 1V 1W للسرعة البطيئة، 2U 2V 2W للسرعة العالية) ليناسب التمرين':'المحرك M1 عاد محركًا عاديًا (U1 V1 W1 / U2 V2 W2) ليناسب التمرين');update();}
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addDevice(b.dataset.add));
 document.getElementById('dRail').onchange=e=>railChange(e.target.value);
@@ -3228,7 +3228,7 @@ function sdOpen(on,ex){SD.open=on;if(ex)SD.ex=ex;const W=document.getElementById
   document.getElementById('sdEx').innerHTML=Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${PNAME[k]}</option>`).join('');
   document.getElementById('dSd').onclick=()=>sdOpen(!SD.open,SD.open?null:(S.pex&&PNAME[S.pex]?S.pex:null));
   document.getElementById('sdX').onclick=()=>sdOpen(false);
-  document.getElementById('sdEx').onchange=e=>{SD.ex=e.target.value;exMotor(SD.ex);sdRender();sdSave();};
+  document.getElementById('sdEx').onchange=e=>{SD.ex=e.target.value;sdRender();sdSave();};
   document.getElementById('sdZi').onclick=()=>{SD.z=Math.min(3,+(SD.z+0.2).toFixed(2));sdRender();sdSave();};
   document.getElementById('sdZo').onclick=()=>{SD.z=Math.max(0.4,+(SD.z-0.2).toFixed(2));sdRender();sdSave();};
   document.getElementById('sdBig').onclick=()=>{SD.big=!SD.big;SD.z=1;sdRender();requestAnimationFrame(sdRender);};
