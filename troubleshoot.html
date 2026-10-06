@@ -60,25 +60,49 @@ body:not(.cloud) .cloud-only{display:none!important}
 .cinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .cinfo .kl{font-size:.74rem;color:#4b5866}.cinfo b{font-size:1.02rem;color:#0b3d91}.cinfo .de{font-size:.78rem;color:#4b5866;direction:ltr;text-align:right}
 .wrap.zero{opacity:.35;pointer-events:none}
-.kctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;justify-content:center;padding-top:8px;margin-top:8px;border-top:2px solid #d8d0b8;direction:ltr}
+.kctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-start;justify-content:center;margin-top:8px;padding:8px 10px 6px;background:linear-gradient(#f3eedf,#e9e2cd);border:1px solid #cfc6aa;border-radius:6px;box-shadow:inset 0 1px 0 #fffaf0,inset 0 -2px 4px rgba(0,0,0,.08);direction:ltr}
 .kctl .kc{direction:rtl}
+.kext{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;margin-top:8px;direction:ltr}
+.kext .kc{direction:rtl}
+.kc.na{opacity:.38;pointer-events:none}
 .board{margin-top:4px;border:1px solid #d8d0b8;border-radius:6px;overflow:hidden;background:#f4eedb}
-.kgrp{display:flex;gap:8px;align-items:flex-end}
-.kc{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;color:#3b4855;min-width:44px}
-.kc .t{font-weight:700;color:#1b2530;direction:ltr}
-.rot{width:46px;height:46px;border-radius:50%;border:3px solid #9aa6b2;background:radial-gradient(circle at 40% 35%,#5b6570,#20262c);cursor:pointer;position:relative;padding:0}
-.rot::after{content:"";position:absolute;left:50%;top:6px;width:5px;height:17px;margin-left:-2.5px;background:#f2f2f2;border-radius:3px;transform-origin:50% 17px;transform:rotate(-90deg);transition:transform .15s}
-.rot.on::after{transform:rotate(0)}
-.rot.on{border-color:#2e9b55}
-.pbt{width:46px;height:46px;border-radius:50%;border:4px solid #c3cbd3;cursor:pointer;color:#fff;font-weight:700;font-size:1rem;touch-action:none;user-select:none;-webkit-user-select:none;padding:0}
-.pbt.red{background:#d32f2f}.pbt.grn{background:#2e9b47}
-.pbt.down{transform:scale(.9);box-shadow:inset 0 3px 6px rgba(0,0,0,.45)}
-.lmp{width:40px;height:40px;border-radius:50%;border:4px solid #c3cbd3;background:#eef0f2;display:block}
-.lmp.on{background:#a8f0c0;box-shadow:0 0 14px 5px #2ecc71;border-color:#1e9e50}
-.lmp.red.on{background:#ffb3ad;box-shadow:0 0 14px 5px #ff3b30;border-color:#c62828}
-.lmp.yel.on{background:#fff3a0;box-shadow:0 0 14px 5px #ffcc00;border-color:#d4a000}
-.lsw{min-width:46px;height:34px;border-radius:7px;border:2px solid #333;background:#111;color:#ddd;font-size:.72rem;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;padding:0 4px}
-.lsw.on{background:#ffb300;color:#111;border-color:#a77400}
+.kgrp{display:flex;gap:10px;align-items:flex-start}
+.kc{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.72rem;color:#3b4855;min-width:44px}
+.kc .t{font-weight:700;color:#1b2530;direction:ltr;font-size:.74rem;line-height:1;min-height:.74rem}
+.chrome{background:radial-gradient(circle at 35% 30%,#fff,#d5dadf 45%,#9aa3ab 75%,#e6e9ec)}
+.rotw{position:relative;width:62px;height:58px;display:flex;align-items:flex-end;justify-content:center}
+.rotw .m0,.rotw .m1{position:absolute;top:0;font-size:.66rem;font-weight:700;color:#555;direction:ltr}
+.rotw .m0{left:6px}.rotw .m1{right:8px}
+.rot{width:50px;height:50px;border-radius:50%;border:0;padding:0;cursor:pointer;position:relative;background:radial-gradient(circle,#2b3036 0 52%,#15191d 56%,#c7cdd2 58%,#f5f7f8 66%,#8e979f 92%,#c9ced3 100%);box-shadow:0 2px 3px rgba(0,0,0,.35)}
+.rot::after{content:"";position:absolute;left:50%;top:9px;width:7px;height:32px;margin-left:-3.5px;border-radius:4px;background:linear-gradient(90deg,#0d1012,#3e454c 50%,#0d1012);box-shadow:0 0 0 1px #000;transform:rotate(-45deg);transition:transform .15s}
+.rot::before{content:"";position:absolute;left:50%;top:10px;width:2px;height:6px;margin-left:-1px;background:#f2f2f2;border-radius:1px;transform-origin:1px 15px;transform:rotate(-45deg);transition:transform .15s;z-index:1}
+.rot.on::after,.rot.on::before{transform:rotate(45deg)}
+.rotw:has(.rot.on) .m1{color:#1e8a46}.rotw:has(.rot:not(.on)) .m0{color:#111}
+.pbt{width:46px;height:46px;border-radius:50%;cursor:pointer;color:rgba(255,255,255,.85);font-weight:700;font-size:.95rem;touch-action:none;user-select:none;-webkit-user-select:none;padding:0;border:0;margin:6px;box-shadow:0 0 0 5px #cfd5da,0 0 0 6px #8e979f,0 3px 5px 6px rgba(0,0,0,.25)}
+.pbt.red{background:radial-gradient(circle at 38% 32%,#ff7a6e,#d42a22 55%,#a8150f)}.pbt.grn{background:radial-gradient(circle at 38% 32%,#6fc77d,#2a8a3c 55%,#1b6029)}
+.pbt.down{transform:scale(.9);box-shadow:0 0 0 7px #cfd5da,0 0 0 8px #8e979f,inset 0 3px 6px rgba(0,0,0,.45)}
+.lmp{width:46px;height:46px;border-radius:50%;margin:6px;display:block;background:radial-gradient(circle at 40% 35%,#fff,#e9ecee 55%,#cdd2d6);box-shadow:0 0 0 5px #cfd5da,0 0 0 6px #8e979f,0 3px 5px 6px rgba(0,0,0,.2)}
+.lmp.on{background:radial-gradient(circle at 40% 35%,#fff,#d8ffe4 50%,#7fe0a2);box-shadow:0 0 0 5px #cfd5da,0 0 0 6px #8e979f,0 0 16px 9px #2ecc71}
+.kext .lmp{width:30px;height:30px;margin:4px}
+.lmp.red.on{background:radial-gradient(circle at 40% 35%,#fff,#ffb3ad 50%,#ff5b50);box-shadow:0 0 0 5px #cfd5da,0 0 0 6px #8e979f,0 0 14px 7px #ff3b30}
+.lmp.yel.on{background:radial-gradient(circle at 40% 35%,#fff,#fff3a0 50%,#ffd21f);box-shadow:0 0 0 5px #cfd5da,0 0 0 6px #8e979f,0 0 14px 7px #ffcc00}
+.lsw{position:relative;width:66px;height:52px;margin-top:2px;border:0;padding:0;background:none;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;direction:ltr}
+.lsw .bd{position:absolute;left:6px;right:6px;top:10px;bottom:0;background:linear-gradient(#2a2a2a,#0e0e0e);border-radius:4px;box-shadow:0 2px 3px rgba(0,0,0,.4)}
+.lsw .bd::after{content:"";position:absolute;left:6px;right:6px;top:8px;height:9px;background:#f4f4f0;border-radius:1px}
+.lsw .tm{position:absolute;top:0;width:15px;height:16px;border-radius:4px 4px 2px 2px;background:linear-gradient(90deg,#000,#3a3a3a 50%,#000)}
+.lsw .tm.a{left:12px}.lsw .tm.b{right:12px}
+.lsw .nr{position:absolute;bottom:4px;left:0;right:0;font-size:.6rem;color:#cfcfcf;text-align:center}
+.lsw .pl{position:absolute;top:28px;width:14px;height:10px;border-radius:2px;background:repeating-linear-gradient(90deg,#1a1a1a 0 2px,#555 2px 4px);transition:width .1s}
+.lsw .pl::after{content:"";position:absolute;top:1px;width:8px;height:8px;border-radius:50%;background:#222}
+.lsw.r .pl{right:-8px}.lsw.r .pl::after{right:-5px}
+.lsw.l .pl{left:-8px}.lsw.l .pl::after{left:-5px}
+.lsw.on .pl{width:6px}.lsw.r.on .pl{right:0}.lsw.l.on .pl{left:0}
+.lsw.on .bd{box-shadow:0 0 0 3px #ffb300,0 2px 3px rgba(0,0,0,.4)}
+.jk{direction:ltr;display:grid;grid-template-columns:22px 22px;gap:9px 12px;margin-top:2px}
+.jk i{width:22px;height:22px;border-radius:50%;display:block;position:relative;box-shadow:0 2px 2px rgba(0,0,0,.35)}
+.jk i::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#0b0b0b}
+.jk .b{background:radial-gradient(circle at 35% 30%,#6aa8ff,#1658c9)}.jk .r{background:radial-gradient(circle at 35% 30%,#ff7b7b,#c81e1e)}.jk .k{background:radial-gradient(circle at 35% 30%,#555,#111)}
+.jkl{direction:ltr;display:flex;justify-content:space-around;width:56px;font-weight:700;font-size:.9rem;line-height:1;color:#1b2530}
 .olr{height:34px;border-radius:7px;border:1px solid #8a96a3;background:#fff;color:#1b2530;font-size:.74rem;cursor:pointer;padding:0 8px;white-space:nowrap}
 .olr.trip{background:#d32f2f;color:#fff;border-color:#9e1d1d;font-weight:700}
 .mot{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #b9c3cf;border-radius:10px;padding:4px 10px}
@@ -198,34 +222,27 @@ body.cloud #sWa{background:var(--panel)}
   <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span></div></div>
   <div class="board"><div class="hint" id="hint"></div>
   <div class="wrap" id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
-  <div class="kctl" id="kctl">
+  <div class="kctl" id="kctl" aria-label="لوحة الضواغط والمفاتيح">
+    <div class="kc"><span class="t">Q2</span><span class="rotw"><span class="m0">0</span><span class="m1">I</span><button class="rot" id="cQ2" aria-label="مفتاح دائرة التحكم Q2"></button></span><span>التحكم</span></div>
+    <div class="kc kls" id="kS4"><span class="t">S4</span><button class="lsw r" data-ls="S4" aria-label="مفتاح نهاية المشوار S4"><span class="tm a"></span><span class="tm b"></span><span class="bd"></span><span class="nr">13 · 21</span><span class="pl"></span></button><span>نهاية يسار</span></div>
+    <div class="kc" title="مقابس جهد التحكم 24V"><span class="jkl"><span>−</span><span>+</span></span><span class="jk" aria-hidden="true"><i class="b"></i><i class="r"></i><i class="k"></i><i class="k"></i></span><span dir="ltr">24V</span></div>
+    <div class="kc kls" id="kS5"><span class="t">S5</span><button class="lsw l" data-ls="S5" aria-label="مفتاح نهاية المشوار S5"><span class="tm a"></span><span class="tm b"></span><span class="bd"></span><span class="nr">21 · 13</span><span class="pl"></span></button><span>نهاية يمين</span></div>
+    <div class="kc"><span class="t">Q1</span><span class="rotw"><span class="m0">0</span><span class="m1">I</span><button class="rot" id="cQ1" aria-label="المفتاح الرئيسي Q1"></button></span><span>الرئيسي</span></div>
     <div class="kgrp">
-      <div class="kc"><button class="rot" id="cQ2" aria-label="مفتاح دائرة التحكم Q2"></button><span class="t">Q2</span><span>التحكم</span></div>
-    </div>
-    <div class="kgrp kls">
-      <div class="kc"><button class="lsw" data-ls="S4">S4</button><span>نهاية يسار</span></div>
-    </div>
-    <div class="kgrp kls">
-      <div class="kc"><button class="lsw" data-ls="S5">S5</button><span>نهاية يمين</span></div>
-    </div>
-    <div class="kgrp">
-      <div class="kc"><button class="rot" id="cQ1" aria-label="المفتاح الرئيسي Q1"></button><span class="t">Q1</span><span>الرئيسي</span></div>
+      <div class="kc"><span class="t">S1</span><button class="pbt red" data-pb="S1" aria-label="S1 إيقاف">0</button><span>إيقاف</span></div>
+      <div class="kc" id="kS2"><span class="t">S2</span><button class="pbt grn" data-pb="S2" aria-label="S2">I</button><span id="tS2">تشغيل</span></div>
+      <div class="kc" id="kS3"><span class="t">S3</span><button class="pbt grn" data-pb="S3" aria-label="S3">II</button><span id="tS3"></span></div>
     </div>
     <div class="kgrp">
-      <div class="kc"><button class="pbt red" data-pb="S1" aria-label="S1 إيقاف">0</button><span class="t">S1</span><span>إيقاف</span></div>
-      <div class="kc" id="kS2"><button class="pbt grn" data-pb="S2" aria-label="S2">I</button><span class="t">S2</span><span id="tS2">تشغيل</span></div>
-      <div class="kc" id="kS3"><button class="pbt grn" data-pb="S3" aria-label="S3">II</button><span class="t">S3</span><span id="tS3"></span></div>
+      <div class="kc" id="kH1"><span class="t">H1</span><span class="lmp" id="lH1"></span><span id="tH1"></span></div>
+      <div class="kc" id="kH2"><span class="t">H2</span><span class="lmp" id="lH2"></span><span id="tH2"></span></div>
     </div>
-    <div class="kgrp">
-      <div class="kc" id="kH1"><span class="lmp" id="lH1"></span><span class="t">H1</span><span id="tH1"></span></div>
-      <div class="kc" id="kH2"><span class="lmp" id="lH2"></span><span class="t">H2</span><span id="tH2"></span></div>
-      <div class="kc"><span class="lmp red" id="lStop"></span><span class="t">&nbsp;</span><span>توقف</span></div>
-      <div class="kc"><span class="lmp yel" id="lFlt"></span><span class="t">&nbsp;</span><span>عطل</span></div>
-    </div>
-    <div class="kgrp">
-      <div class="kc"><button class="olr" data-ol="F5">F5 ↺</button><span>حمل زائد</span></div>
-      <div class="kc" id="kF6"><button class="olr" data-ol="F6">F6 ↺</button><span>حمل زائد</span></div>
-    </div>
+  </div>
+  <div class="kext" aria-label="مؤشرات المحاكي">
+    <div class="kc"><span class="lmp red" id="lStop"></span><span>توقف</span></div>
+    <div class="kc"><span class="lmp yel" id="lFlt"></span><span>عطل</span></div>
+    <div class="kc"><button class="olr" data-ol="F5">F5 ↺</button><span>حمل زائد</span></div>
+    <div class="kc" id="kF6"><button class="olr" data-ol="F6">F6 ↺</button><span>حمل زائد</span></div>
     <div class="mot" aria-live="polite"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="#5d6b78"/><g class="fan" id="fan"><path d="M24 24 L24 5 A19 19 0 0 1 37 11Z M24 24 L40.5 33.5 A19 19 0 0 1 28 42.5Z M24 24 L7.5 33.5 A19 19 0 0 1 9 15Z" fill="#cfd8df"/></g><circle cx="24" cy="24" r="4" fill="#222"/></svg><div class="ms" id="mstat"><b>المحرك متوقف</b></div></div>
   </div>
   <div class="track" id="track"><span class="lim" id="tl4" style="left:0"></span><span class="ll" style="left:8px">S4</span><span class="lim" id="tl5" style="right:0"></span><span class="ll" style="right:8px">S5</span><div class="cart" id="cart">◀▶</div></div>
@@ -720,11 +737,11 @@ function setCircuit(id,keepF){S.cid=id;S.zero=false;S.k={};S.tStart={};S.tDone={
   if(!keepF){S.F=new Set();S.ex=null;}renderSel();drawStatic();update();}
 function renderPanel(){const c=C(),i=INFO[S.cid]||{},has=d=>c.E.some(e=>e.dev===d);
   $('cQ1').classList.toggle('on',S.q.Q1);$('cQ2').classList.toggle('on',S.q.Q2);
-  $('kS3').style.display=has('S3')?'':'none';$('tS2').textContent=i.S2||'تشغيل';$('tS3').textContent=i.S3||'';
-  $('kH2').style.display=has('H2')?'':'none';$('tH1').textContent=i.H1||'';$('tH2').textContent=i.H2||'';
+  $('kS3').classList.toggle('na',!has('S3'));$('tS2').textContent=i.S2||'تشغيل';$('tS3').textContent=i.S3||'';
+  $('kH2').classList.toggle('na',!has('H2'));$('tH1').textContent=i.H1||'';$('tH2').textContent=i.H2||'';
   $('lH1').classList.toggle('on',!!S.lamp.H1);$('lH2').classList.toggle('on',!!S.lamp.H2);
   const flt=S.trip.F5||S.trip.F6||S.mot.st==='hum';$('lFlt').classList.toggle('on',flt);$('lStop').classList.toggle('on',(S.q.Q1||S.q.Q2)&&!flt&&S.mot.st!=='run');
-  document.querySelectorAll('.kls').forEach(g=>g.style.display=c.ls?'':'none');$('kF6').style.display=has('F6')?'':'none';
+  document.querySelectorAll('.kls').forEach(g=>g.classList.toggle('na',!c.ls));$('kF6').style.display=has('F6')?'':'none';
   document.querySelectorAll('[data-ls]').forEach(b=>b.classList.toggle('on',!!S.ls[b.dataset.ls]));
   document.querySelectorAll('[data-ol]').forEach(b=>{const t=S.trip[b.dataset.ol];b.classList.toggle('trip',t);b.textContent=b.dataset.ol+(t?' فصل ↺':' ↺');});
   document.querySelectorAll('[data-pb]').forEach(b=>b.classList.toggle('down',S.pb.has(b.dataset.pb)));
