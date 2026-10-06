@@ -70,7 +70,9 @@ body:not(.cloud) .cloud-only{display:none!important}
 .pbt.red{background:#d32f2f}.pbt.grn{background:#2e9b47}
 .pbt.down{transform:scale(.9);box-shadow:inset 0 3px 6px rgba(0,0,0,.45)}
 .lmp{width:40px;height:40px;border-radius:50%;border:4px solid #c3cbd3;background:#eef0f2;display:block}
-.lmp.on{background:#fff6b0;box-shadow:0 0 14px 5px #ffd54a;border-color:#e0b100}
+.lmp.on{background:#a8f0c0;box-shadow:0 0 14px 5px #2ecc71;border-color:#1e9e50}
+.lmp.red.on{background:#ffb3ad;box-shadow:0 0 14px 5px #ff3b30;border-color:#c62828}
+.lmp.yel.on{background:#fff3a0;box-shadow:0 0 14px 5px #ffcc00;border-color:#d4a000}
 .lsw{min-width:46px;height:34px;border-radius:7px;border:2px solid #333;background:#111;color:#ddd;font-size:.72rem;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;padding:0 4px}
 .lsw.on{background:#ffb300;color:#111;border-color:#a77400}
 .olr{height:34px;border-radius:7px;border:1px solid #8a96a3;background:#fff;color:#1b2530;font-size:.74rem;cursor:pointer;padding:0 8px;white-space:nowrap}
@@ -96,7 +98,7 @@ body:not(.cloud) .cloud-only{display:none!important}
 .w.hot{stroke:#d32f2f;stroke-width:3}.w.ret{stroke:#1565c0;stroke-width:2.6}
 .bus{stroke:#1b1b1b;stroke-width:2.4}.bus.hot{stroke:#d32f2f;stroke-width:3.2}.bus.ret{stroke:#1565c0;stroke-width:3}
 .el{color:#1b1b1b}.el path,.el rect,.el circle{stroke:currentColor;stroke-width:2;fill:none}
-.el .fl{fill:#f6f1df}.el.on .fl{fill:#8fe0a0}.el.lit .fl{fill:#ffe066}
+.el .fl{fill:#f6f1df}.el.on .fl{fill:#8fe0a0}.el.lit .fl{fill:#7ee2a0}
 .el .dsh{stroke-dasharray:3 3;stroke-width:1.4}
 .hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:none}
 .hitr{fill:transparent;pointer-events:none}
@@ -212,6 +214,8 @@ body.cloud #sWa{background:var(--panel)}
     <div class="kgrp">
       <div class="kc" id="kH1"><span class="lmp" id="lH1"></span><span class="t">H1</span><span id="tH1"></span></div>
       <div class="kc" id="kH2"><span class="lmp" id="lH2"></span><span class="t">H2</span><span id="tH2"></span></div>
+      <div class="kc"><span class="lmp red" id="lStop"></span><span class="t">&nbsp;</span><span>توقف</span></div>
+      <div class="kc"><span class="lmp yel" id="lFlt"></span><span class="t">&nbsp;</span><span>عطل</span></div>
     </div>
     <div class="kgrp" id="kLS">
       <div class="kc"><button class="lsw" data-ls="S4">S4</button><span>نهاية يسار</span></div>
@@ -692,6 +696,7 @@ function renderPanel(){const c=C(),i=INFO[S.cid]||{},has=d=>c.E.some(e=>e.dev===
   $('kS3').style.display=has('S3')?'':'none';$('tS2').textContent=i.S2||'تشغيل';$('tS3').textContent=i.S3||'';
   $('kH2').style.display=has('H2')?'':'none';$('tH1').textContent=i.H1||'';$('tH2').textContent=i.H2||'';
   $('lH1').classList.toggle('on',!!S.lamp.H1);$('lH2').classList.toggle('on',!!S.lamp.H2);
+  const flt=S.trip.F5||S.trip.F6||S.mot.st==='hum';$('lFlt').classList.toggle('on',flt);$('lStop').classList.toggle('on',(S.q.Q1||S.q.Q2)&&!flt&&S.mot.st!=='run');
   $('kLS').style.display=c.ls?'':'none';$('kF6').style.display=has('F6')?'':'none';
   document.querySelectorAll('[data-ls]').forEach(b=>b.classList.toggle('on',!!S.ls[b.dataset.ls]));
   document.querySelectorAll('[data-ol]').forEach(b=>{const t=S.trip[b.dataset.ol];b.classList.toggle('trip',t);b.textContent=b.dataset.ol+(t?' فصل ↺':' ↺');});
@@ -898,7 +903,7 @@ function renderHelp(){document.querySelectorAll('[data-ex]').forEach(b=>b.setAtt
    <h3>٣) طريقة المقاومة (بعد الفصل)</h3><p>افصل Q2 (وQ1 لدائرة القدرة) ثم قِس الاستمرارية: السلك أو التلامس المغلق ≈ 0 Ω، والمفتوح OL، وملف الكونتاكتور حوالي 22 Ω، واللمبة حوالي 120 Ω. اضغط الضاغط أثناء القياس لاختبار تلامسه.</p>
    <h3>٤) نصف المسار</h3><p>في المسارات الطويلة قِس في منتصف المسار أولًا ثم في منتصف النصف المعطوب، وهكذا. هذا يقلل عدد القياسات، وعددها يظهر في نتيجتك.</p>
    <p class="note2 warn">⚠ في الواقع: لا تقِس المقاومة في دائرة مكهربة، واستخدم مجسات معزولة، وانتبه إلى أن دائرة القدرة 400V.</p>`;
-  else B.innerHTML=`<h3>مكونات الشنطة (ELWE)</h3><ul><li><b>قاطع التسرب الأرضي</b> 25A / 30mA (AEG) لحماية المتدربين.</li><li>قواطع <b>F1</b> (C2) و<b>F2–F4</b> (C1).</li><li><b>مفتاح اختيار الدائرة</b> Schaltungsnr.: 0 و 5.1 إلى 5.7، ولكل دائرة لوحة مخطط توضع على الواجهة.</li><li><b>مفاتيح البرمجة 8–30</b> (Programmierung): كل مفتاح يحدث عطلًا مخفيًا.</li><li>زر <b>Bereitstellung Lastkreis</b> (تجهيز دائرة الحمل) ومفتاح المدرب بقفل.</li><li>الواجهة: Q1 وQ2 والضواغط S1 (0) وS2 (I) وS3 (II) ومفتاحا النهاية S4 وS5 واللمبتان H1 وH2 ومقابس 24V.</li><li>الكونتاكتورات K1 إلى K5 وK7 وK9 وK10، والمؤقتان K6T وK8T، ومرحلا الحمل الزائد F5 وF6، والمحول 400V/24V، والمقبس X1 للمحرك.</li></ul>
+  else B.innerHTML=`<h3>مكونات الشنطة (ELWE)</h3><ul><li><b>قاطع التسرب الأرضي</b> 25A / 30mA (AEG) لحماية المتدربين.</li><li>قواطع <b>F1</b> (C2) و<b>F2–F4</b> (C1).</li><li><b>مفتاح اختيار الدائرة</b> Schaltungsnr.: 0 و 5.1 إلى 5.7، ولكل دائرة لوحة مخطط توضع على الواجهة.</li><li><b>مفاتيح البرمجة 8–30</b> (Programmierung): كل مفتاح يحدث عطلًا مخفيًا.</li><li>زر <b>Bereitstellung Lastkreis</b> (تجهيز دائرة الحمل) ومفتاح المدرب بقفل.</li><li>في المحاكي: لمبات التشغيل H1 وH2 خضراء، ولمبة التوقف حمراء، ولمبة العطل صفراء (تضيء عند فصل الحمل الزائد أو طنين المحرك على وجهين).</li><li>الواجهة: Q1 وQ2 والضواغط S1 (0) وS2 (I) وS3 (II) ومفتاحا النهاية S4 وS5 واللمبتان H1 وH2 ومقابس 24V.</li><li>الكونتاكتورات K1 إلى K5 وK7 وK9 وK10، والمؤقتان K6T وK8T، ومرحلا الحمل الزائد F5 وF6، والمحول 400V/24V، والمقبس X1 للمحرك.</li></ul>
    <p class="note2">المحاكاة تعليمية: توزيع الأعطال على المفاتيح 8–30 هنا من إعداد المحاكي وقد يختلف عن الشنطة الأصلية.</p>`;}
 $('bHelp').onclick=()=>{renderHelp();exM.classList.add('open');};$('exClose').onclick=()=>exM.classList.remove('open');
 document.querySelector('.achips').addEventListener('click',e=>{const b=e.target.closest('[data-ex]');if(b){EXT=b.dataset.ex;renderHelp();}});
