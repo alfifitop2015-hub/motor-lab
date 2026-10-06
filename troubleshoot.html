@@ -60,7 +60,9 @@ body:not(.cloud) .cloud-only{display:none!important}
 .cinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .cinfo .kl{font-size:.74rem;color:#4b5866}.cinfo b{font-size:1.02rem;color:#0b3d91}.cinfo .de{font-size:.78rem;color:#4b5866;direction:ltr;text-align:right}
 .wrap.zero{opacity:.35;pointer-events:none}
-.kctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;padding-top:6px;border-top:1px dashed #b9c3cf}
+.kctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;justify-content:center;padding-top:8px;margin-top:8px;border-top:2px solid #d8d0b8;direction:ltr}
+.kctl .kc{direction:rtl}
+.board{margin-top:4px;border:1px solid #d8d0b8;border-radius:6px;overflow:hidden;background:#f4eedb}
 .kgrp{display:flex;gap:8px;align-items:flex-end}
 .kc{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;color:#3b4855;min-width:44px}
 .kc .t{font-weight:700;color:#1b2530;direction:ltr}
@@ -79,7 +81,7 @@ body:not(.cloud) .cloud-only{display:none!important}
 .lsw.on{background:#ffb300;color:#111;border-color:#a77400}
 .olr{height:34px;border-radius:7px;border:1px solid #8a96a3;background:#fff;color:#1b2530;font-size:.74rem;cursor:pointer;padding:0 8px;white-space:nowrap}
 .olr.trip{background:#d32f2f;color:#fff;border-color:#9e1d1d;font-weight:700}
-.mot{display:flex;align-items:center;gap:8px;margin-inline-start:auto;background:#fff;border:1px solid #b9c3cf;border-radius:10px;padding:4px 10px}
+.mot{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #b9c3cf;border-radius:10px;padding:4px 10px}
 .mot svg{width:46px;height:46px;flex:none}
 .mot .ms{font-size:.82rem;line-height:1.3;min-width:110px}.mot .ms b{display:block;font-size:.9rem}
 .fan{transform-origin:24px 24px}
@@ -93,8 +95,8 @@ body:not(.cloud) .cloud-only{display:none!important}
 .track .lim{position:absolute;top:0;bottom:0;width:4px;background:#333}.track .lim.on{background:#ffb300}
 .track .ll{position:absolute;top:4px;font-size:.66rem;color:#333}
 
-.wrap{overflow:auto;background:#8e9aa4;position:relative;direction:ltr;touch-action:pan-x pan-y;margin:0 10px;border-radius:8px}
-.hint{direction:rtl;background:rgba(10,20,35,.85);color:#fff;font-size:.85rem;padding:5px 12px;margin:0 10px;border-radius:8px 8px 0 0}
+.wrap{overflow:auto;background:#f4eedb;position:relative;direction:ltr;touch-action:pan-x pan-y;margin:0}
+.hint{direction:rtl;background:rgba(10,20,35,.85);color:#fff;font-size:.85rem;padding:5px 12px;margin:0}
 #svg{display:block;margin:0 auto;direction:ltr;user-select:none;-webkit-user-select:none}
 .w{fill:none;stroke:#1b1b1b;stroke-width:2;stroke-linejoin:round;pointer-events:none}
 .w.hot{stroke:#d32f2f;stroke-width:3}.w.ret{stroke:#1565c0;stroke-width:2.6}
@@ -194,10 +196,20 @@ body.cloud #sWa{background:var(--panel)}
 
 <section class="kit" aria-label="لوحة تشغيل الشنطة">
   <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span></div></div>
+  <div class="board"><div class="hint" id="hint"></div>
+  <div class="wrap" id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
   <div class="kctl" id="kctl">
     <div class="kgrp">
-      <div class="kc"><button class="rot" id="cQ1" aria-label="المفتاح الرئيسي Q1"></button><span class="t">Q1</span><span>الرئيسي</span></div>
       <div class="kc"><button class="rot" id="cQ2" aria-label="مفتاح دائرة التحكم Q2"></button><span class="t">Q2</span><span>التحكم</span></div>
+    </div>
+    <div class="kgrp kls">
+      <div class="kc"><button class="lsw" data-ls="S4">S4</button><span>نهاية يسار</span></div>
+    </div>
+    <div class="kgrp kls">
+      <div class="kc"><button class="lsw" data-ls="S5">S5</button><span>نهاية يمين</span></div>
+    </div>
+    <div class="kgrp">
+      <div class="kc"><button class="rot" id="cQ1" aria-label="المفتاح الرئيسي Q1"></button><span class="t">Q1</span><span>الرئيسي</span></div>
     </div>
     <div class="kgrp">
       <div class="kc"><button class="pbt red" data-pb="S1" aria-label="S1 إيقاف">0</button><span class="t">S1</span><span>إيقاف</span></div>
@@ -210,10 +222,6 @@ body.cloud #sWa{background:var(--panel)}
       <div class="kc"><span class="lmp red" id="lStop"></span><span class="t">&nbsp;</span><span>توقف</span></div>
       <div class="kc"><span class="lmp yel" id="lFlt"></span><span class="t">&nbsp;</span><span>عطل</span></div>
     </div>
-    <div class="kgrp" id="kLS">
-      <div class="kc"><button class="lsw" data-ls="S4">S4</button><span>نهاية يسار</span></div>
-      <div class="kc"><button class="lsw" data-ls="S5">S5</button><span>نهاية يمين</span></div>
-    </div>
     <div class="kgrp">
       <div class="kc"><button class="olr" data-ol="F5">F5 ↺</button><span>حمل زائد</span></div>
       <div class="kc" id="kF6"><button class="olr" data-ol="F6">F6 ↺</button><span>حمل زائد</span></div>
@@ -223,8 +231,6 @@ body.cloud #sWa{background:var(--panel)}
   <div class="track" id="track"><span class="lim" id="tl4" style="left:0"></span><span class="ll" style="left:8px">S4</span><span class="lim" id="tl5" style="right:0"></span><span class="ll" style="right:8px">S5</span><div class="cart" id="cart">◀▶</div></div>
 </section>
 
-<div class="hint" id="hint"></div>
-<div class="wrap" id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
 
 <div class="dock" id="dock" aria-label="أدوات القياس">
   <div class="dstat" id="dstat"></div>
@@ -615,7 +621,7 @@ function coSym(st){const c=st?'<path d="M0 34L10 47"/>':'<path d="M0 14L0 34"/>'
 function elTr(e){return e.h?`translate(${e.x} ${e.y}) rotate(-90)`:`translate(${e.x} ${e.y})`;}
 function grpFirst(c){const m=new Map();c.E.forEach(e=>{if(e.z==='p'&&e.k!=='w'){const key=e.dev+'@'+e.y;if(!m.has(key)||m.get(key).x>e.x)m.set(key,e);}});return new Set([...m.values()].map(e=>e.id));}
 let REF={};
-function drawStatic(){const c=C();let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="#f4eedb"/>`;
+function drawStatic(){const c=C();let s=`<defs><pattern id="holes" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="2.6" fill="#2a2a2a" opacity=".22"/></pattern></defs><rect x="0" y="0" width="${W}" height="${H}" fill="#f4eedb"/><rect x="0" y="0" width="${W}" height="${H}" fill="url(#holes)"/>`;
   for(const[n,b]of Object.entries(c.BUS))s+=`<line class="bus" data-bus="${n}" x1="${b.x1}" y1="${b.y}" x2="${b.x2}" y2="${b.y}"/>`+(b.sock?`<text class="lbl" x="${b.x1+16}" y="${b.y-5}">${n}</text>`:'');
   /* transformer + primary fuses (decor) */
   s+='<g class="el"><path d="M75 40V95M105 62V95"/><rect x="70" y="95" width="10" height="24"/><rect x="100" y="95" width="10" height="24"/><path d="M75 119V150M105 119V150M65 205V182M115 205V182"/>'
@@ -718,7 +724,7 @@ function renderPanel(){const c=C(),i=INFO[S.cid]||{},has=d=>c.E.some(e=>e.dev===
   $('kH2').style.display=has('H2')?'':'none';$('tH1').textContent=i.H1||'';$('tH2').textContent=i.H2||'';
   $('lH1').classList.toggle('on',!!S.lamp.H1);$('lH2').classList.toggle('on',!!S.lamp.H2);
   const flt=S.trip.F5||S.trip.F6||S.mot.st==='hum';$('lFlt').classList.toggle('on',flt);$('lStop').classList.toggle('on',(S.q.Q1||S.q.Q2)&&!flt&&S.mot.st!=='run');
-  $('kLS').style.display=c.ls?'':'none';$('kF6').style.display=has('F6')?'':'none';
+  document.querySelectorAll('.kls').forEach(g=>g.style.display=c.ls?'':'none');$('kF6').style.display=has('F6')?'':'none';
   document.querySelectorAll('[data-ls]').forEach(b=>b.classList.toggle('on',!!S.ls[b.dataset.ls]));
   document.querySelectorAll('[data-ol]').forEach(b=>{const t=S.trip[b.dataset.ol];b.classList.toggle('trip',t);b.textContent=b.dataset.ol+(t?' فصل ↺':' ↺');});
   document.querySelectorAll('[data-pb]').forEach(b=>b.classList.toggle('down',S.pb.has(b.dataset.pb)));
