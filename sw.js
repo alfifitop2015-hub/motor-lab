@@ -1,5 +1,5 @@
 /* عامل الخدمة: يجعل المحاكي يعمل دون إنترنت. غيّر رقم الإصدار عند كل تحديث كبير. */
-const V='ws-v12';
+const V='ws-v13';
 const CORE=['./','index.html','pneumatic.html','troubleshoot.html','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png','favicon-32.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(V).then(c=>Promise.all(CORE.map(u=>c.add(new Request(u,{cache:'reload'})).catch(()=>{})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
