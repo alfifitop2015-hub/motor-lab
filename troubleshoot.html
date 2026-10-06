@@ -124,16 +124,7 @@ body.diag .sock{pointer-events:none;opacity:.6}
 .db:disabled{opacity:.35}.db.on{border-color:#4cd07d;color:#9ff0bb;background:rgba(76,208,125,.14)}.db.hl{border-color:#ffb300;color:#ffd666;background:rgba(255,179,0,.14)}
 .db:focus-visible{outline:3px solid #ffb300;outline-offset:2px}
 .dsep{width:1px;height:40px;background:rgba(255,255,255,.2);flex:none}
-.meter{flex:none;display:flex;align-items:center;gap:6px;background:#f2c200;border-radius:12px;padding:5px 7px;color:#111}
-.lcd{min-width:118px;height:44px;background:#b9c7a4;border:2px solid #2b2b2b;border-radius:6px;font:700 1.35rem/40px "Courier New",monospace;text-align:center;direction:ltr;padding:0 6px;color:#111}
-.lcd.wn{font-size:.78rem;line-height:1.15;display:flex;align-items:center;justify-content:center;font-family:inherit;white-space:normal}
-.mmode{display:flex;flex-direction:column;gap:3px}
-.mmode button{height:20px;min-width:34px;border:1px solid #333;background:#ffe27a;border-radius:5px;font-size:.72rem;font-weight:700;cursor:pointer;padding:0 4px;direction:ltr}
-.mmode button.on{background:#222;color:#ffe27a}
-.prb{display:flex;flex-direction:column;gap:3px;font-size:.74rem;direction:ltr;min-width:84px}
-.prb span{background:rgba(0,0,0,.18);border-radius:6px;padding:1px 6px;white-space:nowrap}
-.prb .r::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#e53935;margin-right:4px}
-.prb .k::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#111;border:1px solid #666;margin-right:4px}
+.mmact{cursor:pointer}[data-drag="mm"]{cursor:move;touch-action:none}
 body.dmin .drow .full,body.dmin .dstat{display:none}
 
 .insp{position:fixed;z-index:45;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,150px) + 8px);width:min(94vw,420px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:12px 14px;display:none;direction:rtl}
@@ -236,9 +227,7 @@ body.cloud #sWa{background:var(--panel)}
 <div class="dock" id="dock" aria-label="أدوات القياس">
   <div class="dstat" id="dstat"></div>
   <div class="drow">
-    <div class="meter" title="الملتيميتر"><div class="lcd" id="lcd" aria-live="polite">- - -</div>
-      <div class="mmode"><button id="mV" class="on" aria-label="قياس الجهد">V~</button><button id="mR" aria-label="قياس المقاومة">Ω</button></div>
-      <div class="prb"><span class="r" id="pR">—</span><span class="k" id="pK">—</span></div></div>
+    <button class="db on" id="dMM"><span class="ic">📟</span>الملتميتر</button>
     <button class="db" id="dClr"><span class="ic">⨯</span>مسح المجسات</button>
     <span class="dsep"></span>
     <button class="db" id="dDiag"><span class="ic">📍</span><span id="dDiagT">تحديد العطل</span></button>
@@ -490,7 +479,7 @@ const ORDER=['5.1','5.2','5.3','5.4','5.5','5.6','5.7'];
 /* ===================================================================== state */
 const TDELAY=3000;
 const S={cid:'5.1',F:new Set(),k:{},tStart:{},tDone:{},pb:new Set(),ls:{S4:false,S5:false},q:{Q1:false,Q2:false},trip:{F5:false,F6:false},
-  pos:50,hum:0,mot:{st:'off'},lamp:{},probes:[null,null],mode:'V',view:false,diag:false,zoom:1,ex:null,show:true,allowView:true,uf:null,msg:''};
+  pos:50,hum:0,mot:{st:'off'},lamp:{},probes:[null,null],mode:'V',mm:{on:true,x:1385,y:520},mmPick:null,view:false,diag:false,zoom:1,ex:null,show:true,allowView:true,uf:null,msg:''};
 const C=()=>CIRC[S.cid];
 function act(dev){if(/T$/.test(dev))return !!S.tDone[dev];if(dev[0]==='K')return !!S.k[dev];
   if(dev==='S1'||dev==='S2'||dev==='S3')return S.pb.has(dev);if(dev==='S4'||dev==='S5')return !!S.ls[dev];
@@ -565,7 +554,7 @@ function nodal(mode,a,b){const c=C(),uf=S.uf||buildUF(),g=n=>uf.find(n);
   if(mode==='R')return V(g(a))[0];
   const va=V(g(a)),vb=V(g(b));return Math.hypot(va[0]-vb[0],va[1]-vb[1]);}
 function nodeV(n){return nodal('V',n,'PE');}
-function measure(){const [a,b]=S.probes;if(!a||!b)return null;
+function measure(){const [a,b]=S.probes;if(!a||!b||S.mode==='OFF')return null;
   if(S.mode==='V')return{t:'V',v:nodal('V',a,b)};
   if(nodal('V',a,b)>1||nodeV(a)>1||nodeV(b)>1)return{t:'live'};
   const uf=S.uf;if(uf.find(a)===uf.find(b))return{t:'R',v:0.1};return{t:'R',v:nodal('R',a,b)};}
@@ -660,7 +649,7 @@ function drawStatic(){const c=C();let s=`<rect x="0" y="0" width="${W}" height="
   const socks=[...Object.entries(c.T)];for(const[n,b]of Object.entries(c.BUS))if(b.sock)socks.push([n,b.sock]);
   socks.forEach(([n,[x,y]])=>{s+=`<circle class="sock" data-t="${esc(n)}" cx="${x}" cy="${y}" r="6"><title>${esc(nm(n))}</title></circle>`;});
   s+=`<text class="lbl" x="1580" y="910" text-anchor="end" font-size="15">${esc(S.cid+' · '+(INFO[S.cid]?INFO[S.cid].de:''))}</text><text class="pin" x="1580" y="926" text-anchor="end">ELWE 24 05 ··· — محاكاة تعليمية</text>`;
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML=s;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML=s+'<defs><filter id="ds2" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity=".35"/></filter></defs><g id="mmL"></g>';
   REF={w:new Map(),e:new Map(),h:new Map(),t:new Map(),bus:new Map()};
   svg.querySelectorAll('[data-w]').forEach(x=>REF.w.set(x.dataset.w,x));svg.querySelectorAll('[data-e]').forEach(x=>REF.e.set(x.dataset.e,x));
   svg.querySelectorAll('[data-h]').forEach(x=>REF.h.set(x.dataset.h,x));svg.querySelectorAll('[data-t]').forEach(x=>REF.t.set(x.dataset.t,x));
@@ -731,19 +720,67 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(.3,(now-last)/1000);las
 function update(){solve();drawDyn();renderPanel();renderMeter();renderStat();save();}
 
 /* ===================================================================== meter and probes */
-function renderMeter(){const lcd=$('lcd'),[a,b]=S.probes;$('pR').textContent=a?nm(a):'—';$('pK').textContent=b?nm(b):'—';
-  $('mV').classList.toggle('on',S.mode==='V');$('mR').classList.toggle('on',S.mode==='R');
-  const r=measure();lcd.classList.remove('wn');
-  if(!r){lcd.textContent=a?'المجس 2…':(S.mode==='V'?'V~':'Ω');if(a)lcd.classList.add('wn');return;}
-  if(r.t==='live'){lcd.classList.add('wn');lcd.textContent='⚠ الدائرة مكهربة — افصل Q2/Q1 قبل قياس المقاومة';return;}
-  lcd.textContent=r.t==='V'?fmtV(r.v):fmtR(r.v);}
-svg.addEventListener('click',e=>{const t=e.target.closest('[data-t]');if(t&&!S.diag){probe(t.dataset.t);return;}
+/* ---------- movable multimeter with leads (same look as the electrical workshop) ---------- */
+const MS=1.4,clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
+let AC=null;function mmAudio(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();}catch(_){}}
+function mmBeep(){if(!AC)return;try{const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=2700;g.gain.value=.05;o.connect(g);g.connect(AC.destination);const t=AC.currentTime;o.start(t);g.gain.setTargetAtTime(0,t+.16,.02);o.stop(t+.25);}catch(_){}}
+function sockXY(n){const c=C();if(c.T[n])return c.T[n];const b=c.BUS[n];return b&&b.sock?b.sock:null;}
+function mmRead(){if(S.mode==='OFF')return{t:'',u:'',note:'الجهاز مطفأ: أدر المفتاح إلى V~ أو Ω'};
+  const u=S.mode==='V'?'V~':'Ω',[a,b]=S.probes;
+  if(!a||!b)return{t:S.mode==='V'?'0.0':'OL',u,note:'اضغط المقبس ثم الطرف، أو المس طرفين'};
+  const r=measure();
+  if(r.t==='live')return{t:'LIVE',u:'',warn:1,note:'⚠ الدائرة مكهربة! افصل Q2/Q1 قبل قياس المقاومة'};
+  if(r.t==='V'){const t=fmtV(r.v).replace(' V','');return{t,u,note:r.v<0.5?'لا يوجد فرق جهد':r.v<60?'جهد دائرة التحكم':r.v>300?'بين طورين':'بين طور وتعادل/أرضي'};}
+  const t=fmtR(r.v).replace(' Ω','').replace(' kΩ','k');return{t,u,cont:r.v<30,note:r.v>2e7?'دائرة مفتوحة':r.v<1?'🔊 استمرارية: توصيل مباشر':r.v<30?'🔊 استمرارية':'مقاومة عبر حِمل (ملف/لمبة/محرك)'};}
+function mmLeadsSVG(){const m=S.mm;let s='';
+  [[1,45,'#1b1b1b'],[0,105,'#d8322b']].forEach(([pi,jx,c])=>{const J=[m.x+jx*MS,m.y+230*MS],n=S.probes[pi],t=n&&sockXY(n),red=pi===0;
+    const tip=t?[t[0],t[1]]:[J[0]+(red?14:-14),J[1]+70],Hd=t?[t[0]+(red?20:-20),t[1]-36]:[J[0]+(red?6:-6),J[1]+40];
+    const cy=Math.max(J[1],Hd[1])+(t?80:6),cx=(J[0]+Hd[0])/2,d=`M${J[0]} ${J[1]}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${Hd[0]} ${Hd[1]}`;
+    s+=`<path d="${d}" stroke="#000" stroke-opacity=".35" stroke-width="6" fill="none" stroke-linecap="round"/><path d="${d}" stroke="${c}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
+    const mid=[Hd[0]+(tip[0]-Hd[0])*.6,Hd[1]+(tip[1]-Hd[1])*.6];
+    s+=`<line x1="${Hd[0]}" y1="${Hd[1]}" x2="${mid[0]}" y2="${mid[1]}" stroke="${c}" stroke-width="9" stroke-linecap="round"/><line x1="${mid[0]}" y1="${mid[1]}" x2="${tip[0]}" y2="${tip[1]}" stroke="#d6dbe0" stroke-width="2.6" stroke-linecap="round"/>`+
+      (t?`<circle cx="${tip[0]}" cy="${tip[1]}" r="9" fill="none" stroke="${red?c:'#fff'}" stroke-width="2.5"/>`:'');});
+  return s;}
+function mmSVG(){const m=S.mm,r=mmRead(),md=S.mode==='V'?'v':S.mode==='R'?'r':'off';
+  if(r.cont&&!m.beep)mmBeep();m.beep=!!r.cont;
+  const ang={off:-55,v:0,r:55},pos=a=>[75+42*Math.sin(a*Math.PI/180),166-42*Math.cos(a*Math.PI/180)];
+  const knob=['off','v','r'].map(k=>{const [px,py]=pos(ang[k]),on=md===k;return `<g class="mmact" data-mm="mode:${k}"><title>${k==='off'?'إطفاء':k==='v'?'قياس الجهد المتردد':'قياس المقاومة والاستمرارية'}</title><circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="14" fill="${on?'#ffd24a':'#3a3f45'}"/><text x="${px.toFixed(1)}" y="${(py+4.5).toFixed(1)}" text-anchor="middle" style="font:700 12px sans-serif;fill:${on?'#1c1400':'#fff'}">${k==='off'?'OFF':k==='v'?'V~':'Ω'}</text></g>`;}).join('');
+  const [kx,ky]=pos(ang[md]);
+  const jack=(pi,x,lab,col)=>{const p=pi?'black':'red',pk=S.mmPick===p,has=!!S.probes[pi];return `<g class="mmact" data-mm="probe:${p}"><title>${has?'إزالة':'وضع'} المجس ${pi?'الأسود':'الأحمر'}</title><circle cx="${x}" cy="230" r="16" fill="transparent"/><circle cx="${x}" cy="230" r="11" fill="#111" stroke="${pk?'#ffd24a':col}" stroke-width="${pk?4:3}"/><circle cx="${x}" cy="230" r="4" fill="#555"/><text x="${x}" y="214" text-anchor="middle" style="font:700 9px sans-serif;fill:#fff">${lab}</text></g>`;};
+  return `<g pointer-events="none">${mmLeadsSVG()}</g><g transform="translate(${m.x} ${m.y}) scale(${MS})">
+  <rect data-drag="mm" x="0" y="0" width="150" height="262" rx="18" fill="#f2b705" stroke="#8a6500" stroke-width="2" filter="url(#ds2)"><title>اسحب لتحريك الملتميتر</title></rect>
+  <rect data-drag="mm" x="8" y="30" width="134" height="224" rx="12" fill="#2b2f33"/>
+  <text data-drag="mm" x="60" y="21" text-anchor="middle" style="font:700 11px sans-serif;fill:#3a2a00">✥ ملتميتر</text>
+  <g class="mmact" data-mm="hide"><title>إخفاء الملتميتر</title><circle cx="130" cy="16" r="9" fill="#d8322b"/><path d="M126.5 12.5l7 7m0-7l-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
+  <rect x="16" y="38" width="118" height="52" rx="6" fill="${r.warn?'#f0b8ab':md==='off'?'#7d8a70':'#b9c7a3'}" stroke="#111" stroke-width="1.5" pointer-events="none"/>
+  <text x="118" y="76" text-anchor="end" style="font:700 28px 'Courier New',monospace;fill:#1c2410" pointer-events="none">${esc(r.t)}</text>
+  <text x="22" y="52" style="font:700 11px sans-serif;fill:#1c2410" pointer-events="none">${r.u}</text>
+  <text x="75" y="103" text-anchor="middle" style="font:500 8.2px sans-serif;fill:${r.warn?'#ff9d8f':'#dfe6ec'}" pointer-events="none">${esc(r.note||'')}</text>
+  <circle cx="75" cy="166" r="24" fill="#1b1d20" stroke="#555" stroke-width="2" pointer-events="none"/><line x1="75" y1="166" x2="${(75+(kx-75)*.5).toFixed(1)}" y2="${(166+(ky-166)*.5).toFixed(1)}" stroke="#ffd24a" stroke-width="4" stroke-linecap="round" pointer-events="none"/>
+  ${knob}${jack(1,45,'COM','#888')}${jack(0,105,'VΩ','#d8322b')}
+  <text x="75" y="250" text-anchor="middle" style="font:500 8px sans-serif;fill:#c7d2dc" pointer-events="none">اضغط المقبس ثم الطرف</text></g>`;}
+function renderMeter(){const L=$('mmL');if(L)L.innerHTML=S.mm.on?mmSVG():'';$('dMM').classList.toggle('on',S.mm.on);}
+function mmShow(){const m=S.mm;m.on=true;const r=svg.getBoundingClientRect(),k=W/r.width,vw=innerWidth,vh=innerHeight;
+  const cx=(Math.max(r.left,0)+Math.min(r.right,vw))/2,cy=(Math.max(r.top,0)+Math.min(r.bottom,vh-($('dock').offsetHeight||0)))/2;
+  m.x=clampN((cx-r.left)*k-75*MS,0,W-150*MS);m.y=clampN((cy-r.top)*k-131*MS,0,H-262*MS);}
+$('dMM').onclick=()=>{S.mmPick=null;if(S.mm.on)S.mm.on=false;else{mmAudio();mmShow();}renderMeter();save();};
+const svgPt=e=>{const r=svg.getBoundingClientRect(),k=W/r.width;return[(e.clientX-r.left)*k,(e.clientY-r.top)*k];};
+let mmDrag=null;
+svg.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-drag="mm"]');if(!g)return;e.preventDefault();mmDrag={p:svgPt(e),x:S.mm.x,y:S.mm.y};try{svg.setPointerCapture(e.pointerId);}catch(_){}});
+svg.addEventListener('pointermove',e=>{if(!mmDrag)return;const p=svgPt(e);S.mm.x=clampN(mmDrag.x+p[0]-mmDrag.p[0],0,W-150*MS);S.mm.y=clampN(mmDrag.y+p[1]-mmDrag.p[1],0,H-262*MS);renderMeter();});
+['pointerup','pointercancel'].forEach(t=>svg.addEventListener(t,()=>{if(mmDrag){mmDrag=null;save();}}));
+svg.addEventListener('click',e=>{const a=e.target.closest('[data-mm]');if(a){mmAudio();const[k,v]=a.dataset.mm.split(':');
+    if(k==='hide'){S.mm.on=false;S.mmPick=null;}else if(k==='mode'){S.mode=v==='v'?'V':v==='r'?'R':'OFF';}
+    else if(k==='probe'){const i=v==='red'?0:1;if(S.probes[i]){S.probes[i]=null;S.mmPick=null;drawDyn();}else S.mmPick=S.mmPick===v?null:v;}
+    renderMeter();save();return;}
+  const t=e.target.closest('[data-t]');if(t&&!S.diag){probe(t.dataset.t);return;}
   const h=e.target.closest('[data-h]');if(h&&S.diag)pickEl(h.dataset.h);});
-function probe(n){const p=S.probes;if(p[0]===n){S.probes=[p[1],null];}else if(p[1]===n){p[1]=null;}
-  else if(!p[0])p[0]=n;else if(!p[1]){p[1]=n;if(S.ex&&!S.ex.done)S.ex.meas++;}else S.probes=[n,null];
+function probe(n){const p=S.probes;if(!S.mm.on){mmShow();}
+  if(S.mmPick){const i=S.mmPick==='red'?0:1,had=p[0]&&p[1];p[i]=n;if(p[1-i]===n)p[1-i]=null;S.mmPick=null;if(!had&&p[0]&&p[1]&&S.ex&&!S.ex.done)S.ex.meas++;drawDyn();renderMeter();renderStat();save();return;}
+  if(p[0]===n){S.probes=[p[1],null];}else if(p[1]===n){p[1]=null;}
+  else if(!p[0])p[0]=n;else if(!p[1]){p[1]=n;if(S.ex&&!S.ex.done)S.ex.meas++;}else{p[0]=n;if(S.ex&&!S.ex.done)S.ex.meas++;}
   drawDyn();renderMeter();renderStat();save();}
-$('dClr').onclick=()=>{S.probes=[null,null];drawDyn();renderMeter();};
-$('mV').onclick=()=>{S.mode='V';renderMeter();};$('mR').onclick=()=>{S.mode='R';renderMeter();};
+$('dClr').onclick=()=>{S.probes=[null,null];S.mmPick=null;drawDyn();renderMeter();};
 
 /* ===================================================================== faults, diagnosis, exams */
 const isTr=()=>document.body.classList.contains('trainer');
@@ -777,7 +814,7 @@ function renderStat(){const d=$('dstat'),x=S.ex;$('dEnd').style.display=x?'':'no
   if(!x){d.innerHTML=S.F.size?'':'<span class="c">لا يوجد عطل — اختر 🎲 عطل عشوائي للتدريب</span>';return;}
   d.innerHTML=`<span class="c ${x.done?'ok':'wn'}">${x.k==='exam'?'تمرين المدرب':x.k==='rand'?'تدريب ذاتي':'أعطال المدرب'} · الدائرة ${esc(x.c)}</span><span class="c">الأعطال: ${x.found.length}/${x.f.length}</span><span class="c">القياسات: ${x.meas}</span><span class="c ${x.wrong.length?'bad':''}">محاولات خاطئة: ${x.wrong.length}</span><span class="c">⏱ ${mmss(secs(x))}</span>`;}
 function hint(){$('hint').textContent=S.diag?(isTr()?'وضع العطل: المس سلكًا أو عنصرًا لإضافة عطل أو إزالته.':'تحديد العطل: المس السلك أو العنصر الذي تعتقد أنه معطوب.')
-  :'المس مقبسين (●) في المخطط لوضع المجس الأحمر ثم الأسود وقراءة الملتيميتر. شغّل Q1 وQ2 واضغط الضواغط من لوحة الشنطة.';
+  :'اسحب الملتميتر الأصفر لأي مكان، واضغط مقبس المجس فيه ثم الطرف (●) في المخطط، أو المس طرفين متتاليين. شغّل Q1 وQ2 واضغط الضواغط من لوحة الشنطة.';
   $('dDiagT').textContent=isTr()?'وضع عطل':'تحديد العطل';}
 function report(x){return{c:x.c,f:x.f.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?fDesc(e):id;}),found:x.found.length,wrong:x.wrong.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?elName(e):id;}),
   meas:x.meas,secs:secs(x),score:score(x),view:!!x.viewUsed,gaveUp:!!x.gaveUp,k:x.k};}
@@ -893,7 +930,7 @@ const _upd=update;update=function(){_upd();if(S.msg)say(S.msg,'err');};
 const exM=$('exModal');let EXT='use';
 function renderHelp(){document.querySelectorAll('[data-ex]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ex===EXT));const B=$('exBody'),i=INFO[S.cid];
   if(EXT==='use')B.innerHTML=`<h3>فكرة الشنطة</h3><p>شنطة ELWE فيها دوائر تحكم جاهزة التوصيل خلف لوحة أمامية. يختار المدرب رقم الدائرة (5.1 إلى 5.7) ويضع لوحة المخطط المطابقة عليها، ثم يفعّل أعطالًا مخفية بمفاتيح البرمجة 8 إلى 30 داخل الباب. يبحث المتدرب عن العطل بالملتيميتر عبر المقابس الموجودة عند أطراف كل عنصر.</p>
-   <h3>الخطوات</h3><ol><li>اختر الدائرة من «رقم الدائرة».</li><li>اضغط <b>🎲 عطل عشوائي</b> (تدريب ذاتي) أو افتح رابط تمرين من المدرب.</li><li>شغّل <b>Q1</b> (الرئيسي) و<b>Q2</b> (التحكم) ثم اضغط الضواغط ولاحظ العَرَض: المحرك واللمبات.</li><li>ضع المجسين: المس مقبسًا (●) للمجس الأحمر ثم آخر للأسود. اختر <b>V~</b> للجهد أو <b>Ω</b> للمقاومة (بعد فصل التغذية).</li><li>عندما تعرف مكان العطل اضغط <b>📍 تحديد العطل</b> ثم المس السلك أو العنصر.</li><li>بعد إيجاد كل الأعطال تظهر النتيجة، وأرسلها للمدرب من 📤.</li></ol>
+   <h3>الخطوات</h3><ol><li>اختر الدائرة من «رقم الدائرة».</li><li>اضغط <b>🎲 عطل عشوائي</b> (تدريب ذاتي) أو افتح رابط تمرين من المدرب.</li><li>شغّل <b>Q1</b> (الرئيسي) و<b>Q2</b> (التحكم) ثم اضغط الضواغط ولاحظ العَرَض: المحرك واللمبات.</li><li>الملتميتر الأصفر على المخطط: اسحبه من إطاره، وأدر مفتاحه إلى <b>V~</b> للجهد أو <b>Ω</b> للمقاومة (بعد فصل التغذية). اضغط مقبس المجس (VΩ الأحمر أو COM الأسود) ثم الطرف في المخطط، أو المس طرفين متتاليين؛ بعدها كل لمسة تنقل المجس الأحمر ويبقى الأسود ثابتًا.</li><li>عندما تعرف مكان العطل اضغط <b>📍 تحديد العطل</b> ثم المس السلك أو العنصر.</li><li>بعد إيجاد كل الأعطال تظهر النتيجة، وأرسلها للمدرب من 📤.</li></ol>
    <p class="note2">زر <b>👁 عرض الجهد</b> يلوّن الأسلاك المكهربة بالأحمر وخط الرجوع بالأزرق ويُظهر حالة التلامسات والملفات. استخدامه يُسجَّل في النتيجة.</p>
    <h3>للمدرب</h3><p>من ⋯ ← «وضع المدرب» تظهر «🧰 الأعطال»: 23 مفتاحًا (8–30) لكل منها عطل ثابت في الدائرة المختارة، ويمكنك وضع عطل على أي سلك أو عنصر بالنقر. ثم «🔗 رابط/كود تمرين» لإرساله للمتدربين، وتصلك نتائجهم في «📋 نتائج المتدربين».</p>`;
   else if(EXT==='circ')B.innerHTML=i?`<h3>${esc(S.cid)} — ${esc(i.n)} <span dir="ltr" style="font-weight:400;color:var(--muted)">(${esc(i.de)})</span></h3><p>${esc(i.d)}</p><h3>تسلسل العمل</h3><ol>${i.seq.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
@@ -912,8 +949,8 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelecto
 
 /* ===================================================================== persistence */
 const SK='ftSim.v1';
-function save(){try{localStorage.setItem(SK,JSON.stringify({cid:S.cid,F:[...S.F],ex:S.ex,show:S.show,allowView:S.allowView,mode:S.mode}));}catch(_){}}
-try{const o=JSON.parse(localStorage.getItem(SK)||'null');if(o&&CIRC[o.cid]){S.cid=o.cid;S.F=new Set((o.F||[]).filter(id=>CIRC[o.cid].E.some(e=>e.id===id)));S.ex=o.ex&&o.ex.c===o.cid?o.ex:null;S.show=o.show!==false;S.allowView=o.allowView!==false;S.mode=o.mode==='R'?'R':'V';}}catch(_){}
+function save(){try{localStorage.setItem(SK,JSON.stringify({cid:S.cid,F:[...S.F],ex:S.ex,show:S.show,allowView:S.allowView,mode:S.mode,mm:{on:S.mm.on,x:S.mm.x,y:S.mm.y}}));}catch(_){}}
+try{const o=JSON.parse(localStorage.getItem(SK)||'null');if(o&&CIRC[o.cid]){S.cid=o.cid;S.F=new Set((o.F||[]).filter(id=>CIRC[o.cid].E.some(e=>e.id===id)));S.ex=o.ex&&o.ex.c===o.cid?o.ex:null;S.show=o.show!==false;S.allowView=o.allowView!==false;S.mode=o.mode==='R'?'R':o.mode==='OFF'?'OFF':'V';if(o.mm)S.mm={on:o.mm.on!==false,x:clampN(+o.mm.x||1385,0,W-150*MS),y:clampN(+o.mm.y||520,0,H-262*MS)};}}catch(_){}
 
 /* ===================================================================== offline queue, PWA */
 const PWA_EMB=(()=>{try{return window.parent!==window;}catch(_){return true;}})();
