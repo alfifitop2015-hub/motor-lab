@@ -52,12 +52,14 @@ body:not(.cloud) .cloud-only{display:none!important}
 
 /* ---- the kit's operating panel ---- */
 .kit{margin:8px 10px;background:#f2efe6;color:#1b2530;border:5px solid #3d6fae;border-radius:10px;padding:8px 10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.ksel{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;align-items:center;scrollbar-width:thin}
-.ksel .kl{font-size:.78rem;color:#4b5866;flex:none}
-.cchip{flex:none;border:1px solid #9fb0c2;background:#fff;color:#1b2530;border-radius:18px;padding:5px 11px;cursor:pointer;font-size:.86rem;white-space:nowrap}
-.cchip b{direction:ltr;display:inline-block;margin-inline-end:4px}
-.cchip[aria-pressed="true"]{background:#0b3d91;color:#fff;border-color:#0b3d91}
-.cchip:disabled{opacity:.45;cursor:not-allowed}
+.ksel{display:flex;gap:12px;align-items:center;padding-bottom:4px;flex-wrap:wrap}
+#dial{width:230px;height:150px;flex:none;direction:ltr;touch-action:none;user-select:none;-webkit-user-select:none}
+#dial .pos{cursor:pointer}#dial .pos:hover text{fill:#0b3d91}#dial .pos.dis{cursor:not-allowed}#dial .pos.dis text{fill:#9aa3ad}
+#dial .pos:focus-visible{outline:none}#dial .pos:focus-visible circle{stroke:#1f5fbf;stroke-width:2}
+#knob{cursor:grab;transition:transform .25s cubic-bezier(.3,1.4,.6,1)}#knob.drag{transition:none;cursor:grabbing}
+.cinfo{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.cinfo .kl{font-size:.74rem;color:#4b5866}.cinfo b{font-size:1.02rem;color:#0b3d91}.cinfo .de{font-size:.78rem;color:#4b5866;direction:ltr;text-align:right}
+.wrap.zero{opacity:.35;pointer-events:none}
 .kctl{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;padding-top:6px;border-top:1px dashed #b9c3cf}
 .kgrp{display:flex;gap:8px;align-items:flex-end}
 .kc{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;color:#3b4855;min-width:44px}
@@ -191,7 +193,7 @@ body.cloud #sWa{background:var(--panel)}
 <div class="stu student-only"><input class="sn" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb" id="bSend">📤 إرسال</button></div>
 
 <section class="kit" aria-label="لوحة تشغيل الشنطة">
-  <div class="ksel"><span class="kl">رقم الدائرة<br><span dir="ltr">Circuit No.</span></span><span id="csel" style="display:flex;gap:6px"></span></div>
+  <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span></div></div>
   <div class="kctl" id="kctl">
     <div class="kgrp">
       <div class="kc"><button class="rot" id="cQ1" aria-label="المفتاح الرئيسي Q1"></button><span class="t">Q1</span><span>الرئيسي</span></div>
@@ -479,7 +481,7 @@ const ORDER=['5.1','5.2','5.3','5.4','5.5','5.6','5.7'];
 /* ===================================================================== state */
 const TDELAY=3000;
 const S={cid:'5.1',F:new Set(),k:{},tStart:{},tDone:{},pb:new Set(),ls:{S4:false,S5:false},q:{Q1:false,Q2:false},trip:{F5:false,F6:false},
-  pos:50,hum:0,mot:{st:'off'},lamp:{},probes:[null,null],mode:'V',mm:{on:true,x:1385,y:520},mmPick:null,view:false,diag:false,zoom:1,ex:null,show:true,allowView:true,uf:null,msg:''};
+  pos:50,hum:0,mot:{st:'off'},lamp:{},probes:[null,null],zero:false,mode:'V',mm:{on:true,x:1385,y:520},mmPick:null,view:false,diag:false,zoom:1,ex:null,show:true,allowView:true,uf:null,msg:''};
 const C=()=>CIRC[S.cid];
 function act(dev){if(/T$/.test(dev))return !!S.tDone[dev];if(dev[0]==='K')return !!S.k[dev];
   if(dev==='S1'||dev==='S2'||dev==='S3')return S.pb.has(dev);if(dev==='S4'||dev==='S5')return !!S.ls[dev];
@@ -674,11 +676,41 @@ function applyZoom(){svg.style.width=Math.round(W*S.zoom)+'px';svg.style.height=
 $('dZi').onclick=()=>{S.zoom=Math.min(3,S.zoom*1.25);applyZoom();};$('dZo').onclick=()=>{S.zoom=Math.max(.25,S.zoom/1.25);applyZoom();};$('dFit').onclick=()=>{S.zoom=fitZ();applyZoom();};
 
 /* ===================================================================== panel */
-function renderSel(){$('csel').innerHTML=ORDER.map(id=>{const i=INFO[id];return`<button class="cchip" data-c="${id}" aria-pressed="${id===S.cid}" ${CIRC[id]?'':'disabled title="لم تصل صورة لوحة هذه الدائرة بعد"'}><b>${id}</b>${i?esc(i.n):'—'}</button>`;}).join('');}
-$('csel').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b||b.disabled)return;const id=b.dataset.c;if(id===S.cid)return;
-  if(S.ex&&!S.ex.done&&!document.body.classList.contains('trainer')){say('أنهِ التمرين الحالي أولًا (🏁 إنهاء) قبل تغيير الدائرة.','wn');return;}
-  setCircuit(id);});
-function setCircuit(id,keepF){S.cid=id;S.k={};S.tStart={};S.tDone={};S.pb.clear();S.ls={S4:false,S5:false};S.trip={F5:false,F6:false};S.pos=50;S.hum=0;S.probes=[null,null];
+/* ---------- circuit selector: rotary knob like the kit's Schaltungsnr. switch ---------- */
+const DPOS=['0',...ORDER],DANG={'0':-118,'5.1':-86,'5.2':-54,'5.3':-20,'5.4':16,'5.5':52,'5.6':86,'5.7':118},DC=[115,98];
+const dxy=(a,r)=>[DC[0]+r*Math.sin(a*Math.PI/180),DC[1]-r*Math.cos(a*Math.PI/180)];
+const curPos=()=>S.zero?'0':S.cid;
+function renderSel(){const cur=curPos();let g='';
+  DPOS.forEach(id=>{const a=DANG[id],[x1,y1]=dxy(a,47),[x2,y2]=dxy(a,58),[tx,ty]=dxy(a,76),ok=id==='0'||!!CIRC[id];
+    g+=`<g class="pos${ok?'':' dis'}" data-p="${id}" role="radio" tabindex="0" aria-checked="${id===cur}" aria-label="${id==='0'?'صفر':id+' '+((INFO[id]||{}).n||'غير متوفرة')}"><circle cx="${tx}" cy="${ty}" r="15" fill="transparent" stroke="transparent"/>
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1b2530" stroke-width="2.4"/><text x="${tx}" y="${ty+5}" text-anchor="middle" style="font:700 ${id==='0'?15:14}px Arial,sans-serif;fill:${id===cur?'#0b3d91':'#1b2530'}">${id}</text></g>`;});
+  g+=`<g id="knob" transform="rotate(${DANG[cur]} ${DC[0]} ${DC[1]})"><circle cx="${DC[0]}" cy="${DC[1]+3}" r="37" fill="#000" opacity=".18"/>
+    <circle cx="${DC[0]}" cy="${DC[1]}" r="36" fill="#d9cfaa" stroke="#9c9170" stroke-width="2"/>
+    ${[...Array(12)].map((_,k)=>{const[a1,b1]=dxy(k*30,30),[a2,b2]=dxy(k*30,36);return`<line x1="${a1}" y1="${b1}" x2="${a2}" y2="${b2}" stroke="#a89d78" stroke-width="3"/>`;}).join('')}
+    <circle cx="${DC[0]}" cy="${DC[1]}" r="27" fill="#efe6c6" stroke="#c2b78f" stroke-width="1.5"/>
+    <line x1="${DC[0]}" y1="${DC[1]}" x2="${DC[0]}" y2="${DC[1]-27}" stroke="#151515" stroke-width="4" stroke-linecap="round"/></g>`;
+  $('dial').innerHTML=g;const i=INFO[S.cid];
+  $('cName').textContent=S.zero?'0 — لا توجد دائرة (الشنطة مفصولة)':S.cid+' — '+(i?i.n:'');$('cDe').textContent=S.zero?'':i?i.de:'';
+  wrap.classList.toggle('zero',!!S.zero);}
+function trySelect(id){if(id===curPos())return;
+  if(id!=='0'&&!CIRC[id]){say('الدائرة '+id+': لم تصل صورة لوحتها بعد، فهي غير متوفرة في المحاكي.','wn');return;}
+  if(S.ex&&!S.ex.done&&!isTr()){say('أنهِ التمرين الحالي أولًا (🏁 إنهاء) قبل تغيير الدائرة.','wn');return;}
+  if(id==='0'){S.zero=true;S.q={Q1:false,Q2:false};S.pb.clear();renderSel();update();say('مفتاح الدائرة على 0: الشنطة بلا دائرة. أدر المقبض لاختيار رقم الدائرة.','info');return;}
+  S.zero=false;if(id===S.cid){renderSel();update();return;}setCircuit(id);}
+const dialEl=$('dial');let dDrag=null;
+function dialAng(e){const r=dialEl.getBoundingClientRect(),k=230/r.width,x=(e.clientX-r.left)*k-DC[0],y=(e.clientY-r.top)*k-DC[1];return Math.atan2(x,-y)*180/Math.PI;}
+function nearest(a){let b='0',d=1e9;DPOS.forEach(id=>{const dd=Math.abs(DANG[id]-a);if(dd<d){d=dd;b=id;}});return b;}
+dialEl.addEventListener('pointerdown',e=>{if(!e.target.closest('#knob'))return;e.preventDefault();dDrag={moved:false,a0:dialAng(e)};$('knob').classList.add('drag');try{dialEl.setPointerCapture(e.pointerId);}catch(_){}});
+dialEl.addEventListener('pointermove',e=>{if(!dDrag)return;const a=Math.max(-125,Math.min(125,dialAng(e)));if(Math.abs(a-dDrag.a0)>4)dDrag.moved=true;$('knob').setAttribute('transform',`rotate(${a} ${DC[0]} ${DC[1]})`);dDrag.a=a;});
+dialEl.addEventListener('pointerup',()=>{if(!dDrag)return;const d=dDrag;dDrag=null;$('knob').classList.remove('drag');
+  if(d.moved&&d.a!=null)trySelect(nearest(d.a));
+  else{const L=DPOS.filter(id=>id==='0'||CIRC[id]),i=L.indexOf(curPos());trySelect(L[(i+1)%L.length]);}
+  renderSel();});
+dialEl.addEventListener('pointercancel',()=>{if(dDrag){dDrag=null;renderSel();}});
+dialEl.addEventListener('click',e=>{const p=e.target.closest('[data-p]');if(p)trySelect(p.dataset.p);});
+dialEl.addEventListener('keydown',e=>{const p=e.target.closest('[data-p]');if(p&&(e.key==='Enter'||e.key===' ')){e.preventDefault();trySelect(p.dataset.p);}
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const L=DPOS.filter(id=>id==='0'||CIRC[id]),i=L.indexOf(curPos());trySelect(L[Math.max(0,Math.min(L.length-1,i+(e.key==='ArrowRight'?1:-1)))]);}});
+function setCircuit(id,keepF){S.cid=id;S.zero=false;S.k={};S.tStart={};S.tDone={};S.pb.clear();S.ls={S4:false,S5:false};S.trip={F5:false,F6:false};S.pos=50;S.hum=0;S.probes=[null,null];
   if(!keepF){S.F=new Set();S.ex=null;}renderSel();drawStatic();update();}
 function renderPanel(){const c=C(),i=INFO[S.cid]||{},has=d=>c.E.some(e=>e.dev===d);
   $('cQ1').classList.toggle('on',S.q.Q1);$('cQ2').classList.toggle('on',S.q.Q2);
@@ -695,7 +727,8 @@ function renderPanel(){const c=C(),i=INFO[S.cid]||{},has=d=>c.E.some(e=>e.dev===
   const SP={n:'',star:' — نجمة (بدء)',delta:' — دلتا (تشغيل كامل)',low:' — سرعة منخفضة',high:' — سرعة عالية'};
   $('mstat').innerHTML=m.st==='run'?`<b>يدور ${m.dir>0?'يمينًا ↻':'يسارًا ↺'}</b>${SP[m.sp]||''}`:m.st==='hum'?'<b style="color:#c42b22">طنين بدون دوران!</b>وجه مفقود — سيفصل الحمل الزائد':m.st==='open'?'<b>متوقف</b>الملفات مفتوحة':'<b>المحرك متوقف</b>'+(S.q.Q1?'':'Q1 مفصول');
   const tk=$('track');tk.classList.toggle('show',!!c.ls);if(c.ls){$('cart').style.left=(4+S.pos*.92)+'%';$('tl4').classList.toggle('on',S.ls.S4);$('tl5').classList.toggle('on',S.ls.S5);}}
-$('cQ1').onclick=()=>{S.q.Q1=!S.q.Q1;update();};$('cQ2').onclick=()=>{S.q.Q2=!S.q.Q2;update();};
+const zeroMsg=()=>{if(S.zero){say('مفتاح الدائرة على 0 — أدر المقبض لاختيار رقم الدائرة أولًا.','wn');return true;}return false;};
+$('cQ1').onclick=()=>{if(zeroMsg())return;S.q.Q1=!S.q.Q1;update();};$('cQ2').onclick=()=>{if(zeroMsg())return;S.q.Q2=!S.q.Q2;update();};
 function hold(sel,on,off){document.querySelectorAll(sel).forEach(b=>{let kb=false;
   b.addEventListener('pointerdown',e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch(_){}on(b);});
   ['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>off(b)));
@@ -930,7 +963,7 @@ const _upd=update;update=function(){_upd();if(S.msg)say(S.msg,'err');};
 const exM=$('exModal');let EXT='use';
 function renderHelp(){document.querySelectorAll('[data-ex]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ex===EXT));const B=$('exBody'),i=INFO[S.cid];
   if(EXT==='use')B.innerHTML=`<h3>فكرة الشنطة</h3><p>شنطة ELWE فيها دوائر تحكم جاهزة التوصيل خلف لوحة أمامية. يختار المدرب رقم الدائرة (5.1 إلى 5.7) ويضع لوحة المخطط المطابقة عليها، ثم يفعّل أعطالًا مخفية بمفاتيح البرمجة 8 إلى 30 داخل الباب. يبحث المتدرب عن العطل بالملتيميتر عبر المقابس الموجودة عند أطراف كل عنصر.</p>
-   <h3>الخطوات</h3><ol><li>اختر الدائرة من «رقم الدائرة».</li><li>اضغط <b>🎲 عطل عشوائي</b> (تدريب ذاتي) أو افتح رابط تمرين من المدرب.</li><li>شغّل <b>Q1</b> (الرئيسي) و<b>Q2</b> (التحكم) ثم اضغط الضواغط ولاحظ العَرَض: المحرك واللمبات.</li><li>الملتميتر الأصفر على المخطط: اسحبه من إطاره، وأدر مفتاحه إلى <b>V~</b> للجهد أو <b>Ω</b> للمقاومة (بعد فصل التغذية). اضغط مقبس المجس (VΩ الأحمر أو COM الأسود) ثم الطرف في المخطط، أو المس طرفين متتاليين؛ بعدها كل لمسة تنقل المجس الأحمر ويبقى الأسود ثابتًا.</li><li>عندما تعرف مكان العطل اضغط <b>📍 تحديد العطل</b> ثم المس السلك أو العنصر.</li><li>بعد إيجاد كل الأعطال تظهر النتيجة، وأرسلها للمدرب من 📤.</li></ol>
+   <h3>الخطوات</h3><ol><li>أدر مقبض «رقم الدائرة» (أو اضغط الرقم) لاختيار الدائرة 5.1 إلى 5.7؛ الوضع 0 يعني بلا دائرة.</li><li>اضغط <b>🎲 عطل عشوائي</b> (تدريب ذاتي) أو افتح رابط تمرين من المدرب.</li><li>شغّل <b>Q1</b> (الرئيسي) و<b>Q2</b> (التحكم) ثم اضغط الضواغط ولاحظ العَرَض: المحرك واللمبات.</li><li>الملتميتر الأصفر على المخطط: اسحبه من إطاره، وأدر مفتاحه إلى <b>V~</b> للجهد أو <b>Ω</b> للمقاومة (بعد فصل التغذية). اضغط مقبس المجس (VΩ الأحمر أو COM الأسود) ثم الطرف في المخطط، أو المس طرفين متتاليين؛ بعدها كل لمسة تنقل المجس الأحمر ويبقى الأسود ثابتًا.</li><li>عندما تعرف مكان العطل اضغط <b>📍 تحديد العطل</b> ثم المس السلك أو العنصر.</li><li>بعد إيجاد كل الأعطال تظهر النتيجة، وأرسلها للمدرب من 📤.</li></ol>
    <p class="note2">زر <b>👁 عرض الجهد</b> يلوّن الأسلاك المكهربة بالأحمر وخط الرجوع بالأزرق ويُظهر حالة التلامسات والملفات. استخدامه يُسجَّل في النتيجة.</p>
    <h3>للمدرب</h3><p>من ⋯ ← «وضع المدرب» تظهر «🧰 الأعطال»: 23 مفتاحًا (8–30) لكل منها عطل ثابت في الدائرة المختارة، ويمكنك وضع عطل على أي سلك أو عنصر بالنقر. ثم «🔗 رابط/كود تمرين» لإرساله للمتدربين، وتصلك نتائجهم في «📋 نتائج المتدربين».</p>`;
   else if(EXT==='circ')B.innerHTML=i?`<h3>${esc(S.cid)} — ${esc(i.n)} <span dir="ltr" style="font-weight:400;color:var(--muted)">(${esc(i.de)})</span></h3><p>${esc(i.d)}</p><h3>تسلسل العمل</h3><ol>${i.seq.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
