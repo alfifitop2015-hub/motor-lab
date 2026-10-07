@@ -1060,7 +1060,8 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelecto
 /* ===================================================================== persistence */
 const SK='ftSim.v1';
 function save(){try{localStorage.setItem(SK,JSON.stringify({cid:S.cid,F:[...S.F],ex:S.ex,show:S.show,allowView:S.allowView,mode:S.mode,mm:{on:S.mm.on,x:S.mm.x,y:S.mm.y}}));}catch(_){}}
-try{const o=JSON.parse(localStorage.getItem(SK)||'null');if(o&&CIRC[o.cid]){S.cid=o.cid;S.F=new Set((o.F||[]).filter(id=>CIRC[o.cid].E.some(e=>e.id===id)));S.ex=o.ex&&o.ex.c===o.cid?o.ex:null;S.show=o.show!==false;S.allowView=o.allowView!==false;S.mode=o.mode==='R'?'R':o.mode==='OFF'?'OFF':'V';if(o.mm)S.mm={on:o.mm.on!==false,x:clampN(+o.mm.x||1385,0,W-150*MS),y:clampN(+o.mm.y||135,0,H-262*MS)};}}catch(_){}
+try{const o=JSON.parse(localStorage.getItem(SK)||'null');if(o&&CIRC[o.cid]){S.cid=o.cid;S.F=new Set((o.F||[]).filter(id=>CIRC[o.cid].E.some(e=>e.id===id)));S.ex=o.ex&&o.ex.c===o.cid?o.ex:null;S.show=o.show!==false;S.allowView=o.allowView!==false;S.mode=o.mode==='R'?'R':o.mode==='OFF'?'OFF':'V';if(o.mm&&Math.round(+o.mm.x)===1385&&Math.round(+o.mm.y)===520){o.mm.x=1385;o.mm.y=135;}
+  if(o.mm)S.mm={on:o.mm.on!==false,x:clampN(+o.mm.x||1385,0,W-150*MS),y:clampN(+o.mm.y||135,0,H-262*MS)};}}catch(_){}
 
 /* ===================================================================== offline queue, PWA */
 const PWA_EMB=(()=>{try{return window.parent!==window;}catch(_){return true;}})();
