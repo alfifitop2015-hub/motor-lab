@@ -177,6 +177,10 @@ body.dmin .drow .full,body.dmin .dstat{display:none}
 .tg .lv::after{content:"";position:absolute;left:-3px;width:16px;height:12px;border-radius:50%;background:#e3e7eb;border:1px solid #6b7580;top:-4px;transition:top .12s}
 .tg.on .lv{background:linear-gradient(#ffcf66,#e09a00)}.tg.on .lv::after{top:20px;background:#ffd54a}
 .tg:focus-visible{outline:2px solid var(--accent)}
+.fsw{margin:6px 0 2px;background:#e9ecef;color:#1b2530;border:3px solid #7d97b8;border-radius:10px;padding:6px 10px 8px}
+.fswh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:.8rem;margin-bottom:4px}.fswh b{font-size:.9rem}.fswh .de{direction:ltr;color:#4b5866}.fswh .kl{color:#4b5866;margin-inline-start:auto}
+.fswg{display:flex;flex-wrap:wrap;gap:4px 12px;direction:ltr}.fswg .tg{min-width:30px}.fswg .tg.sel span:first-child{color:#0b3d91;font-weight:700;text-decoration:underline}
+.insp .sym{font-size:.86rem;background:var(--chip);border-radius:8px;padding:6px 10px;margin:6px 0}.insp .sm{font-size:.8rem;color:var(--muted)}
 .flist{list-style:none;padding:0;margin:10px 0;font-size:.86rem;direction:rtl}
 .flist li{display:flex;gap:8px;align-items:baseline;padding:4px 8px;border-radius:8px}
 .flist li:nth-child(odd){background:var(--chip)}.flist li.on{background:color-mix(in srgb,var(--amber) 22%,transparent);font-weight:600}
@@ -223,6 +227,7 @@ body.cloud #sWa{background:var(--panel)}
 
 <section class="kit" aria-label="لوحة تشغيل الشنطة">
   <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span></div></div>
+  <div class="fsw trainer-only" id="fswBox"><div class="fswh"><b>🧰 مفاتيح الأعطال</b><span class="de">Programmierung</span><span class="kl" id="fswInfo"></span></div><div class="fswg" id="fswg"></div></div>
   <div class="board"><div class="hint" id="hint"></div>
   <div class="wrap" id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
   <div class="kctl" id="kctl" aria-label="لوحة الضواغط والمفاتيح">
@@ -278,7 +283,7 @@ body.cloud #sWa{background:var(--panel)}
 
 <div class="modal" id="fModal" role="dialog" aria-modal="true" aria-labelledby="fT"><div class="box appbox">
   <div class="ah"><h2 id="fT">🧰 مفاتيح الأعطال</h2><button class="btn" id="fClose">إغلاق</button></div>
-  <div class="door"><div class="dt">Programmierung / Programming — ارفع المفتاح (I) لتفعيل العطل في الدائرة <b id="fCirc"></b></div><div class="tgrid" id="tgrid"></div></div>
+  <div class="door"><div class="dt">Programmierung / Programming — الأعطال الشائعة فقط (مستخرجة بتجربة كل عطل ومقارنة أعراضه). ارفع المفتاح (I) لتفعيل العطل في الدائرة <b id="fCirc"></b></div><div class="tgrid" id="tgrid"></div></div>
   <div class="rtools"><button id="fRand">🎲 عطل عشوائي</button><button id="fNone">⭘ إطفاء كل الأعطال</button><button id="fCode">🔗 رابط/كود تمرين للمتدربين</button></div>
   <label class="opt"><input type="checkbox" id="oShow"> إظهار مواقع الأعطال على المخطط (للمدرب)</label>
   <label class="opt"><input type="checkbox" id="oView"> السماح للمتدرب بزر «عرض الجهد» في التمرين المرسل</label>
@@ -653,10 +658,36 @@ function fDesc(e){if(e.k==='w')return'قطع في '+elName(e);if(e.k==='coil'||e
 const byId=id=>C().E.find(e=>e.id===id);
 function cands(c){return c.E.filter(e=>!e.nf);}
 /* fault switches 8..30 → a balanced, fixed selection of faults for each circuit */
-function swMap(c){if(c._sw)return c._sw;const L=cands(c),pick=(z,w)=>L.filter(e=>e.z===z&&(e.k==='w')===w);
-  const q=[pick('c',false),pick('c',true),pick('p',false),pick('p',true)],pat=[0,1,0,2,1,0,3,1],out=[];let i=0,guard=0;
-  while(out.length<23&&guard++<500){const l=q[pat[i++%pat.length]];if(l.length){const k=Math.floor(l.length*((out.length*7)%23)/23)%l.length;out.push(l.splice(k,1)[0].id);}}
-  return c._sw=out;}
+/* Common faults per circuit: every candidate fault is tried in a hidden run of the circuit's normal
+   operating sequence and only what a trainee can see is recorded (lamps, motor). Faults with no visible
+   symptom are dropped, faults with the same symptom are grouped, and each group is represented by its
+   most typical fault (coil, auxiliary contact, button, protection, cable, then wire). */
+const KPRI={coil:0,tcoil:0,no:1,nc:1,tno:1,tnc:1,olnc:2,pbno:2,pbnc:2,lsno:2,lsnc:2,lamp:2,fuse:3,mcb:3,olh:3,w:5,q1:7,sw:7};
+const fCls=e=>e.k==='w'?(e.lead||e.br?'cab':'w'):(e.k==='coil'||e.k==='tcoil')?'coil':NOK.has(e.k)||NCK.has(e.k)?'ct':'prot';
+const pri=e=>(e.k==='w'&&(e.lead||e.br)?3:(KPRI[e.k]??5))+(e.z==='p'?.5:0);
+function obsNow(){const m=S.mot;return(S.lamp.H1?1:0)+''+(S.lamp.H2?1:0)+'|'+m.st+(m.st==='run'?(m.dir>0?'+':'-')+m.sp:'');}
+function runScript(c){const out=[],has=d=>c.E.some(e=>e.dev===d),hasT=c.E.some(e=>e.k==='tcoil'),ob=l=>{solve();out.push([l,obsNow()]);},
+    age=()=>{if(!hasT)return;for(let k=0;k<3;k++){for(const d in S.tStart)S.tStart[d]-=TDELAY+50;solve();}ob('بعد انتهاء زمن المؤقت');},push=(b,l)=>{S.pb.add(b);ob('أثناء الضغط على '+b+(l?' ('+l+')':''));S.pb.delete(b);ob('بعد ترك '+b);};
+  const I=INFO[S.cid]||{};S.q={Q1:true,Q2:true};ob('بعد تشغيل Q1 وQ2');push('S2',I.S2);age();
+  if(has('S3')){push('S3',I.S3);age();}
+  if(c.ls){S.ls.S5=true;ob('عند وصول الحامل إلى S5');S.ls.S5=false;age();S.ls.S4=true;ob('عند وصول الحامل إلى S4');S.ls.S4=false;ob('بعد ابتعاد الحامل عن S4');}
+  push('S1');return out;}
+function simRun(c,f){const keep={};['F','k','tStart','tDone','pb','ls','q','trip','mot','lamp','uf','msg','zero','hum'].forEach(k=>keep[k]=S[k]);
+  try{Object.assign(S,{F:new Set(f?[f]:[]),k:{},tStart:{},tDone:{},pb:new Set(),ls:{S4:false,S5:false},q:{Q1:false,Q2:false},trip:{F5:false,F6:false},lamp:{},zero:false,msg:''});return runScript(c);}
+  finally{Object.assign(S,keep);}}
+function obsTxt(o){const[l,m]=o.split('|'),st=m.replace(/[+-].*/,''),sp=m.split(/[+-]/)[1]||'',dir=m.includes('+')?'يمينًا':'يسارًا';
+  const SP={n:'',star:' (نجمة)',delta:' (دلتا)',low:' بسرعة منخفضة',high:' بسرعة عالية'};
+  const mt=st==='run'?'المحرك يدور '+dir+(SP[sp]||''):st==='hum'?'المحرك يطن ولا يدور':'المحرك متوقف';
+  const lp=[l[0]==='1'?'H1':'',l[1]==='1'?'H2':''].filter(Boolean);return mt+(lp.length?' و'+lp.join(' و')+' مضيئة':'');}
+function symText(base,r){const d=[];r.forEach((x,i)=>{if(x[1]!==base[i][1]&&d.length<2)d.push(`${x[0]}: ${obsTxt(x[1])} (الطبيعي: ${obsTxt(base[i][1])})`);});return d;}
+function commonFaults(c){if(c._cf)return c._cf;const base=simRun(c,null),bs=base.map(x=>x[1]).join(';'),G=new Map(),vis=[];
+  cands(c).forEach(e=>{const r=simRun(c,e.id),sg=r.map(x=>x[1]).join(';');if(sg===bs)return;vis.push(e.id);if(!G.has(sg))G.set(sg,{r,l:[]});G.get(sg).l.push(e);});
+  const first=[],second=[];
+  G.forEach(g=>{g.l.sort((a,b)=>pri(a)-pri(b));const a=g.l[0],b=g.l.find(e=>fCls(e)!==fCls(a)&&e.k!=='q1'&&e.k!=='sw'),sym=symText(base,g.r);
+    first.push({id:a.id,p:pri(a),n:g.l.length,sym});if(b)second.push({id:b.id,p:pri(b)+10,n:g.l.length,sym});});
+  const L=[...first.sort((a,b)=>a.p-b.p),...second.sort((a,b)=>a.p-b.p)].slice(0,12);
+  c._vis=vis;return c._cf=L;}
+function swMap(c){return commonFaults(c).map(x=>x.id);}
 
 /* ===================================================================== drawing */
 const svg=$('svg'),wrap=$('wrap');
@@ -843,7 +874,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(.3,(now-last)/1000);las
   if(dirty)update();
   if(Date.now()-lastSec>1000){lastSec=Date.now();if(S.ex&&!S.ex.done)renderStat();}},100);
 
-function update(){solve();drawDyn();renderPanel();renderMeter();renderStat();save();}
+function update(){solve();drawDyn();renderPanel();renderMeter();renderStat();renderFsw();save();}
 
 /* ===================================================================== meter and probes */
 /* ---------- movable multimeter with leads (same look as the electrical workshop) ---------- */
@@ -926,7 +957,7 @@ function pickEl(id){const e=byId(id);if(!e)return;
     drawDyn();renderStat();save();};}
 function newEx(kind,f,vw){S.F=new Set(f);S.ex=f.length?{k:kind,c:S.cid,f:[...f],t0:Date.now(),found:[],wrong:[],meas:0,vw:vw!==false,done:false,viewUsed:false}:null;
   S.k={};S.tStart={};S.tDone={};S.trip={F5:false,F6:false};S.hum=0;S.pos=50;}
-function randFault(){const L=cands(C()).filter(e=>!(e.k==='q1'));return L[Math.floor(Math.random()*L.length)].id;}
+function randFault(){const c=C();commonFaults(c);const L=c._vis&&c._vis.length?c._vis:cands(c).map(e=>e.id);return L[Math.floor(Math.random()*L.length)];}
 $('dRand').onclick=()=>{if(S.ex&&!S.ex.done&&S.ex.k==='exam'){say('لديك تمرين من المدرب لم ينته بعد. اضغط 🏁 إنهاء أولًا.','wn');return;}
   newEx('rand',[randFault()]);setDiag(false);say('🎲 وُضع عطل مخفي في الدائرة '+S.cid+'. شغّل الشنطة، لاحظ العَرَض، ثم قِس حتى تجده.','info');update();};
 $('dEnd').onclick=()=>{if(!S.ex)return;if(!S.ex.done){if(!confirm('إنهاء التمرين وكشف الأعطال؟'))return;S.ex.done=true;S.ex.t1=Date.now();S.ex.gaveUp=true;setDiag(false);}showReport();update();};
@@ -963,10 +994,22 @@ $('repSend').onclick=()=>{$('repModal').classList.remove('open');openSend();};
 const fM=$('fModal');
 function openFaults(){renderFaults();fM.classList.add('open');}
 $('dFaults').onclick=openFaults;$('bFaults2').onclick=()=>{document.querySelector('.more').open=false;openFaults();};$('fClose').onclick=()=>fM.classList.remove('open');
-function renderFaults(){const c=C(),m=swMap(c);$('fCirc').textContent=S.cid;
+let fswKey='',fswSel=-1;
+function renderFsw(){if(!isTr())return;const c=C(),L=commonFaults(c),key=S.cid+'|'+[...S.F].join(',')+'|'+fswSel;if(key===fswKey)return;fswKey=key;
+  $('fswInfo').textContent=S.zero?'':`الدائرة ${S.cid}: ${L.length} أعطال شائعة · اضغط المفتاح لعرض تفاصيله`;
+  $('fswg').innerHTML=S.zero?'<span class="kl" style="direction:rtl">أدر المقبض لاختيار دائرة</span>':L.map((x,i)=>`<button class="tg${S.F.has(x.id)?' on':''}${i===fswSel?' sel':''}" data-cf="${i}" aria-pressed="${S.F.has(x.id)}" title="${esc(fDesc(byId(x.id)))}"><span>${i+8}</span><span class="lv"></span></button>`).join('');}
+function showSw(i){const x=commonFaults(C())[i];if(!x)return;const e=byId(x.id),on=S.F.has(x.id);fswSel=i;renderFsw();
+  insp.innerHTML=`<b>المفتاح ${i+8}</b> <span class="sm">${on?'🟡 العطل مفعّل':'⭘ غير مفعّل'}</span><p>${esc(fDesc(e))}</p>`+
+    (x.sym.length?`<div class="sym"><b>العَرَض المتوقع</b><br>${x.sym.map(esc).join('<br>')}</div>`:'')+
+    (x.n>1?`<p class="sm">يعطي ${x.n-1} ${x.n-1===1?'عطل آخر':'أعطال أخرى'} العَرَض نفسه، فعلى المتدرب أن يميّز بينها بالقياس.</p>`:'')+
+    `<div class="row"><button class="btn" id="swX">إغلاق</button><button class="btn" id="swT" style="background:${on?'var(--warn)':'var(--ok)'};color:#fff;border-color:transparent">${on?'إيقاف العطل':'تفعيل العطل'}</button></div>`;
+  insp.classList.add('open');$('swX').onclick=()=>{insp.classList.remove('open');fswSel=-1;renderFsw();};
+  $('swT').onclick=()=>{S.F.has(x.id)?S.F.delete(x.id):S.F.add(x.id);trainerFaultsChanged();showSw(i);};}
+$('fswg').addEventListener('click',e=>{const b=e.target.closest('[data-cf]');if(b)showSw(+b.dataset.cf);});
+function renderFaults(){const c=C(),m=swMap(c),cf=commonFaults(c);$('fCirc').textContent=S.cid;renderFsw();
   $('tgrid').innerHTML=m.map((id,i)=>`<button class="tg${S.F.has(id)?' on':''}" data-sw="${i}" title="${esc(fDesc(byId(id)))}" aria-pressed="${S.F.has(id)}"><span>${i+8}</span><span class="lv"></span></button>`).join('');
   const extra=[...S.F].filter(id=>!m.includes(id));
-  $('flist').innerHTML=m.map((id,i)=>`<li class="${S.F.has(id)?'on':''}"><span class="n">${i+8}</span><span>${esc(fDesc(byId(id)))}</span></li>`).join('')+
+  $('flist').innerHTML=m.map((id,i)=>`<li class="${S.F.has(id)?'on':''}"><span class="n">${i+8}</span><span>${esc(fDesc(byId(id)))}${cf[i]&&cf[i].sym[0]?`<br><small style="color:var(--muted)">${esc(cf[i].sym[0])}</small>`:''}</span></li>`).join('')+
     extra.map(id=>{const e=byId(id);return e?`<li class="on"><span class="n">✚</span><span>${esc(fDesc(e))} (وُضع بالنقر)</span></li>`:'';}).join('');
   $('oShow').checked=S.show;$('oView').checked=S.allowView;}
 $('tgrid').addEventListener('click',e=>{const b=e.target.closest('[data-sw]');if(!b)return;const id=swMap(C())[+b.dataset.sw];S.F.has(id)?S.F.delete(id):S.F.add(id);trainerFaultsChanged();});
@@ -1043,7 +1086,7 @@ $('rList').addEventListener('click',async e=>{const o=e.target.closest('[data-ro
 
 /* ===================================================================== trainer mode (same PIN as the electrical workshop) */
 const PINH='ba1777b5',hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};
-function setTrainer(on){document.body.classList.toggle('trainer',on);try{on?localStorage.setItem('wsTrainer',PINH):localStorage.removeItem('wsTrainer');}catch(_){}$('bTrainer').textContent=on?'🔓 الخروج من وضع المدرب':'🔒 وضع المدرب';hint();if(S.uf)drawDyn();measureDock();}
+function setTrainer(on){document.body.classList.toggle('trainer',on);try{on?localStorage.setItem('wsTrainer',PINH):localStorage.removeItem('wsTrainer');}catch(_){}$('bTrainer').textContent=on?'🔓 الخروج من وضع المدرب':'🔒 وضع المدرب';hint();if(S.uf)drawDyn();fswKey='';if(!on)insp.classList.remove('open');renderFsw();measureDock();}
 try{if(localStorage.getItem('wsTrainer')===PINH)setTrainer(true);}catch(_){}
 const pM=$('pinModal');$('bTrainer').onclick=()=>{document.querySelector('.more').open=false;if(isTr()){setTrainer(false);return;}$('pinIn').value='';$('pinMsg').textContent='';pM.classList.add('open');setTimeout(()=>$('pinIn').focus(),50);};
 const tryPin=()=>{if(hpin($('pinIn').value.trim())===PINH){pM.classList.remove('open');setTrainer(true);}else $('pinMsg').textContent='الرمز غير صحيح';};
@@ -1058,7 +1101,7 @@ function renderHelp(){document.querySelectorAll('[data-ex]').forEach(b=>b.setAtt
   if(EXT==='use')B.innerHTML=`<h3>فكرة الشنطة</h3><p>شنطة ELWE فيها دوائر تحكم جاهزة التوصيل خلف لوحة أمامية. يختار المدرب رقم الدائرة (5.1 إلى 5.7) ويضع لوحة المخطط المطابقة عليها، ثم يفعّل أعطالًا مخفية بمفاتيح البرمجة 8 إلى 30 داخل الباب. يبحث المتدرب عن العطل بالملتيميتر عبر المقابس الموجودة عند أطراف كل عنصر.</p>
    <h3>الخطوات</h3><ol><li>أدر مقبض «رقم الدائرة» (أو اضغط الرقم) لاختيار الدائرة 5.1 إلى 5.7؛ الوضع 0 يعني بلا دائرة.</li><li>اضغط <b>🎲 عطل عشوائي</b> (تدريب ذاتي) أو افتح رابط تمرين من المدرب.</li><li>شغّل <b>Q1</b> (الرئيسي) و<b>Q2</b> (التحكم) ثم اضغط الضواغط ولاحظ العَرَض: المحرك واللمبات.</li><li>الملتميتر الأصفر على المخطط: اسحبه من إطاره، وأدر مفتاحه إلى <b>V~</b> للجهد أو <b>Ω</b> للمقاومة (بعد فصل التغذية). اضغط مقبس المجس (VΩ الأحمر أو COM الأسود) ثم الطرف في المخطط، أو المس طرفين متتاليين؛ بعدها كل لمسة تنقل المجس الأحمر ويبقى الأسود ثابتًا.</li><li>عندما تعرف مكان العطل اضغط <b>📍 تحديد العطل</b> ثم المس السلك أو العنصر.</li><li>بعد إيجاد كل الأعطال تظهر النتيجة، وأرسلها للمدرب من 📤.</li></ol>
    <p class="note2">زر <b>👁 عرض الجهد</b> يلوّن الأسلاك المكهربة بالأحمر وخط الرجوع بالأزرق ويُظهر حالة التلامسات والملفات. استخدامه يُسجَّل في النتيجة.</p>
-   <h3>للمدرب</h3><p>من ⋯ ← «وضع المدرب» تظهر «🧰 الأعطال»: 23 مفتاحًا (8–30) لكل منها عطل ثابت في الدائرة المختارة، ويمكنك وضع عطل على أي سلك أو عنصر بالنقر. ثم «🔗 رابط/كود تمرين» لإرساله للمتدربين، وتصلك نتائجهم في «📋 نتائج المتدربين».</p>`;
+   <h3>للمدرب</h3><p>من ⋯ ← «وضع المدرب» تظهر مفاتيح الأعطال تحت مقبض اختيار الدائرة: الأعطال الشائعة فقط لكل دائرة (يجرّب المحاكي كل عطل ممكن ويقارن أعراضه، ويختار عطلًا مميزًا لكل عَرَض). اضغط المفتاح لترى العطل وعَرَضه المتوقع ثم فعّله أو أوقفه، ويمكنك وضع عطل على أي سلك أو عنصر بالنقر. ثم «🔗 رابط/كود تمرين» لإرساله للمتدربين، وتصلك نتائجهم في «📋 نتائج المتدربين».</p>`;
   else if(EXT==='circ')B.innerHTML=i?`<h3>${esc(S.cid)} — ${esc(i.n)} <span dir="ltr" style="font-weight:400;color:var(--muted)">(${esc(i.de)})</span></h3><p>${esc(i.d)}</p><h3>تسلسل العمل</h3><ol>${i.seq.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>
    <h3>عناصر الدائرة</h3><ul><li><b>F1</b>: مصهر دائرة التحكم 24V بعد المحول.</li><li><b>Q2</b>: مفتاح دائرة التحكم، و<b>Q1</b>: المفتاح الرئيسي للقدرة، و<b>F2–F4</b>: قواطع القدرة.</li><li><b>F5/F6</b>: مرحل الحمل الزائد، عنصره الحراري في دائرة القدرة وتلامسه 95-96 في دائرة التحكم.</li><li>المؤقت (K6T/K8T): تأخير عند التشغيل ${TDELAY/1000} ثوانٍ؛ 15 مشترك، 16 مغلق، 18 مفتوح.</li></ul>`:'';
   else if(EXT==='method')B.innerHTML=`<h3>١) لاحظ العَرَض</h3><ul><li>لا شيء يعمل؟ ابدأ من مصدر 24V: F1 ثم Q2 ثم 95-96 ثم S1.</li><li>الكونتاكتور يعمل أثناء الضغط فقط؟ العطل في دائرة المسك (13-14) أو أسلاكها.</li><li>اللمبة لا تضيء والمحرك يعمل؟ العطل في اللمبة أو سلكيها.</li><li>المحرك يطن ولا يدور؟ وجه مفقود في دائرة القدرة (قاطع، تلامس رئيسي، عنصر حراري، سلك).</li></ul>
