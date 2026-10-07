@@ -299,7 +299,7 @@ body.cloud #sWa{background:var(--panel)}
   <h2 id="sendT" style="margin:0 0 4px;font-size:1.1rem">إرسال النتيجة للمدرب</h2>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.88rem">يصل للمدرب اسمك ورقمك والدائرة والأعطال التي وجدتها ومحاولاتك وعدد القياسات والزمن.</p>
   <div class="fld"><label>اسم المتدرب<input id="stName2"></label><label style="flex:.7">الرقم التدريبي<input id="stId2" inputmode="numeric" style="direction:ltr;text-align:right"></label></div>
-  <div class="sbtns"><button class="btn prim cloud-only" id="sCloud">☁️ إرسال للمدرب عبر الموقع</button><button class="btn" id="sWa">واتساب</button><button class="btn" id="sCopy">نسخ الرسالة</button><button class="btn" id="sClose">إغلاق</button></div>
+  <div class="sbtns"><button class="btn prim cloud-only" id="sCloud">☁️ إرسال للمدرب عبر الموقع</button><button class="btn" id="sWa">💬 مشاركة التمرين واتساب</button><button class="btn" id="sClose">إغلاق</button></div>
   <p id="sendMsg" style="margin:8px 0 0;font-size:.88rem;min-height:1.2em"></p></div></div>
 
 <div class="modal" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinT"><div class="box" style="max-width:340px;text-align:center">
@@ -1052,7 +1052,6 @@ async function buildMsg(st){const r=report(S.ex),code=await encodeCode({app:'ft'
   return{code,r,text:`نتيجة شنطة اكتشاف الأعطال\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالدائرة: ${r.c} — ${(INFO[r.c]||{}).n||''}\nالأعطال الموجودة: ${r.found} من ${r.f.length} · الدرجة: ${r.score}%\nالقياسات: ${r.meas} · محاولات خاطئة: ${r.wrong.length} · الزمن: ${mmss(r.secs)}${S.ex.done?'':' (لم ينته)'}\n`+(link?`\nافتح النتيجة:\n${link}\n`:'')+`\nالكود (للمدرب: ⋯ ← فتح بالكود):\n${code}`};}
 function openLink(u){const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
 $('sWa').onclick=async()=>{const st=sendReady();if(!st)return;const{text}=await buildMsg(st);openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
-$('sCopy').onclick=async()=>{const st=sendReady();if(!st)return;const{text}=await buildMsg(st);let ok=false;try{await navigator.clipboard.writeText(text);ok=true;}catch(_){}okMsg(ok?'نُسخت الرسالة.':'تعذّر النسخ هنا.',!ok);};
 function repImg(st,r,w){const c=document.createElement('canvas'),h=Math.round(w*1.25),k=w/600;c.width=w;c.height=h;const g=c.getContext('2d');
   g.fillStyle='#f4eedb';g.fillRect(0,0,w,h);g.fillStyle='#0c2753';g.fillRect(0,0,w,90*k);g.fillStyle='#fff';g.direction='rtl';g.textAlign='right';
   const F=(s,b)=>(b?'bold ':'')+Math.round(s*k)+'px "IBM Plex Sans Arabic",Tahoma,sans-serif';
