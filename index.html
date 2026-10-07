@@ -342,6 +342,65 @@ body.fs{padding-bottom:0}
 .jit{animation:jit .1s linear infinite}@keyframes jit{50%{transform:translateX(1.5px)}}
 @keyframes hum{50%{transform:rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){.fan,.sh,.jit{animation:none!important}}
+/* الفيديو التعريفي */
+#bVid{text-decoration:none;color:#b3261e;background:#fde8e7;border-color:#ec9a94;font-weight:700;font-size:.9rem;gap:4px;white-space:nowrap}
+#bVid.vnew{animation:vNew 1.8s ease-in-out 4}
+@keyframes vNew{50%{box-shadow:0 0 0 5px rgba(229,57,53,.35)}}
+@media (max-width:560px){#bVid span{display:none}#bVid{font-size:1.05rem}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #bVid{background:#3d1614;color:#ffb4ab;border-color:#8c3a33}}
+:root[data-theme="dark"] #bVid{background:#3d1614;color:#ffb4ab;border-color:#8c3a33}
+#vidModal{background:rgba(0,0,0,.78);z-index:80}
+#vidModal .vbox{background:#0b1220;color:#eef3f9;border-radius:14px;overflow:hidden;width:min(880px,100%,calc((100vh - 210px)*1.778));min-width:min(300px,100%);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.vhead{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0f1726}
+.vhead h2{margin:0;font-size:1rem;flex:1}
+.vstage{position:relative;aspect-ratio:16/9;background:radial-gradient(circle at 50% 35%,#1d3557 0%,#0b1220 75%);overflow:hidden}
+.vstage svg{position:absolute;inset:0;width:100%;height:100%;direction:ltr}
+.vstage text{font-family:inherit}
+.vtag{position:absolute;top:3%;inset-inline-start:3%;background:#1f5fbf;color:#fff;padding:.15em .75em;border-radius:20px;font-size:clamp(.7rem,1.8vw,.92rem);font-weight:700}
+.vend{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,18,32,.6)}
+.vend[hidden]{display:none}
+.vend button{font-size:1.05rem;font-weight:700;padding:10px 22px;border-radius:30px;border:0;background:#e53935;color:#fff;cursor:pointer}
+.vcap{margin:0;padding:8px 14px;min-height:4.4em;text-align:center;font-size:clamp(.85rem,2.2vw,1.08rem);line-height:1.65;background:#0f1726;border-top:1px solid #1f2c40}
+.vctl{display:flex;gap:6px;align-items:center;padding:8px 10px;background:#0f1726}
+.vctl>button,.vhead button{background:#1b2638;border:1px solid #2c3b52;color:#fff;border-radius:8px;height:36px;min-width:40px;cursor:pointer;font-size:1rem;flex:none}
+.vctl>button:focus-visible,.vhead button:focus-visible,.vseg:focus-visible{outline:3px solid #6ea4ff;outline-offset:2px}
+.vprog{flex:1;display:flex;gap:3px;min-width:60px}
+.vseg{flex:1;height:22px;display:flex;align-items:center;cursor:pointer;background:none;border:0;padding:0}
+.vseg b{display:block;width:100%;height:6px;background:#2c3b52;border-radius:3px;overflow:hidden}
+.vseg i{display:block;height:100%;width:0;background:#4ea1ff}
+.vnote{margin:0;padding:0 12px 8px;background:#0f1726;color:#ffd27a;font-size:.8rem}
+.vnote:empty{display:none}
+.vstage .v-pop{opacity:0;animation:vPop .55s cubic-bezier(.3,1.5,.6,1) forwards;transform-box:fill-box;transform-origin:center}
+.vstage .v-fade{opacity:0;animation:vFade .6s ease-out forwards}
+.vstage .v-spin{animation:vSpin .7s linear infinite;transform-box:fill-box;transform-origin:center}
+.vstage .v-slow{animation:vSpin 4s linear infinite;transform-box:fill-box;transform-origin:center}
+.vstage .v-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:vDraw 1.05s ease-in-out forwards}
+.vstage .v-flow{stroke-dasharray:7 9;animation:vFlow .5s linear infinite}
+.vstage .v-press{animation:vPress .5s ease-in-out both;transform-box:fill-box;transform-origin:center}
+.vstage .v-pull{animation:vPull .25s ease-in forwards}
+.vstage .v-turn{animation:vTurn .45s ease-in-out forwards;transform-box:fill-box;transform-origin:center}
+.vstage .v-ping{opacity:0;animation:vPing .8s ease-out forwards;transform-box:fill-box;transform-origin:center}
+.vstage .v-blink{animation:vBlink 1s steps(2) infinite}
+.vstage .v-piston{animation:vPiston 1.4s ease-in-out infinite alternate}
+.vstage .v-cur{opacity:0;animation:vCur 3.2s ease-in-out .5s forwards}
+.vstage .v-fly{opacity:0;animation:vFly 1.4s ease-in-out forwards}
+.vstage .v-pulse{animation:vPulse 2s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes vPop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:none}}
+@keyframes vFade{to{opacity:1}}
+@keyframes vSpin{to{transform:rotate(360deg)}}
+@keyframes vDraw{to{stroke-dashoffset:0}}
+@keyframes vFlow{to{stroke-dashoffset:-16}}
+@keyframes vPress{0%,100%{transform:none}50%{transform:scale(.72)}}
+@keyframes vPull{to{transform:translateY(13px)}}
+@keyframes vTurn{to{transform:rotate(90deg)}}
+@keyframes vPing{0%{opacity:.9;transform:scale(.2)}100%{opacity:0;transform:scale(1)}}
+@keyframes vBlink{50%{opacity:.15}}
+@keyframes vPiston{to{transform:translateX(52px)}}
+@keyframes vCur{0%{opacity:0;transform:translate(560px,300px)}8%{opacity:1}30%,44%{transform:translate(195px,197px)}74%,100%{opacity:1;transform:translate(440px,112px)}}
+@keyframes vFly{0%{opacity:0;transform:translate(300px,175px) scale(.7)}15%{opacity:1}55%{transform:translate(210px,90px) scale(.9)}90%{opacity:1}100%{opacity:0;transform:translate(115px,140px) scale(.6)}}
+@keyframes vPulse{0%{opacity:.6;transform:scale(.9)}100%{opacity:0;transform:scale(1.5)}}
+#vidModal.vpaused .vstage *{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){.vstage .v-spin,.vstage .v-slow,.vstage .v-flow,.vstage .v-blink,.vstage .v-piston,.vstage .v-pulse{animation:none}}
 </style>
 </head>
 <body>
@@ -349,6 +408,7 @@ body.fs{padding-bottom:0}
   <div class="bar1">
     <h1>محاكي ورشة التحكم في المحركات الكهربائية<span class="credit">فكرة وتنفيذ م. جابر الفيفي بواسطة Claude</span></h1>
     <span class="tbadge trainer-only" title="وضع المدرب">مدرب</span>
+    <button class="ib" id="bVid" title="فيديو تعريفي: ما المحاكي وكيف تستخدمه" aria-label="فيديو تعريفي بالمحاكي"><svg viewBox="0 0 26 20" width="24" height="18" aria-hidden="true" style="flex:none;vertical-align:middle"><rect x="1" y="1.5" width="24" height="17" rx="4.5" fill="currentColor"/><path d="M10.5 6v8l6.5-4z" fill="#fff"/></svg> <span>فيديو</span></button>
     <a class="ib" id="bPneu" title="ورشة التحكم الهوائي (النيوماتيك)" aria-label="ورشة التحكم الهوائي" style="text-decoration:none;color:#0b5394;background:#e3f0fb;border-color:#7fb3e0;font-weight:700;font-size:.9rem;gap:4px;white-space:nowrap"><svg class="cylIc" viewBox="0 0 34 20" width="30" height="18" aria-hidden="true" style="direction:ltr;flex:none;vertical-align:middle" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="3" width="20" height="12"/><line x1="8" y1="3" x2="8" y2="15" stroke-width="3"/><line x1="8" y1="9" x2="32.5" y2="9" stroke-width="2.2"/><polyline points="9.5,9 11,4.5 13,13.5 15,4.5 17,13.5 19,4.5 20.5,9" stroke-width="1.1"/><line x1="4.5" y1="15" x2="4.5" y2="19"/></svg> <span>الهوائي</span></a>
     <a class="ib" id="bFault" title="شنطة اكتشاف الأعطال" aria-label="شنطة اكتشاف الأعطال" style="text-decoration:none;color:#7a4b00;background:#fff3d6;border-color:#e0b45a;font-weight:700;font-size:.9rem;gap:4px;white-space:nowrap"><img src="data:image/jpeg;base64,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" width="30" height="19" alt="" aria-hidden="true" style="border-radius:3px;object-fit:cover;flex:none;vertical-align:middle"> <span>الأعطال</span></a>
     <button class="ib" id="bHelp" title="شرح الدوائر والتركيبات" aria-label="شرح الدوائر والتركيبات">📖</button>
@@ -361,6 +421,7 @@ body.fs{padding-bottom:0}
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <a class="mi" id="bPneu2" style="text-decoration:none;color:inherit"><svg class="cylIc" viewBox="0 0 34 20" width="24" height="14" aria-hidden="true" style="direction:ltr;flex:none;vertical-align:middle" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="3" width="20" height="12"/><line x1="8" y1="3" x2="8" y2="15" stroke-width="3"/><line x1="8" y1="9" x2="32.5" y2="9" stroke-width="2.2"/><polyline points="9.5,9 11,4.5 13,13.5 15,4.5 17,13.5 19,4.5 20.5,9" stroke-width="1.1"/><line x1="4.5" y1="15" x2="4.5" y2="19"/></svg> ورشة التحكم الهوائي</a>
         <a class="mi" id="bFault2" style="text-decoration:none;color:inherit"><img src="data:image/jpeg;base64,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" width="24" height="15" alt="" aria-hidden="true" style="border-radius:3px;object-fit:cover;flex:none;vertical-align:middle"> شنطة اكتشاف الأعطال</a>
+        <button class="mi" id="bVid2">🎬 فيديو تعريفي بالمحاكي</button>
         <button class="mi" id="bHelp2">📖 شرح الدوائر والتركيبات</button>
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
         <button class="mi" id="bShare">⇪ مشاركة التوصيلات</button>
@@ -437,6 +498,21 @@ body.fs{padding-bottom:0}
   <svg id="svg" viewBox="0 0 1000 1640" xmlns="http://www.w3.org/2000/svg"></svg>
 </div>
 
+<div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
+  <div class="vbox">
+    <div class="vhead"><h2 id="vT">🎬 تعرّف على المحاكي</h2><button id="vClose" title="إغلاق" aria-label="إغلاق الفيديو">✕</button></div>
+    <div class="vstage"><div id="vArt" aria-hidden="true"></div><span class="vtag" id="vTag"></span><div class="vend" id="vEnd" hidden><button id="vAgain">↻ مشاهدة مرة أخرى</button></div></div>
+    <p class="vcap" id="vCap"></p>
+    <div class="vctl">
+      <button id="vPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button>
+      <button id="vPrev" title="المشهد السابق" aria-label="المشهد السابق">›</button>
+      <button id="vNext" title="المشهد التالي" aria-label="المشهد التالي">‹</button>
+      <div class="vprog" id="vProg"></div>
+      <button id="vMute" title="كتم الصوت" aria-label="كتم الصوت">🔊</button>
+    </div>
+    <p class="vnote" id="vNote"></p>
+  </div>
+</div>
 <div class="modal" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrT">
   <div class="box" style="max-width:420px;text-align:center">
     <h2 id="qrT" style="margin:0 0 4px;font-size:1.1rem">امسح الباركود للدخول إلى المحاكي</h2>
@@ -3489,6 +3565,129 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
     else alert('لتثبيت التطبيق على الآيفون أو الآيباد:\n\n١) افتح الموقع في متصفح Safari\n٢) اضغط زر المشاركة ⬆ أسفل الشاشة\n٣) اختر «إضافة إلى الشاشة الرئيسية»\n٤) اضغط «إضافة»');};
   upd();}
 measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());addEventListener("load",()=>{measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());});
+})();
+/* ---------- الفيديو التعريفي: مشاهد متحركة بتعليق صوتي من نطق الجهاز ---------- */
+(()=>{
+const g=id=>document.getElementById(id);
+const vM=g('vidModal'),art=g('vArt'),cap=g('vCap'),tag=g('vTag'),prog=g('vProg'),endV=g('vEnd'),note=g('vNote'),bPlay=g('vPlay'),bMute=g('vMute');
+const D=d=>`style="animation-delay:${d}s"`;
+const T=(x,y,s,t,o='')=>`<text x="${x}" y="${y}" font-size="${s}" text-anchor="middle" direction="rtl" fill="#eef3f9" ${o}>${t}</text>`;
+const SV=b=>`<svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
+/* قطع اللوحة */
+const motor=(x,y,r,spin)=>`<g transform="translate(${x} ${y})"><rect x="${-r*.35}" y="${-r-12}" width="${r*.7}" height="14" rx="3" fill="#24496f"/><rect x="${-r-8}" y="${r-6}" width="${2*r+16}" height="12" rx="4" fill="#3b4a5e"/><circle r="${r}" fill="#2f6fb0" stroke="#9cc6ff" stroke-width="3"/><circle r="${r*.8}" fill="#173a63"/><g ${spin!=null?`class="v-spin" ${D(spin)}`:''}><circle r="${r*.75}" fill="none"/>${[0,72,144,216,288].map(a=>`<ellipse cx="${r*.4}" rx="${r*.36}" ry="${r*.13}" fill="#8fb8e6" transform="rotate(${a})"/>`).join('')}</g><circle r="${r*.15}" fill="#dfe8f3"/></g>`;
+const contactor=(x,y,pull)=>`<g transform="translate(${x} ${y})"><rect x="-34" y="-50" width="68" height="100" rx="6" fill="#d9dcd6" stroke="#9aa09a"/>${[-20,0,20].map(d=>`<circle cx="${d}" cy="-40" r="5" fill="#c9b072" stroke="#6b5f3c"/><circle cx="${d}" cy="40" r="5" fill="#c9b072" stroke="#6b5f3c"/>`).join('')}<rect x="-22" y="-24" width="44" height="44" rx="3" fill="#7f878d"/><rect ${pull!=null?`class="v-pull" ${D(pull)}`:''} x="-15" y="-18" width="30" height="14" rx="2" fill="#2b3036"/><text y="15" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">K1</text></g>`;
+const btn=(x,y,col,press)=>`<g transform="translate(${x} ${y})"><rect x="-26" y="-26" width="52" height="52" rx="8" fill="#e9ebee" stroke="#9aa3ad"/><circle r="17" fill="#4a5058"/><circle r="14" fill="${col}" ${press!=null?`class="v-press" ${D(press)}`:''}/></g>`;
+const lamp=(x,y,col,on,r=16)=>`<g transform="translate(${x} ${y})"><circle r="${r+3}" fill="#3a4350" stroke="#9aa3ad" stroke-width="2"/><circle r="${r}" fill="#59636f"/>${on!=null?`<g class="v-fade" ${D(on)}><circle r="${r*1.9}" fill="${col}" opacity=".3"/><circle r="${r}" fill="${col}"/><circle cx="${-r*.3}" cy="${-r*.3}" r="${r*.3}" fill="#fff" opacity=".6"/></g>`:''}</g>`;
+const breaker=x=>`<rect x="${x-18}" y="105" width="36" height="90" rx="4" fill="#f1f1ee" stroke="#9aa09a"/><rect x="${x-7}" y="118" width="14" height="26" rx="3" fill="#2b3036"/><rect x="${x-5}" y="120" width="10" height="11" rx="2" fill="#e53935"/>`;
+const overload=x=>`<rect x="${x-30}" y="110" width="60" height="80" rx="5" fill="#eeeeea" stroke="#9aa09a"/><circle cx="${x-6}" cy="150" r="13" fill="#d8322b"/><circle cx="${x+16}" cy="134" r="6" fill="#2d6fd6"/><circle cx="${x+16}" cy="166" r="6" fill="#d8322b"/>`;
+const timer=(x,s)=>`<rect x="${x-28}" y="105" width="56" height="90" rx="5" fill="#f1f0ea" stroke="#9aa09a"/><circle cx="${x}" cy="150" r="18" fill="#fff" stroke="#999" stroke-width="2"/><g class="v-slow" ${D(s)}><circle cx="${x}" cy="150" r="14" fill="none"/><line x1="${x}" y1="150" x2="${x}" y2="137" stroke="#d8322b" stroke-width="3" stroke-linecap="round"/></g>`;
+const qr=(x,y)=>{let s=`<rect x="${x}" y="${y}" width="100" height="100" rx="6" fill="#fff"/>`;const f=(a,b)=>`<rect x="${a+4}" y="${b+4}" width="26" height="26" fill="#111"/><rect x="${a+8}" y="${b+8}" width="18" height="18" fill="#fff"/><rect x="${a+12}" y="${b+12}" width="10" height="10" fill="#111"/>`;
+  let r=7;for(let i=0;i<8;i++)for(let j=0;j<8;j++){r=(r*37+11)%101;if(r%3&&!((i<3&&j<3)||(i<3&&j>4)||(i>4&&j<3)))s+=`<rect x="${x+8+j*11}" y="${y+8+i*11}" width="10" height="10" fill="#111"/>`;}
+  return s+f(x,y)+f(x+66,y)+f(x,y+66);};
+/* المشاهد: عنوان، نص التعليق، أقل مدة بالثواني، الرسم */
+const SC=[
+{t:'مرحبًا',min:7,say:'مرحبًا بك في محاكي ورشة التحكم في المحركات الكهربائية: ورشةٌ افتراضية تتدرّب فيها على توصيل دوائر التحكم، وكأنك أمام لوحةٍ حقيقية.',
+ svg:SV(`<circle cx="320" cy="135" r="80" fill="none" stroke="#4ea1ff" stroke-width="3" class="v-pulse"/>${motor(320,135,66,0)}
+ <path class="v-fade" ${D(.5)} d="M190 95l-22 40h18l-12 34 32-46h-19l14-28z" fill="#ffd54a"/><path class="v-fade" ${D(.8)} d="M452 95l-22 40h18l-12 34 32-46h-19l14-28z" fill="#ffd54a"/>
+ <g class="v-fade" ${D(.6)}>${T(320,262,26,'محاكي ورشة التحكم في المحركات','font-weight="700"')}</g><g class="v-fade" ${D(1.4)}>${T(320,300,17,'تدرّب على دوائر التحكم الكهربائي بأمان','fill-opacity=".75"')}</g>`)},
+{t:'ماذا يحتوي؟',min:9,say:'يضمّ المحاكي قطعَ اللوحة المعروفة: القاطع، والكونتاكتور، والأوفرلود، والمؤقت، والضواغط، ولمبات البيان، والمحركات.',
+ svg:SV(`<rect x="22" y="143" width="596" height="14" rx="3" fill="#59636f" class="v-fade"/>
+ ${[[60,'قاطع',breaker(60)],[148,'كونتاكتور',contactor(148,150)],[236,'أوفرلود',overload(236)],[322,'مؤقت',timer(322,4.6)],[408,'ضواغط',`<rect x="382" y="105" width="52" height="90" rx="6" fill="#e9ebee" stroke="#9aa3ad"/><circle cx="408" cy="130" r="13" fill="#1a8a42"/><circle cx="408" cy="170" r="13" fill="#d8322b"/>`],[492,'لمبات',`<rect x="466" y="105" width="52" height="90" rx="6" fill="#2b2f33"/>${lamp(492,128,'#4cd07d',6.2,11)}${lamp(492,172,'#ff6b60',6.4,11)}`],[578,'محرك',motor(578,150,36,7.4)]]
+ .map(([x,l,s],k)=>{const d=[2.2,3,3.8,4.6,5.4,6,7][k];return `<g class="v-pop" ${D(d)}>${s}</g><g class="v-fade" ${D(d+.2)}>${T(x,232,15,l)}</g>`;}).join('')}
+ <g class="v-fade" ${D(.3)}>${T(320,60,20,'لوحة تحكم كاملة بين يديك','font-weight="700"')}</g>`)},
+{t:'طريقة الاستخدام',min:8,say:'طريقة الاستخدام سهلة: اضغط على طرفٍ، ثم اضغط على الطرف الآخر، فيمتدّ السلك بينهما. ويمكنك إضافة القطع وتحريكها من شريط الأدوات.',
+ svg:SV(`<rect x="140" y="95" width="80" height="110" rx="8" fill="#e9ebee" stroke="#9aa3ad"/><circle cx="180" cy="135" r="20" fill="#1a8a42" stroke="#4a5058" stroke-width="4"/>
+ <circle cx="165" cy="197" r="7" fill="#c9b072" stroke="#6b5f3c"/><circle cx="195" cy="197" r="7" fill="#c9b072" stroke="#6b5f3c"/>
+ <text x="165" y="222" font-size="11" text-anchor="middle" fill="#cfe0f5">13</text><text x="195" y="222" font-size="11" text-anchor="middle" fill="#cfe0f5">14</text>
+ ${contactor(460,152)}<text x="440" y="93" font-size="11" text-anchor="middle" fill="#cfe0f5">A1</text>
+ <path class="v-draw" ${D(1.9)} pathLength="1" d="M195 197C260 300 380 20 440 112" fill="none" stroke="#e53935" stroke-width="5" stroke-linecap="round"/>
+ <circle cx="195" cy="197" r="22" fill="none" stroke="#ffd54a" stroke-width="3" class="v-ping" ${D(1.45)}/><circle cx="440" cy="112" r="22" fill="none" stroke="#ffd54a" stroke-width="3" class="v-ping" ${D(2.85)}/>
+ <g class="v-cur"><path d="M0 0l0 26 7-7 6 13 5-2-6-13 10 0z" fill="#fff" stroke="#111" stroke-width="1.5"/></g>
+ <g class="v-fade" ${D(1.4)}>${T(320,48,17,'١- اضغط على الطرف الأول')}</g><g class="v-fade" ${D(2.8)}>${T(320,74,17,'٢- ثم على الطرف الثاني')}</g>
+ <g class="v-pop" ${D(3.2)}>${T(320,300,20,'✔ تمّ توصيل السلك','fill="#4cd07d" font-weight="700"')}</g>
+ <g class="v-fade" ${D(5.5)}><rect x="170" y="318" width="300" height="34" rx="10" fill="#1b2638" stroke="#2c3b52"/>${T(320,341,14,'＋ أضف القطع وحرّكها من شريط الأدوات')}</g>`)},
+{t:'التشغيل',min:8,say:'بعد التوصيل شغّل الكهرباء واضغط زرّ التشغيل، فترى الكونتاكتور يعمل، واللمبة تضيء، والمحرك يدور، تمامًا كما في الواقع.',
+ svg:SV(`<g stroke="#59636f" stroke-width="5" fill="none"><path d="M120 150H184M236 150H306M374 150H472M374 110H440V96"/></g>
+ <g fill="none" stroke="#ffd54a" stroke-width="5"><g class="v-fade" ${D(1)}><path class="v-flow" d="M120 150H184"/></g><g class="v-fade" ${D(3.3)}><path class="v-flow" d="M236 150H306M374 150H472M374 110H440V96"/></g></g>
+ <rect x="60" y="110" width="60" height="80" rx="6" fill="#ececec" stroke="#9aa3ad"/><circle cx="90" cy="150" r="20" fill="#d8322b"/><g class="v-turn" ${D(.6)}><rect x="86" y="128" width="8" height="44" rx="3" fill="#ffd54a"/></g>
+ ${btn(210,150,'#1a8a42',2.9)}${contactor(340,150,3.2)}${lamp(440,74,'#4cd07d',3.3)}${motor(530,150,56,3.4)}
+ ${T(90,222,14,'مفتاح رئيسي')}${T(210,222,14,'زر التشغيل')}${T(340,232,14,'كونتاكتور')}${T(530,240,14,'المحرك')}
+ <g class="v-pop" ${D(.9)}>${T(90,92,14,'ON','fill="#4cd07d" font-weight="700"')}</g>
+ <g class="v-pop" ${D(4.6)}>${T(320,300,21,'✔ المحرك يعمل','fill="#4cd07d" font-weight="700"')}</g>`)},
+{t:'أدوات تساعدك',min:8,say:'وتساعدك أدواتٌ مثل شرح الدوائر، والمخطط، والملتميتر للقياس، إضافةً إلى دوائر متنوّعة من التشغيل البسيط حتى النجمة دلتا وعكس الحركة.',
+ svg:SV([['📖','شرح الدوائر',1.2],['📐','المخطط',2.4],['📟','الملتميتر',3.4],['🔁','دوائر متنوّعة',5]].map(([e,l,d],k)=>{const x=105+k*143;return `<g class="v-pop" ${D(d)}><rect x="${x-62}" y="80" width="124" height="150" rx="16" fill="#13233a" stroke="#4ea1ff" stroke-width="2"/><text x="${x}" y="160" font-size="50" text-anchor="middle">${e}</text>${T(x,205,15,l,'font-weight="700"')}</g>`;}).join('')
+ +`<g class="v-fade" ${D(6.4)}>${T(320,290,15,'تشغيل محرك • تشغيل من مكانين • تتابع • عكس حركة • نجمة / دلتا • دالندر','fill-opacity=".8"')}</g>`)},
+{t:'المتدرّب والمدرّب',min:9,say:'يدخل المتدرّب بمسح الباركود، ثم يقيّم تجربته من عشرين درجة، ويرسلها إلى المدرّب بضغطة زر.',
+ svg:SV(`<g class="v-pop" ${D(.3)}>${qr(485,95)}</g>${T(535,228,14,'امسح الباركود')}
+ <path class="v-fade" ${D(1.2)} d="M468 145h-48m12-10-12 10 12 10" stroke="#4ea1ff" stroke-width="4" fill="none" stroke-linecap="round"/>
+ <g class="v-pop" ${D(1.5)}><rect x="278" y="70" width="88" height="160" rx="14" fill="#111" stroke="#59636f" stroke-width="3"/><rect x="285" y="84" width="74" height="130" rx="4" fill="#e8eef5"/>
+ <g class="v-pop" ${D(2.6)}><text x="322" y="130" font-size="30" text-anchor="middle">🎯</text><text x="322" y="170" font-size="20" font-weight="700" text-anchor="middle" fill="#1a8a42">18 / 20</text></g></g>${T(322,256,14,'المتدرّب')}
+ <g class="v-fly" ${D(4.2)}><rect x="-22" y="-15" width="44" height="30" rx="4" fill="#fff"/><path d="M-22-15 0 3 22-15" stroke="#1f5fbf" stroke-width="3" fill="none"/></g>
+ <g class="v-pop" ${D(.6)}><rect x="50" y="88" width="134" height="92" rx="6" fill="#111" stroke="#59636f" stroke-width="3"/><rect x="56" y="94" width="122" height="80" fill="#e8eef5"/><path d="M35 180h164l-12 14H47z" fill="#59636f"/>
+ <text x="117" y="112" font-size="12" font-weight="700" text-anchor="middle" direction="rtl" fill="#0b3d91">📋 النتائج</text>
+ ${[['أحمد','18'],['سالم','20'],['خالد','16']].map(([n,s],k)=>`<g class="v-fade" ${D(5.6+k*.35)}><rect x="63" y="${119+k*17}" width="108" height="14" rx="3" fill="#fff"/><text x="167" y="${130+k*17}" font-size="10" text-anchor="end" fill="#15202b">${n}</text><text x="68" y="${130+k*17}" font-size="10" font-weight="700" fill="#1a8a42">${s}</text></g>`).join('')}</g>${T(117,228,14,'المدرّب')}`)},
+{t:'ورش إضافية',min:9,say:'وفي المحاكي أيضًا ورشةٌ للتحكم الهوائي، وشنطةٌ لاكتشاف الأعطال تتدرّب فيها على القياس وتحديد العطل.',
+ svg:SV(`<g transform="translate(305 0)"><g class="v-pop" ${D(.3)}><rect x="30" y="50" width="275" height="250" rx="18" fill="#13233a" stroke="#4ea1ff" stroke-width="2"/>${T(167,92,18,'ورشة التحكم الهوائي','font-weight="700"')}
+ <rect x="62" y="140" width="130" height="48" rx="6" fill="#c7d3df" stroke="#7f8b97" stroke-width="2"/><g class="v-piston"><rect x="96" y="146" width="10" height="36" fill="#59636f"/><rect x="106" y="160" width="120" height="8" rx="3" fill="#e5eaef"/><rect x="224" y="152" width="14" height="24" rx="3" fill="#ffd54a"/></g>
+ <path d="M75 188v40h70v-40" stroke="#2d8fe0" stroke-width="5" fill="none"/>${T(167,272,14,'أسطوانات وصمامات','fill-opacity=".8"')}</g>
+ </g><g transform="translate(-305 0)"><g class="v-pop" ${D(3.6)}><rect x="335" y="50" width="275" height="250" rx="18" fill="#13233a" stroke="#ffbf3c" stroke-width="2"/>${T(472,92,18,'شنطة اكتشاف الأعطال','font-weight="700"')}
+ <path d="M440 128v-14a8 8 0 0 1 8-8h48a8 8 0 0 1 8 8v14" stroke="#8a6a1c" stroke-width="7" fill="none"/><rect x="392" y="126" width="160" height="104" rx="12" fill="#d99000"/>
+ <rect x="420" y="140" width="64" height="80" rx="8" fill="#2b2f33"/><rect x="428" y="148" width="48" height="22" rx="3" fill="#b8e0a8"/><text class="v-blink" x="452" y="164" font-size="13" font-weight="700" text-anchor="middle" fill="#15202b">0 V</text><circle cx="452" cy="196" r="12" fill="#59636f"/>
+ <text class="v-blink" x="522" y="190" font-size="34" text-anchor="middle">⚠️</text>${T(472,272,14,'قِس وحدّد مكان العطل','fill-opacity=".8"')}</g></g>`)},
+{t:'لماذا المحاكي؟',min:8,say:'تدرّب في أي وقت ومن أي جهاز، بأمانٍ تام، دون خطر الكهرباء ودون تلفٍ للمعدات. نتمنى لك تدريبًا ممتعًا ومفيدًا!',
+ svg:SV([['⏰','في أي وقت',.4],['📱','من أي جهاز',1.4],['🛡️','آمن تمامًا',2.6],['🔧','بلا تلف للمعدات',4]].map(([e,l,d],k)=>{const x=95+k*150;return `<g class="v-pop" ${D(d)}><circle cx="${x}" cy="130" r="54" fill="#13233a" stroke="#4cd07d" stroke-width="3"/><text x="${x}" y="146" font-size="44" text-anchor="middle">${e}</text>${T(x,218,16,l,'font-weight="700"')}</g>`;}).join('')
+ +`<g class="v-fade" ${D(5.4)}>${T(320,285,15,'فكرة وتنفيذ م. جابر الفيفي بواسطة Claude','fill-opacity=".75"')}</g>`)}
+];
+/* الصوت: أفضل صوت عربي متاح في الجهاز */
+const SS=window.speechSynthesis;let voice=null;
+const pick=()=>{if(!SS)return;const ar=SS.getVoices().filter(v=>/^ar/i.test(v.lang)),q=/google|natural|neural|online|premium|enhanced/i;
+  voice=ar.find(v=>/SA/i.test(v.lang)&&q.test(v.name))||ar.find(v=>q.test(v.name))||ar.find(v=>/SA/i.test(v.lang))||ar[0]||null;};
+if(SS){pick();SS.onvoiceschanged=pick;}
+let ac=null;
+const chime=()=>{if(muted)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime;
+  [660,880].forEach((f,k)=>{const o=ac.createOscillator(),gn=ac.createGain(),s=t+k*.12;o.frequency.value=f;gn.gain.setValueAtTime(0,s);gn.gain.linearRampToValueAtTime(.05,s+.02);gn.gain.exponentialRampToValueAtTime(.0001,s+.5);o.connect(gn).connect(ac.destination);o.start(s);o.stop(s+.55);});}catch(_){}};
+let cur=0,playing=false,muted=false,tok=0,tms=[];
+const est=s=>Math.max(s.min*1000,s.say.length*80);
+const clr=()=>{tok++;tms.forEach(clearTimeout);tms=[];if(SS)SS.cancel();};
+prog.innerHTML=SC.map((s,k)=>`<button class="vseg" data-k="${k}" title="${s.t}" aria-label="المشهد ${k+1}: ${s.t}"><b><i></i></b></button>`).join('');
+const segs=[...prog.querySelectorAll('i')];
+const setPlay=p=>{playing=p;bPlay.textContent=p?'⏸':'▶';bPlay.title=p?'إيقاف مؤقت':'تشغيل';bPlay.setAttribute('aria-label',bPlay.title);vM.classList.toggle('vpaused',!p);};
+function show(n){
+  clr();const my=tok,s=SC[n],t0=Date.now(),ms=est(s);cur=n;endV.hidden=true;setPlay(true);
+  art.innerHTML=s.svg;tag.textContent=`${n+1}/${SC.length} · ${s.t}`;cap.textContent=s.say;
+  segs.forEach((e,k)=>{e.style.transition='none';e.style.width=k<n?'100%':'0';});
+  void segs[n].offsetWidth;segs[n].style.transition=`width ${ms}ms linear`;segs[n].style.width='100%';
+  chime();
+  let done=false;
+  const next=()=>{if(my!==tok||done)return;done=true;segs[n].style.transition='width .3s';segs[n].style.width='100%';
+    tms.push(setTimeout(()=>{if(my!==tok)return;n+1<SC.length?show(n+1):finish();},Math.max(0,s.min*1000-(Date.now()-t0))+900));};
+  if(SS&&!muted){const u=new SpeechSynthesisUtterance(s.say);u.lang=voice?voice.lang:'ar-SA';if(voice)u.voice=voice;u.rate=.95;
+    u.onend=next;u.onerror=()=>{if(my===tok)tms.push(setTimeout(next,Math.max(0,ms-(Date.now()-t0))));};SS.speak(u);tms.push(setTimeout(next,ms*1.7+3000));}
+  else tms.push(setTimeout(next,ms));
+}
+function finish(){clr();setPlay(false);vM.classList.remove('vpaused');segs.forEach(e=>{e.style.transition='none';e.style.width='100%';});endV.hidden=false;}
+function pause(){clr();setPlay(false);segs.forEach(e=>{const w=getComputedStyle(e).width;e.style.transition='none';e.style.width=w;});}
+function open(){
+  vM.classList.add('open');try{localStorage.setItem('vidSeen','1');}catch(_){}g('bVid').classList.remove('vnew');
+  note.textContent=SS?'':'هذا المتصفح لا يدعم النطق الصوتي؛ تابع الشرح المكتوب أسفل المشهد.';
+  show(0);
+  if(SS)setTimeout(()=>{if(vM.classList.contains('open')&&!voice&&SS.getVoices().length)note.textContent='لا يوجد صوت عربي مثبّت على هذا الجهاز؛ تابع الشرح المكتوب أسفل المشهد.';},1500);
+  g('vClose').focus({preventScroll:true});
+}
+function close(){clr();setPlay(false);vM.classList.remove('open','vpaused');art.innerHTML='';}
+g('bVid').onclick=open;g('bVid2').onclick=()=>{g('bVid').closest('.bar1').querySelector('details.more')?.removeAttribute('open');open();};
+g('vClose').onclick=close;g('vAgain').onclick=()=>show(0);
+bPlay.onclick=()=>playing?pause():show(cur);
+g('vPrev').onclick=()=>show(Math.max(0,cur-1));
+g('vNext').onclick=()=>cur+1<SC.length?show(cur+1):finish();
+prog.onclick=e=>{const b=e.target.closest('.vseg');if(b)show(+b.dataset.k);};
+bMute.onclick=()=>{muted=!muted;bMute.textContent=muted?'🔇':'🔊';bMute.title=muted?'تشغيل الصوت':'كتم الصوت';bMute.setAttribute('aria-label',bMute.title);if(playing)show(cur);};
+vM.addEventListener('click',e=>{if(e.target===vM)close();});
+addEventListener('keydown',e=>{if(!vM.classList.contains('open'))return;
+  if(e.key==='Escape'){e.stopPropagation();close();}
+  else if(e.key===' '&&e.target.tagName!=='BUTTON'){e.preventDefault();bPlay.click();}},true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing)pause();});
+try{if(!localStorage.getItem('vidSeen'))g('bVid').classList.add('vnew');}catch(_){}
 })();
 </script>
 </body>
