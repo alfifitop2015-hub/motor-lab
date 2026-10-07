@@ -167,7 +167,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
   <h2 id="sendT" style="margin:0 0 4px;font-size:1.1rem">إرسال الدائرة للمدرب</h2>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.88rem">يصل للمدرب اسمك ورقمك وصورة اللوحة وكود يفتح دائرتك كما هي.</p>
   <div class="fld"><label>اسم المتدرب<input id="stName2"></label><label style="flex:.7">الرقم التدريبي<input id="stId2" inputmode="numeric" style="direction:ltr;text-align:right"></label></div>
-  <div class="sbtns"><button class="btn prim cloud-only" id="sCloud">☁️ إرسال للمدرب عبر الموقع</button><button class="btn prim" id="sShare">📤 مشاركة مع الصورة</button><button class="btn" id="sWa">واتساب</button><button class="btn" id="sCopy">نسخ الرسالة</button><button class="btn" id="sImg">⬇ تنزيل صورة اللوحة</button><button class="btn" id="sClose">إغلاق</button></div>
+  <div class="sbtns"><button class="btn prim cloud-only" id="sCloud">☁️ إرسال للمدرب عبر الموقع</button><button class="btn prim" id="sShare">📤 مشاركة الصورة واتساب</button><button class="btn" id="sWa" style="grid-column:1/-1">💬 مشاركة التمرين واتساب</button><button class="btn" id="sImg">⬇ تنزيل صورة اللوحة</button><button class="btn" id="sClose">إغلاق</button></div>
   <p id="sendMsg" style="margin:8px 0 0;font-size:.88rem;min-height:1.2em"></p></div></div>
 <div class="modal" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinT"><div class="box" style="max-width:340px;text-align:center">
   <h2 id="pinT" style="margin:0 0 6px;font-size:1.1rem">وضع المدرب</h2><p style="margin:0 0 12px;color:var(--muted);font-size:.88rem">أدخل رمز المدرب</p>
@@ -553,7 +553,6 @@ $('sShare').onclick=async()=>{const st=sendReady();if(!st)return;okMsg('جارٍ
   try{if(file&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text});okMsg('أُرسلت.');return;}if(navigator.share){await navigator.share({text});okMsg('أُرسلت الرسالة.');return;}}catch(e){if(e&&e.name==='AbortError'){okMsg('');return;}}
   openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
 $('sWa').onclick=async()=>{const st=sendReady();if(!st)return;const {text}=await buildMsg(st);openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
-$('sCopy').onclick=async()=>{const st=sendReady();if(!st)return;const {text}=await buildMsg(st);let ok=false;try{await navigator.clipboard.writeText(text);ok=true;}catch(_){}okMsg(ok?'نُسخت الرسالة.':'تعذّر النسخ هنا.',!ok);};
 $('sImg').onclick=async()=>{const st=sendReady();if(!st)return;const b=await panelBlob(st.n,st.id);if(!b)return okMsg('تعذّر إنشاء الصورة.',1);const r=await saveBlob(b,'دائرة-'+st.id+'.png');okMsg(r==='saved'?'نُزّلت الصورة.':'',r==='failed');};
 /* cloud (same Google sheet as the electrical workshop; pneumatic rows are marked pn) */
 const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
