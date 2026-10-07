@@ -106,13 +106,14 @@ body:not(.cloud) .cloud-only{display:none!important}
 .olr{height:34px;border-radius:7px;border:1px solid #8a96a3;background:#fff;color:#1b2530;font-size:.74rem;cursor:pointer;padding:0 8px;white-space:nowrap}
 .olr.trip{background:#d32f2f;color:#fff;border-color:#9e1d1d;font-weight:700}
 .mot{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #b9c3cf;border-radius:10px;padding:4px 10px}
-.mot svg{width:46px;height:46px;flex:none}
+.mot svg{width:118px;height:66px;flex:none;direction:ltr}
+.mot .mbody.hum{animation:hum2 .09s linear infinite}@keyframes hum2{50%{transform:translate(.8px,-.6px)}}
 .mot .ms{font-size:.82rem;line-height:1.3;min-width:110px}.mot .ms b{display:block;font-size:.9rem}
-.fan{transform-origin:24px 24px}
+.fan{transform-box:fill-box;transform-origin:50% 50%}
 .fan.spin{animation:spin var(--sp,.6s) linear infinite}.fan.spin.rev{animation-direction:reverse}
 .fan.hum{animation:hum .09s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes hum{50%{transform:rotate(4deg)}}
-@media (prefers-reduced-motion:reduce){.fan.spin,.fan.hum{animation:none}}
+@media (prefers-reduced-motion:reduce){.fan.spin,.fan.hum,.mot .mbody.hum{animation:none}}
 .track{position:relative;height:26px;margin-top:8px;background:#dfe4ea;border-radius:6px;border:1px solid #b9c3cf;display:none;direction:ltr}
 .track.show{display:block}
 .track .cart{position:absolute;top:3px;width:46px;height:18px;margin-left:-23px;background:#3d6fae;border-radius:4px;color:#fff;font-size:.66rem;text-align:center;line-height:18px}
@@ -245,7 +246,7 @@ body.cloud #sWa{background:var(--panel)}
     <div class="kc"><span class="lmp yel" id="lFlt"></span><span>عطل</span></div>
     <div class="kc"><button class="olr" data-ol="F5">F5 ↺</button><span>حمل زائد</span></div>
     <div class="kc" id="kF6"><button class="olr" data-ol="F6">F6 ↺</button><span>حمل زائد</span></div>
-    <div class="mot" aria-live="polite"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="#5d6b78"/><g class="fan" id="fan"><path d="M24 24 L24 5 A19 19 0 0 1 37 11Z M24 24 L40.5 33.5 A19 19 0 0 1 28 42.5Z M24 24 L7.5 33.5 A19 19 0 0 1 9 15Z" fill="#cfd8df"/></g><circle cx="24" cy="24" r="4" fill="#222"/></svg><div class="ms" id="mstat"><b>المحرك متوقف</b></div></div>
+    <div class="mot" aria-live="polite"><svg id="motPic" viewBox="0 0 120 66" aria-hidden="true"></svg><div class="ms" id="mstat"><b>المحرك متوقف</b></div></div>
   </div>
   <div class="track" id="track"><span class="lim" id="tl4" style="left:0"></span><span class="ll" style="left:8px">S4</span><span class="lim" id="tl5" style="right:0"></span><span class="ll" style="right:8px">S5</span><div class="cart" id="cart">◀▶</div></div>
 </section>
@@ -789,6 +790,19 @@ dialEl.addEventListener('keydown',e=>{const p=e.target.closest('[data-p]');if(p&
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const L=DPOS.filter(id=>id==='0'||CIRC[id]),i=L.indexOf(curPos());trySelect(L[Math.max(0,Math.min(L.length-1,i+(e.key==='ArrowRight'?1:-1)))]);}});
 function setCircuit(id,keepF){S.cid=id;S.zero=false;S.k={};S.tStart={};S.tDone={};S.pb.clear();S.ls={S4:false,S5:false};S.trip={F5:false,F6:false};S.pos=50;S.hum=0;S.probes=[null,null];
   if(!keepF){S.F=new Set();S.ex=null;}renderSel();drawStatic();update();}
+/* small motor picture for the panel: the same two workshop motors as on the schematic */
+function miniMotor(t){const disc=`<g class="fan" id="fan"><circle cx="13" cy="38" r="11" fill="#d9dde0" stroke="#555" stroke-width="1.4"/><path d="M13 27v22M2 38h22" stroke="#555" stroke-width="2.2"/><circle cx="13" cy="38" r="3" fill="#333"/><circle cx="13" cy="29.5" r="2" fill="#d32f2f"/></g>`;
+  if(t==='m3')return`<rect x="14" y="60" width="102" height="4" rx="2" fill="#2f3438" opacity=".4"/><g id="mbody"><rect x="38" y="54" width="14" height="7" fill="#6f787d"/><rect x="88" y="54" width="14" height="7" fill="#6f787d"/>
+    <rect x="98" y="25" width="18" height="30" rx="8" fill="#b9c0c4" stroke="#6f787d"/><rect x="30" y="25" width="72" height="30" rx="5" fill="#9aa3a8" stroke="#6f787d"/>
+    ${[0,1,2,3].map(i=>`<line x1="34" y1="${30+i*6}" x2="98" y2="${30+i*6}" stroke="#7f888d" stroke-width="1.6"/>`).join('')}
+    <rect x="26" y="23" width="6" height="34" rx="2" fill="#8b9499"/><rect x="18" y="35" width="9" height="6" fill="#b5babd"/>
+    <rect x="50" y="2" width="36" height="24" rx="3" fill="#f4f2ea" stroke="#a7a59c"/>${[56,68,80].map(x=>`<circle cx="${x}" cy="9" r="2.6" fill="#141414"/><circle cx="${x}" cy="18" r="2.6" fill="#141414"/>`).join('')}<path d="M56 9H80" stroke="#c7ccd0" stroke-width="1.6"/></g>${disc}`;
+  return`<rect x="14" y="60" width="102" height="4" rx="2" fill="#2f3438" opacity=".4"/><g id="mbody"><rect x="40" y="54" width="14" height="7" fill="#8a7a5c"/><rect x="88" y="54" width="14" height="7" fill="#8a7a5c"/>
+    <rect x="30" y="18" width="80" height="38" rx="9" fill="#bfae8c" stroke="#8a7a5c"/>${[0,1,2,3,4,5,6].map(i=>`<line x1="${38+i*10}" y1="20" x2="${38+i*10}" y2="54" stroke="#a39373" stroke-width="2"/>`).join('')}
+    <rect x="18" y="35" width="13" height="6" fill="#b5babd"/>
+    <rect x="52" y="4" width="54" height="40" rx="2" fill="#e8d38c" stroke="#a5873a"/>${[0,1,2].map(i=>`<path d="M${57+i*5} 9v8a1.5 1.5 0 0 1 0 3a1.5 1.5 0 0 1 0 3v12" fill="none" stroke="#3a2e12" stroke-width=".9"/>`).join('')}
+    <rect x="73" y="10" width="20" height="16" fill="none" stroke="#3a2e12" stroke-width=".7" stroke-dasharray="2 1.5"/>${[77,83,89].map(x=>`<circle cx="${x}" cy="14" r="1.8" fill="#141414"/><circle cx="${x}" cy="22" r="1.8" fill="#141414"/>`).join('')}
+    <rect x="95" y="7" width="9" height="13" fill="none" stroke="#3a2e12" stroke-width=".6"/><circle cx="62" cy="38" r="4" fill="none" stroke="#3a2e12" stroke-width=".8"/></g>${disc}`;}
 function renderPanel(){const c=C(),i=INFO[S.cid]||{},has=d=>c.E.some(e=>e.dev===d);
   $('cQ1').classList.toggle('on',S.q.Q1);$('cQ2').classList.toggle('on',S.q.Q2);
   $('kS3').classList.toggle('na',!has('S3'));$('tS2').textContent=i.S2||'تشغيل';$('tS3').textContent=i.S3||'';
@@ -799,6 +813,8 @@ function renderPanel(){const c=C(),i=INFO[S.cid]||{},has=d=>c.E.some(e=>e.dev===
   document.querySelectorAll('[data-ls]').forEach(b=>b.classList.toggle('on',!!S.ls[b.dataset.ls]));
   document.querySelectorAll('[data-ol]').forEach(b=>{const t=S.trip[b.dataset.ol];b.classList.toggle('trip',t);b.textContent=b.dataset.ol+(t?' فصل ↺':' ↺');});
   document.querySelectorAll('[data-pb]').forEach(b=>b.classList.toggle('down',S.pb.has(b.dataset.pb)));
+  const mt=c.motor.type==='m3'?'m3':'elwe',mp=$('motPic');if(mp.dataset.t!==mt){mp.dataset.t=mt;mp.innerHTML=miniMotor(mt);}
+  $('mbody').setAttribute('class','mbody'+(S.mot.st==='hum'?' hum':''));
   const m=S.mot,fan=$('fan');fan.setAttribute('class','fan'+(m.st==='run'?' spin'+(m.dir<0?' rev':''):m.st==='hum'?' hum':''));
   fan.style.setProperty('--sp',m.sp==='high'||m.sp==='delta'?'.28s':m.sp==='low'||m.sp==='star'?'.7s':'.4s');
   const SP={n:'',star:' — نجمة (بدء)',delta:' — دلتا (تشغيل كامل)',low:' — سرعة منخفضة',high:' — سرعة عالية'};
