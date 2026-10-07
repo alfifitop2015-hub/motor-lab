@@ -2382,13 +2382,8 @@ function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim(
   if(!n||!id){[['stName','stName2',n],['stId','stId2',id]].forEach(([a,b,v])=>{if(!v){$(a).classList.add('bad');$(b).classList.add('bad');}});
     const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='اكتب اسمك ورقمك التدريبي أولًا.';(n?$('stId2'):$('stName2')).focus();return null;}
   if(!S.wires.length){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='لا توجد توصيلات بعد. نفّذ التجربة ثم أرسلها.';return null;}
-  autoGrade(n,id);return{n,id};}
-/* trainee forgot to press grade: grade on send, against the exercise chosen in the grade dialog or else the closest match */
-function autoGrade(n,id){if(curGrade()||S.stu)return;const A=gAll();let ex=GV.ex&&PNAME[GV.ex]&&PRESETS[GV.ex]?GV.ex:'',r=null;
-  if(ex)r=A[ex]?null:gradeNow(ex);
-  else Object.keys(PNAME).forEach(k=>{if(!PRESETS[k]||DAHLX.has(k)!==!!S.dahl)return;try{const x=gradeNow(k);if(!r||x.s>r.s||(x.s===r.s&&x.ok>r.ok)){r=x;ex=k;}}catch(_){}});
-  if(!ex)return;if(!A[ex]){if(!r)return;A[ex]={ex,...r,t:Date.now(),n,id,w:serial()};}A._cur=ex;gSave(A);GV.ex=ex;
-  renderTop();gUpdBtn();$('sendSum').textContent=sendSummary();}
+  if(!curGrade()&&!S.stu&&!document.body.classList.contains('trainer')){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='يرجى التقييم أولًا: اضغط زر 🎯 تقييم واختر التمرين، ثم أرسل.';return null;}
+  return{n,id};}
 async function buildMsg(st){const G=curGrade();const code=await encodeCode(G?{...G.w,st:{n:st.n,id:st.id,t:Date.now(),g:{ex:G.ex,s:G.s,t:G.t,n:G.n,id:G.id}}}:{...serial(),st:{n:st.n,id:st.id,t:Date.now()}});
   const link=isHosted()&&code.startsWith('Z1')?location.href.split('#')[0]+'#t='+code.slice(2):'';
   const text=`تجربة من محاكي ورشة التحكم في المحركات الكهربائية\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\n${sendSummary()}\n`+(link?`\nافتح التجربة مباشرة:\n${link}\n`:'')+`\nكود التجربة (للمدرب: ⋯ ← فتح تجربة متدرب):\n${code}`;
