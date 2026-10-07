@@ -353,6 +353,8 @@ body.fs{padding-bottom:0}
 #vidModal .vbox{background:#0b1220;color:#eef3f9;border-radius:14px;overflow:hidden;width:min(880px,100%,calc((100vh - 210px)*1.778));min-width:min(300px,100%);box-shadow:0 18px 50px rgba(0,0,0,.5)}
 .vhead{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#0f1726}
 .vhead h2{margin:0;font-size:1rem;flex:1}
+#vVoice{max-width:42%;height:36px;background:#1b2638;border:1px solid #2c3b52;color:#fff;border-radius:8px;padding:0 6px;font-size:.85rem}
+#vVoice[hidden]{display:none}
 .vstage{position:relative;aspect-ratio:16/9;background:radial-gradient(circle at 50% 35%,#1d3557 0%,#0b1220 75%);overflow:hidden}
 .vstage svg{position:absolute;inset:0;width:100%;height:100%;direction:ltr}
 .vstage text{font-family:inherit}
@@ -500,7 +502,7 @@ body.fs{padding-bottom:0}
 
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
-    <div class="vhead"><h2 id="vT">🎬 تعرّف على المحاكي</h2><button id="vClose" title="إغلاق" aria-label="إغلاق الفيديو">✕</button></div>
+    <div class="vhead"><h2 id="vT">🎬 تعرّف على المحاكي</h2><select id="vVoice" title="اختيار صوت التعليق" aria-label="صوت التعليق" hidden></select><button id="vClose" title="إغلاق" aria-label="إغلاق الفيديو">✕</button></div>
     <div class="vstage"><div id="vArt" aria-hidden="true"></div><span class="vtag" id="vTag"></span><div class="vend" id="vEnd" hidden><button id="vAgain">↻ مشاهدة مرة أخرى</button></div></div>
     <p class="vcap" id="vCap"></p>
     <div class="vctl">
@@ -3586,16 +3588,16 @@ const qr=(x,y)=>{let s=`<rect x="${x}" y="${y}" width="100" height="100" rx="6" 
   return s+f(x,y)+f(x+66,y)+f(x,y+66);};
 /* المشاهد: عنوان، نص التعليق، أقل مدة بالثواني، الرسم */
 const SC=[
-{t:'مرحبًا',min:7,say:'مرحبًا بك في محاكي ورشة التحكم في المحركات الكهربائية: ورشةٌ افتراضية تتدرّب فيها على توصيل دوائر التحكم، وكأنك أمام لوحةٍ حقيقية.',
+{t:'مرحبًا',min:7,say:'مَرْحَبًا بِكَ فِي مُحَاكِي وَرْشَةِ التَّحَكُّمِ فِي المُحَرِّكَاتِ الكَهْرَبَائِيَّةِ: وَرْشَةٌ افْتِرَاضِيَّةٌ تَتَدَرَّبُ فِيهَا عَلَى تَوْصِيلِ دَوَائِرِ التَّحَكُّمِ، وَكَأَنَّكَ أَمَامَ لَوْحَةٍ حَقِيقِيَّةٍ.',
  svg:SV(`<circle cx="320" cy="135" r="80" fill="none" stroke="#4ea1ff" stroke-width="3" class="v-pulse"/>${motor(320,135,66,0)}
  <path class="v-fade" ${D(.5)} d="M190 95l-22 40h18l-12 34 32-46h-19l14-28z" fill="#ffd54a"/><path class="v-fade" ${D(.8)} d="M452 95l-22 40h18l-12 34 32-46h-19l14-28z" fill="#ffd54a"/>
  <g class="v-fade" ${D(.6)}>${T(320,262,26,'محاكي ورشة التحكم في المحركات','font-weight="700"')}</g><g class="v-fade" ${D(1.4)}>${T(320,300,17,'تدرّب على دوائر التحكم الكهربائي بأمان','fill-opacity=".75"')}</g>`)},
-{t:'ماذا يحتوي؟',min:9,say:'يضمّ المحاكي قطعَ اللوحة المعروفة: القاطع، والكونتاكتور، والأوفرلود، والمؤقت، والضواغط، ولمبات البيان، والمحركات.',
+{t:'ماذا يحتوي؟',min:9,say:'يَضُمُّ المُحَاكِي قِطَعَ اللَّوْحَةِ المَعْرُوفَةَ: القَاطِعَ، وَالكُونْتَاكْتُورَ، وَالأُوفَرْلُودَ، وَالمُؤَقِّتَ، وَالضَّوَاغِطَ، وَلَمْبَاتِ البَيَانِ، وَالمُحَرِّكَاتِ.',
  svg:SV(`<rect x="22" y="143" width="596" height="14" rx="3" fill="#59636f" class="v-fade"/>
  ${[[60,'قاطع',breaker(60)],[148,'كونتاكتور',contactor(148,150)],[236,'أوفرلود',overload(236)],[322,'مؤقت',timer(322,4.6)],[408,'ضواغط',`<rect x="382" y="105" width="52" height="90" rx="6" fill="#e9ebee" stroke="#9aa3ad"/><circle cx="408" cy="130" r="13" fill="#1a8a42"/><circle cx="408" cy="170" r="13" fill="#d8322b"/>`],[492,'لمبات',`<rect x="466" y="105" width="52" height="90" rx="6" fill="#2b2f33"/>${lamp(492,128,'#4cd07d',6.2,11)}${lamp(492,172,'#ff6b60',6.4,11)}`],[578,'محرك',motor(578,150,36,7.4)]]
  .map(([x,l,s],k)=>{const d=[2.2,3,3.8,4.6,5.4,6,7][k];return `<g class="v-pop" ${D(d)}>${s}</g><g class="v-fade" ${D(d+.2)}>${T(x,232,15,l)}</g>`;}).join('')}
  <g class="v-fade" ${D(.3)}>${T(320,60,20,'لوحة تحكم كاملة بين يديك','font-weight="700"')}</g>`)},
-{t:'طريقة الاستخدام',min:8,say:'طريقة الاستخدام سهلة: اضغط على طرفٍ، ثم اضغط على الطرف الآخر، فيمتدّ السلك بينهما. ويمكنك إضافة القطع وتحريكها من شريط الأدوات.',
+{t:'طريقة الاستخدام',min:8,say:'طَرِيقَةُ الاسْتِخْدَامِ سَهْلَةٌ: اضْغَطْ عَلَى طَرَفٍ، ثُمَّ اضْغَطْ عَلَى الطَّرَفِ الآخَرِ، فَيَمْتَدُّ السِّلْكُ بَيْنَهُمَا. وَيُمْكِنُكَ إِضَافَةُ القِطَعِ وَتَحْرِيكُهَا مِنْ شَرِيطِ الأَدَوَاتِ.',
  svg:SV(`<rect x="140" y="95" width="80" height="110" rx="8" fill="#e9ebee" stroke="#9aa3ad"/><circle cx="180" cy="135" r="20" fill="#1a8a42" stroke="#4a5058" stroke-width="4"/>
  <circle cx="165" cy="197" r="7" fill="#c9b072" stroke="#6b5f3c"/><circle cx="195" cy="197" r="7" fill="#c9b072" stroke="#6b5f3c"/>
  <text x="165" y="222" font-size="11" text-anchor="middle" fill="#cfe0f5">13</text><text x="195" y="222" font-size="11" text-anchor="middle" fill="#cfe0f5">14</text>
@@ -3606,7 +3608,7 @@ const SC=[
  <g class="v-fade" ${D(1.4)}>${T(320,48,17,'١- اضغط على الطرف الأول')}</g><g class="v-fade" ${D(2.8)}>${T(320,74,17,'٢- ثم على الطرف الثاني')}</g>
  <g class="v-pop" ${D(3.2)}>${T(320,300,20,'✔ تمّ توصيل السلك','fill="#4cd07d" font-weight="700"')}</g>
  <g class="v-fade" ${D(5.5)}><rect x="170" y="318" width="300" height="34" rx="10" fill="#1b2638" stroke="#2c3b52"/>${T(320,341,14,'＋ أضف القطع وحرّكها من شريط الأدوات')}</g>`)},
-{t:'التشغيل',min:8,say:'بعد التوصيل شغّل الكهرباء واضغط زرّ التشغيل، فترى الكونتاكتور يعمل، واللمبة تضيء، والمحرك يدور، تمامًا كما في الواقع.',
+{t:'التشغيل',min:8,say:'بَعْدَ التَّوْصِيلِ شَغِّلِ الكَهْرَبَاءَ وَاضْغَطْ زِرَّ التَّشْغِيلِ، فَتَرَى الكُونْتَاكْتُورَ يَعْمَلُ، وَاللَّمْبَةَ تُضِيءُ، وَالمُحَرِّكَ يَدُورُ، تَمَامًا كَمَا فِي الوَاقِعِ.',
  svg:SV(`<g stroke="#59636f" stroke-width="5" fill="none"><path d="M120 150H184M236 150H306M374 150H472M374 110H440V96"/></g>
  <g fill="none" stroke="#ffd54a" stroke-width="5"><g class="v-fade" ${D(1)}><path class="v-flow" d="M120 150H184"/></g><g class="v-fade" ${D(3.3)}><path class="v-flow" d="M236 150H306M374 150H472M374 110H440V96"/></g></g>
  <rect x="60" y="110" width="60" height="80" rx="6" fill="#ececec" stroke="#9aa3ad"/><circle cx="90" cy="150" r="20" fill="#d8322b"/><g class="v-turn" ${D(.6)}><rect x="86" y="128" width="8" height="44" rx="3" fill="#ffd54a"/></g>
@@ -3614,10 +3616,10 @@ const SC=[
  ${T(90,222,14,'مفتاح رئيسي')}${T(210,222,14,'زر التشغيل')}${T(340,232,14,'كونتاكتور')}${T(530,240,14,'المحرك')}
  <g class="v-pop" ${D(.9)}>${T(90,92,14,'ON','fill="#4cd07d" font-weight="700"')}</g>
  <g class="v-pop" ${D(4.6)}>${T(320,300,21,'✔ المحرك يعمل','fill="#4cd07d" font-weight="700"')}</g>`)},
-{t:'أدوات تساعدك',min:8,say:'وتساعدك أدواتٌ مثل شرح الدوائر، والمخطط، والملتميتر للقياس، إضافةً إلى دوائر متنوّعة من التشغيل البسيط حتى النجمة دلتا وعكس الحركة.',
+{t:'أدوات تساعدك',min:8,say:'وَتُسَاعِدُكَ أَدَوَاتٌ مِثْلُ شَرْحِ الدَّوَائِرِ، وَالمُخَطَّطِ، وَالمَلْتِيمِيتَرِ لِلْقِيَاسِ، إِضَافَةً إِلَى دَوَائِرَ مُتَنَوِّعَةٍ مِنَ التَّشْغِيلِ البَسِيطِ حَتَّى النَّجْمَةِ دِلْتَا وَعَكْسِ الحَرَكَةِ.',
  svg:SV([['📖','شرح الدوائر',1.2],['📐','المخطط',2.4],['📟','الملتميتر',3.4],['🔁','دوائر متنوّعة',5]].map(([e,l,d],k)=>{const x=105+k*143;return `<g class="v-pop" ${D(d)}><rect x="${x-62}" y="80" width="124" height="150" rx="16" fill="#13233a" stroke="#4ea1ff" stroke-width="2"/><text x="${x}" y="160" font-size="50" text-anchor="middle">${e}</text>${T(x,205,15,l,'font-weight="700"')}</g>`;}).join('')
  +`<g class="v-fade" ${D(6.4)}>${T(320,290,15,'تشغيل محرك • تشغيل من مكانين • تتابع • عكس حركة • نجمة / دلتا • دالندر','fill-opacity=".8"')}</g>`)},
-{t:'المتدرّب والمدرّب',min:9,say:'يدخل المتدرّب بمسح الباركود، ثم يقيّم تجربته من عشرين درجة، ويرسلها إلى المدرّب بضغطة زر.',
+{t:'المتدرّب والمدرّب',min:9,say:'يَدْخُلُ المُتَدَرِّبُ بِمَسْحِ البَارْكُودِ، ثُمَّ يُقَيِّمُ تَجْرِبَتَهُ مِنْ عِشْرِينَ دَرَجَةً، وَيُرْسِلُهَا إِلَى المُدَرِّبِ بِضَغْطَةِ زِرٍّ.',
  svg:SV(`<g class="v-pop" ${D(.3)}>${qr(485,95)}</g>${T(535,228,14,'امسح الباركود')}
  <path class="v-fade" ${D(1.2)} d="M468 145h-48m12-10-12 10 12 10" stroke="#4ea1ff" stroke-width="4" fill="none" stroke-linecap="round"/>
  <g class="v-pop" ${D(1.5)}><rect x="278" y="70" width="88" height="160" rx="14" fill="#111" stroke="#59636f" stroke-width="3"/><rect x="285" y="84" width="74" height="130" rx="4" fill="#e8eef5"/>
@@ -3626,7 +3628,7 @@ const SC=[
  <g class="v-pop" ${D(.6)}><rect x="50" y="88" width="134" height="92" rx="6" fill="#111" stroke="#59636f" stroke-width="3"/><rect x="56" y="94" width="122" height="80" fill="#e8eef5"/><path d="M35 180h164l-12 14H47z" fill="#59636f"/>
  <text x="117" y="112" font-size="12" font-weight="700" text-anchor="middle" direction="rtl" fill="#0b3d91">📋 النتائج</text>
  ${[['أحمد','18'],['سالم','20'],['خالد','16']].map(([n,s],k)=>`<g class="v-fade" ${D(5.6+k*.35)}><rect x="63" y="${119+k*17}" width="108" height="14" rx="3" fill="#fff"/><text x="167" y="${130+k*17}" font-size="10" text-anchor="end" fill="#15202b">${n}</text><text x="68" y="${130+k*17}" font-size="10" font-weight="700" fill="#1a8a42">${s}</text></g>`).join('')}</g>${T(117,228,14,'المدرّب')}`)},
-{t:'ورش إضافية',min:9,say:'وفي المحاكي أيضًا ورشةٌ للتحكم الهوائي، وشنطةٌ لاكتشاف الأعطال تتدرّب فيها على القياس وتحديد العطل.',
+{t:'ورش إضافية',min:9,say:'وَفِي المُحَاكِي أَيْضًا وَرْشَةٌ لِلتَّحَكُّمِ الهَوَائِيِّ، وَشَنْطَةٌ لِاكْتِشَافِ الأَعْطَالِ تَتَدَرَّبُ فِيهَا عَلَى القِيَاسِ وَتَحْدِيدِ العُطْلِ.',
  svg:SV(`<g transform="translate(305 0)"><g class="v-pop" ${D(.3)}><rect x="30" y="50" width="275" height="250" rx="18" fill="#13233a" stroke="#4ea1ff" stroke-width="2"/>${T(167,92,18,'ورشة التحكم الهوائي','font-weight="700"')}
  <rect x="62" y="140" width="130" height="48" rx="6" fill="#c7d3df" stroke="#7f8b97" stroke-width="2"/><g class="v-piston"><rect x="96" y="146" width="10" height="36" fill="#59636f"/><rect x="106" y="160" width="120" height="8" rx="3" fill="#e5eaef"/><rect x="224" y="152" width="14" height="24" rx="3" fill="#ffd54a"/></g>
  <path d="M75 188v40h70v-40" stroke="#2d8fe0" stroke-width="5" fill="none"/>${T(167,272,14,'أسطوانات وصمامات','fill-opacity=".8"')}</g>
@@ -3634,20 +3636,33 @@ const SC=[
  <path d="M440 128v-14a8 8 0 0 1 8-8h48a8 8 0 0 1 8 8v14" stroke="#8a6a1c" stroke-width="7" fill="none"/><rect x="392" y="126" width="160" height="104" rx="12" fill="#d99000"/>
  <rect x="420" y="140" width="64" height="80" rx="8" fill="#2b2f33"/><rect x="428" y="148" width="48" height="22" rx="3" fill="#b8e0a8"/><text class="v-blink" x="452" y="164" font-size="13" font-weight="700" text-anchor="middle" fill="#15202b">0 V</text><circle cx="452" cy="196" r="12" fill="#59636f"/>
  <text class="v-blink" x="522" y="190" font-size="34" text-anchor="middle">⚠️</text>${T(472,272,14,'قِس وحدّد مكان العطل','fill-opacity=".8"')}</g></g>`)},
-{t:'لماذا المحاكي؟',min:8,say:'تدرّب في أي وقت ومن أي جهاز، بأمانٍ تام، دون خطر الكهرباء ودون تلفٍ للمعدات. نتمنى لك تدريبًا ممتعًا ومفيدًا!',
+{t:'لماذا المحاكي؟',min:8,say:'تَدَرَّبْ فِي أَيِّ وَقْتٍ وَمِنْ أَيِّ جِهَازٍ، بِأَمَانٍ تَامٍّ، دُونَ خَطَرِ الكَهْرَبَاءِ وَدُونَ تَلَفٍ لِلْمُعَدَّاتِ. نَتَمَنَّى لَكَ تَدْرِيبًا مُمْتِعًا وَمُفِيدًا!',
  svg:SV([['⏰','في أي وقت',.4],['📱','من أي جهاز',1.4],['🛡️','آمن تمامًا',2.6],['🔧','بلا تلف للمعدات',4]].map(([e,l,d],k)=>{const x=95+k*150;return `<g class="v-pop" ${D(d)}><circle cx="${x}" cy="130" r="54" fill="#13233a" stroke="#4cd07d" stroke-width="3"/><text x="${x}" y="146" font-size="44" text-anchor="middle">${e}</text>${T(x,218,16,l,'font-weight="700"')}</g>`;}).join('')
  +`<g class="v-fade" ${D(5.4)}>${T(320,285,15,'فكرة وتنفيذ م. جابر الفيفي بواسطة Claude','fill-opacity=".75"')}</g>`)}
 ];
 /* الصوت: أفضل صوت عربي متاح في الجهاز */
-const SS=window.speechSynthesis;let voice=null;
-const pick=()=>{if(!SS)return;const ar=SS.getVoices().filter(v=>/^ar/i.test(v.lang)),q=/google|natural|neural|online|premium|enhanced/i;
-  voice=ar.find(v=>/SA/i.test(v.lang)&&q.test(v.name))||ar.find(v=>q.test(v.name))||ar.find(v=>/SA/i.test(v.lang))||ar[0]||null;};
+/* الصوت: يُفضَّل صوت عربي رجالي، ويمكن اختيار غيره من القائمة */
+const SS=window.speechSynthesis,vSel=g('vVoice');let voice=null,arV=[];
+const MALE=/naayf|hamed|shakir|hamdan|taim|fahed|moaz|\bali\b|abdullah|rami|omar|jamal|laith|hedi|saleh|ismael|bassel|maged|majed|tarik|x-ar[de]-|\bmale\b/i,
+  FEM=/hoda|zariyah|salma|fatima|sana|amany|laila|layla|mouna|noura|rana|iman|reem|amina|mona|x-ar[cz]-|female/i,
+  isM=v=>MALE.test(v.name+' '+v.voiceURI),
+  score=v=>(isM(v)?100:FEM.test(v.name+' '+v.voiceURI)?-50:0)+(/google|natural|neural|online|premium|enhanced/i.test(v.name)?10:0)+(/SA/i.test(v.lang)?3:0);
+const vName=v=>(v.name.replace(/microsoft|google|apple|online|\(natural\)|\s-\s.*$|\(.*?\)/gi,'').trim()||v.name)+(isM(v)?' ♂':'');
+const pick=()=>{if(!SS)return;arV=SS.getVoices().filter(v=>/^ar/i.test(v.lang)).sort((a,b)=>score(b)-score(a));
+  let want=null;try{want=localStorage.getItem('vidVoice');}catch(_){}
+  voice=(want&&arV.find(v=>v.voiceURI===want))||arV[0]||null;
+  vSel.innerHTML=arV.map(v=>`<option value="${v.voiceURI.replace(/"/g,'&quot;')}">${vName(v).replace(/</g,'&lt;')}</option>`).join('');
+  vSel.hidden=arV.length<2;if(voice)vSel.value=voice.voiceURI;};
 if(SS){pick();SS.onvoiceschanged=pick;}
+const voiceNote=()=>{if(!SS)return;
+  if(!arV.length){if(SS.getVoices().length)note.textContent='لا يوجد صوت عربي مثبّت على هذا الجهاز؛ تابع الشرح المكتوب أسفل المشهد.';return;}
+  note.textContent=voice&&isM(voice)?'':'إن كان الصوت نسائيًا '+(arV.length>1?'فاختر صوتًا آخر من قائمة الصوت أعلى الفيديو، أو ':'ف')+'ثبّت صوتًا عربيًا رجاليًا: في أندرويد من الإعدادات ← تحويل النص إلى كلام ← محرك Google ← العربية، وفي آيفون من الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات ← العربية ← ماجد.';};
+vSel.onchange=()=>{voice=arV.find(v=>v.voiceURI===vSel.value)||voice;try{localStorage.setItem('vidVoice',vSel.value);}catch(_){}voiceNote();if(playing)show(cur);};
 let ac=null;
 const chime=()=>{if(muted)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime;
   [660,880].forEach((f,k)=>{const o=ac.createOscillator(),gn=ac.createGain(),s=t+k*.12;o.frequency.value=f;gn.gain.setValueAtTime(0,s);gn.gain.linearRampToValueAtTime(.05,s+.02);gn.gain.exponentialRampToValueAtTime(.0001,s+.5);o.connect(gn).connect(ac.destination);o.start(s);o.stop(s+.55);});}catch(_){}};
 let cur=0,playing=false,muted=false,tok=0,tms=[];
-const est=s=>Math.max(s.min*1000,s.say.length*80);
+const est=s=>Math.max(s.min*1000,s.say.replace(/[\u064B-\u0652]/g,'').length*80);
 const clr=()=>{tok++;tms.forEach(clearTimeout);tms=[];if(SS)SS.cancel();};
 prog.innerHTML=SC.map((s,k)=>`<button class="vseg" data-k="${k}" title="${s.t}" aria-label="المشهد ${k+1}: ${s.t}"><b><i></i></b></button>`).join('');
 const segs=[...prog.querySelectorAll('i')];
@@ -3671,7 +3686,7 @@ function open(){
   vM.classList.add('open');try{localStorage.setItem('vidSeen','1');}catch(_){}g('bVid').classList.remove('vnew');
   note.textContent=SS?'':'هذا المتصفح لا يدعم النطق الصوتي؛ تابع الشرح المكتوب أسفل المشهد.';
   show(0);
-  if(SS)setTimeout(()=>{if(vM.classList.contains('open')&&!voice&&SS.getVoices().length)note.textContent='لا يوجد صوت عربي مثبّت على هذا الجهاز؛ تابع الشرح المكتوب أسفل المشهد.';},1500);
+  if(SS)setTimeout(()=>{if(vM.classList.contains('open')){if(!arV.length)pick();voiceNote();}},1500);
   g('vClose').focus({preventScroll:true});
 }
 function close(){clr();setPlay(false);vM.classList.remove('open','vpaused');art.innerHTML='';}
