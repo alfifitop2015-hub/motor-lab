@@ -804,7 +804,7 @@ function renderSel(){const cur=curPos();let g='';
 function trySelect(id){if(id===curPos())return;
   if(id!=='0'&&!CIRC[id]){say('الدائرة '+id+': لم تصل صورة لوحتها بعد، فهي غير متوفرة في المحاكي.','wn');return;}
   if(S.ex&&!S.ex.done&&!isTr()){say('أنهِ التمرين الحالي أولًا (🏁 إنهاء) قبل تغيير الدائرة.','wn');return;}
-  if(id==='0'){S.zero=true;S.q={Q1:false,Q2:false};S.pb.clear();renderSel();update();say('مفتاح الدائرة على 0: الشنطة بلا دائرة. أدر المقبض لاختيار رقم الدائرة.','info');return;}
+  if(id==='0'){S.zero=true;S.q={Q1:false,Q2:false};S.pb.clear();S.F=new Set();S.ex=null;S.probes=[null,null];insp.classList.remove('open');fswSel=-1;setDiag(false);renderSel();update();say('مفتاح الدائرة على 0: الشنطة بلا دائرة. أدر المقبض لاختيار رقم الدائرة.','info');return;}
   S.zero=false;if(id===S.cid){renderSel();update();return;}setCircuit(id);}
 const dialEl=$('dial');let dDrag=null;
 function dialAng(e){const r=dialEl.getBoundingClientRect(),k=230/r.width,x=(e.clientX-r.left)*k-DC[0],y=(e.clientY-r.top)*k-DC[1];return Math.atan2(x,-y)*180/Math.PI;}
@@ -942,7 +942,7 @@ $('dClr').onclick=()=>{S.probes=[null,null];S.mmPick=null;drawDyn();renderMeter(
 /* ===================================================================== faults, diagnosis, exams */
 const isTr=()=>document.body.classList.contains('trainer');
 function setDiag(on){S.diag=on;document.body.classList.toggle('diag',on);$('dDiag').classList.toggle('hl',on);hint();}
-$('dDiag').onclick=()=>{if(!isTr()&&!S.F.size){say('لا يوجد عطل في الشنطة الآن. اضغط 🎲 عطل عشوائي أو افتح تمرين المدرب.','wn');return;}setDiag(!S.diag);};
+$('dDiag').onclick=()=>{if(S.zero){say('المقبض على 0: لا توجد دائرة. أدر المقبض لاختيار رقم الدائرة أولًا.','wn');return;}if(!isTr()&&!S.F.size){say('لا يوجد عطل في الشنطة الآن. اضغط 🎲 عطل عشوائي أو افتح تمرين المدرب.','wn');return;}setDiag(!S.diag);};
 const insp=$('insp');
 function pickEl(id){const e=byId(id);if(!e)return;
   if(isTr()){S.F.has(id)?S.F.delete(id):S.F.add(id);trainerFaultsChanged();return;}
@@ -958,7 +958,7 @@ function pickEl(id){const e=byId(id);if(!e)return;
 function newEx(kind,f,vw){S.F=new Set(f);S.ex=f.length?{k:kind,c:S.cid,f:[...f],t0:Date.now(),found:[],wrong:[],meas:0,vw:vw!==false,done:false,viewUsed:false}:null;
   S.k={};S.tStart={};S.tDone={};S.trip={F5:false,F6:false};S.hum=0;S.pos=50;}
 function randFault(){const c=C();commonFaults(c);const L=c._vis&&c._vis.length?c._vis:cands(c).map(e=>e.id);return L[Math.floor(Math.random()*L.length)];}
-$('dRand').onclick=()=>{if(S.ex&&!S.ex.done&&S.ex.k==='exam'){say('لديك تمرين من المدرب لم ينته بعد. اضغط 🏁 إنهاء أولًا.','wn');return;}
+$('dRand').onclick=()=>{if(S.zero){say('المقبض على 0: لا توجد دائرة. أدر المقبض لاختيار رقم الدائرة أولًا.','wn');return;}if(S.ex&&!S.ex.done&&S.ex.k==='exam'){say('لديك تمرين من المدرب لم ينته بعد. اضغط 🏁 إنهاء أولًا.','wn');return;}
   newEx('rand',[randFault()]);setDiag(false);say('🎲 وُضع عطل مخفي في الدائرة '+S.cid+'. شغّل الشنطة، لاحظ العَرَض، ثم قِس حتى تجده.','info');update();};
 $('dEnd').onclick=()=>{if(!S.ex)return;if(!S.ex.done){if(!confirm('إنهاء التمرين وكشف الأعطال؟'))return;S.ex.done=true;S.ex.t1=Date.now();S.ex.gaveUp=true;setDiag(false);}showReport();update();};
 $('dView').onclick=()=>{if(!isTr()&&S.ex&&S.ex.vw===false&&!S.ex.done){say('المدرب أوقف «عرض الجهد» في هذا التمرين. اعتمد على الملتيميتر.','wn');return;}
@@ -968,6 +968,7 @@ function score(x){const n=x.f.length||1;return Math.max(0,Math.round(100*x.found
 function secs(x){return Math.round(((x.t1||Date.now())-x.t0)/1000);}
 const mmss=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 function renderStat(){const d=$('dstat'),x=S.ex;$('dEnd').style.display=x?'':'none';
+  if(S.zero){d.innerHTML='<span class="c">المقبض على 0 — لا توجد دائرة ولا أعطال</span>';return;}
   if(!x){d.innerHTML=S.F.size?'':'<span class="c">لا يوجد عطل — اختر 🎲 عطل عشوائي للتدريب</span>';return;}
   d.innerHTML=`<span class="c ${x.done?'ok':'wn'}">${x.k==='exam'?'تمرين المدرب':x.k==='rand'?'تدريب ذاتي':'أعطال المدرب'} · الدائرة ${esc(x.c)}</span><span class="c">الأعطال: ${x.found.length}/${x.f.length}</span><span class="c">القياسات: ${x.meas}</span><span class="c ${x.wrong.length?'bad':''}">محاولات خاطئة: ${x.wrong.length}</span><span class="c">⏱ ${mmss(secs(x))}</span>`;}
 function hint(){$('hint').textContent=S.diag?(isTr()?'وضع العطل: المس سلكًا أو عنصرًا لإضافة عطل أو إزالته.':'تحديد العطل: المس السلك أو العنصر الذي تعتقد أنه معطوب.')
@@ -992,12 +993,12 @@ $('repSend').onclick=()=>{$('repModal').classList.remove('open');openSend();};
 
 /* ---------- trainer: the 23 programming switches (8..30) ---------- */
 const fM=$('fModal');
-function openFaults(){renderFaults();fM.classList.add('open');}
+function openFaults(){if(S.zero){say('المقبض على 0: لا توجد دائرة ولا أعطال. أدر المقبض لاختيار رقم الدائرة.','wn');return;}renderFaults();fM.classList.add('open');}
 $('dFaults').onclick=openFaults;$('bFaults2').onclick=()=>{document.querySelector('.more').open=false;openFaults();};$('fClose').onclick=()=>fM.classList.remove('open');
 let fswKey='',fswSel=-1;
-function renderFsw(){if(!isTr())return;const c=C(),L=commonFaults(c),key=S.cid+'|'+[...S.F].join(',')+'|'+fswSel;if(key===fswKey)return;fswKey=key;
-  $('fswInfo').textContent=S.zero?'':`الدائرة ${S.cid}: ${L.length} أعطال شائعة · اضغط المفتاح لعرض تفاصيله`;
-  $('fswg').innerHTML=S.zero?'<span class="kl" style="direction:rtl">أدر المقبض لاختيار دائرة</span>':L.map((x,i)=>`<button class="tg${S.F.has(x.id)?' on':''}${i===fswSel?' sel':''}" data-cf="${i}" aria-pressed="${S.F.has(x.id)}" title="${esc(fDesc(byId(x.id)))}"><span>${i+8}</span><span class="lv"></span></button>`).join('');}
+function renderFsw(){$('fswBox').style.display=S.zero?'none':'';if(!isTr()||S.zero){fswKey='';return;}const c=C(),L=commonFaults(c),key=S.cid+'|'+[...S.F].join(',')+'|'+fswSel;if(key===fswKey)return;fswKey=key;
+  $('fswInfo').textContent=`الدائرة ${S.cid}: ${L.length} أعطال شائعة · اضغط المفتاح لعرض تفاصيله`;
+  $('fswg').innerHTML=L.map((x,i)=>`<button class="tg${S.F.has(x.id)?' on':''}${i===fswSel?' sel':''}" data-cf="${i}" aria-pressed="${S.F.has(x.id)}" title="${esc(fDesc(byId(x.id)))}"><span>${i+8}</span><span class="lv"></span></button>`).join('');}
 function showSw(i){const x=commonFaults(C())[i];if(!x)return;const e=byId(x.id),on=S.F.has(x.id);fswSel=i;renderFsw();
   insp.innerHTML=`<b>المفتاح ${i+8}</b> <span class="sm">${on?'🟡 العطل مفعّل':'⭘ غير مفعّل'}</span><p>${esc(fDesc(e))}</p>`+
     (x.sym.length?`<div class="sym"><b>العَرَض المتوقع</b><br>${x.sym.map(esc).join('<br>')}</div>`:'')+
