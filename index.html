@@ -814,7 +814,9 @@ const phasesOf=set=>[...set].filter(x=>PH.includes(x));
 function loadV(R,a,b){const A=R.srcOf(a),B=R.srcOf(b),pa=phasesOf(A),pb=phasesOf(B);
   if((pa.length&&B.has('N'))||(pb.length&&A.has('N')))return'on';
   if(pa.length&&pb.length&&pa[0]!==pb[0])return'over';return'off';}
-const timerDone=id=>{const t=S.tm[id];return !!t&&t.start!=null&&performance.now()-t.start>=t.delay*1000;};
+/* clock for the logic; the grading simulation runs it on its own time */
+let SIMT=null,SIMEX='';const pnow=()=>SIMT!=null?SIMT:performance.now();
+const timerDone=id=>{const t=S.tm[id];return !!t&&t.start!=null&&pnow()-t.start>=t.delay*1000;};
 const coilIds=()=>[...ofType('k'),...ofType('timer')];
 const nm=k=>k.startsWith('KT')?'المؤقت '+k:k;
 function say(m){S.last=m;}
@@ -828,7 +830,7 @@ function solve(){
     const nc={};coilIds().forEach(k=>nc[k]=loadV(R,k+'.A1',k+'.A2')==='on');
     const same=Object.keys(nc).every(k=>nc[k]===!!coils[k]);
     coils=nc;
-    tids.forEach(t=>{const tm=S.tm[t];if(coils[t]){if(tm.start==null)tm.start=performance.now();}else tm.start=null;});
+    tids.forEach(t=>{const tm=S.tm[t];if(coils[t]){if(tm.start==null)tm.start=pnow();}else tm.start=null;});
     const nd=dmap(),sameD=tids.every(t=>nd[t]===done[t]);
     const pc=plcCycle(R);
     if(same&&sameD&&!pc)break;
@@ -2522,71 +2524,153 @@ const GREQ={p1:'S1 تشغيل مع تثبيت ذاتي، S0 إيقاف. المح
  p16:'محرك دالندر مع عكس حركة: S1 أمامي (K1) وS2 عكسي (K2) مع تثبيت ذاتي وإعاقة كهربائية 21-22، وS0 إيقاف. عمل K1 أو K2 (نقطتا 53-54 على التوازي) يغذي: K3 السرعة البطيئة عبر 15-16 للمؤقت K1T ثم 21-22 لـ K4 و21-22 لـ K5، والمؤقت عبر النقطة المغلقة لـ K5. بعد الزمن تغلق 15-18 فيعمل K4 (قصر 1U 1V 1W) ويثبت بـ 13-14 عبر 21-22 لـ K3، ثم يعمل K5 (السرعة العالية) عبر 53-54 لـ K4. F5 وF6 على التوالي قبل S0.',
  p17:'بجهاز easy: S0 إلى I1، وS1 (أمامي) إلى I2، وS2 (عكسي) إلى I3. Q1 ← K1، وQ2 ← K2، وQ3 ← K3 (بطيئة)، وQ4 ← K4 (قصر 1U 1V 1W)، وK5 (عالية) يعمل مع K4 عبر نقطته 53-54. المؤقت T1 في البرنامج يحوّل من البطيئة إلى العالية، والإعاقات في البرنامج. F5 وF6 على التوالي في تغذية المخارج.',
  p15:'مثل العكس البطيء (S1 أمامي، S2 عكسي، S0 إيقاف، تثبيت ذاتي وإعاقة كهربائية)، مع نهايتي مشوار: النقطة المغلقة لـ SQ2 (25-26) في مسار K1 توقف الحركة الأمامية عند وصول العربة إليها، والنقطة المغلقة لـ SQ1 (21-22) في مسار K2 توقف العكسية. H1 أمامي، H2 عكسي، H4 عطل.'};
-/* compare the trainee's wiring with the approved diagram, net by net (running is not required) */
+/* grading is functional: the trainee's panel is switched on and operated like a trainer would (buttons, limit switches,
+   overload trip, waiting for the timer), and what it does is compared with what the exercise requires.
+   The approved diagram is only used to know the required behaviour, never as the wiring to copy: any wiring that works gets the marks. */
 const isLampW=([a,b],ex)=>{const t=k=>/^H\d+\.X[12]$/.test(k)||/^X1\.(29|30|31|32)$/.test(k)||/^F\d+\.(97|98)$/.test(k)||(PLCX.has(ex)&&/^K\d+\.(13|14)$/.test(k));return t(a)||t(b)||(a==='F1.2'&&/^K\d+A\.61$/.test(b))||(b==='F1.2'&&/^K\d+A\.61$/.test(a));};
-function refWires(ex){const m21=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
-  return [...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21(a),m21(b)]).filter(w=>!isLampW(w,ex));}
 function staticLinks(D){D=D||S.devs;const L=[['Q1.5','F1.1']];for(let i=34;i<=36;i++)L.push(['X1.'+i,'X1.33']);MB.forEach(n=>L.push(['X1.'+n,'X1.'+n+'b']));
   D.forEach(d=>{if(d.type==='ol'&&d.host)L.push([d.host+'.2',d.id+'.1'],[d.host+'.4',d.id+'.3'],[d.host+'.6',d.id+'.5']);});return L;}
-/* grading: the wiring is compared with the approved diagram net by net. Equivalent choices count as correct:
-   - a free auxiliary contact of the same kind (NO 13-14 / 53-54 / 83-84, NC 61-62 / 71-72) on the same contactor
-   - for one-motor exercises: M1 in delta or M2 in star (both match the 400 V supply)
-   Indicator lamps are graded by what they show and only added as a bonus (the total never passes 20). */
 const LAMP_BONUS=2,LAMPT=['X1.29','X1.30','X1.31','X1.32'];
-const CPAIR={'13':'14','14':'13','53':'54','54':'53','83':'84','84':'83','61':'62','62':'61','71':'72','72':'71','95':'96','96':'95','97':'98','98':'97'};
-const CGRP=[[['','13','14'],['A','53','54'],['A','83','84']],[['A','61','62'],['A','71','72']]];
-const NCREST=[[7,8],[9,10],[13,14],[17,18],[21,22],[25,26]];
 const m21k=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
-function refVariants(ex){const base=refWires(ex),V=[base];
-  if(!['p3','p10','p6','p7','p13','p14','p16','p17'].includes(ex)&&base.some(w=>w.some(k=>/^M1\./.test(k)))){
-    V.push([...base.filter(([a,b])=>!(/^M1\./.test(a)&&/^M1\./.test(b))).map(w=>w.map(k=>k.replace(/^M1\./,'M2.'))),...m2Star.map(([a,b])=>[a,b])]);}
-  return V;}
-function gCmp(ex,W,ref0,D){const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
-  const u0=uf([]),seen=new Set(),ref=[];
-  ref0.forEach(([a,b])=>{if(a===b||u0.find(a)===u0.find(b))return;const k=[a,b].sort().join('|');if(!seen.has(k)){seen.add(k);ref.push([a,b]);}});
-  const refT=new Set();ref.forEach(w=>w.forEach(k=>refT.add(k)));
-  // lamp wires: anything touching a lamp terminal, or a free contact whose other side feeds a lamp
-  const ua=uf(W.map(x=>x.w)),lampNet=k=>LAMPT.some(l=>ua.find(l)===ua.find(k));
-  const free=k=>{const m=/^(.+)\.(\d+)$/.exec(k);return !!m&&!!CPAIR[m[2]]&&!refT.has(k)&&lampNet(m[1]+'.'+CPAIR[m[2]]);};
-  const M=W.filter(x=>!(isLampW(x.w,ex)||free(x.w[0])||free(x.w[1])));
-  const us=uf(M.map(x=>x.w)),ur=uf(ref);
-  const miss=ref.filter(([a,b])=>us.find(a)!==us.find(b));
-  const wrongW=M.filter(x=>ur.find(x.w[0])!==ur.find(x.w[1])).map(x=>x.o);
-  const tot=ref.length,ok=tot-miss.length,bad=wrongW.length;
-  return{ok,tot,bad,miss,wrongW,wr:tot?ok/(tot+bad):0,refT};}
-function gradeWiring(ex,W0,D){let best=null;
-  refVariants(ex).forEach(ref=>{let W=W0.map(w=>({w:[w[0],w[1]],o:[w[0],w[1]]})),r=gCmp(ex,W,ref,D);
-    // try moving each contact the trainee used onto an equivalent one the diagram uses
-    const used=new Set();W.forEach(x=>x.w.forEach(k=>used.add(k)));const ks=new Set();[...used,...r.refT].forEach(k=>{const m=/^(K\d+)A?\./.exec(k);if(m)ks.add(m[1]);});
-    ks.forEach(K=>CGRP.forEach(G=>{const P=G.map(([sf,a,b])=>[K+sf+'.'+a,K+sf+'.'+b]),inRef=p=>p.some(k=>r.refT.has(k)),inStu=p=>p.some(k=>W.some(x=>x.w.includes(k)));
-      P.filter(p=>inStu(p)&&!inRef(p)).forEach(sp=>{let bw=null,br=r;
-        P.filter(p=>inRef(p)&&!inStu(p)).forEach(rp=>[[rp[0],rp[1]],[rp[1],rp[0]]].forEach(([x,y])=>{const mp={[sp[0]]:x,[sp[1]]:y};
-          const W2=W.map(q=>({w:q.w.map(k=>mp[k]||k),o:q.o})),r2=gCmp(ex,W2,ref,D);if(r2.wr>br.wr+1e-9){br=r2;bw=W2;}}));
-        if(bw){W=bw;r=br;}});}));
-    if(!best||r.wr>best.r.wr)best={r,W};});
-  return best;}
-// lamps: switch every contactor / timer / overload on and off and compare which lamps light with the diagram
-function lampLit(W,D,vars,st,lamps){const u=makeUF();staticLinks(D).forEach(([a,b])=>u.union(a,b));W.forEach(([a,b])=>u.union(a,b));
-  NCREST.forEach(([a,b])=>u.union('X1.'+a,'X1.'+b));const j=(a,b)=>u.union(a,b);
-  vars.forEach((v,i)=>{const on=!!(st>>i&1);
-    if(/^K\d+$/.test(v)){if(on){j(v+'.1',v+'.2');j(v+'.3',v+'.4');j(v+'.5',v+'.6');j(v+'.13',v+'.14');j(v+'A.53',v+'A.54');j(v+'A.83',v+'A.84');j(v+'.A1','F1.2');}else{j(v+'A.61',v+'A.62');j(v+'A.71',v+'A.72');}}
-    else if(/^KT\d+$/.test(v)){if(on){j(v+'.15',v+'.18');j(v+'.A1','F1.2');}else j(v+'.15',v+'.16');}
-    else{if(on)j(v+'.97',v+'.98');else j(v+'.95',v+'.96');}});
-  return lamps.map(l=>u.find(l)===u.find('F1.2'));}
-function gradeLamps(ex,W,D){const R=[...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21k(a),m21k(b)]),lamps=LAMPT.filter(l=>R.some(w=>w.includes(l)));if(!lamps.length)return null;
-  const vs=new Set();[...R,...W].forEach(w=>w.forEach(k=>{const m=/^(K\d+|KT\d+|F[2-9])A?\./.exec(k);if(m)vs.add(m[1]);}));const vars=[...vs].sort();
-  let ok=0,n=0;for(let st=0;st<(1<<vars.length);st++){
-    if(vars.some((v,i)=>/^F/.test(v)&&st>>i&1)&&vars.some((v,i)=>/^K/.test(v)&&st>>i&1))continue; // a tripped overload drops every contactor
-    const a=lampLit(R,D,vars,st,lamps),b=lampLit(W,D,vars,st,lamps);a.forEach((x,i)=>{if(!x&&!b[i])return;n++;if(x===b[i])ok++;});}
-  return{lr:n?ok/n:0,lamps:lamps.length};}
+/* test scenarios: p:X press and hold, r:X release, w wait for every timer, t1 / t2 trip the overload of M1 / M2, ok reset the overloads */
+const SC_ON=['p:S1','r:S1'],SC_OFF=['p:S0','r:S0'];
+const GSCN={
+ p1:[...SC_ON,...SC_OFF,...SC_ON,'t1','p:S1','r:S1','ok',...SC_ON,...SC_OFF],
+ p2:[...SC_ON,...SC_OFF,'p:S2','r:S2','p:S3','r:S3','p:S2','r:S2',...SC_OFF,...SC_ON,'p:S3','r:S3','p:S2','r:S2','t1','p:S1','r:S1','ok'],
+ p3:['p:S2','r:S2',...SC_ON,'p:S2','r:S2','p:S3','r:S3','p:S2','r:S2',...SC_OFF,...SC_ON,'p:S2','r:S2','t1','ok',...SC_ON,'p:S2','r:S2','t2','ok'],
+ p4:[...SC_ON,'p:S2','r:S2',...SC_OFF,'p:S2','r:S2','p:S1','r:S1',...SC_OFF,...SC_ON,'t1','ok','p:S2','r:S2',...SC_OFF],
+ p5:[...SC_ON,'p:S2','r:S2','p:S1','r:S1',...SC_OFF,'p:S2','r:S2',...SC_OFF,...SC_ON,'t1','ok'],
+ p6:['p:S2','r:S2',...SC_ON,'p:S2','r:S2','p:S1','r:S1',...SC_OFF,...SC_ON,'t1','ok',...SC_ON,'p:S2','r:S2',...SC_OFF],
+ p7:[...SC_ON,'w',...SC_OFF,...SC_ON,'t1','ok',...SC_ON,'w',...SC_OFF],
+ p15:[...SC_ON,'p:S2','r:S2','p:LS2','p:S1','r:S1','p:S2','r:S2','r:LS2','p:LS1','p:S2','r:S2','p:S1','r:S1','r:LS1',...SC_OFF,...SC_ON,'t1','ok'],
+ p16:[...SC_ON,'w','p:S2','r:S2',...SC_OFF,'p:S2','r:S2','w',...SC_OFF,...SC_ON,'t1','ok',...SC_ON,'w',...SC_OFF],
+ p17:[...SC_ON,'w','p:S2','r:S2','w',...SC_OFF,'p:S2','r:S2','w','p:S1','r:S1',...SC_OFF,...SC_ON,'t1','ok']};
+Object.assign(GSCN,{p8:GSCN.p1,p9:GSCN.p2,p10:GSCN.p3,p11:GSCN.p4,p12:GSCN.p5,p13:GSCN.p6,p14:GSCN.p7});
+const SNM={S0:'S0',S1:'S1',S2:'S2',S3:'S3',S4:'S4',LS1:'نهاية المشوار SQ1',LS2:'نهاية المشوار SQ2'};
+const scTxt=(a,ex)=>a==='w'?'انتظار انتهاء زمن المؤقت':a==='t1'?(TWO_M.has(ex)?'فصل أوفرلود المحرك M1':'فصل الأوفرلود (زيادة حمل على المحرك)'):a==='t2'?'فصل أوفرلود المحرك M2':a==='ok'?'إعادة ضبط الأوفرلود':
+  a.startsWith('p:')?(a.slice(2).startsWith('LS')?'وصول العربة إلى '+SNM[a.slice(2)]:'ضغط '+a.slice(2)):(a.slice(2).startsWith('LS')?'ابتعاد العربة عن '+SNM[a.slice(2)]:'رفع الإصبع عن '+a.slice(2));
+const TWO_M=new Set(['p3','p10']),ONE_M=ex=>!TWO_M.has(ex)&&!['p6','p7','p13','p14','p16','p17'].includes(ex);
+/* run fn on a temporary copy of a panel; the trainee's own panel and all its live state are put back afterwards */
+const SIMK=['devs','wires','tm','ol','fx','fbp','pex','dahl','railCount','target','nextId','power','Q1','F1','pressed','coils','done','ls1','ls2','fault','last','motor','motor2','lamps','warn','R','osc','ran'];
+function simWith(obj,ex,prog,fn){const keep={},pk={...S.plc},q=QUIET,t0=SIMT;SIMK.forEach(k=>keep[k]=S[k]);QUIET=true;
+  try{SIMEX=ex;applyObj({...obj,px:undefined,mt:DAHLX.has(ex)?'d':'s'});
+    if(prog){S.plc.prog=JSON.parse(JSON.stringify(prog.prog||[]));S.plc.tm=JSON.parse(JSON.stringify(prog.tm||{}));}
+    Object.assign(S.plc,{run:true,q:[false,false,false,false,false],m:{},ts:{},prev:{},inp:{},pw:false,flow:[]});
+    Object.assign(S,{power:true,Q1:true,F1:true,pressed:new Set(),coils:{},done:{},ls1:false,ls2:false,fault:null});
+    SIMT=0;ofType('timer').forEach(t=>S.tm[t].start=null);ofType('ol').forEach(f=>Object.assign(S.ol[f],{trip:false,heat:0}));
+    return fn();}
+  finally{SIMT=t0;QUIET=q;Object.assign(S,keep);Object.assign(S.plc,pk);relayout();}}
+/* what can be seen on the panel: the motor(s), the lamps and the contactors.
+   One-motor exercises accept M1 (star or delta) or M2 in star; M2 in delta overloads it */
+function simObs(ex){const one=ONE_M(ex),a=S.motor,b=S.motor2;let m,m2=null,why='';
+  if(one){const r=x=>x.state==='run';
+    if(r(a))m='run:ok:'+a.dir;else if(r(b))m='run:'+(b.mode==='star'?'ok':'m2delta')+':'+b.dir;
+    else if(a.state==='fault'||b.state==='fault'){m='fault';why=(a.why||b.why||'');}else m='off';}
+  else{m=a.state==='run'?'run:'+a.mode+':'+a.dir:a.state;why=a.why||'';if(TWO_M.has(ex)){m2=b.state==='run'?'run:'+b.mode+':'+b.dir:b.state;if(!why)why=b.why||'';}}
+  return{m,m2,why,L:[1,2,3,4].map(i=>!!S.lamps['H'+i]),k:Object.keys(S.coils).filter(k=>S.coils[k]&&/^K\d+$/.test(k)).sort(),sh:null,warn:S.warn.slice()};}
+function simAct(a){const [op,x]=a.split(':');
+  if(op==='p')S.pressed.add(x);else if(op==='r')S.pressed.delete(x);
+  else if(op==='ok')ofType('ol').forEach(f=>Object.assign(S.ol[f],{trip:false,heat:0}));
+  else if(op==='t1'||op==='t2'){const R=S.R,ks=op==='t2'?Object.values(M2K):[...Object.values(M),...(ONE_M(SIMEX)?Object.values(M2K):[])],roots=new Set(ks.map(k=>R.uf.find(k)));
+    ofType('ol').forEach(f=>{if([f+'.2',f+'.4',f+'.6'].some(k=>roots.has(R.uf.find(k))))S.ol[f].trip=true;});}
+  if(op==='w'){const ds=[...ofType('timer').map(t=>+S.tm[t].delay||0),...Object.values(S.plc.tm||{}).map(c=>+(c&&c.t)||0)],end=SIMT+Math.min(60,Math.max(1,...ds)+0.6)*1000;
+    while(SIMT<end){SIMT+=100;solve();if(S.fault)return;}}
+  else simSettle();}
+/* the easy relay needs a few scans after a change (the live panel scans it every 100 ms) */
+function simSettle(){let k='',n=0;for(let i=0;i<10&&n<2;i++){SIMT+=50;solve();if(S.fault)return;const k2=S.plc.q.join()+JSON.stringify(S.plc.m)+JSON.stringify(S.coils);n=k2===k?n+1:0;k=k2;}}
+/* run one scenario; a short circuit is noted on the step that caused it, then the supply comes back for the next step */
+function simRun(ex){const out=[];simSettle();
+  const ob=()=>{const o=simObs(ex);if(S.fault){o.sh=S.fault;o.m='short';if(o.m2)o.m2='short';S.fault=null;S.power=true;}return o;};
+  out.push(ob());(GSCN[ex]||[]).forEach(a=>{simAct(a);out.push(ob());});
+  const combos=[...new Set(out.map(o=>o.k.join(',')))].map(s=>s?s.split(','):[]);return{out,combos};}
+/* power circuit on its own: switch on a set of contactors by hand and look at the motor */
+function simPower(ex,sets){return sets.map(ks=>{const coils={};ks.forEach(k=>{if(k)coils[k]=true;});S.pressed=new Set();S.power=true;
+  const R=compute(coils,{});for(const [,set] of R.src){const p=phasesOf(set);if(p.length>=2||(p.length&&set.has('N')))return{m:'short',m2:TWO_M.has(ex)?'short':null};}
+  S.R=R;const a=motorEval(R),b=motor2Eval(R),keep=[S.motor,S.motor2];S.motor=a;S.motor2=b;const o=simObs(ex);[S.motor,S.motor2]=keep;return o;});}
+const flipS=s=>s&&s.startsWith('run:')?s.replace(/:(cw|ccw)$/,(_,d)=>':'+(d==='cw'?'ccw':'cw')):s;
+const sameM=(r,t)=>r===t||(r==='fault'&&t==='fault');
+function mTxt(s,why,who){who=who||'المحرك';if(!s||s==='off')return who+' متوقف';if(s==='short')return 'حدث قصر دائرة وفُصلت التغذية';if(s==='fault')return who+' لا يعمل بشكل سليم'+(why?' ('+why.replace(/\.$/,'')+')':'');return who+' '+mRun(s);}
+function mRun(s){const [,mode,dir]=s.split(':'),d=dir==='cw'?'للأمام':'للخلف';
+  return 'يعمل '+d+({ok:'',m2delta:' لكن M2 موصّل دلتا (يجب نجمة على 400V)',star:' نجمة',delta:' دلتا',low:' بالسرعة البطيئة',high:' بالسرعة العالية'}[mode]||'');}
+const mWant=s=>!s||s==='off'?'أن يكون متوقفًا':s.startsWith('run:')?'أن '+mRun(s):'أن يكون متوقفًا';
+/* the trainee may give a contactor another number; pick the naming that matches the required contactor states best */
+function kPerm(refK,stuK,score){let best=null;const ids=[...new Set([...stuK,...refK])];
+  const rec=(i,used,map)=>{if(i===refK.length){const v=score(map),id=refK.filter(k=>map[k]===k).length;if(!best||v>best.v+1e-9||(Math.abs(v-best.v)<1e-9&&id>best.id))best={v,id,map:{...map}};return;}
+    ids.forEach(c=>{if(used.has(c))return;used.add(c);map[refK[i]]=c;rec(i+1,used,map);used.delete(c);});};
+  if(refK.length<=6&&ids.length<=8)rec(0,new Set(),{});return best?best.map:Object.fromEntries(refK.map(k=>[k,k]));}
+function fTest(ex,obj,prog,refProg){
+  const ref=simWith(refObj(ex),ex,refProg,()=>{const r=simRun(ex);return{...r,pw:simPower(ex,r.combos)};});
+  return simWith(obj,ex,prog,()=>{const st=simRun(ex),two=TWO_M.has(ex),steps=GSCN[ex]||[],fl0=ex==='p15'?[false]:[false,true];
+    const sk=i=>i&&steps[i-1]==='ok';
+    const cmpSys=fl=>{let ok=0,rel=0;ref.out.forEach((r,i)=>{if(sk(i))return;const t=st.out[i],tm=fl?flipS(t.m):t.m,tm2=fl?flipS(t.m2):t.m2;
+      if(r.m!=='off'||tm!=='off'){rel++;if(sameM(r.m,tm))ok++;}if(two&&(r.m2!=='off'||tm2!=='off')){rel++;if(sameM(r.m2,tm2))ok++;}});return{ok,rel};};
+    let fl=false,sys=cmpSys(false);if(fl0.length>1){const s2=cmpSys(true);if(s2.ok>sys.ok){sys=s2;fl=true;}}
+    const refK=[...new Set(ref.out.flatMap(o=>o.k))].sort(),stuK=ofType('k');
+    const ctlOf=map=>{let ok=0,rel=0;ref.out.forEach((r,i)=>!sk(i)&&refK.forEach(k=>{const a=r.k.includes(k),b=st.out[i].k.includes(map[k]);if(a||b){rel++;if(a===b)ok++;}}));return{ok,rel};};
+    const pwOf=m=>{const pw=simPower(ex,ref.combos.map(ks=>ks.map(k=>m[k]||k)));let ok=0,rel=0;
+      ref.pw.forEach((r,i)=>{const t=pw[i],tm=fl?flipS(t.m):t.m,tm2=fl?flipS(t.m2):t.m2;if(r.m!=='off'||tm!=='off'){rel++;if(sameM(r.m,tm))ok++;}if(two&&(r.m2!=='off'||tm2!=='off')){rel++;if(sameM(r.m2,tm2))ok++;}});return{ok,rel,pw};};
+    const map=kPerm(refK,stuK,m=>{const c=ctlOf(m),p=pwOf(m);return (c.rel?c.ok/c.rel:0)+(p.rel?p.ok/p.rel:0);}),ctl=ctlOf(map),PW=pwOf(map),pw=PW.pw,pok=PW.ok,prel=PW.rel;
+    // lamps the exercise uses
+    const LU=[0,1,2,3].filter(j=>ref.out.some(o=>o.L[j]));let lok=0,lrel=0;ref.out.forEach((r,i)=>!sk(i)&&LU.forEach(j=>{const a=r.L[j],b=st.out[i].L[j];if(a||b){lrel++;if(a===b)lok++;}}));
+    // the trainee's errors, step by step
+    const at=i=>i?'الخطوة '+i+' ('+scTxt(steps[i-1],ex)+')':'عند وصل التغذية',E=[],LE=[],DE=[],WS=new Set();
+    st.out.forEach((t,i)=>{const r=ref.out[i];if(t.sh)WS.add(t.sh);t.warn.forEach(w=>WS.add(w));if(sk(i))return;
+      const tm=fl?flipS(t.m):t.m,tm2=fl?flipS(t.m2):t.m2,bad=[];
+      if(!sameM(r.m,tm))bad.push(mTxt(tm,t.why,two?'M1':'')+'، والمطلوب '+mWant(r.m));
+      if(two&&!sameM(r.m2,tm2)&&!(tm2==='short'&&tm==='short'))bad.push(mTxt(tm2,t.why,'M2')+'، والمطلوب '+mWant(r.m2));
+      if(bad.length)E.push(at(i)+': '+bad.join('؛ و'));
+      const lb=LU.filter(j=>r.L[j]!==t.L[j]).map(j=>'H'+(j+1)+(t.L[j]?' مضيئة ويجب أن تكون مطفأة':' مطفأة ويجب أن تضيء'));if(lb.length)LE.push(at(i)+': '+lb.join('، و'));
+      const kb=refK.filter(k=>r.k.includes(k)!==t.k.includes(map[k])).map(k=>(map[k]!==k?map[k]+' (بدور '+k+')':k)+(t.k.includes(map[k])?' يعمل والمطلوب أن يكون مفصولًا':' مفصول والمطلوب أن يعمل'));
+      if(kb.length)DE.push(at(i)+': '+kb.join('، و'));});
+    const PE=[];ref.pw.forEach((r,i)=>{const t=pw[i],tm=fl?flipS(t.m):t.m,tm2=fl?flipS(t.m2):t.m2,ks=ref.combos[i].map(k=>map[k]||k);
+      const bad=[];if(!sameM(r.m,tm))bad.push(mTxt(tm,t.why,two?'M1':'')+'، والمطلوب '+mWant(r.m));if(two&&!sameM(r.m2,tm2)&&!(tm2==='short'&&tm==='short'))bad.push(mTxt(tm2,t.why,'M2')+'، والمطلوب '+mWant(r.m2));
+      if(bad.length)PE.push((ks.length?'عند تشغيل '+ks.join(' و')+' يدويًا':'والكونتاكتورات كلها مفصولة')+': '+bad.join('؛ و'));});
+    const rr=x=>x.rel?x.ok/x.rel:0;
+    return{sys,ctl,pwr:{ok:pok,rel:prel},lamp:LU.length?{ok:lok,rel:lrel}:null,fl,map,E,LE,DE:sys.ok<sys.rel?DE:[],PE:sys.ok<sys.rel?PE:[],warn:[...WS],
+      H:gHints(ex,ref,st,steps,fl,sk,ctl,{ok:pok,rel:prel},sys),
+      sh:st.out.some(o=>o.sh)||pw.some(o=>o.m==='short'),
+      r:st.out.some(o=>o.sh)||pw.some(o=>o.m==='short')?rr(sys):Math.max(rr(sys),(rr(ctl)+rr({ok:pok,rel:prel}))/2),sr:rr(sys)};});}
+/* the likely mistakes behind the failed steps, in plain words */
+const REVX=new Set(['p4','p5','p11','p12','p15','p16','p17']),SDX=new Set(['p6','p7','p13','p14']);
+function gHints(ex,ref,st,steps,fl,sk,ctl,pwr,sys){const H=new Map(),plc=PLCX.has(ex),add=(k,t)=>{if(!H.has(k))H.set(k,t);};
+  const run=s=>!!s&&s.startsWith('run:'),parts=s=>s.split(':');
+  let off=false; // after the first wrong step, later differences are usually its consequences: hint again only once the panel is back in step
+  st.out.forEach((t,i)=>{if(!i||sk(i))return;const r=ref.out[i],a=steps[i-1],b=a.slice(2),aft=!!st.out[i-1].sh;
+    const okNow=sameM(r.m,fl?flipS(t.m):t.m)&&(!TWO_M.has(ex)||sameM(r.m2,fl?flipS(t.m2):t.m2));if(okNow){off=false;return;}if(off&&!(fl?flipS(t.m):t.m).startsWith('short'))return;off=true;
+    [[r.m,fl?flipS(t.m):t.m,t.why],...(TWO_M.has(ex)?[[r.m2,fl?flipS(t.m2):t.m2,t.why]]:[])].forEach(([R,T,why])=>{if(sameM(R,T))return;
+      if(T==='short'){if(REVX.has(ex)&&/^p:S[12]$/.test(a))add('il','عمل كونتاكتورا الاتجاهين معًا فحدث قصر دائرة: الإعاقة الكهربائية بين الأمامي والعكسي غير موجودة أو خاطئة'+(plc?'.':' (تلامس مغلق NC من كل كونتاكتور في مسار ملف الآخر).'));
+        else if(SDX.has(ex))add('sd','عمل كونتاكتورا النجمة والدلتا معًا فحدث قصر دائرة: تحقق من الإعاقة بينهما.');else add('sh','حدث قصر دائرة عند '+scTxt(a,ex)+'.');return;}
+      if(T==='fault'){add('f'+why,'المحرك لا يعمل بشكل سليم: '+why);return;}
+      if(run(R)&&run(T)){const [,rm,rd]=parts(R),[,tm,td]=parts(T);
+        if(rd!==td)add('dir','اتجاه الدوران غير صحيح'+(REVX.has(ex)?': لعكس الحركة يجب تبديل طورين في دائرة قوى كونتاكتور العكس.':'.'));
+        if(rm!==tm)add('mode',tm==='m2delta'?'المحرك M2 موصّل دلتا، ويجب توصيله نجمة على 400V.':SDX.has(ex)||ex==='p16'||ex==='p17'?'المحرك يعمل '+mRun(T).slice(5)+' في خطوة يجب أن يعمل فيها '+mRun(R).slice(5)+'.':'طريقة توصيل ملفات المحرك غير صحيحة.');return;}
+      if(a==='w'){add('w','التحويل بعد انتهاء زمن المؤقت لا يحدث كما هو مطلوب.');return;}
+      if(a==='t1'||a==='t2'){if(run(T))add('ol','فصل الأوفرلود لا يوقف '+(a==='t2'?'المحركين':'المحرك')+': '+(plc?'تلامس الأوفرلود 95-96 يجب أن يغذي مشترك المخارج.':'المحرك غير محمي، أو تلامس الأوفرلود 95-96 ليس على التوالي في دائرة التحكم.'));return;}
+      if(/^p:LS/.test(a)&&run(T)){add('ls','الوصول إلى '+SNM[b]+' لا يوقف الحركة'+(plc?'.':': تلامسها المغلق يجب أن يكون في مسار ملف الاتجاه الذي يتجه إليها.'));return;}
+      if(/^[pr]:S[03]$/.test(a)&&run(T)&&!run(R)){add('st'+b,'الضاغط '+b+' لا يوقف '+(TWO_M.has(ex)&&b==='S0'?'المحركين':'المحرك')+' كما هو مطلوب'+(plc?'.':': تلامسه المغلق NC يجب أن يكون على التوالي في مسار الملف.'));return;}
+      if(aft&&!run(T))return; // the supply was cut by a short on the step before
+      if(/^r:S[12]$/.test(a)&&run(R)&&!run(T)){const pv=st.out[i-1];if(run(fl?flipS(pv.m):pv.m)||run(pv.m2)){add('h'+b,'التثبيت الذاتي لا يعمل مع '+b+': يقف المحرك عند رفع الإصبع'+(plc?'.':'. ضع تلامسًا مفتوحًا NO من الكونتاكتور على التوازي مع الضاغط.'));return;}}
+      if(/^[pr]:S[12]$/.test(a)&&run(R)&&!run(T)){add('n'+b,'الضغط على '+b+' لا يشغّل المحرك كما هو مطلوب'+(plc?'.':': تحقق من مسار الملف (الضاغط، والتلامسات على التوالي، وطرفي الملف A1 وA2).'));return;}
+      if(/^[pr]:S\d$/.test(a)&&run(T)&&!run(R)){if(TWO_M.has(ex)&&R===r.m2&&!run(r.m)){add('seq','المحرك M2 يعمل دون أن يعمل M1 أولًا: شرط التتابع غير متحقق'+(plc?'.':' (تغذية دائرة M2 يجب أن تمر بتلامس مفتوح NO من K1).'));return;}add('x'+b,'الضغط على '+b+' يشغّل المحرك في حالة يجب ألا يعمل فيها (شرط التشغيل أو الإعاقة غير متحقق).');return;}
+      add('o'+a,'عند '+scTxt(a,ex)+': '+mTxt(T,why)+'، والمطلوب '+mWant(R)+'.');});});
+  if(!st.out.some(o=>run(o.m)||run(o.m2)||o.m==='fault'||o.m2==='fault'||o.sh))H.clear(),add('never','المحرك لم يعمل في أي خطوة من الاختبار.');
+  if(sys.ok<sys.rel){const c=ctl.rel&&ctl.ok===ctl.rel,p=pwr.rel&&pwr.ok===pwr.rel;
+    if(c&&!p)add('zp','دائرة التحكم سليمة، والخطأ في دائرة القوى (توصيل الكونتاكتورات بالمحرك).');else if(p&&!c)add('zc','دائرة القوى سليمة، والخطأ في دائرة التحكم.');}
+  return [...H.values()];}
+function refObj(ex){return{v:6,w:[...PRESETS[ex],...presetExtra(ex)],d:5};}
 /* every fraction is rounded up in the trainee's favour; the final score is a whole number */
 const gUp=(v,k)=>Math.ceil(v*k-1e-9)/k;
-function gradeNow(ex,W,D,PG){W=W||S.wires.map(w=>[w.a,w.b]);D=D||S.devs;
-  const b=gradeWiring(ex,W,D),{ok,tot,bad,miss,wrongW,wr}=b.r,L=gradeLamps(ex,W,D),lb=L?gUp(LAMP_BONUS*L.lr,10):0;
-  const fin=sm=>{const s=Math.min(20,gUp(sm+(L?LAMP_BONUS*L.lr:0),1));sm=gUp(sm,10);return{s,sm,lb,lr:L?gUp(100*L.lr,1):null};};
-  if(PLCX.has(ex)&&PTEST[ex]){const pg=PG||S.plc,gp=gradeProg(ex,pg.prog,pg.tm);
-    return{...fin(10*wr+10*gp.r),ok,tot,bad,miss,wrongW,ws:gUp(10*wr,10),ps:gUp(10*gp.r,10),pOk:gp.ok,pRel:gp.rel,pBad:gp.bad};}
-  return{...fin(20*wr),ok,tot,bad,miss,wrongW};}
+function gradeNow(ex,obj){obj=obj||serial();const plc=PLCX.has(ex)&&PTEST[ex],RP=PPROG[ex]?{prog:PPROG[ex].prog,tm:PPROG[ex].tm}:null,P0=obj.plc||{prog:[],tm:{}};
+  // easy exercises: the wiring is tested with the model program, and the whole panel with the trainee's own program; a working whole counts for both
+  const F=fTest(ex,obj,plc?RP:P0,RP),FS=plc?fTest(ex,obj,P0,RP):null;
+  const lam=x=>x&&x.lamp?(x.lamp.rel?x.lamp.ok/x.lamp.rel:1):null,l0=lam(F),l1=lam(FS),lr=l0==null&&l1==null?null:Math.max(l0||0,l1||0),lb=lr==null?0:gUp(LAMP_BONUS*lr,10);
+  const cap=(FS||F).sys.ok<(FS||F).sys.rel?19:20; // the lamp bonus never makes up for a fault in operation
+  const fin=sm=>({s:Math.min(cap,gUp(sm+(lr==null?0:LAMP_BONUS*lr),1)),sm:gUp(sm,10),lb,lr:lr==null?null:gUp(100*lr,1)});
+  const A=FS||F,base={fn:1,sh:F.sh||!!(FS&&FS.sh),sys:A.sys,ctl:F.ctl,pwr:F.pwr,fl:A.fl,H:A.H,E:A.E,LE:A.LE,DE:F.DE,PE:F.PE,warn:[...new Set([...A.warn,...F.warn])],
+    ren:Object.entries(F.map).filter(([a,b])=>a!==b).map(([a,b])=>b+' بدور '+a)};
+  if(plc){const gp=gradeProg(ex,P0.prog,P0.tm),wr=Math.max(F.r,FS.sr),pr=Math.max(gp.r,FS.sr);
+    return{...fin(10*wr+10*pr),...base,wsys:F.sys,ws:gUp(10*wr,10),ps:gUp(10*pr,10),pOk:gp.ok,pRel:gp.rel,pBad:gp.bad,whole:FS.sr};}
+  return{...fin(20*F.r),...base};}
 /* program check: run the trainee's ladder program and the model program through the same input sequence and compare Q1-Q4 */
 const PTEST={
  p8:{base:{I1:1},steps:[{},{I2:1},{I2:0},{I1:0},{I1:1},{I2:1},{I2:0},{I1:0},{I1:1}],d:['ضغط S1','رفع الإصبع','ضغط S0','رفع S0','تشغيل مرة ثانية','رفع','إيقاف','رفع']},
@@ -2617,10 +2701,29 @@ async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn
 const gM=$('gradeModal');let GV={ex:''};
 const wl=L=>L.map(([a,b])=>`<li><span dir="ltr">${esc(a)} ⟷ ${esc(b)}</span></li>`).join('');
 const gLampTxt=G=>G.sm==null?'. المجموع = '+G.s+' من 20.':`. لمبات البيان درجة إضافية حتى ${LAMP_BONUS}: تُضاف ${G.lb} إذا كانت الدرجة أقل من 20، ولا تتجاوز الدرجة 20. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب). يُقبل أي تلامس مساعد مكافئ، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.`;
+/* functional result: what was tested, how the score is made, and the trainee's errors step by step */
+const gErrL=(t,L,op)=>L&&L.length?`<details${op?' open':''} style="margin-top:6px"><summary>${t} (${L.length})</summary><ul class="glist">${L.map(x=>`<li class="no"><span>✖</span><span>${esc(x)}</span></li>`).join('')}</ul></details>`:'';
+function gFnHTML(G){const f=x=>x&&x.rel?`${x.ok} / ${x.rel}`:'—',pc=x=>x&&x.rel?Math.round(100*x.ok/x.rel):0,full=x=>x&&x.ok===x.rel,plc=G.ps!=null;
+  const noErr=!(G.E||[]).length&&!(G.LE||[]).length&&!(G.warn||[]).length;
+  return `<ul class="glist"><li class="${full(G.sys)?'':'no'}"><span>${full(G.sys)?'✔':'✖'}</span><span>${plc?'التشغيل الكامل للوحتك ببرنامجك: ':'اختبار التشغيل الكامل: '}ضغط الضواغط ورفعها، والإيقاف، وفصل الأوفرلود${(GSCN[G.ex]||[]).includes('w')?'، وانتهاء زمن المؤقت':''}${G.ex==='p15'?'، ونهايتا المشوار':''}</span><b>${f(G.sys)}</b></li>
+   ${G.wsys?`<li class="${full(G.wsys)?'':'no'}"><span>${full(G.wsys)?'✔':'✖'}</span><span>التوصيل وحده: تشغيل لوحتك بالبرنامج النموذجي</span><b>${f(G.wsys)}</b></li>`:''}
+   <li class="${full(G.pwr)?'':'no'}"><span>⚡</span><span>دائرة القوى: حالة المحرك عند تشغيل الكونتاكتورات</span><b>${f(G.pwr)}</b></li>
+   <li class="${full(G.ctl)?'':'no'}"><span>🔌</span><span>دائرة التحكم: عمل الكونتاكتورات في كل خطوة</span><b>${f(G.ctl)}</b></li>
+   ${G.lr!=null?`<li class="${G.lr<100?'no':''}"><span>💡</span><span>لمبات البيان (درجة إضافية، تعمل كما هو مطلوب ${G.lr}%)</span><b>+${G.lb}</b></li>`:''}
+   ${plc?`<li class="${G.ps<10?'no':''}"><span>${G.ps>=10?'✔':'✖'}</span><span>البرنامج: مخارج صحيحة في اختبارات التشغيل</span><b>${G.pOk} / ${G.pRel}</b></li>`:''}</ul>
+  ${noErr?`<div class="glock" style="background:color-mix(in srgb,var(--ok) 16%,transparent)">✔ اشتغلت اللوحة كما هو مطلوب في كل خطوات الاختبار.</div>`:''}
+  ${G.H&&G.H.length?`<div class="greq" style="border-inline-start:4px solid var(--warn)"><b>الأخطاء الرئيسية:</b><ul style="margin:4px 0 0;padding-inline-start:18px">${G.H.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
+  ${gErrL('تفاصيل التشغيل: ما حدث في كل خطوة وما المطلوب',G.E,0)}
+  ${gErrL('دائرة التحكم: الكونتاكتورات التي لم تعمل كما يجب'+(plc?' (مع البرنامج النموذجي)':''),G.DE,1)}
+  ${gErrL('دائرة القوى: أخطاء توصيل المحرك',G.PE,1)}
+  ${gErrL('لمبات البيان',G.LE,0)}
+  ${gErrL('تنبيهات السلامة التي ظهرت أثناء الاختبار',G.warn,1)}
+  <p class="gmeta" style="margin-top:6px">طريقة الحساب: ${plc?`التوصيل ${G.ws} من 10 (يُختبر ببرنامج نموذجي)، والبرنامج ${G.ps} من 10، وإذا اشتغلت اللوحة كاملة ببرنامجك يأخذ الاثنان الدرجة كاملة`:G.sh?`حدث قصر دائرة أثناء الاختبار، لذلك تُحسب الدرجة من اختبار التشغيل الكامل فقط: 20 × ${pc(G.sys)}% = ${G.sm}`:`20 × الأعلى بين نجاح التشغيل الكامل (${pc(G.sys)}%) ومتوسط دائرتي القوى والتحكم (${Math.round((pc(G.pwr)+pc(G.ctl))/2)}%) = ${G.sm}`}${G.lr!=null?`، ولمبات البيان درجة إضافية حتى ${LAMP_BONUS}: +${G.lb}`:''}. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب، ولا تتجاوز الدرجة 20${full(G.sys)?'':'، ولا تكتمل 20 مع وجود خطأ في التشغيل'}).</p>
+  <p class="gmeta">لا يُقارن توصيلك بالمخطط سلكًا بسلك. يشغّل المحاكي لوحتك آليًا ويقارن عمل المحرك واللمبات بالمطلوب في التمرين، فأي توصيل بديل يؤدي العمل نفسه يأخذ الدرجة كاملة.${G.fl?' اتجاه دوران المحرك عندك معكوس عن المخطط، وقُبل لأن التشغيل صحيح.':''}${G.ren&&G.ren.length?' استخدمت أرقامًا أخرى للكونتاكتورات ('+esc(G.ren.join('، '))+')، وقُبلت.':''}</p>`;}
 function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)';
   return `<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <p style="margin:0 0 6px;font-weight:700">${esc(PNAME[G.ex])}</p>
-  ${G.tot!=null?`<ul class="glist"><li><span>✔</span><span>توصيلات صحيحة مطابقة للمخطط</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>توصيلات خاطئة أو زائدة</span><b>${G.bad}</b></li>${G.lr!=null?`<li class="${G.lr<100?'no':''}"><span>💡</span><span>لمبات البيان (درجة إضافية، تعمل كما في المخطط ${G.lr}%)</span><b>+${G.lb}</b></li>`:''}</ul>
+  ${G.fn?gFnHTML(G):G.tot!=null?`<ul class="glist"><li><span>✔</span><span>توصيلات صحيحة مطابقة للمخطط</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>توصيلات خاطئة أو زائدة</span><b>${G.bad}</b></li>${G.lr!=null?`<li class="${G.lr<100?'no':''}"><span>💡</span><span>لمبات البيان (درجة إضافية، تعمل كما في المخطط ${G.lr}%)</span><b>+${G.lb}</b></li>`:''}</ul>
   ${G.ps!=null?`<ul class="glist"><li class="${G.ps<10?'no':''}"><span>${G.ps>=10?'✔':'✖'}</span><span>البرنامج: مخارج صحيحة في اختبارات التشغيل</span><b>${G.pOk} / ${G.pRel}</b></li></ul>
   <p class="gmeta" style="margin-top:6px">طريقة الحساب: التوصيل = 10 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.ws}، والبرنامج = 10 × ${G.pOk} ÷ ${G.pRel||1} = ${G.ps}${gLampTxt(G)}</p>
   <p class="gmeta">يُختبر البرنامج آليًا: تُمرَّر عليه حالات الضغط والرفع والإيقاف ونهاية المشوار والمؤقت، وتُقارن مخارجه Q1-Q4 بالبرنامج النموذجي. أي برنامج يؤدي العمل نفسه يأخذ الدرجة كاملة.</p>`:
@@ -2631,7 +2734,7 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}${view?'':' · 🔒 الدرجة مقفلة'}</p>`;}
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
   let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+A[k].s+'/20 🔒':''}</option>`).join('')}</select></label>`;
-  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يقارن المحاكي كل توصيلة في لوحتك بتوصيلات المخطط المعتمد للتمرين، وتُحسب الدرجة بنسبة التوصيلات الصحيحة، سواء اشتغلت الدائرة أم لا. التوصيلات الخاطئة أو الزائدة تُنقص الدرجة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
+  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يشغّل المحاكي لوحتك آليًا كما يفعل المدرب: يضغط الضواغط ويرفعها، ويوقف، ويفصل الأوفرلود، وينتظر المؤقت، ثم يقارن عمل المحرك واللمبات بالمطلوب في التمرين. لا يُقارن توصيلك بالمخطط سلكًا بسلك، فأي توصيل بديل يؤدي العمل يأخذ الدرجة كاملة. إذا لم تعمل اللوحة كاملة تُفحص دائرة القوى ودائرة التحكم كلٌّ على حدة لتأخذ درجة ما نفّذته صحيحًا، وتظهر لك الأخطاء خطوة بخطوة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
   else if(G){h+=`<div class="glock">🔒 قُيّم هذا التمرين من قبل، والدرجة مقفلة ولا تتغير حتى لو عدّلت التوصيل. التوصيل الذي قُيّم هو الذي يُرسل للمدرب.</div>`+gResHTML(G)+
     `<div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button>${tr?'<button class="btn trainer-only" id="gRedo" style="grid-column:1/-1">🔓 مسح الدرجة وإعادة التقييم (للمدرب)</button>':''}</div>
     <div class="fld" style="margin-top:10px"><label>رمز فك القفل من المدرب<input id="gUlkIn" dir="ltr" autocomplete="off" maxlength="12" style="text-transform:uppercase;letter-spacing:.15em"></label></div>
@@ -2700,7 +2803,7 @@ try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const exName=ex=>PNAME[ex]?'تمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]:'بدون تقييم';
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 async function recheck(r){if(RS.chk[r.uid]!==undefined||!r.code||!PRESETS[r.ex])return;RS.chk[r.uid]=null;
-  try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o.w.map(x=>[x[0],x[1]]),o.devs||[],o.plc||{prog:[],tm:{}}).s;}catch(_){RS.chk[r.uid]=null;}}
+  try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o).s;}catch(_){RS.chk[r.uid]=null;}}
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q));
   $('rDelSel').disabled=!RS.sel.size;$('rDelSel').textContent=RS.sel.size?'🗑 حذف المحدد ('+RS.sel.size+')':'🗑 حذف المحدد';
   $('rList').innerHTML=L.length?L.map(r=>{const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,ok=c==null||sv==='—'?'':c===+r.s?' <span title="أُعيد الفحص على التوصيل المرسل">✔</span>':` <span style="color:var(--warn)" title="إعادة الفحص أعطت ${c}">⚠${c}</span>`;
@@ -2778,7 +2881,7 @@ function plcCycle(R){const P=S.plc,q0=P.q.join(),pw=loadV(R,'PLC.L','PLC.N1')===
   if(!pw){if(P.pw){P.m={};P.ts={};P.prev={};}P.pw=false;P.inp={};P.flow=[];P.q=[false,false,false,false,false];return q0!==P.q.join();}
   if(!P.pw){P.m={};P.ts={};P.prev={};}P.pw=true;const inp={};for(let i=1;i<=8;i++)inp[i]=loadV(R,'XP.I'+i,'PLC.N1')==='on';P.inp=inp;
   if(!P.run){P.q=[false,false,false,false,false];P.flow=[];return q0!==P.q.join();}
-  plcScan(inp,performance.now());return q0!==P.q.join();}
+  plcScan(inp,pnow());return q0!==P.q.join();}
 // ----- editor
 const plM=$('plcModal'),PE={r:0,c:0,cf:'C',tf:'T'};
 const TMODES={X:'تأخير تشغيل (X)',OFF:'تأخير فصل',P:'نبضة واحدة',F:'وميض'};
@@ -3431,8 +3534,9 @@ function sdOpen(on,ex){SD.open=on;if(ex)SD.ex=ex;const W=document.getElementById
     all.forEach(([a,b])=>{if(a===b||u.find(a)===u.find(b))return;const k=[a,b].sort().join('|');if(seen.has(k))return;seen.add(k);L.push({a,b,lamp:isLampW([a,b],ex)});});
     return L.map((w,i)=>({...w,n:i+1}));}
   const SPOT={type:'object',additionalProperties:false,required:['img','x','y','r'],properties:{img:{type:'integer',description:'رقم الصورة يبدأ من 1'},x:{type:'number',description:'0..1 من عرض الصورة'},y:{type:'number',description:'0..1 من ارتفاع الصورة'},r:{type:'number',description:'نصف القطر 0..1 من عرض الصورة'}}};
-  const SCHEMA={type:'object',additionalProperties:false,required:['summary','items','extras'],properties:{
+  const SCHEMA={type:'object',additionalProperties:false,required:['summary','errors','items','extras'],properties:{
     summary:{type:'string'},
+    errors:{type:'array',items:{type:'string'}},
     items:{type:'array',items:{type:'object',additionalProperties:false,required:['n','status','note','spots'],properties:{n:{type:'integer'},status:{type:'string',enum:['ok','missing','wrong','unclear']},note:{type:'string'},spots:{type:'array',items:SPOT}}}},
     extras:{type:'array',items:{type:'object',additionalProperties:false,required:['desc','spots'],properties:{desc:{type:'string'},spots:{type:'array',items:SPOT}}}}}};
   const ZOOM={name:'zoom',description:'يقص جزءًا من إحدى الصور بالدقة الكاملة ويعيده مكبرًا، لقراءة أرقام الأطراف ومسار الأسلاك. الإحداثيات من 0 إلى 1 نسبة إلى عرض الصورة وارتفاعها.',strict:true,
@@ -3445,18 +3549,21 @@ function sdOpen(on,ex){SD.open=on;if(ex)SD.ex=ex;const W=document.getElementById
 اللوحة مثل لوحة المحاكي: قاطع رئيسي Q1، وقاطع تحكم F1، وكونتاكتورات K1 وK2 ...، وكتلة نقاط مساعدة تُركّب على الكونتاكتور (اسمها في القائمة Kn A، وأطرافها 53-54 و83-84 مفتوحة NO و61-62 و71-72 مغلقة NC)، وأوفرلودات F تُركّب أسفل الكونتاكتور مباشرة، ومؤقتات KT، وترمنال سفلي X1 مرقم من 1 إلى 36 تصل إليه الضواغط واللمبات والمحرك من الداخل (المجموعات: ${GROUPS.map(g=>g.name+' '+g.from+'-'+g.to2).join('، ')}).${plc?' وجهاز easy له مداخل I1-I8 ومخارج Q1-Q4 بطرفين (1 و2).':''}${DAHLX.has(ex)?' المحرك M1 محرك دالندر بأطراف 1U 1V 1W و2U 2V 2W.':''}
 توصيلات مسبقة لا تُقيّم: Q1.5 مع F1.1، والجهتان العلوية والسفلية لنفس ترمنال X1، وشعب التعادل 33-36 فيما بينها، والأوفرلود المركب على كونتاكتور يتصل بأطراف خرجه من الداخل.
 
-قائمة التوصيلات المعتمدة (كل سطر سلك واحد في المخطط المعتمد)، وما عليه [لمبة] درجة إضافية:
+قائمة التوصيلات في المخطط النموذجي (كل سطر سلك واحد)، وما عليه [لمبة] درجة إضافية. هذا حل نموذجي واحد وليس الحل الوحيد: المتدرب قد يصل إلى العمل نفسه بتوصيل بديل صحيح.
 ${ref.map(w=>`#${w.n}: ${rvDesc(w.a)}  ⟷  ${rvDesc(w.b)}${w.lamp?' [لمبة]':''}`).join('\n')}
 
 طريقة التقييم:
+- المهم أن تعمل اللوحة كما هو مطلوب في التمرين، لا أن تطابق المخطط سلكًا بسلك. فكّر في كل توصيلة بوظيفتها (تغذية الملف، تثبيت ذاتي، إيقاف، إعاقة، حماية بالأوفرلود، تبديل الأطوار للعكس، نجمة/دلتا، لمبة بيان...). إذا أدى المتدرب وظيفتها بطريقة بديلة صحيحة (مسار آخر، أو ترتيب آخر للعناصر على التوالي، أو طرف آخر مكافئ، أو تلامس آخر من النوع نفسه، أو كونتاكتور برقم آخر يقوم بالدور نفسه، أو توصيل صحيح آخر للمحرك) فاعتبرها ok، واكتب البديل في note.
+- missing أو wrong فقط إذا كانت الوظيفة نفسها غير منفذة أو منفذة بشكل خاطئ يغيّر التشغيل أو يسبب خطرًا.
 - لكل توصيلة في القائمة حدد الحالة: ok إذا رأيت أن النقطتين موصولتان كهربائيًا فعلًا، وmissing إذا كانت غير موصولة، وwrong إذا وُصلت إحداهما بمكان خطأ، وunclear إذا لم تستطع التأكد (سلك مخفي أو متشابك، رقم طرف غير مقروء، صورة غير واضحة، أو الجزء خارج الصور).
 - لا تخمّن. عند أي شك اختر unclear. التقييم يعتمد عليك، والمدرب سيراجع النقاط غير الواضحة بنفسه.
 - التوصيلة صحيحة إذا كانت النقطتان على نفس العقدة الكهربائية ولو بترتيب أسلاك مختلف (مثلًا جسر متسلسل بترتيب آخر). ويُقبل أي تلامس مساعد حر من نفس النوع على نفس الكونتاكتور (NO: 13-14 أو 53-54 أو 83-84، وNC: 21-22 أو 61-62 أو 71-72).
 - استخدم أداة zoom بكثرة لتكبير الكونتاكتورات والترمنال وقراءة أرقام الأطراف ومتابعة الأسلاك قبل الحكم.
 - spots: لكل توصيلة unclear أو wrong أو missing ضع دائرة واحدة على الأقل في مكان المشكلة في الصورة (مركز الدائرة x وy من 0 إلى 1، ونصف القطر r بين 0.02 و0.08 من عرض الصورة). للتوصيلة ok اترك spots فارغة.
-- extras: أي سلك موجود في اللوحة وليس في القائمة ولا يكافئ توصيلة منها (سلك زائد أو خاطئ)، مع وصف قصير ودائرة على مكانه. لا تذكر أسلاكًا لست متأكدًا أنها زائدة.
+- extras: أي سلك موجود في اللوحة يفسد التشغيل المطلوب أو يسبب خطرًا (قصر، تجاوز حماية، تشغيل في حالة ممنوعة)، مع وصف قصير ودائرة على مكانه. سلك ينتمي إلى حل بديل صحيح ليس زائدًا. لا تذكر أسلاكًا لست متأكدًا من ضررها.
+- errors: أخطاء المتدرب المؤكدة، كل خطأ في جملة قصيرة بالعربية تذكر مكانه وأثره على التشغيل (مثلًا: لا يوجد تثبيت ذاتي لـ K1، فيقف المحرك عند رفع الإصبع عن S1). اتركها فارغة إذا لم تجد أخطاء مؤكدة.
 - note: ملاحظة قصيرة جدًا بالعربية لكل توصيلة (فارغة إذا كانت ok وواضحة).
-- summary: ملخص بالعربية في سطرين عن جودة التنفيذ وأهم الأخطاء.
+- summary: ملخص بالعربية في سطرين: هل ستعمل اللوحة كما هو مطلوب، وجودة التنفيذ.
 أعد عنصرًا واحدًا لكل رقم من 1 إلى ${ref.length}.`;}
   /* photos: a downscaled copy goes to the model; zoom crops come from the full-resolution photo */
   const loadImg=f=>new Promise((res,rej)=>{const u=URL.createObjectURL(f),i=new Image();i.onload=()=>res({im:i,url:u,name:f.name});i.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'));};i.src=u;});
@@ -3487,7 +3594,7 @@ ${ref.map(w=>`#${w.n}: ${rvDesc(w.a)}  ⟷  ${rvDesc(w.b)}${w.lamp?' [لمبة]'
       if(!final)throw new Error('long');
       const byN={};(final.items||[]).forEach(it=>{if(it&&ref[it.n-1])byN[it.n]=it;});
       const spots=a=>(Array.isArray(a)?a:[]).filter(s=>s&&RV.imgs[(s.img|0)-1]).map(s=>({img:s.img|0,x:Math.min(1,Math.max(0,+s.x||0)),y:Math.min(1,Math.max(0,+s.y||0)),r:Math.min(.15,Math.max(.012,+s.r||.04))}));
-      RV.res={ex,ref,summary:String(final.summary||''),items:ref.map(w=>{const it=byN[w.n]||{status:'unclear',note:'لم يُذكر في الرد',spots:[]};return{...w,st:['ok','missing','wrong','unclear'].includes(it.status)?it.status:'unclear',note:String(it.note||''),spots:spots(it.spots)};}),
+      RV.res={ex,ref,summary:String(final.summary||''),errors:(Array.isArray(final.errors)?final.errors:[]).map(String).filter(Boolean),items:ref.map(w=>{const it=byN[w.n]||{status:'unclear',note:'لم يُذكر في الرد',spots:[]};return{...w,st:['ok','missing','wrong','unclear'].includes(it.status)?it.status:'unclear',note:String(it.note||''),spots:spots(it.spots)};}),
         extras:(final.extras||[]).map((x,i)=>({i:i+1,desc:String(x.desc||''),spots:spots(x.spots)})),t:Date.now()};
       RV.dec={};RV.xdec={};msg('');}
     catch(e){const A=SDK;msg(e.message==='refusal'?'رفض النموذج إكمال الطلب. جرّب صورًا أخرى.':e.message==='long'?'لم يكتمل التقييم (الرد طويل جدًا). قلّل عدد الصور أو قرّبها.':
@@ -3513,7 +3620,7 @@ ${ref.map(w=>`#${w.n}: ${rvDesc(w.a)}  ⟷  ${rvDesc(w.b)}${w.lamp?' [لمبة]'
     h+=`<label style="font-size:.88rem;color:var(--muted)">التمرين المنفذ<select class="gsel" id="rvEx"${RV.busy?' disabled':''}><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===RV.ex?' selected':''}>${i+1}. ${PNAME[k]}</option>`).join('')}</select></label>`;
     h+=`<div class="rvimgs">${RV.imgs.map((P,i)=>`<div class="rvimg"><img src="${P.url}" alt="صورة ${i+1}"><svg viewBox="0 0 1000 ${Math.round(1000*P.ar)}" preserveAspectRatio="none">${circles(i)}</svg><span class="rvno">${i+1}</span>${RV.busy?'':`<button class="rvdel" data-rvdel="${i}" title="حذف الصورة" aria-label="حذف الصورة ${i+1}">✕</button>`}</div>`).join('')}</div>`;
     if(!R)h+=`<div class="sbtns"><button class="btn" id="rvCam"${RV.busy||RV.imgs.length>=4?' disabled':''}>📷 التقاط صورة</button><button class="btn" id="rvPick"${RV.busy||RV.imgs.length>=4?' disabled':''}>🖼 تحميل صور</button></div>
-      <p class="greq">صوّر اللوحة كاملة بوضوح، ثم صورًا قريبة للكونتاكتورات والترمنال X1 (حتى 4 صور). يقرأ Claude التوصيلات ويقارنها بتوصيلات المخطط المعتمد مثل تقييم المحاكي، ويضع دائرة على كل نقطة لم يتأكد منها.</p>`;
+      <p class="greq">صوّر اللوحة كاملة بوضوح، ثم صورًا قريبة للكونتاكتورات والترمنال X1 (حتى 4 صور). يقرأ Claude التوصيلات ويحكم على عمل الدائرة لا على مطابقتها للمخطط، فأي توصيل بديل يؤدي الوظيفة نفسها يُقبل. ويحدد أخطاء المتدرب، ويضع دائرة على كل نقطة لم يتأكد منها.</p>`;
     if(RV.ex&&PLCX.has(RV.ex))h+=`<div class="fld"><label>درجة البرنامج في جهاز easy (يقدّرها المدرب من 10)<input id="rvProg" type="number" min="0" max="10" step="0.5" inputmode="decimal" value="${esc(G?G.pv:RV.pv||'')}"></label></div>`;
     h+=`<details id="rvSet"${aiKey()?'':' open'}><summary style="cursor:pointer;font-size:.88rem;color:var(--muted)">⚙ مفتاح Claude API ${aiKey()?'(محفوظ على هذا الجهاز)':''}</summary><div class="fld" style="margin-top:6px"><label>المفتاح يُحفظ على هذا الجهاز فقط ويُرسل مباشرة إلى Claude<input id="rvKey" type="password" autocomplete="off" placeholder="sk-ant-..." value="${esc(aiKey())}"></label></div></details>`;
     if(!R)h+=`<div class="sbtns"><button class="btn prim" id="rvGo"${RV.busy?' disabled':''}>${RV.busy?'⏳ جارٍ التقييم…':'🤖 قيّم اللوحة'}</button></div>`;
@@ -3521,6 +3628,7 @@ ${ref.map(w=>`#${w.n}: ${rvDesc(w.a)}  ⟷  ${rvDesc(w.b)}${w.lamp?' [لمبة]'
     if(R&&G){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)';
       h+=`<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
       ${R.summary?`<div class="greq">${esc(R.summary)}</div>`:''}
+      ${R.errors&&R.errors.length?`<div class="greq" style="border-inline-start:4px solid var(--warn)"><b>أخطاء المتدرب:</b><ul style="margin:4px 0 0;padding-inline-start:18px">${R.errors.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
       <p class="gmeta">التوصيل: ${G.plc?'10':'20'} × ${G.ok} صحيحة ÷ (${G.tot} محسوبة + ${G.bad} زائدة)${G.plc?` + البرنامج ${G.pg}${G.pv===''?' (لم تُكتب درجته)':''}`:''}${G.lr!=null?` + لمبات ${G.lb}`:''} = ${G.s} من 20. النقاط المتجاوزة (${G.skip}) لا تدخل في الحساب. الدوائر البرتقالية المتقطعة نقاط غير واضحة متجاوزة، غيّر حالتها من القائمة بعد التحقق بنفسك.</p>
       <ul class="glist rvlist">${R.items.map(it=>{const d=dec(it);return `<li id="rvn${it.n}" class="${d==='bad'?'no':''}${it.st==='unclear'?' rvu':''}"><span dir="ltr" style="min-width:2.2em;font-weight:700">#${it.n}</span><span style="flex:1">${esc(rvDesc(it.a))} ⟷ ${esc(rvDesc(it.b))}${it.lamp?' <small>(لمبة)</small>':''}<br><small style="color:var(--muted)">${ST[it.st]}${it.note?' · '+esc(it.note):''}</small></span>${sel(`data-rvn="${it.n}"`,d)}</li>`;}).join('')}
       ${R.extras.map(x=>`<li id="rvx${x.i}" class="${xd(x)==='bad'?'no':''}"><span dir="ltr" style="min-width:2.2em;font-weight:700">+${x.i}</span><span style="flex:1">سلك زائد أو خاطئ: ${esc(x.desc)}</span><select data-rvx="${x.i}" class="rvsel"><option value="bad"${xd(x)==='bad'?' selected':''}>خاطئ</option><option value="skip"${xd(x)==='skip'?' selected':''}>تجاوز</option></select></li>`).join('')}</ul>
@@ -3529,7 +3637,7 @@ ${ref.map(w=>`#${w.n}: ${rvDesc(w.a)}  ⟷  ${rvDesc(w.b)}${w.lamp?' [لمبة]'
     $('rvBody').innerHTML=h;}
   /* report image: photos with the circles, score and the list of problems */
   async function rvReport(){const R=RV.res,G=rvScore(),W=1100,pad=24,ims=RV.imgs.map(P=>({P,h:Math.round(W*P.ar)}));
-    const probs=R.items.filter(i=>dec(i)!=='ok').map(i=>(dec(i)==='skip'?'◯ ':'✖ ')+'#'+i.n+' '+rvDesc(i.a)+' ⟷ '+rvDesc(i.b)).concat(R.extras.filter(x=>xd(x)==='bad').map(x=>'✖ +'+x.i+' '+x.desc));
+    const probs=(R.errors||[]).map(x=>'• '+x).concat(R.items.filter(i=>dec(i)!=='ok').map(i=>(dec(i)==='skip'?'◯ ':'✖ ')+'#'+i.n+' '+rvDesc(i.a)+' ⟷ '+rvDesc(i.b)).concat(R.extras.filter(x=>xd(x)==='bad').map(x=>'✖ +'+x.i+' '+x.desc)));
     const c=document.createElement('canvas'),g=c.getContext('2d');c.width=W+2*pad;c.height=150+ims.reduce((a,b)=>a+b.h+pad,0)+probs.length*30+40;
     g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.direction='rtl';g.textAlign='right';g.fillStyle='#15202b';g.font='700 30px "IBM Plex Sans Arabic",sans-serif';
     g.fillText('تقييم لوحة حقيقية: '+PNAME[R.ex],c.width-pad,50);g.font='500 24px "IBM Plex Sans Arabic",sans-serif';
