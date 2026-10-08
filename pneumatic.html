@@ -459,6 +459,16 @@ svg.addEventListener('pointermove',e=>{if(!drag)return;const p=svgPt(e),dx=p.x-d
   const D=DEF[drag.c.t];drag.c.x=Math.round(Math.max(0,Math.min(W-D.w,drag.x+dx)));drag.c.y=Math.round(Math.max(14,Math.min(H-D.h,drag.y+dy)));if(!raf)raf=requestAnimationFrame(()=>{raf=0;render();});});
 function endDrag(){if(!drag)return;const d=drag;drag=null;if(!d.moved){S.selC=d.c.id;S.sel=null;S.pending=null;}render();}
 svg.addEventListener('pointerup',endDrag);svg.addEventListener('pointercancel',endDrag);
+/* keep the board still while a component or hose is dragged: on touch screens (iPad/iPhone Safari ignores
+   touch-action on SVG parts) the finger would otherwise also scroll or pan the board under the part */
+let bLock=null;
+const bLockOn=()=>{if(drag||tdrag)bLock={x:scrollX,y:scrollY,l:wrap.scrollLeft,t:wrap.scrollTop};};svg.addEventListener('pointerdown',bLockOn,true);svg.addEventListener('pointerdown',bLockOn);
+const bUnlock=()=>{bLock=null;};window.addEventListener('pointerup',bUnlock);window.addEventListener('pointercancel',bUnlock);
+const bStop=e=>{if(bLock&&e.cancelable&&e.touches.length<2)e.preventDefault();};document.addEventListener('touchmove',bStop,{passive:false});
+/* the dragged part is redrawn while it moves, so its touchmoves stop bubbling up to the document: also catch them on the touched element itself */
+document.addEventListener('touchstart',e=>{if(!bLock)return;const t=e.target;t.addEventListener('touchmove',bStop,{passive:false});const off=()=>{t.removeEventListener('touchmove',bStop);t.removeEventListener('touchend',off);t.removeEventListener('touchcancel',off);};t.addEventListener('touchend',off);t.addEventListener('touchcancel',off);},{capture:true,passive:true});
+window.addEventListener('scroll',()=>{if(bLock&&(scrollX!==bLock.x||scrollY!==bLock.y))scrollTo(bLock.x,bLock.y);},{passive:true});
+wrap.addEventListener('scroll',()=>{if(!bLock)return;if(wrap.scrollLeft!==bLock.l)wrap.scrollLeft=bLock.l;if(wrap.scrollTop!==bLock.t)wrap.scrollTop=bLock.t;},{passive:true});
 window.addEventListener('pointerup',()=>{if(S.pressed.size){S.pressed.clear();update();}});
 svg.addEventListener('click',e=>{if(S.justT)return;if(e.target.closest('[data-wp],[data-wadd]'))return;const pt=e.target.closest('[data-port]');if(pt)return portClick(pt.dataset.port);
   const a=e.target.closest('[data-act]');if(a)return act(a.dataset.act);
