@@ -419,6 +419,7 @@ body.fs{padding-bottom:0}
       <div class="menu">
         <button class="mi trainer-only" id="bResults">📋 نتائج المتدربين</button>
         <button class="mi trainer-only" id="bReal">📷 تقييم لوحة حقيقية بالصور</button>
+        <button class="mi trainer-only" id="bPinChg">🔑 تغيير الرقم السري للمدرب</button>
         <button class="mi trainer-only" id="bClrGrades">🧹 مسح الدرجات من هذا الجهاز</button>
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <a class="mi" id="bPneu2" style="text-decoration:none;color:inherit"><svg class="cylIc" viewBox="0 0 34 20" width="24" height="14" aria-hidden="true" style="direction:ltr;flex:none;vertical-align:middle" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="3" width="20" height="12"/><line x1="8" y1="3" x2="8" y2="15" stroke-width="3"/><line x1="8" y1="9" x2="32.5" y2="9" stroke-width="2.2"/><polyline points="9.5,9 11,4.5 13,13.5 15,4.5 17,13.5 19,4.5 20.5,9" stroke-width="1.1"/><line x1="4.5" y1="15" x2="4.5" y2="19"/></svg> ورشة التحكم الهوائي</a>
@@ -648,6 +649,17 @@ body.fs{padding-bottom:0}
       <button class="btn" id="sClose">إغلاق</button>
     </div>
     <p id="sendMsg" style="margin:8px 0 0;font-size:.88rem;min-height:1.2em"></p>
+  </div>
+</div>
+<div class="modal" id="pinChgModal" role="dialog" aria-modal="true" aria-labelledby="pcT">
+  <div class="box" style="max-width:360px">
+    <h2 id="pcT" style="margin:0 0 6px;font-size:1.1rem">🔑 تغيير الرقم السري للمدرب</h2>
+    <p style="margin:0 0 10px;color:var(--muted);font-size:.86rem">يُحفظ الرقم الجديد على خادم Google، فيتغير لكل الأجهزة. الأجهزة المفتوحة بوضع المدرب تخرج منه، ويلزمها الرقم الجديد.</p>
+    <div class="fld"><label>الرقم السري الحالي<input id="pcOld" type="password" inputmode="numeric" autocomplete="off"></label>
+      <label>الرقم السري الجديد (4 خانات على الأقل)<input id="pcNew" type="password" inputmode="numeric" autocomplete="new-password"></label>
+      <label>تأكيد الرقم الجديد<input id="pcNew2" type="password" inputmode="numeric" autocomplete="new-password"></label></div>
+    <p id="pcMsg" style="margin:8px 0 0;color:var(--warn);font-size:.88rem;min-height:1.2em"></p>
+    <div class="grp" style="justify-content:center;margin-top:8px"><button class="btn" id="pcOk" style="font-weight:700">حفظ الرقم الجديد</button><button class="btn" id="pcCancel">إغلاق</button></div>
   </div>
 </div>
 <div class="modal" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinT">
@@ -2506,14 +2518,33 @@ $('sShare').onclick=async()=>{const st=sendReady();if(!st)return;okMsg('جارٍ
 $('sWa').onclick=async()=>{const st=sendReady();if(!st)return;const {text}=await buildMsg(st);openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب. اختر المدرب وأرسل.');};
 $('sImg').onclick=async()=>{const st=sendReady();if(!st)return;okMsg('جارٍ تجهيز الصورة…');const b=await withGraded(()=>panelBlob(st.n,st.id));if(!b){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='تعذّر إنشاء الصورة على هذا الجهاز. أرسل الرسالة بدونها، فالكود يكفي لفتح التجربة.';return;}const r=await saveBlob(b,'تجربة-'+st.id+'.png');if(r==='saved')okMsg('نُزّلت الصورة. أرفقها في رسالتك للمدرب.');else if(r==='declined')okMsg('');else{const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='التنزيل غير متاح هنا. أرسل الرسالة، فالكود يكفي لفتح التجربة.';}};
 // trainer mode (examples + opening trainee work)
-const PINH='ba1777b5',hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};
+/* trainer PIN: the Google server keeps it, so a change applies to every device. Offline, the last PIN verified on this device is used
+   (the built-in default only until the server reports that the PIN was changed) */
+const PIN0='ba1777b5',lsG=k=>{try{return localStorage.getItem(k);}catch(_){return null;}},lsS=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v);}catch(_){}};
+let PINH=lsG('wsPinH')||PIN0;const hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};
 function setTrainer(on){document.body.classList.toggle('trainer',on);try{on?localStorage.setItem('wsTrainer',PINH):localStorage.removeItem('wsTrainer');}catch(_){}
   $('bTrainer').textContent=on?'🔓 الخروج من وضع المدرب':'🔒 وضع المدرب';measureTop();}
 try{if(localStorage.getItem('wsTrainer')===PINH)setTrainer(true);}catch(_){}
 const pinM=$('pinModal');
 $('bTrainer').onclick=()=>{if(document.body.classList.contains('trainer')){setTrainer(false);say('خرجت من وضع المدرب');renderTop();return;}$('pinIn').value='';$('pinMsg').textContent='';pinM.classList.add('open');setTimeout(()=>$('pinIn').focus(),50);};
-const tryPin=()=>{if(hpin($('pinIn').value.trim())===PINH){pinM.classList.remove('open');setTrainer(true);say('وضع المدرب مفعّل');renderTop();}else{$('pinMsg').textContent='الرمز غير صحيح';$('pinIn').select();}};
+const pinIn=h=>{PINH=h;lsS('wsPinH',h);$('pinMsg').textContent='';pinM.classList.remove('open');setTrainer(true);say('وضع المدرب مفعّل');renderTop();};
+const tryPin=async()=>{const p=$('pinIn').value.trim(),h=hpin(p),bad=t=>{$('pinMsg').textContent=t||'الرمز غير صحيح';$('pinIn').select();};if(!p)return bad();
+  if(CLOUD_ON){$('pinMsg').textContent='جارٍ التحقق…';try{const j=await cloud({action:'pinCheck',pin:p});if(j.v!=null)lsS('wsPinV',String(j.v));return pinIn(h);}
+    catch(e){if(e.message==='pin')return bad();if(e.message==='busy')return bad('محاولات خاطئة كثيرة. انتظر 10 دقائق.');$('pinMsg').textContent='';}}
+  if(h===PINH||(h===PIN0&&!(+lsG('wsPinV')>0)))return pinIn(h);bad();};
 $('pinOk').onclick=tryPin;$('pinIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryPin();});
+const pcM=$('pinChgModal');
+$('bPinChg').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;['pcOld','pcNew','pcNew2'].forEach(i=>$(i).value='');$('pcMsg').textContent='';pcM.classList.add('open');setTimeout(()=>$('pcOld').focus(),50);};
+$('pcCancel').onclick=()=>pcM.classList.remove('open');pcM.addEventListener('click',e=>{if(e.target===pcM)pcM.classList.remove('open');});
+$('pcOk').onclick=async()=>{const o=$('pcOld').value.trim(),n=$('pcNew').value.trim(),m=t=>{$('pcMsg').style.color='var(--warn)';$('pcMsg').textContent=t;};
+  if(!o)return m('اكتب الرقم السري الحالي.');if(!/^\S{4,32}$/.test(n))return m('الرقم الجديد 4 خانات على الأقل وبدون مسافات.');if(n!==$('pcNew2').value.trim())return m('تأكيد الرقم الجديد لا يطابقه.');
+  if(!CLOUD_ON)return m('التغيير يتم من موقعك المنشور فقط (alfifitop2015-hub.github.io/motor-lab).');
+  const b=$('pcOk');b.disabled=true;m('جارٍ الحفظ…');
+  try{const j=await cloud({action:'pinSet',old:o,pin:n});lsS('wsPinV',String(j.v));PINH=hpin(n);lsS('wsPinH',PINH);setTrainer(true);
+    $('pcMsg').style.color='var(--ok)';$('pcMsg').textContent='✔ تغيّر الرقم السري لكل الأجهزة.';say('تغيّر الرقم السري للمدرب');}
+  catch(e){m(e.message==='pin'?'الرقم السري الحالي غير صحيح.':e.message==='busy'?'محاولات خاطئة كثيرة. انتظر 10 دقائق.':e.message==='net'?'لا يوجد اتصال بالإنترنت.':
+    'خادم Google لم يُحدَّث بعد لحفظ الرقم السري: أضف الكود من الملف apps-script-pin.gs إلى Apps Script ثم انشر نسخة جديدة.');}
+  finally{b.disabled=false;}};
 $('pinCancel').onclick=()=>pinM.classList.remove('open');pinM.addEventListener('click',e=>{if(e.target===pinM)pinM.classList.remove('open');});
 $('bOpenStu').onclick=()=>{$('codeOut').value='';$('codeIn').value='';$('loadErr').textContent='';modal.classList.add('open');setTimeout(()=>$('codeIn').focus(),50);};
 /* ---------- grading out of 20 (locked after the first evaluation) ---------- */
@@ -2797,6 +2828,8 @@ const CLOUD_URL='https://script.google.com/macros/s/AKfycbzW0GhYTzvq_t332RqtqbKZ
     ov.style.display='block';document.body.style.overflow='hidden';const d=document.querySelector('.more');if(d)d.open=false;};
   ['bFault','bFault2'].forEach(i=>{$(i).href='#';$(i).onclick=openFt;});}
 const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
+if(CLOUD_ON)setTimeout(()=>cloud({action:'pinGet'}).then(j=>{if(j.v==null)return;const v=String(j.v),old=lsG('wsPinV');lsS('wsPinV',v);
+  if(old!=null&&old!==v){PINH=PIN0;lsS('wsPinH',null);if(document.body.classList.contains('trainer')){setTrainer(false);say('تغيّر الرقم السري للمدرب، فأُغلق وضع المدرب. ادخل بالرقم الجديد.');renderTop();}}}).catch(()=>{}),1500);
 async function cloudImgs(st){try{const b=await withGraded(()=>panelBlob(st.n,st.id));if(!b)return{};
   const url=URL.createObjectURL(b);const im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url;});URL.revokeObjectURL(url);
   const jpg=(w,q)=>{const c=document.createElement('canvas');c.width=w;c.height=Math.round(im.height*w/im.width);const g=c.getContext('2d');g.fillStyle='#0c2753';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q).split(',')[1];};
