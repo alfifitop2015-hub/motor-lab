@@ -570,6 +570,16 @@ body.fs{padding-bottom:0}
     <div id="gBody"></div>
   </div>
 </div>
+<div class="modal" id="ulkModal" role="dialog" aria-modal="true" aria-labelledby="ulkT">
+  <div class="box" style="max-width:380px;text-align:center">
+    <h2 id="ulkT" style="margin:0 0 6px;font-size:1.1rem">🔓 فك قفل الدرجة</h2>
+    <p id="ulkFor" style="margin:0 0 10px;color:var(--muted);font-size:.88rem"></p>
+    <div id="ulkCode" dir="ltr" style="font:700 1.9rem/1.2 monospace;letter-spacing:.2em;padding:10px;border:1px dashed var(--line);border-radius:10px;user-select:all"></div>
+    <p style="margin:8px 0 10px;color:var(--muted);font-size:.84rem">أرسل الرابط للمتدرب، فيُفك القفل عند فتحه. أو يكتب المتدرب الرمز في نافذة 🎯 تقييم. الرمز صالح لهذا التقييم فقط.</p>
+    <p id="ulkMsg" style="margin:0 0 6px;color:var(--ok);font-size:.88rem;min-height:1.2em"></p>
+    <div class="grp" style="justify-content:center"><button class="btn" id="ulkWa" style="font-weight:700">📤 إرسال عبر واتساب</button><button class="btn" id="ulkCopy">نسخ</button><button class="btn" id="ulkClose">إغلاق</button></div>
+  </div>
+</div>
 <div id="xsTabs" class="xstabs" hidden><button id="xrTab" class="xstab" title="أشعة: إظهار الأجزاء الداخلية للقطع على اللوحة نفسها">🩻<span>أشعة</span></button><button id="xsTab" class="xstab" title="مقطع عرضي يوضح ما يحدث داخل القطع ومسار التيار">🔬<span>مقطع عرضي</span></button></div>
 <aside id="xsPanel" class="xsp l" hidden aria-label="المقطع العرضي ومسار التيار">
   <div class="xsh"><b>🔬 داخل القطع أثناء التشغيل</b>
@@ -2623,7 +2633,10 @@ function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classLis
   let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+A[k].s+'/20 🔒':''}</option>`).join('')}</select></label>`;
   if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يقارن المحاكي كل توصيلة في لوحتك بتوصيلات المخطط المعتمد للتمرين، وتُحسب الدرجة بنسبة التوصيلات الصحيحة، سواء اشتغلت الدائرة أم لا. التوصيلات الخاطئة أو الزائدة تُنقص الدرجة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
   else if(G){h+=`<div class="glock">🔒 قُيّم هذا التمرين من قبل، والدرجة مقفلة ولا تتغير حتى لو عدّلت التوصيل. التوصيل الذي قُيّم هو الذي يُرسل للمدرب.</div>`+gResHTML(G)+
-    `<div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button>${tr?'<button class="btn trainer-only" id="gRedo" style="grid-column:1/-1">🔓 مسح الدرجة وإعادة التقييم (للمدرب)</button>':''}</div>`;}
+    `<div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button>${tr?'<button class="btn trainer-only" id="gRedo" style="grid-column:1/-1">🔓 مسح الدرجة وإعادة التقييم (للمدرب)</button>':''}</div>
+    <div class="fld" style="margin-top:10px"><label>رمز فك القفل من المدرب<input id="gUlkIn" dir="ltr" autocomplete="off" maxlength="12" style="text-transform:uppercase;letter-spacing:.15em"></label></div>
+    <p id="gUlkMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
+    <div class="sbtns"><button class="btn" id="gUlk">🔓 فك القفل بالرمز</button></div>`;}
   else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}${PLCX.has(ex)?'<br><b>التقييم:</b> التوصيل 10 درجات، والبرنامج 10 درجات (يُختبر تشغيله آليًا).':''}</div>
     <div class="glock">⚠️ التقييم يُحسب <b>مرة واحدة</b> لهذا التمرين. بعده تُقفل الدرجة ولا تتغير حتى لو عدّلت التوصيل، فراجع توصيلاتك قبل البدء. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
@@ -2641,7 +2654,13 @@ $('gBody').addEventListener('click',e=>{const id=e.target.id;
     const r=gradeNow(GV.ex);A[GV.ex]={ex:GV.ex,...r,t:Date.now(),n,id:sid,w:serial()};A._cur=GV.ex;gSave(A);
     say('قُيّمت التجربة: '+r.s+' من 20 (الدرجة مقفلة)');renderTop();gRender();gUpdBtn();}
   else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
-  else if(id==='gRedo'){const A=gAll();delete A[GV.ex];if(A._cur===GV.ex)delete A._cur;gSave(A);gRender();gUpdBtn();}});
+  else if(id==='gRedo'){const A=gAll();delete A[GV.ex];if(A._cur===GV.ex)delete A._cur;gSave(A);gRender();gUpdBtn();}
+  else if(id==='gUlk'){const ex=ulkApply($('gUlkIn').value);if(ex){GV.ex=ex;gRender();}else $('gUlkMsg').textContent='الرمز غير صحيح لهذا التمرين أو لهذا الجهاز.';}});
+// remote unlock: the trainer derives a code from a submitted grade (trainee id + exercise + grading time); the trainee's device recomputes it to match
+const ulkCode=(id,ex,t)=>{let h=5381,k=7;for(const ch of 'wsu:'+id+'|'+ex+'|'+t){h=((h*33)^ch.charCodeAt(0))>>>0;k=(k*31+ch.charCodeAt(0))>>>0;}return ((h^(k<<7))>>>0).toString(36).toUpperCase().padStart(6,'0').slice(-6);};
+function ulkApply(raw){const c=String(raw||'').toUpperCase().replace(/[^0-9A-Z]/g,'');if(c.length!==6)return null;const A=gAll();
+  const ex=Object.keys(A).find(k=>k!=='_cur'&&A[k]&&ulkCode(A[k].id,k,A[k].t)===c);if(!ex)return null;
+  delete A[ex];if(A._cur===ex)delete A._cur;gSave(A);gUpdBtn();say('فُك قفل '+PNAME[ex]+'. يمكنك إعادة التقييم الآن.');renderTop();return ex;}
 $('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex='';gUpdBtn();say('مُسحت الدرجات المقفلة من هذا الجهاز');renderTop();};
 function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20':'🎯 تقييم';}
 gUpdBtn();
@@ -2688,7 +2707,7 @@ function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+
     const th=r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="صورة لوحة ${esc(r.n)}" loading="lazy">`:'<div class="rth none">بلا صورة</div>';
     return `<div class="rrow"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))} · ${fmtT(r.t)}</div></div>
       <div class="rg">${sv}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
-      <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}).join(''):
+      <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button>${PNAME[r.ex]&&r.code?`<button data-rulk="${esc(r.uid)}">🔓 فك القفل</button>`:''}<button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}).join(''):
     `<p class="greq">${RS.rows.length?'لا نتائج تطابق البحث.':'لا توجد تجارب مرسلة حاليًا.'}</p>`;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة سر المدرب.';$('rKey').focus();return;}
   try{localStorage.setItem('wsKey',key);}catch(_){}
@@ -2711,6 +2730,7 @@ async function showImg(r){IMG={b:null,name:'تجربة-'+r.id+'.jpg'};$('imgT').
 $('imgClose').onclick=()=>imM.classList.remove('open');imM.addEventListener('click',e=>{if(e.target===imM)imM.classList.remove('open');});
 $('imgDl').onclick=async()=>{if(!IMG.b){$('imgMsg').textContent='انتظر اكتمال تحميل الصورة.';return;}const r=await saveBlob(IMG.b,IMG.name);$('imgMsg').textContent=r==='saved'?'نُزّلت الصورة.':r==='declined'?'':'التنزيل غير متاح هنا.';};
 $('rList').addEventListener('click',async e=>{const im=e.target.closest('[data-rimg]');if(im){const r=RS.rows.find(x=>x.uid===im.dataset.rimg);if(r)showImg(r);return;}
+  const u=e.target.closest('[data-rulk]');if(u){const r=RS.rows.find(x=>x.uid===u.dataset.rulk);if(r)ulkOpen(r);return;}
   const o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
   if(d)return arm(d,()=>rDelete([d.dataset.rdel]));
   if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);if(!r)return;if(!r.code)return showImg(r);try{const ob=await decodeCode(r.code);snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);rM.classList.remove('open');update();}catch(_){$('rMsg').textContent='تعذّر فتح هذه التجربة.';}}});
@@ -2720,6 +2740,18 @@ $('rCsv').onclick=async()=>{if(!RS.rows.length){$('rMsg').textContent='حمّل 
   const res=await saveBlob(new Blob([csv],{type:'text/csv'}),'نتائج-المتدربين.csv');$('rMsg').textContent=res==='saved'?'نُزّل الملف، ويفتح في Excel.':res==='declined'?'':'التنزيل غير متاح هنا.';};
 window.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(imM.classList.contains('open'))imM.classList.remove('open');else if(rM.classList.contains('open'))rM.classList.remove('open');});
 
+const uM=$('ulkModal');let ULK={text:'',code:''};
+async function ulkOpen(r){let g=null;try{const ob=await decodeCode(r.code);g=ob.st&&ob.st.g;}catch(_){}
+  if(!g||!g.t||!PNAME[g.ex]){$('rMsg').textContent='هذه التجربة أُرسلت بدون درجة مقفلة، فلا يوجد ما يُفك.';return;}
+  const c=ulkCode(g.id,g.ex,g.t),link=isHosted()?location.href.split('#')[0]+'#u='+c:'';
+  ULK={code:c,text:`فك قفل الدرجة\nالمتدرب: ${r.n}\nالتمرين: ${exName(g.ex)}\n`+(link?`\nافتح الرابط من جهازك ليُفك القفل:\n${link}\n`:'')+`\nأو اكتب هذا الرمز في نافذة 🎯 تقييم ← رمز فك القفل:\n${c}`};
+  $('ulkFor').textContent=r.n+' · '+exName(g.ex)+' · الدرجة '+g.s+'/20';$('ulkCode').textContent=c;$('ulkMsg').textContent='';uM.classList.add('open');}
+$('ulkWa').onclick=()=>openLink('https://wa.me/?text='+encodeURIComponent(ULK.text));
+$('ulkCopy').onclick=async()=>{try{await navigator.clipboard.writeText(ULK.text);$('ulkMsg').textContent='نُسخت الرسالة.';}catch(_){$('ulkMsg').textContent='انسخ الرمز يدويًا.';}};
+$('ulkClose').onclick=()=>uM.classList.remove('open');uM.addEventListener('click',e=>{if(e.target===uM)uM.classList.remove('open');});
+// unlock a grade from the trainer's link (#u=...)
+{const m=/^#u=([0-9A-Za-z]+)/.exec(location.hash);if(m){history.replaceState(null,'',location.pathname+location.search);
+  if(!ulkApply(m[1]))say('رابط فك القفل لا يطابق أي درجة مقفلة على هذا الجهاز. افتحه من الجهاز والمتصفح الذي قُيّمت عليه التجربة.');}}
 // open trainee work from a link (#t=...)
 if(/^#t=/.test(location.hash))decodeCode(location.hash).then(o=>{snap();applyObj(o);S.stu=o.st||null;stuCheck();say(o.st?'فُتحت تجربة المتدرب '+o.st.n:'فُتحت تجربة من رابط');update();}).catch(()=>{});
 
