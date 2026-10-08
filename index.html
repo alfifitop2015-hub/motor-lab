@@ -859,8 +859,8 @@ function voice(k){if(VOX[k])return VOX[k];const o1=AC.createOscillator(),o2=AC.c
   return VOX[k]={o1,o2,g1,g2};}
 function updateSound(){if(!AC)return;const t=AC.currentTime;
   [['M1',S.motor,1],['M2',S.motor2,1.15]].forEach(([k,m,fk])=>{const v=voice(k);let hum=0,whine=0,wf=60;
-    const SND=SNDM[k];if(SND&&m.state==='run'){hum=slowM(m)?.035:.05;whine=slowM(m)?.025:.04;wf=(slowM(m)?260:430)*fk;}
-    else if(SND&&m.state==='fault'&&m.hum){hum=.09;whine=0;}
+    const SND=SNDM[k];if(SND&&m.state==='run'){hum=slowM(m)?.14:.2;whine=slowM(m)?.08:.12;wf=(slowM(m)?260:430)*fk;}
+    else if(SND&&m.state==='fault'&&m.hum){hum=.3;whine=0;}
     v.g1.gain.setTargetAtTime(hum,t,.15);v.g2.gain.setTargetAtTime(whine,t,.5);v.o2.frequency.setTargetAtTime(wf,t,.9);});}
 let QUIET=false;
 function clickSnd(on){if(QUIET||!anySnd()||!AC)return;try{const n=AC.sampleRate*.035,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);
@@ -3156,8 +3156,8 @@ function apAudio(sp){if(!AP.sound){if(AP.au){const t=AC.currentTime;['nG','hG','
     h.type='sawtooth';h.frequency.value=100;hf.type='lowpass';hf.frequency.value=450;w.type='triangle';bp.type='square';bp.frequency.value=880;[nG,hG,wG,bG].forEach(g=>g.gain.value=0);
     src.connect(f);f.connect(nG);nG.connect(AC.destination);h.connect(hf);hf.connect(hG);hG.connect(AC.destination);w.connect(wG);wG.connect(AC.destination);bp.connect(bG);bG.connect(AC.destination);src.start();h.start();w.start();bp.start();AP.au={f,nG,hG,wG,bG,w};}
   const a=AP.au,t=AC.currentTime,s=Math.abs(sp),cfg={conv:['bandpass',1400,.08],gate:['lowpass',300,.14],crane:['bandpass',700,.08],pump:['lowpass',650,.22],fan:['bandpass',900,.3],mix:['lowpass',350,.2]}[AP.app];
-  a.f.type=cfg[0];a.f.frequency.setTargetAtTime(cfg[1]*(.6+.4*s),t,.2);let ng=cfg[2]*s;if(AP.app==='conv')ng*=.6+.4*Math.abs(Math.sin(AP.t*12*s));
-  a.nG.gain.setTargetAtTime(ng,t,.15);a.hG.gain.setTargetAtTime(s?.04:0,t,.15);a.w.frequency.setTargetAtTime(180+320*s,t,.6);a.wG.gain.setTargetAtTime(s*.025,t,.4);
+  a.f.type=cfg[0];a.f.frequency.setTargetAtTime(cfg[1]*(.6+.4*s),t,.2);let ng=cfg[2]*s*2;if(AP.app==='conv')ng*=.6+.4*Math.abs(Math.sin(AP.t*12*s));
+  a.nG.gain.setTargetAtTime(ng,t,.15);a.hG.gain.setTargetAtTime(s?.12:0,t,.15);a.w.frequency.setTargetAtTime(180+320*s,t,.6);a.wG.gain.setTargetAtTime(s*.07,t,.4);
   const beep=(AP.app==='gate'||AP.app==='crane')&&s>0.01&&!AP.atEnd&&(AP.t%0.8<0.12);a.bG.gain.setTargetAtTime(beep?.035:0,t,.01);}
 function apLoop(ts){if(!AP.open)return;const dt=Math.min(.05,AP.last?(ts-AP.last)/1000:0);AP.last=ts;AP.t+=dt;
   const mo=apMotor();const sp=mo.sp;
