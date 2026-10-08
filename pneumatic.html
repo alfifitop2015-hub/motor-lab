@@ -593,7 +593,7 @@ $('rList').addEventListener('click',async e=>{const im=e.target.closest('[data-r
 $('imgClose').onclick=()=>$('imgModal').classList.remove('open');
 
 /* ---------- trainer mode (same PIN as the electrical workshop) ---------- */
-const PINH='ba1777b5',hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};
+const PINH='ba1ab459',hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};
 function setTrainer(on){document.body.classList.toggle('trainer',on);try{on?localStorage.setItem('wsTrainer',PINH):localStorage.removeItem('wsTrainer');}catch(_){}$('bTrainer').textContent=on?'🔓 الخروج من وضع المدرب':'🔒 وضع المدرب';}
 try{if(localStorage.getItem('wsTrainer')===PINH)setTrainer(true);}catch(_){}
 const pM=$('pinModal');$('bTrainer').onclick=()=>{if(document.body.classList.contains('trainer')){setTrainer(false);return;}$('pinIn').value='';$('pinMsg').textContent='';pM.classList.add('open');setTimeout(()=>$('pinIn').focus(),50);};
