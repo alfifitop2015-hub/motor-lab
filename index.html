@@ -691,7 +691,8 @@ body.fs{padding-bottom:0}
 (function(){
 let W=1000,H=1640,DY=0;const PH=['L1','L2','L3'],EMPTY=new Set();
 const IN_DELTA=5.0,IN_STAR=1.7,I_FAULT=7.5;
-const COLORS=[['#7a4a22','بني: الطور L1'],['#1b1b1b','أسود: الطور L2'],['#8e949a','رمادي: الطور L3'],['#4aa3df','أزرق فاتح: التعادل N'],['#e0342f','أحمر: دوائر التحكم'],['#ff8a1f','برتقالي: تغذية خارجية وإعاقة']];
+const COLORS=[['#7a4a22','بني: الطور L1'],['#1b1b1b','أسود: الطور L2'],['#8e949a','رمادي: الطور L3'],['#4aa3df','أزرق فاتح: التعادل N'],['#e0342f','أحمر: دوائر التحكم'],['#ff8a1f','برتقالي: تغذية خارجية وإعاقة'],['#9acd32','أخضر/أصفر: الأرضي PE'],['#1c3fb8','أزرق غامق'],['#f3f3ef','أبيض'],['#2aa84a','أخضر'],['#f2c200','أصفر']];
+const PEW='#9acd32'; // green/yellow earth wire: drawn yellow with green stripes
 const OKC=new Set(COLORS.map(c=>c[0]).concat(['#c9a44a']));
 const normC=c=>OKC.has(c)?c:({'#1f6fe5':'#4aa3df','#9aa0a6':'#8e949a'}[c]||'#e0342f');
 const svg=document.getElementById('svg');
@@ -2002,7 +2003,7 @@ function render(){
   NODEL=true;let s=bg();devices.forEach(d=>{const sel=['k','timer','ol','olh','aux'].includes(d.type);const body=D3T.includes(d.type)?`<g filter="url(#ds)">${ext3(d)}${drawDev(d)}${GLT.includes(d.type)?gloss3(d):''}</g>`:drawDev(d);s+=sel?`<g data-dev="${d.id}" style="cursor:ew-resize${S.selDev&&(S.selDev===d.id||(S.devs.find(q=>q.id===d.id)||{}).host===S.selDev)?';touch-action:none':''}"><title>${d.id}: اضغط لتحديده، واسحبه يمينًا أو يسارًا لتغيير المسافة</title>${body}</g>`:body;if(sel&&S.selDev===d.id)s+=`<rect x="${d.x-5}" y="${d.y-5}" width="${d.w+10}" height="${d.h+10}" rx="10" fill="none" stroke="#ffb300" stroke-width="4" stroke-dasharray="10 6" pointer-events="none"/>`;});s+=xrDevs();s+=`<g transform="translate(0 ${DY})">${drawField()}</g>`;
   const PATHS=routeAll();
   const isFxW=w=>(T[w.a]&&T[w.a].zone==='z')||(T[w.b]&&T[w.b].zone==='z');
-  const wSVG=w=>{const d=PATHS[w.id];if(!d)return '';return `<g class="wire${S.sel===w.id?' sel':''}"><path d="${d}" class="wsd"/><path d="${d}" class="wsh" stroke="${shade(w.c,-.5)}"/><path d="${d}" class="wcore" stroke="${w.c}"/><path d="${d}" class="wlt" stroke="${shade(w.c,.42)}"/><path d="${d}" class="whl"/>${isLive(w.a)?`<path d="${d}" class="flowb"/><path d="${d}" class="flow"/>`:''}<path d="${d}" class="whit" data-wire="${w.id}"/></g>`;};
+  const wSVG=w=>{const d=PATHS[w.id];if(!d)return '';return `<g class="wire${S.sel===w.id?' sel':''}"><path d="${d}" class="wsd"/><path d="${d}" class="wsh" stroke="${shade(w.c,-.5)}"/><path d="${d}" class="wcore" stroke="${w.c===PEW?'#f2c200':w.c}"/>${w.c===PEW?`<path d="${d}" class="wcore" stroke="#2aa84a" stroke-dasharray="9 7" stroke-linecap="butt"/>`:''}<path d="${d}" class="wlt" stroke="${shade(w.c===PEW?'#f2c200':w.c,.42)}"/><path d="${d}" class="whl"/>${isLive(w.a)?`<path d="${d}" class="flowb"/><path d="${d}" class="flow"/>`:''}<path d="${d}" class="whit" data-wire="${w.id}"/></g>`;};
   s+=xsHL(PATHS);
   S.wires.forEach(w=>{if(!isFxW(w))s+=wSVG(w);});
   NODEL=false;devices.forEach(d=>{if(S.selDev===d.id&&['k','timer','ol','olh','aux'].includes(d.type))s+=delBtn(d);});
@@ -2281,7 +2282,7 @@ document.getElementById('bClear').onclick=()=>{if(!S.wires.length)return;snap();
 const dsw=document.getElementById('dSw');
 function pickColor(c){curColor=c;document.querySelectorAll('[data-col]').forEach(x=>x.classList.toggle('cur',x.dataset.col===c));
   if(S.sel!=null){const w=S.wires.find(w=>w.id===S.sel);if(w){snap();w.c=c;render();}}}
-COLORS.forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.style.background=c;b.title=n;b.setAttribute('aria-label','سلك '+n);
+COLORS.forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.style.background=c===PEW?'repeating-linear-gradient(135deg,#2aa84a 0 6px,#f2c200 6px 12px)':c;b.title=n;b.setAttribute('aria-label','سلك '+n);
   b.onclick=()=>pickColor(c);box.appendChild(b);});});
 const wrap=document.getElementById('wrap');
 const topEl=document.querySelector('.top');
