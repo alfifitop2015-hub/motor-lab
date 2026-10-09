@@ -3752,7 +3752,7 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
   upd();}
 measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());addEventListener("load",()=>{measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());});
 })();
-/* ---------- الفيديو التعريفي: مشاهد متحركة بتعليق صوتي من نطق الجهاز ---------- */
+/* ---------- الفيديو التعريفي: مشاهد متحركة بتعليق صوتي مسجّل بصوت رجالي، ونطق الجهاز عند تعذّر التسجيل ---------- */
 (()=>{
 const g=id=>document.getElementById(id);
 const vM=g('vidModal'),art=g('vArt'),cap=g('vCap'),tag=g('vTag'),prog=g('vProg'),endV=g('vEnd'),note=g('vNote'),bPlay=g('vPlay'),bMute=g('vMute');
@@ -3824,9 +3824,10 @@ const SC=[
  svg:SV([['⏰','في أي وقت',.4],['📱','من أي جهاز',1.4],['🛡️','آمن تمامًا',2.6],['🔧','بلا تلف للمعدات',4]].map(([e,l,d],k)=>{const x=95+k*150;return `<g class="v-pop" ${D(d)}><circle cx="${x}" cy="130" r="54" fill="#13233a" stroke="#4cd07d" stroke-width="3"/><text x="${x}" y="146" font-size="44" text-anchor="middle">${e}</text>${T(x,218,16,l,'font-weight="700"')}</g>`;}).join('')
  +`<g class="v-fade" ${D(5.4)}>${T(320,285,15,'فكرة وتنفيذ م. جابر الفيفي بواسطة Claude','fill-opacity=".75"')}</g>`)}
 ];
-/* الصوت: أفضل صوت عربي متاح في الجهاز */
-/* الصوت: يُفضَّل صوت عربي رجالي، ويمكن اختيار غيره من القائمة */
-const SS=window.speechSynthesis,vSel=g('vVoice');let voice=null,arV=[];
+/* تسجيل المشهد رقم n في audio/n.mp3 */
+SC.forEach((s,k)=>s.audio=`audio/${k+1}.mp3`);
+/* الصوت البديل عند تعذّر التسجيل: يُفضَّل صوت عربي رجالي، ويمكن اختيار غيره من القائمة */
+const SS=window.speechSynthesis,vSel=g('vVoice');let voice=null,arV=[],fb=false;
 const MALE=/naayf|hamed|shakir|hamdan|taim|fahed|moaz|\bali\b|abdullah|rami|omar|jamal|laith|hedi|saleh|ismael|bassel|maged|majed|tarik|x-ar[de]-|\bmale\b/i,
   FEM=/hoda|zariyah|salma|fatima|sana|amany|laila|layla|mouna|noura|rana|iman|reem|amina|mona|x-ar[cz]-|female/i,
   isM=v=>MALE.test(v.name+' '+v.voiceURI),
@@ -3836,18 +3837,20 @@ const pick=()=>{if(!SS)return;arV=SS.getVoices().filter(v=>/^ar/i.test(v.lang)).
   let want=null;try{want=localStorage.getItem('vidVoice');}catch(_){}
   voice=(want&&arV.find(v=>v.voiceURI===want))||arV[0]||null;
   vSel.innerHTML=arV.map(v=>`<option value="${v.voiceURI.replace(/"/g,'&quot;')}">${vName(v).replace(/</g,'&lt;')}</option>`).join('');
-  vSel.hidden=arV.length<2;if(voice)vSel.value=voice.voiceURI;};
+  vSel.hidden=arV.length<2||!fb;if(voice)vSel.value=voice.voiceURI;};
 if(SS){pick();SS.onvoiceschanged=pick;}
-const voiceNote=()=>{if(!SS)return;
+const voiceNote=()=>{if(!SS||!fb)return;
   if(!arV.length){if(SS.getVoices().length)note.textContent='لا يوجد صوت عربي مثبّت على هذا الجهاز؛ تابع الشرح المكتوب أسفل المشهد.';return;}
   note.textContent=voice&&isM(voice)?'':'إن كان الصوت نسائيًا '+(arV.length>1?'فاختر صوتًا آخر من قائمة الصوت أعلى الفيديو، أو ':'ف')+'ثبّت صوتًا عربيًا رجاليًا: في أندرويد من الإعدادات ← تحويل النص إلى كلام ← محرك Google ← العربية، وفي آيفون من الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات ← العربية ← ماجد.';};
 vSel.onchange=()=>{voice=arV.find(v=>v.voiceURI===vSel.value)||voice;try{localStorage.setItem('vidVoice',vSel.value);}catch(_){}voiceNote();if(playing)show(cur);};
 let ac=null;
 const chime=()=>{if(muted)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();const t=ac.currentTime;
   [660,880].forEach((f,k)=>{const o=ac.createOscillator(),gn=ac.createGain(),s=t+k*.12;o.frequency.value=f;gn.gain.setValueAtTime(0,s);gn.gain.linearRampToValueAtTime(.05,s+.02);gn.gain.exponentialRampToValueAtTime(.0001,s+.5);o.connect(gn).connect(ac.destination);o.start(s);o.stop(s+.55);});}catch(_){}};
+/* عنصر صوت واحد يُعاد استخدامه: يبقى مسموحًا بعد أول ضغطة في متصفحات الجوال */
+const au=new Audio();au.preload='auto';
 let cur=0,playing=false,muted=false,tok=0,tms=[];
 const est=s=>Math.max(s.min*1000,s.say.replace(/[\u064B-\u0652]/g,'').length*80);
-const clr=()=>{tok++;tms.forEach(clearTimeout);tms=[];if(SS)SS.cancel();};
+const clr=()=>{tok++;tms.forEach(clearTimeout);tms=[];if(SS)SS.cancel();au.onended=au.onerror=au.onloadedmetadata=null;au.pause();};
 prog.innerHTML=SC.map((s,k)=>`<button class="vseg" data-k="${k}" title="${s.t}" aria-label="المشهد ${k+1}: ${s.t}"><b><i></i></b></button>`).join('');
 const segs=[...prog.querySelectorAll('i')];
 const setPlay=p=>{playing=p;bPlay.textContent=p?'⏸':'▶';bPlay.title=p?'إيقاف مؤقت':'تشغيل';bPlay.setAttribute('aria-label',bPlay.title);vM.classList.toggle('vpaused',!p);};
@@ -3860,15 +3863,22 @@ function show(n){
   let done=false;
   const next=()=>{if(my!==tok||done)return;done=true;segs[n].style.transition='width .3s';segs[n].style.width='100%';
     tms.push(setTimeout(()=>{if(my!==tok)return;n+1<SC.length?show(n+1):finish();},Math.max(0,s.min*1000-(Date.now()-t0))+900));};
-  if(SS&&!muted){const u=new SpeechSynthesisUtterance(s.say);u.lang=voice?voice.lang:'ar-SA';if(voice)u.voice=voice;u.rate=.95;
+  const tts=()=>{if(!fb){fb=true;if(SS){vSel.hidden=arV.length<2;voiceNote();}else note.textContent='هذا المتصفح لا يدعم النطق الصوتي؛ تابع الشرح المكتوب أسفل المشهد.';}
+    if(SS&&!muted){const u=new SpeechSynthesisUtterance(s.say);u.lang=voice?voice.lang:'ar-SA';if(voice)u.voice=voice;u.rate=.95;
     u.onend=next;u.onerror=()=>{if(my===tok)tms.push(setTimeout(next,Math.max(0,ms-(Date.now()-t0))));};SS.speak(u);tms.push(setTimeout(next,ms*1.7+3000));}
-  else tms.push(setTimeout(next,ms));
+    else tms.push(setTimeout(next,ms));};
+  if(muted)tms.push(setTimeout(next,ms));
+  else if(s.audio){au.src=s.audio;
+    au.onloadedmetadata=()=>{if(my===tok&&isFinite(au.duration)){const left=Math.max(ms,au.duration*1000)-(Date.now()-t0);segs[n].style.transition=`width ${Math.max(0,left)}ms linear`;}};
+    au.onended=next;au.onerror=()=>{if(my===tok){au.onerror=null;tts();}};
+    au.play().catch(e=>{if(my===tok&&au.onerror&&e.name!=='AbortError'){au.onerror=null;tts();}});}
+  else tts();
 }
 function finish(){clr();setPlay(false);vM.classList.remove('vpaused');segs.forEach(e=>{e.style.transition='none';e.style.width='100%';});endV.hidden=false;}
 function pause(){clr();setPlay(false);segs.forEach(e=>{const w=getComputedStyle(e).width;e.style.transition='none';e.style.width=w;});}
 function open(){
   vM.classList.add('open');try{localStorage.setItem('vidSeen','1');}catch(_){}g('bVid').classList.remove('vnew');
-  note.textContent=SS?'':'هذا المتصفح لا يدعم النطق الصوتي؛ تابع الشرح المكتوب أسفل المشهد.';
+  note.textContent='';
   show(0);
   if(SS)setTimeout(()=>{if(vM.classList.contains('open')){if(!arV.length)pick();voiceNote();}},1500);
   g('vClose').focus({preventScroll:true});
