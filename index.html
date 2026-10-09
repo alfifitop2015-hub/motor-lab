@@ -62,7 +62,7 @@ select{border:1px solid var(--line);background:var(--panel);border-radius:8px;pa
 .top .power{flex:none;height:38px;padding:0 10px;font-size:.9rem}
 .more{position:relative;flex:none}
 .more summary{list-style:none}.more summary::-webkit-details-marker{display:none}
-.menu{position:absolute;inset-inline-end:0;top:44px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.25);padding:6px;display:flex;flex-direction:column;gap:2px;z-index:60;min-width:200px}
+.menu{position:absolute;inset-inline-end:0;top:44px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.25);padding:6px;display:flex;flex-direction:column;gap:2px;z-index:60;min-width:200px;overflow-y:auto;overscroll-behavior:contain}
 .mi{border:0;background:none;text-align:start;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:.95rem}
 .mi:hover,.mi:focus-visible{background:var(--chip);outline:none}
 .mi.danger{color:var(--warn)}
@@ -2368,6 +2368,13 @@ function exitFS(){document.body.classList.remove('fs');
   setTimeout(fitW,250);}
 document.querySelectorAll('.menu .mi').forEach(b=>b.addEventListener('click',()=>{const d=b.closest('details');if(d)d.open=false;}));
 document.addEventListener('click',e=>{const d=document.querySelector('.more');if(d&&d.open&&!d.contains(e.target))d.open=false;});
+/* the ⋯ menu is placed in the viewport when it opens, so it never runs off the screen wherever the button wrapped to */
+{const d=document.querySelector('.more'),m=d&&d.querySelector('.menu');
+  const place=()=>{if(!d.open)return;const s=d.querySelector('summary').getBoundingClientRect(),g=8;
+    Object.assign(m.style,{position:'fixed',insetInlineEnd:'auto',maxHeight:(innerHeight-2*g)+'px'});const r=m.getBoundingClientRect();
+    m.style.left=Math.max(g,Math.min(innerWidth-r.width-g,s.right-r.width))+'px';
+    m.style.top=(s.bottom+6+r.height<=innerHeight-g?s.bottom+6:Math.max(g,innerHeight-r.height-g))+'px';};
+  if(m){d.addEventListener('toggle',place);addEventListener('resize',place);}}
 document.getElementById('bFS').onclick=()=>document.body.classList.contains('fs')?exitFS():enterFS();
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{if(!fsApi()&&document.body.classList.contains('fs'))exitFS();}));
 let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{measureTop();measureDock();if(fitMode==='w')fitW();else if(fitMode==='all')fitAll();},150);});
