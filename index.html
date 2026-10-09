@@ -126,27 +126,26 @@ body.trainer .exb{border-bottom:1px solid rgba(255,255,255,.18)}
 .exb select{flex:1;min-width:0;width:0;height:38px;border:1px solid #8fb0e0;border-radius:9px;background:#fff;color:#15202b;padding:0 8px;font-size:.92rem}
 .exb select:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
 .wcb{background:#1f6fe5}
-.wcbar{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,120px) + 8px);width:min(560px,calc(100vw - 16px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:8px 10px 10px;direction:rtl}
+.wcbar{position:fixed;z-index:46;left:8px;top:8px;width:min(360px,calc(100vw - 16px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:4px 8px 6px;direction:rtl}
 .wcbar[hidden]{display:none}
-.wch{display:flex;align-items:center;gap:8px}.wch b{flex:1;font-size:.95rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wcn{font-size:.82rem;color:var(--muted);white-space:nowrap}
-.wcprog{height:6px;border-radius:3px;background:var(--chip);margin:6px 0;overflow:hidden}.wcprog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
-.wccap{margin:0 0 8px;font-size:.9rem;line-height:1.55;min-height:3.1em}
+.wch{display:flex;align-items:center;gap:6px;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}.wch b{flex:1;font-size:.82rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wcgrip{flex:none;color:var(--muted);display:flex}
+.wcn{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.wci{flex:none;width:28px;height:28px;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--ink);display:grid;place-items:center;padding:0;cursor:pointer;font-size:.85rem;line-height:1}
+.wcprog{height:4px;border-radius:2px;background:var(--chip);margin:4px 0;overflow:hidden}.wcprog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.wccap{margin:0 0 5px;font-size:.78rem;line-height:1.45}
 .wccap .wcg{display:inline-block;font-size:.78rem;font-weight:700;border-radius:6px;padding:0 6px;margin-inline-end:6px;background:var(--chip)}
 .wccap .wcw{font-weight:700;direction:ltr;unicode-bidi:isolate}
 .wccap .wcsw{display:inline-block;width:22px;height:8px;border-radius:4px;vertical-align:middle;border:1px solid rgba(0,0,0,.35);margin-inline-start:4px}
-.wcctl{display:flex;gap:6px;flex-wrap:wrap}
-.wcctl button{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--chip);color:var(--ink);font-weight:700;padding:0 12px;cursor:pointer}
-.wcctl button.prim{background:var(--accent);border-color:var(--accent);color:#fff;flex:1}
+.wcctl{display:flex;gap:4px}
+.wcctl button{height:30px;min-width:34px;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--ink);font-weight:700;font-size:.85rem;padding:0 8px;cursor:pointer}.wcctl button:disabled{opacity:.45}
+.wcctl button.prim{background:var(--accent);border-color:var(--accent);color:#fff;min-width:46px}
 .wcctl button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
 body.wclip .top,body.wclip .wtop,body.wclip #svg,body.wclip .dock{pointer-events:none}
 body.wclip .dock{opacity:.55}
 .wchl{fill:none;stroke:#ffd000;stroke-width:16;stroke-linecap:round;stroke-linejoin:round;opacity:.5;pointer-events:none;animation:wcPulse 1s ease-in-out infinite alternate}
 .wcht{fill:none;stroke:#ff3b30;stroke-width:4;pointer-events:none;animation:wcPulse 1s ease-in-out infinite alternate}
-.wcbar.mini{left:8px;transform:none;width:min(340px,calc(100vw - 16px));padding:6px 8px 8px}
-.wcbar.mini .wccap{font-size:.82rem;min-height:0;margin-bottom:6px}.wcbar.mini #wcSpd{display:none}
-.wcbar.mini .wcctl button{height:32px;padding:0 9px}
-.wcleg{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:.76rem;margin:0 0 6px;color:var(--muted)}.wcleg:empty{display:none}
+.wcbar.mini #wcPlay,.wcbar.mini #wcSpd{display:none}
+.wcleg{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:.68rem;margin:0 0 4px;color:var(--muted)}.wcleg:empty{display:none}
 .wcleg span{display:inline-flex;align-items:center;gap:4px}.wcleg i{display:inline-block;width:18px;height:7px;border-radius:4px;border:1px solid rgba(0,0,0,.3)}
 .wcbar.mini .wcleg{display:none}#wcClr.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .wccap .wcst{font-weight:700;color:var(--ok)}.wccap .wcst.no{color:var(--warn)}
@@ -542,11 +541,11 @@ body.fs{padding-bottom:0}
 </div>
 
 <div id="wcBar" class="wcbar" hidden role="region" aria-label="مقطع التوصيل خطوة بخطوة">
-  <div class="wch"><b id="wcT">🎬 مقطع التوصيل</b><span class="wcn" id="wcN"></span><button class="ib" id="wcMin" title="تصغير المقطع والتوصيل على لوحتك" aria-label="تصغير المقطع">🗕</button><button class="ib" id="wcX" title="إغلاق المقطع والعودة إلى توصيلاتك" aria-label="إغلاق المقطع">✕</button></div>
+  <div class="wch" id="wcDrag" title="اسحب من هنا لتحريك النافذة"><span class="wcgrip"><svg viewBox="0 0 10 16" width="10" height="16" aria-hidden="true"><g fill="currentColor"><circle cx="2.5" cy="3" r="1.4"/><circle cx="7.5" cy="3" r="1.4"/><circle cx="2.5" cy="8" r="1.4"/><circle cx="7.5" cy="8" r="1.4"/><circle cx="2.5" cy="13" r="1.4"/><circle cx="7.5" cy="13" r="1.4"/></g></svg></span><b id="wcT">🎬 مقطع التوصيل</b><span class="wcn" id="wcN"></span><button class="wci" id="wcMin" title="تصغير المقطع والتوصيل على لوحتك" aria-label="تصغير المقطع"></button><button class="wci" id="wcX" title="إغلاق المقطع" aria-label="إغلاق المقطع">✕</button></div>
   <div class="wcprog"><i id="wcPg"></i></div>
   <div class="wcleg" id="wcLeg"></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
-  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة">› السابق</button><button class="prim" id="wcPlay">⏸ إيقاف مؤقت</button><button id="wcNext" title="الخطوة التالية">التالي ‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcClr" title="ألوان الشرح: لون لكل جزء من الدائرة">🎨</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
+  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcClr" title="ألوان الشرح: لون لكل جزء من الدائرة">🎨</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
@@ -2871,6 +2870,7 @@ const wcCol=c=>{if(c===BRS)return 'قنطرة';const f=COLORS.find(x=>x[0]===c);
    the shared control feed, the indicator lamps and the neutral; the step's real wire colour is still named in the caption */
 let WCCLR=lsG('wcClr')!=='0';
 const WCK={pw:['⚡ دائرة القوى','#7a4a22'],feed:['🔌 تغذية التحكم المشتركة','#e0342f'],in:['⬅ مداخل PLC','#ff8a1f'],out:['➡ مخارج PLC','#00a6a6'],lamp:['💡 لمبات البيان','#c9a000'],N:['التعادل N','#4aa3df']};
+const WCKS={pw:'القوى',feed:'تغذية مشتركة',in:'مداخل PLC',out:'مخارج PLC',lamp:'لمبات',N:'N'};
 const WCKC=['#1c3fb8','#2aa84a','#d6249f','#6d28d9','#111111','#ff5c8a','#8e949a'];
 function wcClass(steps){const gT=to=>{const L=[];GROUPS.filter(g=>g.to===to).forEach(g=>{for(let n=g.from;n<=g.to2;n++)L.push('X1.'+n);});return new Set(L);};
   const LAMP=gT('H'),NEU=gT('N'),coils=S.devs.filter(d=>d.type==='k'||d.type==='timer').map(d=>d.id).sort((a,b)=>(a.startsWith('KT')-b.startsWith('KT'))||parseInt(a.replace(/\D/g,''))-parseInt(b.replace(/\D/g,'')));
@@ -2901,7 +2901,7 @@ function wcClass(steps){const gT=to=>{const L=[];GROUPS.filter(g=>g.to===to).for
   const order=['pw','feed','in','out',...coils,'lamp','N'];return {order,cat};}
 function wcPaint(c){c.steps.forEach(w=>{w.c=WCCLR?w.cx:w.c0;});
   const seen=c.order.filter(k=>c.steps.some(w=>w.k===k));
-  $('wcLeg').innerHTML=WCCLR?seen.map(k=>{const d=WCK[k]||c.cat[k];return `<span><i style="background:${d[1]}"></i>${esc(d[0])}</span>`;}).join(''):'';
+  $('wcLeg').innerHTML=WCCLR?seen.map(k=>{const d=WCK[k]||c.cat[k];return `<span title="${esc(d[0])}"><i style="background:${d[1]}"></i>${esc(WCKS[k]||k)}</span>`;}).join(''):'';
   $('wcClr').classList.toggle('on',WCCLR);$('wcClr').title=WCCLR?'إظهار ألوان الأسلاك الحقيقية':'ألوان الشرح: لون لكل جزء من الدائرة';}
 /* full view: the board shows the exercise's reference wiring step by step and is read-only.
    mini view: the trainee's own board comes back and stays editable; a small window keeps the current step,
@@ -2943,7 +2943,7 @@ function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c);
   let h,t;
   if(i===0){h=`القطع على اللوحة: <span class="wcw">${esc(S.devs.filter(x=>!x.host||x.type==='ol').map(x=>x.id).join('، ')||'—')}</span>. القاطع الرئيسي مفصول أثناء التوصيل. يُوصَّل ${n} سلكًا: دائرة القوى أولًا ثم دائرة التحكم.`;
     t='مقطع توصيل تمرين '+PNAME[c.ex]+'. افصل القاطع الرئيسي قبل التوصيل. نُوَصِّل دائرة القوى أَوَّلًا، ثم دائرة التحكم.';}
-  else if(!w){h=`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} ${c.mini?'اضغط 🎯 تقييم عندما تنتهي.':'اضغط ✕ للعودة إلى توصيلاتك أو 🗕 لتوصّل والمقطع مصغّر، ثم اضغط 🎯 تقييم.'}`;
+  else if(!w){h=`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} ${c.mini?'اضغط 🎯 تقييم عندما تنتهي.':'اضغط ✕ للعودة إلى توصيلاتك، أو صغّر المقطع لتوصّل وهو أمامك، ثم اضغط 🎯 تقييم.'}`;
     t='اكتمل التوصيل. '+(c.mini?'اضغط تقييم عندما تنتهي.':'أغلق المقطع ووصّل التمرين بنفسك، ثم اضغط تقييم.');}
   else{const p=w.k==='pw',first=i===1||c.steps[i-2].k!==w.k,col=wcCol(w.c0);
     h=`<span class="wcg" style="border-inline-start:5px solid ${w.cx}">${esc(w.kl)}</span>${col?'سلك '+esc(col)+(WCCLR?' في اللوحة الحقيقية':''):''}<span class="wcsw" style="background:${w.c0}"></span><br>`+
@@ -2951,13 +2951,14 @@ function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c);
     if(c.mini){const miss=[...new Set([w.a,w.b].filter(k=>!T[k]).map(k=>k.split('.')[0]))];
       h+=miss.length?`<br><span class="wcst no">⚠ أضف ${esc(miss.join(' و '))} إلى لوحتك أولًا من الأدوات.</span>`:wcHas(w)?'<br><span class="wcst">✔ وصّلت هذا السلك</span>':'';}
     t=(first?(i===1?'':'الآن ')+w.kl.replace(/^[^\u0600-\u06FF]+/,'')+'. ':'')+'من '+termDesc(w.a)+'، إلى '+termDesc(w.b)+'.';}
-  $('wcCap').innerHTML=h;wcBtns();if(WCSND)speak(t);
+  $('wcCap').innerHTML=h;wcBtns();wcPlace();if(WCSND)speak(t);
   requestAnimationFrame(()=>{const e=svg.querySelector(c.mini?'.wcht':'.wchl');if(!e)return;const r=e.getBoundingClientRect(),
-      top=Math.max(...['.top','.wtop'].map(q=>{const x=document.querySelector(q);return x&&x.offsetParent?x.getBoundingClientRect().bottom:0;})),bot=$('wcBar').getBoundingClientRect().top;
-    if(r.top<top||r.bottom>bot||r.left<0||r.right>innerWidth)e.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});});}
-function wcBtns(){const c=S.clip,n=c.steps.length;$('wcPlay').textContent=c.i>n?'↻ إعادة المقطع':c.mini?'⛶ مشاهدة الخطوة':c.play?'⏸ إيقاف مؤقت':'▶ تشغيل';
+      top=Math.max(...['.top','.wtop'].map(q=>{const x=document.querySelector(q);return x&&x.offsetParent?x.getBoundingClientRect().bottom:0;})),
+      bot=document.querySelector('.dock').getBoundingClientRect().top,B=$('wcBar').getBoundingClientRect(),hid=!(r.bottom<B.top||r.top>B.bottom||r.right<B.left||r.left>B.right);
+    if(hid||r.top<top||r.bottom>bot||r.left<0||r.right>innerWidth)e.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});});}
+function wcBtns(){const c=S.clip,n=c.steps.length,pl=$('wcPlay'),[pi,pt]=c.i>n?['↻','إعادة المقطع']:c.play?['⏸','إيقاف مؤقت']:['▶','تشغيل'];pl.textContent=pi;pl.title=pl.ariaLabel=pt;
   $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>n;$('wcSnd').textContent=WCSND?'🔊':'🔇';
-  $('wcMin').textContent=c.mini?'⛶':'🗕';$('wcMin').title=$('wcMin').ariaLabel=c.mini?'تكبير المقطع':'تصغير المقطع والتوصيل على لوحتك';}
+  $('wcMin').innerHTML=c.mini?'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>':'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 12.5h10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';$('wcMin').title=$('wcMin').ariaLabel=c.mini?'تكبير المقطع':'تصغير المقطع والتوصيل على لوحتك';}
 /* next step after a pause, or when the spoken step has finished, whichever is later */
 function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play||c.mini)return;if(c.i>c.steps.length){c.play=false;wcBtns();return;}
   const t0=Date.now(),min=(c.i===0?4000:2400)/c.spd;
@@ -2965,6 +2966,16 @@ function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play||c.mini)return;if(
     if(el>=min&&(!talk||el>=min+15000)){c.i++;wcShow();wcPlan();}else c.t=setTimeout(tick,200);};
   c.t=setTimeout(tick,200);}
 function wcGo(d){const c=S.clip;clearTimeout(c.adv);c.adv=null;c.i=Math.max(c.mini?1:0,Math.min(c.steps.length+1,c.i+d));wcShow();wcPlan();}
+/* the clip window starts at the top and can be dragged by its title row; its place is remembered */
+let WCP={};try{WCP=JSON.parse(lsG('wcPos')||'{}')||{};}catch(_){}
+function wcPlace(){const b=$('wcBar');if(b.hidden)return;const r=b.getBoundingClientRect();
+  b.style.left=Math.max(4,Math.min(innerWidth-r.width-4,WCP.x==null?(innerWidth-r.width)/2:WCP.x))+'px';
+  b.style.top=Math.max(4,Math.min(innerHeight-r.height-4,WCP.y==null?8:WCP.y))+'px';}
+{const h=$('wcDrag');let d=null;
+  h.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;const r=$('wcBar').getBoundingClientRect();d={dx:e.clientX-r.left,dy:e.clientY-r.top};try{h.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+  h.addEventListener('pointermove',e=>{if(!d)return;WCP={x:e.clientX-d.dx,y:e.clientY-d.dy};wcPlace();});
+  const up=()=>{if(!d)return;d=null;const r=$('wcBar').getBoundingClientRect();WCP={x:Math.round(r.left),y:Math.round(r.top)};lsS('wcPos',JSON.stringify(WCP));};
+  h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);addEventListener('resize',wcPlace);}
 $('exClip').onclick=wcStart;$('wcX').onclick=wcStop;$('wcMin').onclick=wcMini;$('wcPrev').onclick=()=>wcGo(-1);$('wcNext').onclick=()=>wcGo(1);
 $('wcPlay').onclick=()=>{const c=S.clip;if(c.i>c.steps.length){if(c.mini)wcMini();c.i=0;c.play=true;wcShow();wcPlan();return;}
   if(c.mini){wcMini();return;}
