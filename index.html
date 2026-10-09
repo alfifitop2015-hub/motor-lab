@@ -148,11 +148,7 @@ body.wclip .dock{opacity:.55}
 .wcleg{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:.68rem;margin:0 0 4px;color:var(--muted)}.wcleg:empty{display:none}
 .wcleg span{display:inline-flex;align-items:center;gap:4px}.wcleg i{display:inline-block;width:18px;height:7px;border-radius:4px;border:1px solid rgba(0,0,0,.3)}
 .wcbar.mini .wcleg{display:none}
-.wcdash{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:flex-end;margin:0 0 6px;padding:6px 8px;border-radius:9px;background:#1d2733;color:#e8eef4;font-size:.68rem}
-.wcdash[hidden]{display:none}.wcdash .g{display:flex;gap:7px;align-items:flex-end}
-.wcdash>svg{display:block;width:100%;height:auto;pointer-events:none}
-.wcdash .k{padding:2px 6px;border-radius:6px;background:#3a4450;font-weight:700}.wcdash .k.on{background:#2aa84a;color:#fff}
-.wcdash .m{flex-basis:100%;font-weight:700}
+.wcbar.demo .wcleg{display:none}
 .wccap .wcres{display:block;margin-top:4px;font-weight:700;color:var(--accent)}
 .wcbt{fill:none;stroke:#ffd000;stroke-width:6;pointer-events:none;animation:wcPulse .5s ease-in-out infinite alternate}
 .wccap .wcst{font-weight:700;color:var(--ok)}.wccap .wcst.no{color:var(--warn)}
@@ -554,7 +550,6 @@ body.fs{padding-bottom:0}
   <div class="wcprog"><i id="wcPg"></i></div>
   <div class="wcleg" id="wcLeg"></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
-  <div class="wcdash" id="wcDash" hidden aria-label="الضواغط ولمبات البيان أثناء تجربة التشغيل"></div>
   <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
@@ -2933,14 +2928,13 @@ function wcPaint(c){c.steps.forEach(w=>{w.c=w.cx;});
    its two terminals pulse on the trainee's board, and the clip moves on by itself once that wire is connected */
 const wcHas=w=>S.wires.some(x=>(x.a===w.a&&x.b===w.b)||(x.a===w.b&&x.b===w.a));
 const wcCur=c=>c.i&&c.i<=c.steps.length?c.steps[c.i-1]:null;
-/* during the operating demo the clip window shows the same push buttons and lamps drawn on the installation board (cut out of boardV), with the contactors and motor state */
-function wcDash(){const c=S.clip,e=$('wcDash');if(!e)return;const on=!!c&&!c.mini&&c.i>c.steps.length&&c.i<wcEnd(c);e.hidden=!on;if(!on)return;
-  const fb=boardV({x:0,y:0,w:FBW,h:FBH}),G=6,P=[[8,138,64,134],...(c.ex==='p15'?[[70,136,112,120]]:[]),[180,138,64,182],[6,24,238,112]];let X=0;
-  const parts=P.map(([vx,vy,vw,vh])=>{const r=`<svg x="${X}" y="0" width="${vw}" height="${vh}" viewBox="${vx} ${vy} ${vw} ${vh}">${fb}</svg>`;X+=vw+G;return r;}).join(''),H=Math.max(...P.map(q=>q[3]));
-  const K=c.order.filter(k=>/^KT?\d+$/.test(k)).map(k=>`<span class="k${S.coils[k]?' on':''}">${k}</span>`).join('');
-  const ms=m=>m.state==='run'?'run:'+(m.mode||'ok')+':'+m.dir:m.state,two=TWO_M.has(c.ex);
-  e.innerHTML=`<svg viewBox="0 0 ${X-G} ${H}" role="img" aria-label="الضواغط ولمبات البيان في لوحة التركيبات">${parts}</svg><span class="g">${K}</span><span class="m">⚙ ${esc(mTxt(ms(S.motor),S.motor.why,two?'M1':'المحرك'))}${two?' · '+esc(mTxt(ms(S.motor2),S.motor2.why,'M2')):''}</span>`;}
-function wcHL(P){const c=S.clip;try{wcDash();}catch(_){}if(!c)return '';
+/* during the operating demo the buttons and lamps are watched on the board itself: it is scrolled to sit in view below the clip window */
+function wcSeeFB(){const g=document.getElementById('fbG'),B=$('wcBar');if(!g||B.hidden)return;const r=g.getBoundingClientRect(),b=B.getBoundingClientRect(),
+    top=Math.max(b.bottom,...['.top','.wtop'].map(q=>{const x=document.querySelector(q);return x&&x.offsetParent?x.getBoundingClientRect().bottom:0;}))+8,
+    bot=document.querySelector('.dock').getBoundingClientRect().top-8,dy=r.top-top-Math.max(0,(bot-top-r.height)/2),dx=r.left<0||r.right>innerWidth?r.left-Math.max(0,(innerWidth-r.width)/2):0;
+  if(dx)wrap.scrollBy({left:dx,behavior:'smooth'});
+  if(Math.abs(dy)>4){if(document.body.classList.contains('fs'))wrap.scrollBy({top:dy,behavior:'smooth'});else window.scrollBy({top:dy,behavior:'smooth'});}}
+function wcHL(P){const c=S.clip;if(!c)return '';
   if(c.mini){const w=wcCur(c);if(!w)return '';const A=T[w.a],B=T[w.b],done=wcHas(w);
     if(done&&!c.adv)c.adv=setTimeout(()=>{c.adv=null;if(S.clip===c&&c.mini&&wcCur(c)===w&&wcHas(w))wcGo(1);},900);
     return (A&&B&&!done?`<path d="M${A.x} ${A.y}L${B.x} ${B.y}" class="wcgh" stroke="${w.c===BRS?'#c9a44a':w.c}"/>`:'')+[A,B].map(t=>t?`<circle cx="${t.x}" cy="${t.y}" r="15" class="wcht${done?' ok':''}"/>`:'').join('');}
@@ -3036,10 +3030,10 @@ function wcDemoReset(c){c.tok=(c.tok||0)+1;c.btn=null;const P=PPROG[c.ex];
   S.plc.prog=P?JSON.parse(JSON.stringify(P.prog)):[];S.plc.tm=P?JSON.parse(JSON.stringify(P.tm||{})):{};Object.assign(S.plc,{run:true,q:[false,false,false,false,false],m:{},ts:{},prev:{},inp:{},flow:[]});}
 /* run one demo action on the live panel, then call back with the result */
 function wcDemoAct(c,a,cb){const tok=c.tok,ok=()=>S.clip===c&&c.tok===tok,later=(f,ms)=>setTimeout(()=>{if(ok())f();},ms),sig=()=>JSON.stringify(S.coils)+S.motor.state+S.motor.mode;
-  if(a==='on'){wcDemoReset(c);c.tok=tok;update();later(cb,900);}
+  if(a==='on'){wcDemoReset(c);c.tok=tok;update();requestAnimationFrame(wcSeeFB);later(cb,900);}
   else if(/^S\d$/.test(a)){const el=svg.querySelector(`[data-press="${a}"]`);
     if(el){const r=el.getBoundingClientRect(),m=svg.getScreenCTM();if(m){const p=new DOMPoint(r.x+r.width/2,r.y+r.height/2).matrixTransform(m.inverse());c.btn={x:p.x,y:p.y};}
-      el.scrollIntoView({block:'center',inline:'nearest',behavior:'smooth'});}
+      wcSeeFB();}
     later(()=>{S.pressed.add(a);update();later(()=>{S.pressed.delete(a);update();later(()=>{c.btn=null;update();cb();},900);},1100);},500);}
   else if(a==='w'||a==='m'){const s0=sig(),t0=Date.now(),lim=a==='w'?Math.max(4,...ofType('timer').map(t=>+S.tm[t].delay||0),...Object.values(S.plc.tm||{}).map(x=>+(x&&x.t)||0))*1000+4000:20000;
     const poll=()=>{if(!ok())return;if((a==='w'?sig()!==s0:S.motor.state!=='run')||Date.now()-t0>lim)later(cb,900);else later(poll,200);};later(poll,300);}
@@ -3067,7 +3061,7 @@ function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c),ND=wcND(c),E=
     if(c.mini){const miss=[...new Set([w.a,w.b].filter(k=>!T[k]).map(k=>k.split('.')[0]))];
       h+=miss.length?`<br><span class="wcst no">⚠ أضف ${esc(miss.join(' و '))} إلى لوحتك أولًا من الأدوات.</span>`:wcHas(w)?'<br><span class="wcst">✔ وصّلت هذا السلك</span>':'';}
     t=(first?(i===1?'':'الآن ')+w.kl.replace(/^[^\u0600-\u06FF]+/,'')+'. ':'')+'من '+termDesc(w.a)+'، إلى '+termDesc(w.b)+'.';}
-  $('wcCap').innerHTML=h;wcBtns();wcPlace();if(WCSND)speak(t);
+  $('wcBar').classList.toggle('demo',dm>=0);$('wcCap').innerHTML=h;wcBtns();wcPlace();if(WCSND)speak(t);
   if(dm>=0){c.tok=(c.tok||0)+1;wcDemoAct(c,DEMO[c.ex][dm][0],()=>{c.busy=false;c.dk=dm;wcBtns();const r=wcObs(c),e=$('wcRes');if(e)e.textContent='النتيجة: '+r;wcPlace();if(WCSND)speak('النتيجة: '+r.replace(/ · /g,'، ')+'.',true);});}
   requestAnimationFrame(()=>{const e=svg.querySelector(c.mini?'.wcht':'.wchl');if(!e)return;const r=e.getBoundingClientRect(),
       top=Math.max(...['.top','.wtop'].map(q=>{const x=document.querySelector(q);return x&&x.offsetParent?x.getBoundingClientRect().bottom:0;})),
