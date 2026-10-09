@@ -1558,7 +1558,7 @@ function spkFail(r){say('تعذّر تشغيل الصوت على هذا الجه
 function speak(t,queue){if(!SPK.ok){spkFail('nosupport');return false;}if(!t)return false;
   try{const parts=[];spkText(t).replace(/([.،:!؟])\s+/g,'$1\n').split('\n').forEach(p=>{p=p.trim();if(!p)return;if(parts.length&&(parts[parts.length-1]+' '+p).length<170)parts[parts.length-1]+=' '+p;else parts.push(p);});
     const go=()=>{const v=spkVoice(),id=++SPQ;let started=false;
-      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.9;u.pitch=1;u.onstart=()=>{started=true;};
+      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{started=true;};
         if(i===0)u.onerror=e=>{if(e&&e.error!=='interrupted'&&e.error!=='canceled'&&id===SPQ)spkFail(e.error);};speechSynthesis.speak(u);});
       try{speechSynthesis.resume();}catch(_){}
       setTimeout(()=>{if(id===SPQ&&!started&&!speechSynthesis.speaking)spkFail('nostart');},3000);};
