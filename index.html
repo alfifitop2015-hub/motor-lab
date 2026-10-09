@@ -150,10 +150,7 @@ body.wclip .dock{opacity:.55}
 .wcbar.mini .wcleg{display:none}
 .wcdash{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:flex-end;margin:0 0 6px;padding:6px 8px;border-radius:9px;background:#1d2733;color:#e8eef4;font-size:.68rem}
 .wcdash[hidden]{display:none}.wcdash .g{display:flex;gap:7px;align-items:flex-end}
-.wcdash .u{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:30px}
-.wcdash .l{width:18px;height:18px;border-radius:50%;background:#3a4450;border:2px solid #77828d}
-.wcdash .b{width:20px;height:20px;border-radius:50%;border:3px solid #c9ced3;transition:transform .1s}
-.wcdash .b.p{transform:scale(.78);box-shadow:0 0 0 4px #ffd000}
+.wcdash>svg{display:block;width:100%;height:auto;pointer-events:none}
 .wcdash .k{padding:2px 6px;border-radius:6px;background:#3a4450;font-weight:700}.wcdash .k.on{background:#2aa84a;color:#fff}
 .wcdash .m{flex-basis:100%;font-weight:700}
 .wccap .wcres{display:block;margin-top:4px;font-weight:700;color:var(--accent)}
@@ -2928,17 +2925,13 @@ function wcPaint(c){c.steps.forEach(w=>{w.c=w.cx;});
    its two terminals pulse on the trainee's board, and the clip moves on by itself once that wire is connected */
 const wcHas=w=>S.wires.some(x=>(x.a===w.a&&x.b===w.b)||(x.a===w.b&&x.b===w.a));
 const wcCur=c=>c.i&&c.i<=c.steps.length?c.steps[c.i-1]:null;
-/* during the operating demo the clip window shows the exercise's buttons, lamps, contactors and motor, so they are seen without scrolling */
-const WCBT=[['S0','#d8322b','إيقاف'],['S1','#2aa84a','تشغيل 1'],['S2','#2aa84a','تشغيل 2'],['S3','#d8322b','إيقاف 2'],['S4','#2aa84a','تشغيل 3']],
-  WCLP=[['H1','#39d353','تشغيل 1'],['H2','#39d353','تشغيل 2'],['H3','#ff3b30','إيقاف'],['H4','#ffb000','عطل']];
+/* during the operating demo the clip window shows the same push buttons and lamps drawn on the installation board (cut out of boardV), with the contactors and motor state */
 function wcDash(){const c=S.clip,e=$('wcDash');if(!e)return;const on=!!c&&!c.mini&&c.i>c.steps.length&&c.i<wcEnd(c);e.hidden=!on;if(!on)return;
-  const used=new Set(['S0',...(DEMO[c.ex]||[]).map(x=>x[0]).filter(a=>/^S\d$/.test(a))]),ends=new Set(c.steps.flatMap(w=>[w.a,w.b]));
-  const B=WCBT.filter(([id])=>used.has(id)).map(([id,col,cap])=>`<span class="u"><i class="b${S.pressed.has(id)?' p':''}" style="background:${col}"></i>${id}<small>${cap}</small></span>`).join('');
-  const L=WCLP.filter((_,i)=>ends.has('X1.'+(29+i))).map(([id,col,cap])=>{const lit=S.lamps&&S.lamps[id];return `<span class="u"><i class="l" style="${lit?`background:${col};border-color:#fff;box-shadow:0 0 10px ${col}`:''}"></i>${id}<small>${cap}</small></span>`;}).join('');
-  const K=c.order.filter(k=>/^KT?\d+$/.test(k)).map(k=>`<span class="k${S.coils[k]?' on':''}">${k}</span>`).join(''),
-    Q=c.ex==='p15'?['SQ1','SQ2'].map((q,i)=>`<span class="k${(i?S.ls2:S.ls1)?' on':''}">${q}</span>`).join(''):'';
+  const fb=boardV({x:0,y:0,w:FBW,h:FBH}),G=6,P=[[8,138,64,134],...(c.ex==='p15'?[[70,136,112,120]]:[]),[180,138,64,182],[6,24,238,112]];let X=0;
+  const parts=P.map(([vx,vy,vw,vh])=>{const r=`<svg x="${X}" y="0" width="${vw}" height="${vh}" viewBox="${vx} ${vy} ${vw} ${vh}">${fb}</svg>`;X+=vw+G;return r;}).join(''),H=Math.max(...P.map(q=>q[3]));
+  const K=c.order.filter(k=>/^KT?\d+$/.test(k)).map(k=>`<span class="k${S.coils[k]?' on':''}">${k}</span>`).join('');
   const ms=m=>m.state==='run'?'run:'+(m.mode||'ok')+':'+m.dir:m.state,two=TWO_M.has(c.ex);
-  e.innerHTML=`<span class="g">${B}</span>${L?`<span class="g">${L}</span>`:''}<span class="g">${K}${Q}</span><span class="m">⚙ ${esc(mTxt(ms(S.motor),S.motor.why,two?'M1':'المحرك'))}${two?' · '+esc(mTxt(ms(S.motor2),S.motor2.why,'M2')):''}</span>`;}
+  e.innerHTML=`<svg viewBox="0 0 ${X-G} ${H}" role="img" aria-label="الضواغط ولمبات البيان في لوحة التركيبات">${parts}</svg><span class="g">${K}</span><span class="m">⚙ ${esc(mTxt(ms(S.motor),S.motor.why,two?'M1':'المحرك'))}${two?' · '+esc(mTxt(ms(S.motor2),S.motor2.why,'M2')):''}</span>`;}
 function wcHL(P){const c=S.clip;try{wcDash();}catch(_){}if(!c)return '';
   if(c.mini){const w=wcCur(c);if(!w)return '';const A=T[w.a],B=T[w.b],done=wcHas(w);
     if(done&&!c.adv)c.adv=setTimeout(()=>{c.adv=null;if(S.clip===c&&c.mini&&wcCur(c)===w&&wcHas(w))wcGo(1);},900);
