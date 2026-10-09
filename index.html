@@ -119,6 +119,32 @@ body.trainer .student-only{display:none!important}
 .stu input.bad,.fld input.bad{border-color:var(--warn);box-shadow:0 0 0 2px color-mix(in srgb,var(--warn) 30%,transparent)}
 .sendb{height:38px;border:0;border-radius:9px;background:var(--ok);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;flex:none;white-space:nowrap}
 .gradeb{background:#ffb300;color:#1c1400}
+/* exercise picker above the board + step-by-step wiring clip */
+.exb{display:flex;gap:6px;align-items:center;padding:8px 10px;background:#123a78}
+.exb+.stu{padding-top:0}
+body.trainer .exb{border-bottom:1px solid rgba(255,255,255,.18)}
+.exb select{flex:1;min-width:0;width:0;height:38px;border:1px solid #8fb0e0;border-radius:9px;background:#fff;color:#15202b;padding:0 8px;font-size:.92rem}
+.exb select:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.wcb{background:#1f6fe5}
+.wcbar{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,120px) + 8px);width:min(560px,calc(100vw - 16px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:8px 10px 10px;direction:rtl}
+.wcbar[hidden]{display:none}
+.wch{display:flex;align-items:center;gap:8px}.wch b{flex:1;font-size:.95rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wcn{font-size:.82rem;color:var(--muted);white-space:nowrap}
+.wcprog{height:6px;border-radius:3px;background:var(--chip);margin:6px 0;overflow:hidden}.wcprog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.wccap{margin:0 0 8px;font-size:.9rem;line-height:1.55;min-height:3.1em}
+.wccap .wcg{display:inline-block;font-size:.78rem;font-weight:700;border-radius:6px;padding:0 6px;margin-inline-end:6px;background:var(--chip)}
+.wccap .wcw{font-weight:700;direction:ltr;unicode-bidi:isolate}
+.wccap .wcsw{display:inline-block;width:22px;height:8px;border-radius:4px;vertical-align:middle;border:1px solid rgba(0,0,0,.35);margin-inline-start:4px}
+.wcctl{display:flex;gap:6px;flex-wrap:wrap}
+.wcctl button{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--chip);color:var(--ink);font-weight:700;padding:0 12px;cursor:pointer}
+.wcctl button.prim{background:var(--accent);border-color:var(--accent);color:#fff;flex:1}
+.wcctl button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+body.wclip .top,body.wclip .wtop,body.wclip #svg,body.wclip .dock{pointer-events:none}
+body.wclip .dock{opacity:.55}
+.wchl{fill:none;stroke:#ffd000;stroke-width:16;stroke-linecap:round;stroke-linejoin:round;opacity:.5;pointer-events:none;animation:wcPulse 1s ease-in-out infinite alternate}
+.wcht{fill:none;stroke:#ff3b30;stroke-width:4;pointer-events:none;animation:wcPulse 1s ease-in-out infinite alternate}
+@keyframes wcPulse{from{opacity:.25}to{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.wchl,.wcht{animation:none}}
 .plcbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.plcbar .grow{flex:1}
 .plcbar button,.plckeys button,.plcpal button{height:36px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.88rem}
 .plcbar button.on{background:#1a8a42;color:#fff;border-color:#1a8a42}.plcbar button.stop.on{background:#c42b22;border-color:#c42b22}
@@ -491,6 +517,10 @@ body.fs{padding-bottom:0}
 <div class="insp" id="insp" role="dialog" aria-label="إعدادات القطعة"></div>
 <div class="wrap" id="wrap">
   <div class="wtop">
+    <div class="exb" aria-label="اختيار التمرين">
+    <select id="exPick" aria-label="التمرين المطلوب تنفيذه" title="اختر التمرين: يظهر مقطع توصيله، ويُختار تلقائيًا عند التقييم"><option value="">📘 اختر التمرين…</option></select>
+    <button class="sendb wcb" id="exClip" hidden title="مشاهدة توصيل هذا التمرين سلكًا سلكًا">▶ مقطع التوصيل</button>
+    </div>
     <div class="stu student-only" aria-label="بيانات المتدرب">
     <input class="sn student-only" id="stName" placeholder="اسم المتدرب" autocomplete="name" aria-label="اسم المتدرب">
     <input class="sid student-only" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي">
@@ -502,6 +532,12 @@ body.fs{padding-bottom:0}
   <svg id="svg" viewBox="0 0 1000 1640" xmlns="http://www.w3.org/2000/svg"></svg>
 </div>
 
+<div id="wcBar" class="wcbar" hidden role="region" aria-label="مقطع التوصيل خطوة بخطوة">
+  <div class="wch"><b id="wcT">🎬 مقطع التوصيل</b><span class="wcn" id="wcN"></span><button class="ib" id="wcX" title="إغلاق المقطع والعودة إلى توصيلاتك" aria-label="إغلاق المقطع">✕</button></div>
+  <div class="wcprog"><i id="wcPg"></i></div>
+  <p class="wccap" id="wcCap" aria-live="polite"></p>
+  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة">› السابق</button><button class="prim" id="wcPlay">⏸ إيقاف مؤقت</button><button id="wcNext" title="الخطوة التالية">التالي ‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
+</div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
     <div class="vhead"><h2 id="vT">🎬 تعرّف على المحاكي</h2><select id="vVoice" title="اختيار صوت التعليق" aria-label="صوت التعليق" hidden></select><button id="vClose" title="إغلاق" aria-label="إغلاق الفيديو">✕</button></div>
@@ -2006,7 +2042,7 @@ function render(){
   const isFxW=w=>(T[w.a]&&T[w.a].zone==='z')||(T[w.b]&&T[w.b].zone==='z');
   const wSVG=w=>{const d=PATHS[w.id];if(!d)return '';return `<g class="wire${S.sel===w.id?' sel':''}"><path d="${d}" class="wsd"/><path d="${d}" class="wsh" stroke="${shade(w.c,-.5)}"/><path d="${d}" class="wcore" stroke="${w.c===PEW?'#f2c200':w.c}"/>${w.c===PEW?`<path d="${d}" class="wcore" stroke="#2aa84a" stroke-dasharray="9 7" stroke-linecap="butt"/>`:''}<path d="${d}" class="wlt" stroke="${shade(w.c===PEW?'#f2c200':w.c,.42)}"/><path d="${d}" class="whl"/>${isLive(w.a)?`<path d="${d}" class="flowb"/><path d="${d}" class="flow"/>`:''}<path d="${d}" class="whit" data-wire="${w.id}"/></g>`;};
   s+=xsHL(PATHS);
-  S.wires.forEach(w=>{if(!isFxW(w))s+=wSVG(w);});
+  S.wires.forEach(w=>{if(!isFxW(w))s+=wSVG(w);});s+=wcHL(PATHS);
   NODEL=false;devices.forEach(d=>{if(S.selDev===d.id&&['k','timer','ol','olh','aux'].includes(d.type))s+=delBtn(d);});
   const tSVG=k=>{const t=T[k],ly=t.lyo!=null?t.y+t.lyo:t.side==='u'?t.y+21:t.y-12,r=k.startsWith('X1.')?5.5:6.5;
     return `<g class="term${isLive(k)?' live':''}${S.pending===k?' pend':''}" data-term="${k}"><circle cx="${t.x}" cy="${t.y}" r="12" class="thit"/><circle cx="${t.x}" cy="${t.y}" r="${r}" class="screw"/><path d="M${t.x-3} ${t.y}H${t.x+3}" class="slot"/>${t.badge?`<rect x="${t.x-13}" y="${t.y-36}" width="26" height="16" rx="4" fill="#0b3d91" stroke="#fff" stroke-width="1.2" pointer-events="none"/><text x="${t.x}" y="${t.y-24}" class="dl" style="font-size:11.5px;fill:#fff;pointer-events:none">${t.badge}</text>`:''}${t.label?`<text x="${t.x}" y="${ly}" class="tl${t.stud||t.lt?' tlf':''}">${t.label}</text>`:''}</g>`;};
@@ -2468,7 +2504,7 @@ document.getElementById('bCopy').onclick=async()=>{const ta=document.getElementB
 document.getElementById('bLoad').onclick=async()=>{const raw=document.getElementById('codeIn').value;
   try{const o=await decodeCode(raw);snap();applyObj(o);S.stu=o.st||null;stuCheck();S.sel=null;S.pending=null;say(o.st?'فُتحت تجربة المتدرب '+o.st.n:'حُمّلت توصيلات من كود مشاركة');modal.classList.remove('open');update();}
   catch(_){document.getElementById('loadErr').textContent='الكود غير صالح. الصق رسالة المتدرب كاملة أو الكود فقط.';}};
-function save(){try{localStorage.setItem('panelSim.v4',JSON.stringify(serial()));}catch(_){}}
+function save(){if(S.clip)return;try{localStorage.setItem('panelSim.v4',JSON.stringify(serial()));}catch(_){}}
 try{const o=JSON.parse(localStorage.getItem('panelSim.v4')||'null');if(o)applyObj(o);}catch(_){}
 
 /* ---------- trainee submit & trainer mode ---------- */
@@ -2788,10 +2824,10 @@ function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classLis
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
     <div class="sbtns"><button class="btn prim" id="gGo">🎯 ابدأ التقييم الآن</button></div>`;}
   $('gBody').innerHTML=h;}
-function openGrade(){if(document.body.classList.contains('fs'))exitFS();const A=gAll();GV.ex=GV.ex||A._cur||'';gRender();gM.classList.add('open');}
+function openGrade(){if(document.body.classList.contains('fs'))exitFS();const A=gAll();GV.ex=EXP.ex||GV.ex||A._cur||'';gRender();gM.classList.add('open');}
 $('bGrade').onclick=openGrade;
 $('gClose').onclick=()=>gM.classList.remove('open');gM.addEventListener('click',e=>{if(e.target===gM)gM.classList.remove('open');});
-$('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'){GV.ex=e.target.value;exMotor(GV.ex);gRender();}});
+$('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'){GV.ex=e.target.value;exMotor(GV.ex);exPick(GV.ex,true);gRender();}});
 $('gBody').addEventListener('click',e=>{const id=e.target.id;
   if(id==='gGo'){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
     if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return;}
@@ -2807,9 +2843,69 @@ const ulkCode=(id,ex,t)=>{let h=5381,k=7;for(const ch of 'wsu:'+id+'|'+ex+'|'+t)
 function ulkApply(raw){const c=String(raw||'').toUpperCase().replace(/[^0-9A-Z]/g,'');if(c.length!==6)return null;const A=gAll();
   const ex=Object.keys(A).find(k=>k!=='_cur'&&A[k]&&ulkCode(A[k].id,k,A[k].t)===c);if(!ex)return null;
   delete A[ex];if(A._cur===ex)delete A._cur;gSave(A);gUpdBtn();say('فُك قفل '+PNAME[ex]+'. يمكنك إعادة التقييم الآن.');renderTop();return ex;}
-$('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex='';gUpdBtn();say('مُسحت الدرجات المقفلة من هذا الجهاز');renderTop();};
+$('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex=EXP.ex;gUpdBtn();say('مُسحت الدرجات المقفلة من هذا الجهاز');renderTop();};
 function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20':'🎯 تقييم';}
 gUpdBtn();
+/* ---------- exercise picker (top of the board) + step-by-step wiring clip ----------
+   The picked exercise is the one graded, so the trainee does not choose it again in 🎯.
+   The clip plays the exercise's reference wiring on the board one wire at a time, then puts the trainee's own wiring back. */
+const EXP={ex:''};
+function exPick(v,quiet){v=PNAME[v]?v:'';EXP.ex=v;$('exPick').value=v;$('exClip').hidden=!PRESETS[v];lsS('wsEx',v||null);
+  if(!v)return;GV.ex=v;if(!quiet)exMotor(v);try{SD.ex=v;sdSave();if(SD.open)sdRender();}catch(_){}}
+$('exPick').insertAdjacentHTML('beforeend',Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${esc(PNAME[k])}</option>`).join(''));
+$('exPick').onchange=e=>{exPick(e.target.value,true);if(EXP.ex){say('التمرين المختار: '+PNAME[EXP.ex]+'. شاهد ▶ مقطع التوصيل، وعند 🎯 التقييم يُقيَّم هذا التمرين مباشرة.');exMotor(EXP.ex);}renderTop();};
+{const v=lsG('wsEx');if(v&&PNAME[v])exPick(v,true);}
+let WCSND=lsG('wcSnd')!=='0';
+const wcPow=w=>[BR,BK,GR,BRS].includes(w.c)||/^M[12]\./.test(w.a)||/^M[12]\./.test(w.b);
+const wcCol=c=>{if(c===BRS)return 'قنطرة';const f=COLORS.find(x=>x[0]===c);return f?f[1].split(':')[0]:'';};
+function wcHL(P){const c=S.clip;if(!c||c.hl==null||!P[c.hl])return '';const w=S.wires.find(x=>x.id===c.hl);if(!w)return '';
+  return `<path d="${P[w.id]}" class="wchl"/>`+[w.a,w.b].map(k=>T[k]?`<circle cx="${T[k].x}" cy="${T[k].y}" r="15" class="wcht"/>`:'').join('');}
+function wcStart(){const v=EXP.ex;if(!v||!PRESETS[v]||S.clip)return;hush();
+  const c=S.clip={ex:v,saved:serial(),keep:{power:S.power,Q1:S.Q1,F1:S.F1},steps:[],i:0,play:true,t:null,spd:1,hl:null};
+  try{applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,px:v,...(DAHLX.has(v)?{mt:'d'}:{})});}catch(_){S.clip=null;applyObj(c.saved);update();return;}
+  /* power circuit first (motor jumpers after the motor cable), then the control circuit */
+  const rk=w=>wcPow(w)?(w.c===BRS?1:0):2;c.steps=S.wires.slice().map((w,i)=>[w,i]).sort((a,b)=>rk(a[0])-rk(b[0])||a[1]-b[1]).map(x=>x[0]);
+  Object.assign(S,{Q1:false,F1:false,fault:null,coils:{},sel:null,pending:null,selDev:null});
+  const d=document.querySelector('.more');if(d)d.open=false;
+  document.body.classList.add('wclip');$('wcBar').hidden=false;$('wcT').textContent='🎬 '+PNAME[v];$('wcSpd').textContent='1×';
+  say('🎬 مقطع التوصيل: '+PNAME[v]+'. توصيلاتك محفوظة وتعود كما هي عند إغلاق المقطع.');wcShow();wcPlan();}
+function wcStop(){const c=S.clip;if(!c)return;clearTimeout(c.t);hush();S.clip=null;document.body.classList.remove('wclip');$('wcBar').hidden=true;
+  try{applyObj(c.saved);}catch(_){}Object.assign(S,c.keep,{fault:null,sel:null,pending:null,selDev:null});
+  say('أُغلق المقطع وعادت توصيلاتك كما كانت. وصّل التمرين بنفسك، ثم اضغط 🎯 تقييم.');update();}
+function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=i&&i<=n?c.steps[i-1]:null;
+  S.wires=c.steps.slice(0,Math.min(i,n));c.hl=w?w.id:null;update();
+  $('wcN').textContent=i===0?n+' سلكًا':i>n?'✔ اكتمل':`الخطوة ${i} من ${n}`;$('wcPg').style.width=(100*Math.min(i,n)/n)+'%';
+  let h,t;
+  if(i===0){h=`القطع على اللوحة: <span class="wcw">${esc(S.devs.filter(x=>!x.host||x.type==='ol').map(x=>x.id).join('، ')||'—')}</span>. القاطع الرئيسي مفصول أثناء التوصيل. يُوصَّل ${n} سلكًا: دائرة القوى أولًا ثم دائرة التحكم.`;
+    t='مقطع توصيل تمرين '+PNAME[c.ex]+'. افصل القاطع الرئيسي قبل التوصيل. نوصّل دائرة القوى أولًا، ثم دائرة التحكم.';}
+  else if(!w){h=`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} اضغط ✕ للعودة إلى توصيلاتك، ثم وصّل بنفسك واضغط 🎯 تقييم.`;
+    t='اكتمل التوصيل. أغلق المقطع ووصّل التمرين بنفسك، ثم اضغط تقييم.';}
+  else{const p=wcPow(w),first=i===1||wcPow(c.steps[i-2])!==p,col=wcCol(w.c);
+    h=`<span class="wcg">${p?'⚡ دائرة القوى':'🔌 دائرة التحكم'}</span>${col?'سلك '+esc(col):''}<span class="wcsw" style="background:${w.c}"></span><br>`+
+      `من <span class="wcw">${esc(dk(w.a))}</span>: ${esc(termDesc(w.a))}<br>إلى <span class="wcw">${esc(dk(w.b))}</span>: ${esc(termDesc(w.b))}`;
+    t=(first?(p?'دائرة القوى. ':'الآن دائرة التحكم. '):'')+'من '+termDesc(w.a)+'، إلى '+termDesc(w.b)+'.';}
+  $('wcCap').innerHTML=h;wcBtns();if(WCSND)speak(t);
+  requestAnimationFrame(()=>{const e=svg.querySelector('.wchl');if(!e)return;const r=e.getBoundingClientRect(),
+      top=Math.max(...['.top','.wtop'].map(q=>{const x=document.querySelector(q);return x&&x.offsetParent?x.getBoundingClientRect().bottom:0;})),bot=$('wcBar').getBoundingClientRect().top;
+    if(r.top<top||r.bottom>bot||r.left<0||r.right>innerWidth)e.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});});}
+function wcBtns(){const c=S.clip,n=c.steps.length;$('wcPlay').textContent=c.i>n?'↻ إعادة المقطع':c.play?'⏸ إيقاف مؤقت':'▶ تشغيل';
+  $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>n;$('wcSnd').textContent=WCSND?'🔊':'🔇';}
+/* next step after a pause, or when the spoken step has finished, whichever is later */
+function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play)return;if(c.i>c.steps.length){c.play=false;wcBtns();return;}
+  const t0=Date.now(),min=(c.i===0?4000:2400)/c.spd;
+  const tick=()=>{if(S.clip!==c||!c.play)return;const el=Date.now()-t0,talk=WCSND&&SPK.ok&&(speechSynthesis.speaking||speechSynthesis.pending);
+    if(el>=min&&(!talk||el>=min+15000)){c.i++;wcShow();wcPlan();}else c.t=setTimeout(tick,200);};
+  c.t=setTimeout(tick,200);}
+function wcGo(d){const c=S.clip;c.i=Math.max(0,Math.min(c.steps.length+1,c.i+d));wcShow();wcPlan();}
+$('exClip').onclick=wcStart;$('wcX').onclick=wcStop;$('wcPrev').onclick=()=>wcGo(-1);$('wcNext').onclick=()=>wcGo(1);
+$('wcPlay').onclick=()=>{const c=S.clip;if(c.i>c.steps.length){c.i=0;c.play=true;wcShow();wcPlan();return;}
+  c.play=!c.play;if(c.play)wcGo(1);else{clearTimeout(c.t);hush();wcBtns();}};
+$('wcSpd').onclick=()=>{const c=S.clip,L=[1,1.5,2,0.75];c.spd=L[(L.indexOf(c.spd)+1)%L.length];$('wcSpd').textContent=c.spd+'×';};
+$('wcSnd').onclick=()=>{WCSND=!WCSND;lsS('wcSnd',WCSND?null:'0');if(!WCSND)hush();wcBtns();};
+/* while the clip plays, the board's own shortcuts (delete, undo…) are off; Space pauses, the arrows step, Esc closes */
+window.addEventListener('keydown',e=>{if(!S.clip||e.key==='Tab')return;e.stopPropagation();
+  if(e.target.closest&&e.target.closest('#wcBar button')&&(e.key===' '||e.key==='Enter'))return;
+  const f={Escape:wcStop,' ':()=>$('wcPlay').click(),ArrowLeft:()=>wcGo(1),ArrowRight:()=>wcGo(-1)}[e.key];if(f){e.preventDefault();f();}},true);
 function stuCheck(){const st=S.stu;if(!st||!st.g||!PRESETS[st.g.ex]){if(st)st.gc=null;return;}try{const r=gradeNow(st.g.ex);st.gc=r.s;st.gi=r;}catch(_){st.gc=null;}}
 function showStuGrade(){const st=S.stu;if(!st||!st.g)return;
   $('gBody').innerHTML=`<p class="greq">نتيجة المتدرب كما أُرسلت: <b>${+st.g.s} / 20</b>. أعاد المحاكي الفحص الآن على التوصيل المرسل نفسه${st.gc==null?'.':st.gc===+st.g.s?' وحصل على الدرجة نفسها ✔':` وحصل على <b style="color:var(--warn)">${st.gc} / 20</b> ⚠ (قد تكون الدرجة عُدّلت يدويًا).`}</p>`+
