@@ -148,6 +148,14 @@ body.wclip .dock{opacity:.55}
 .wcleg{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:.68rem;margin:0 0 4px;color:var(--muted)}.wcleg:empty{display:none}
 .wcleg span{display:inline-flex;align-items:center;gap:4px}.wcleg i{display:inline-block;width:18px;height:7px;border-radius:4px;border:1px solid rgba(0,0,0,.3)}
 .wcbar.mini .wcleg{display:none}
+.wcdash{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:flex-end;margin:0 0 6px;padding:6px 8px;border-radius:9px;background:#1d2733;color:#e8eef4;font-size:.68rem}
+.wcdash[hidden]{display:none}.wcdash .g{display:flex;gap:7px;align-items:flex-end}
+.wcdash .u{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:30px}
+.wcdash .l{width:18px;height:18px;border-radius:50%;background:#3a4450;border:2px solid #77828d}
+.wcdash .b{width:20px;height:20px;border-radius:50%;border:3px solid #c9ced3;transition:transform .1s}
+.wcdash .b.p{transform:scale(.78);box-shadow:0 0 0 4px #ffd000}
+.wcdash .k{padding:2px 6px;border-radius:6px;background:#3a4450;font-weight:700}.wcdash .k.on{background:#2aa84a;color:#fff}
+.wcdash .m{flex-basis:100%;font-weight:700}
 .wccap .wcres{display:block;margin-top:4px;font-weight:700;color:var(--accent)}
 .wcbt{fill:none;stroke:#ffd000;stroke-width:6;pointer-events:none;animation:wcPulse .5s ease-in-out infinite alternate}
 .wccap .wcst{font-weight:700;color:var(--ok)}.wccap .wcst.no{color:var(--warn)}
@@ -547,6 +555,7 @@ body.fs{padding-bottom:0}
   <div class="wcprog"><i id="wcPg"></i></div>
   <div class="wcleg" id="wcLeg"></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
+  <div class="wcdash" id="wcDash" hidden aria-label="الضواغط ولمبات البيان أثناء تجربة التشغيل"></div>
   <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
@@ -2919,7 +2928,18 @@ function wcPaint(c){c.steps.forEach(w=>{w.c=w.cx;});
    its two terminals pulse on the trainee's board, and the clip moves on by itself once that wire is connected */
 const wcHas=w=>S.wires.some(x=>(x.a===w.a&&x.b===w.b)||(x.a===w.b&&x.b===w.a));
 const wcCur=c=>c.i&&c.i<=c.steps.length?c.steps[c.i-1]:null;
-function wcHL(P){const c=S.clip;if(!c)return '';
+/* during the operating demo the clip window shows the exercise's buttons, lamps, contactors and motor, so they are seen without scrolling */
+const WCBT=[['S0','#d8322b','إيقاف'],['S1','#2aa84a','تشغيل 1'],['S2','#2aa84a','تشغيل 2'],['S3','#d8322b','إيقاف 2'],['S4','#2aa84a','تشغيل 3']],
+  WCLP=[['H1','#39d353','تشغيل 1'],['H2','#39d353','تشغيل 2'],['H3','#ff3b30','إيقاف'],['H4','#ffb000','عطل']];
+function wcDash(){const c=S.clip,e=$('wcDash');if(!e)return;const on=!!c&&!c.mini&&c.i>c.steps.length&&c.i<wcEnd(c);e.hidden=!on;if(!on)return;
+  const used=new Set(['S0',...(DEMO[c.ex]||[]).map(x=>x[0]).filter(a=>/^S\d$/.test(a))]),ends=new Set(c.steps.flatMap(w=>[w.a,w.b]));
+  const B=WCBT.filter(([id])=>used.has(id)).map(([id,col,cap])=>`<span class="u"><i class="b${S.pressed.has(id)?' p':''}" style="background:${col}"></i>${id}<small>${cap}</small></span>`).join('');
+  const L=WCLP.filter((_,i)=>ends.has('X1.'+(29+i))).map(([id,col,cap])=>{const lit=S.lamps&&S.lamps[id];return `<span class="u"><i class="l" style="${lit?`background:${col};border-color:#fff;box-shadow:0 0 10px ${col}`:''}"></i>${id}<small>${cap}</small></span>`;}).join('');
+  const K=c.order.filter(k=>/^KT?\d+$/.test(k)).map(k=>`<span class="k${S.coils[k]?' on':''}">${k}</span>`).join(''),
+    Q=c.ex==='p15'?['SQ1','SQ2'].map((q,i)=>`<span class="k${(i?S.ls2:S.ls1)?' on':''}">${q}</span>`).join(''):'';
+  const ms=m=>m.state==='run'?'run:'+(m.mode||'ok')+':'+m.dir:m.state,two=TWO_M.has(c.ex);
+  e.innerHTML=`<span class="g">${B}</span>${L?`<span class="g">${L}</span>`:''}<span class="g">${K}${Q}</span><span class="m">⚙ ${esc(mTxt(ms(S.motor),S.motor.why,two?'M1':'المحرك'))}${two?' · '+esc(mTxt(ms(S.motor2),S.motor2.why,'M2')):''}</span>`;}
+function wcHL(P){const c=S.clip;try{wcDash();}catch(_){}if(!c)return '';
   if(c.mini){const w=wcCur(c);if(!w)return '';const A=T[w.a],B=T[w.b],done=wcHas(w);
     if(done&&!c.adv)c.adv=setTimeout(()=>{c.adv=null;if(S.clip===c&&c.mini&&wcCur(c)===w&&wcHas(w))wcGo(1);},900);
     return (A&&B&&!done?`<path d="M${A.x} ${A.y}L${B.x} ${B.y}" class="wcgh" stroke="${w.c===BRS?'#c9a44a':w.c}"/>`:'')+[A,B].map(t=>t?`<circle cx="${t.x}" cy="${t.y}" r="15" class="wcht${done?' ok':''}"/>`:'').join('');}
