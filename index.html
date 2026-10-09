@@ -147,7 +147,9 @@ body.wclip .dock{opacity:.55}
 .wcbar.mini #wcPlay,.wcbar.mini #wcSpd{display:none}
 .wcleg{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:.68rem;margin:0 0 4px;color:var(--muted)}.wcleg:empty{display:none}
 .wcleg span{display:inline-flex;align-items:center;gap:4px}.wcleg i{display:inline-block;width:18px;height:7px;border-radius:4px;border:1px solid rgba(0,0,0,.3)}
-.wcbar.mini .wcleg{display:none}#wcClr.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.wcbar.mini .wcleg{display:none}
+.wccap .wcres{display:block;margin-top:4px;font-weight:700;color:var(--accent)}
+.wcbt{fill:none;stroke:#ffd000;stroke-width:6;pointer-events:none;animation:wcPulse .5s ease-in-out infinite alternate}
 .wccap .wcst{font-weight:700;color:var(--ok)}.wccap .wcst.no{color:var(--warn)}
 .wcgh{fill:none;stroke-width:5;stroke-dasharray:10 8;stroke-linecap:round;opacity:.75;pointer-events:none}
 .wcht.ok{stroke:#2aa84a;animation:none;opacity:.9}
@@ -545,7 +547,7 @@ body.fs{padding-bottom:0}
   <div class="wcprog"><i id="wcPg"></i></div>
   <div class="wcleg" id="wcLeg"></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
-  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcClr" title="ألوان الشرح: لون لكل جزء من الدائرة">🎨</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
+  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
@@ -863,12 +865,12 @@ function links(coils,done){const L=[],pr=(d,a,b)=>L.push([d+'.'+a,d+'.'+b]),x=(a
     if(f.t==='sel'){if(f.on)pr(id,'13','14');else pr(id,'21','22');}});
   return L;}
 const SRC={L1:'Q1.1',L2:'Q1.3',L3:'Q1.5',N:'X1.33'};
-function compute(coils,done){const uf=makeUF();
+function compute(coils,done){const uf=makeUF(),lk=links(coils,done);
   S.wires.forEach(w=>uf.union(w.a,w.b));
-  links(coils,done).forEach(([a,b])=>uf.union(a,b));
+  lk.forEach(([a,b])=>uf.union(a,b));
   const src=new Map();
   if(S.power)Object.entries(SRC).forEach(([s,k])=>{const r=uf.find(k);if(!src.has(r))src.set(r,new Set());src.get(r).add(s);});
-  return{uf,src,srcOf:k=>src.get(uf.find(k))||EMPTY};}
+  return{uf,lk,src,srcOf:k=>src.get(uf.find(k))||EMPTY};}
 const phasesOf=set=>[...set].filter(x=>PH.includes(x));
 function loadV(R,a,b){const A=R.srcOf(a),B=R.srcOf(b),pa=phasesOf(A),pb=phasesOf(B);
   if((pa.length&&B.has('N'))||(pb.length&&A.has('N')))return'on';
@@ -913,8 +915,12 @@ function solve(){
   const mroots=Object.values(M).map(k=>R.uf.find(k));
   S.motor2=motor2Eval(R);if(S.motor.state==='run'||S.motor2.state==='run')S.ran=true;
   const m2roots=Object.values(M2K).map(k=>R.uf.find(k));
-  ofType('ol').forEach(f=>{const o=S.ol[f],live=phasesOf(R.srcOf(f+'.1')).length>0,outs=[f+'.2',f+'.4',f+'.6'].map(k=>R.uf.find(k));
-    o.m1=live&&outs.some(r=>mroots.includes(r));o.m2=live&&outs.some(r=>m2roots.includes(r));});
+  /* which motor each overload carries: its outputs are followed with its own poles left out, otherwise two motors running
+     from the same supply share every node and each overload would count both motors' current */
+  ofType('ol').forEach(f=>{const o=S.ol[f],live=phasesOf(R.srcOf(f+'.1')).length>0,u=makeUF();
+    S.wires.forEach(w=>u.union(w.a,w.b));(R.lk||[]).forEach(([a,b])=>{if(!(a.startsWith(f+'.')&&b.startsWith(f+'.')))u.union(a,b);});
+    const outs=[f+'.2',f+'.4',f+'.6'].map(k=>u.find(k)),r1=Object.values(M).map(k=>u.find(k)),r2=Object.values(M2K).map(k=>u.find(k));
+    o.m1=live&&outs.some(r=>r1.includes(r));o.m2=live&&outs.some(r=>r2.includes(r));});
   const prot=k=>ofType('ol').some(f=>S.ol[f][k]);
   if(S.motor.state!=='off'&&!prot('m1'))S.warn.push('المحرك M1 يعمل بدون المرور على أوفرلود، أي أنه غير محمي.');
   if(S.motor2.state==='run'&&S.motor2.mode==='delta')S.warn.push('المحرك M2 مصمم نجمة على 400V، وتوصيله دلتا يرفع تياره (راقب الأوفرلود).');
@@ -1527,7 +1533,7 @@ function spkFillSel(){const el=document.getElementById('xsVoice');if(!el)return;
   el.disabled=!L.length;if(hint)hint.hidden=L.some(spkMale)||!L.length;}
 const LTR={KT:'كيه تي',SQ:'إس كيو',K:'كيه',S:'إس',H:'إتش',F:'إف',Q:'كيو',M:'إم',A:'إيه',L:'إل',I:'آي',X:'إكس',U:'يو',V:'في',W:'دبليو'};
 /* tashkeel (diacritics) so the Arabic voice reads technical words correctly; lookup ignores any existing marks */
-const TSH_RX=/[\u064B-\u0652\u0670\u0640]/g,TSH=(()=>{const m=new Map();'الآلِيّ آلِيّ أَحْمال الأَحْمال أَسْفَل أَضاءَت أَغْلِق أَمْبير أَو أَوْفَرْلود الأَوْفَرْلود أَيّ بِأَيّ أَيْضًا إِضافَة إِطْفاء إِعاقَة والإِعاقَة إِعْدادات إِلّا إِلى إِمْساك اتِّجاه بِاتِّجاه اسْم اشْتَغَل اضْغَط اكْتِمال اكْتَمَلَت الآخَر الآن الأَجْزاء الأَطْراف الأَطْوار الأَقْطاب الإِيقاف لِلإِيقاف الاخْتِيار الانْقِطاع البَرْنامَج البَكَرَة البَيان بَيان التَّأْخير بِتَأْخير التَّحَكُّم التَّرْك التَّسْخين التَّشْغيل تَشْغيل لِتَشْغيلِه التَّعادُل بِالتَّعادُل التَّعْليق التَّغْذِيَة تَغْذِيَة لِلتَّغْذِيَة التَّلامُس تَلامُس والتَّلامُس تَلامُسُه التَّلامُسات تَلامُسات والتَّلامُسات فالتَّلامُسات تَلامُساتُها التِّلْقائِيّ التَّوْصيل تَوْصيل بِتَوْصيل الَّتي التَّيّار تَيّار والتَّيّار الثّابِت الثّابِتَة الثَّلاثَة الثُّلاثِيّ ثُلاثِيّ الجُزْء الجِسْر الجِهاز جِهاز لِجِهاز الجُهْد جُهْد الحامِل حامِل حامِلِه فالحامِل الحَثِّيّ الحَرارَة بِالحَرارَة الحَرارِيّ حَرارِيَّة الحِمْل حِمْل الدّائِرَة دائِرَة بِدائِرَة الدّاخِلِيَّة الدَّخْل دَخْل الدَّوّار دَوّارًا الدَّوَران الذّاتِيَّة ذاتِيَّة الذِّراع الَّذي الرَّئيسِيّ رَئيسِيّ الرَّئيسِيَّة الرَّسْم الزَّمَن زَمَن السِّلْسِلَة السُّلَّمِيّ السِّلْك الشَّرائِح الشَّرارَة الشَّريحَة شَريحَة الشُّعْبَة شُعْبَة الصِّمام الصَّوْت صَوْت الصَّوْتِيّ صَوْتِيّ الضّاغِط ضاغِط الضَّبْط الضَّغْط الضَّوْئِيّ الطَّرَف طَرَف طَرَفاه طَرَفُه طَرَفَيْها الطَّرَفَيْن الطَّوارِئ الطَّوْر طَوْر طَوْران طَوْرَيْن العَرَبَة العَرَبِيّ عَرَبِيّ العُضْو العُطْل عُطْل العَمَل الفَصْل الفَعّالَة فَعّال القاطِع قاطِع القَصْر القَضيب قَضيب قُضْبان القَلْب والقَلْب القَوْس الكونْتاكْتور كونْتاكْتور اللَّحْظَة اللَّمْبَة لَمْبَة ولَمْبات اللَّوْحَة المُؤَقِّت مُؤَقِّت والمُؤَقِّت المُبَرْمَج المُتَحَرِّك المُتَحَكِّم المُتَصَفِّح المُحَرِّك مُحَرِّك المِحْوَر المَخارِج المَخْرَج مَخْرَج المُخَطَّط المَداخِل المَسار مَسار مَسارُه مَسارُها ومَسار لِمَسار المُساعِد مُساعِد المُساعِدَة مُساعِدَة المَسْح المُشْتَرَك المِشْوار المَضْبوط المَعْدِن المُغْلَق مُغْلَق المُغْلَقَة مُغْلَقَة المِغْناطيس بِمِغْناطيس المِغْناطيسِيّ مِغْناطيسِيّ مِغْناطيسِيًّا المِفْتاح مِفْتاح المَفْتوح مَفْتوح المَفْتوحَة مَفْتوحَة مَفْتوحًا المُفَعَّل المُفَعَّلَة المَلَفّ مَلَفّ مَلَفّات النّابِض والنّابِض النُّطْق نُطْق النِّقاط نِقاط النُّقْطَة نُقْطَة الوَسائِط الوَضْع وَضْع وَضْعِه انْتَظِر انْتَقَل فانْتَقَل انْتِهاء انْتَهى انْطَفَأَت بِاسْتِمْرار بِالتَّدْوير بِالعَدّ بِتَلامُسَيْن بَدَأ بِزِرّ زِرّ بَعْد وبَعْد بَعْدَه وبَعْدَه بَعيدًا بِلا بَيْن تَأَكَّد تَبْدَأ تَبْديل تَجاوَز تَحُدّ تَحْويل تَدْفَع تُرَكَّب تُسْتَخْدَم تَصِل تَضْغَط تُضيء فَتُضيء تُطْفَأ تَظْهَر وتَظْهَر تَعَذَّر تَعْمَل تُغْلَق فَتُغْلَق وتُغْلَق تُفْتَح تَنْحَني فَتَنْحَني تُوجَد تَوَقَّف ثُمّ ثُنائِيَّة جاهِز حَتّى حُجْرَة حَرِّر حَرَكَة حَمْراء حُذِف خاطِئ خَرْج داخِل دارَة دَلْتا دَوْرَة دُون رَأْسَه راجِع زال زِيادَة شَرْح شَيْء صُدْفَة صَغير ضَبْطُه ضَرْبِه طَريقَة طَويلَة عادَةً عَبْر عَبْرَه عَلى عَلَيْه وعَلَيْه عَلَيْها عَن عَناصِر عِنْد وعِنْد عِنْدَما غَيْر فُتِح فَصَل فَتَفْصِلُه فَتَنْفَتِح وتَنْفَتِح وتَنْغَلِق فَقَد فَلا فَوْرًا فَوْق فولْت فَيَبْقى ويَبْقى فَيَتَحَرَّك وتَتَحَرَّك فَيَجْذِب فَيَدور فَيَصِل فَيَضْغَط فَيُضيء فَيَفْتَح فَيَفْصِل فَيَقْرَؤُه فَيَمُرّ ويَمُرّ يَمُرّ فَيَنْقَطِع فيه قَطْع قِطْعَة قيمَة كامَة كُلّ كَلام كَهْرَبائِيّ لِأَنّ لِتَجْرِبَتِه لِذلِك لِرُؤْيَة لِفَتْرَة لِقُطْب لَكِنْ لِلأَمام لِلْخَلْف لَه مَعَه مَع لِيَظْهَر مُتَوَقِّف مُثَبَّت مِثْل مَجال مَجالًا مَجْذوب مُرْتَفِع مُرَحِّلات مُرَكَّبَة مُضاءَة مَضْغوط مُضيئًا مُطْفَأَة مَفْصول مُقاوَمَة مَقْطَع مَقْطَعُها مَقْطوع مُكْتَمِل مِن مُوَصَّل مُوَصَّلَة نازِل نَجْمَة نَفْس نَفْسُها نِهايَة هَذا هَل هُوَ وهُوَ وَإِذا واحِد واضِح وجَرِّب وَصِّل ووَظيفَتُهُما وَقَد يَأْتي يَبْتَعِد يَبْرُد يَتَوَفَّر يَتَوَلَّد يَجْذِب يُحَرَّر يَحْمي يَخْرُج ويَخْرُج يَدْخُل يَدْعَم يَدور يُدير يَرْجِع يَرْفَع يُسْتَخْدَم يُسَخِّن ويُسَخِّن يَشْرَح يُشَغِّل يَصِل يَضْغَط يَضْغَطُه يُعاد يَعُدّ يَعْكِس يَعْمَل يَعود ويَعود يُعيدُه يُغَذّي يُغْلَق ويُغْلَق يُفْتَح يَفْصِل يُفَعِّلُه يَقْرَأ يُكَرِّر يَكون يُمَرِّر يُمْكِن يَنْتَظِر يَنْتَقِل يَنْحَبِس يَنْزِل يُنْطَق يُنَفِّذ يوجَد يُوَلِّد فَيُحَثّ القُوَى تَمْرِين التَّمْرِين افْصِل قَبْل اكْتَمَل المَقْطَع بِنَفْسِك تَقْيِيم عَكْس بِجِهاز لَمْبات بِمُؤَقِّت مَكان مَكانَيْن مُحَرِّكَيْن بِالتَّتابُع بَطِيء سَرِيع يَدَوِي دالَنْدَر بِسُرْعَتَيْن بِدُون نِهايَتَي مِشْوار المُشْتَرَكة مَداخِل مَخارِج'.split(' ').forEach(w=>m.set(w.replace(TSH_RX,''),w));return m;})();
+const TSH_RX=/[\u064B-\u0652\u0670\u0640]/g,TSH=(()=>{const m=new Map();'الآلِيّ آلِيّ أَحْمال الأَحْمال أَسْفَل أَضاءَت أَغْلِق أَمْبير أَو أَوْفَرْلود الأَوْفَرْلود أَيّ بِأَيّ أَيْضًا إِضافَة إِطْفاء إِعاقَة والإِعاقَة إِعْدادات إِلّا إِلى إِمْساك اتِّجاه بِاتِّجاه اسْم اشْتَغَل اضْغَط اكْتِمال اكْتَمَلَت الآخَر الآن الأَجْزاء الأَطْراف الأَطْوار الأَقْطاب الإِيقاف لِلإِيقاف الاخْتِيار الانْقِطاع البَرْنامَج البَكَرَة البَيان بَيان التَّأْخير بِتَأْخير التَّحَكُّم التَّرْك التَّسْخين التَّشْغيل تَشْغيل لِتَشْغيلِه التَّعادُل بِالتَّعادُل التَّعْليق التَّغْذِيَة تَغْذِيَة لِلتَّغْذِيَة التَّلامُس تَلامُس والتَّلامُس تَلامُسُه التَّلامُسات تَلامُسات والتَّلامُسات فالتَّلامُسات تَلامُساتُها التِّلْقائِيّ التَّوْصيل تَوْصيل بِتَوْصيل الَّتي التَّيّار تَيّار والتَّيّار الثّابِت الثّابِتَة الثَّلاثَة الثُّلاثِيّ ثُلاثِيّ الجُزْء الجِسْر الجِهاز جِهاز لِجِهاز الجُهْد جُهْد الحامِل حامِل حامِلِه فالحامِل الحَثِّيّ الحَرارَة بِالحَرارَة الحَرارِيّ حَرارِيَّة الحِمْل حِمْل الدّائِرَة دائِرَة بِدائِرَة الدّاخِلِيَّة الدَّخْل دَخْل الدَّوّار دَوّارًا الدَّوَران الذّاتِيَّة ذاتِيَّة الذِّراع الَّذي الرَّئيسِيّ رَئيسِيّ الرَّئيسِيَّة الرَّسْم الزَّمَن زَمَن السِّلْسِلَة السُّلَّمِيّ السِّلْك الشَّرائِح الشَّرارَة الشَّريحَة شَريحَة الشُّعْبَة شُعْبَة الصِّمام الصَّوْت صَوْت الصَّوْتِيّ صَوْتِيّ الضّاغِط ضاغِط الضَّبْط الضَّغْط الضَّوْئِيّ الطَّرَف طَرَف طَرَفاه طَرَفُه طَرَفَيْها الطَّرَفَيْن الطَّوارِئ الطَّوْر طَوْر طَوْران طَوْرَيْن العَرَبَة العَرَبِيّ عَرَبِيّ العُضْو العُطْل عُطْل العَمَل الفَصْل الفَعّالَة فَعّال القاطِع قاطِع القَصْر القَضيب قَضيب قُضْبان القَلْب والقَلْب القَوْس الكونْتاكْتور كونْتاكْتور اللَّحْظَة اللَّمْبَة لَمْبَة ولَمْبات اللَّوْحَة المُؤَقِّت مُؤَقِّت والمُؤَقِّت المُبَرْمَج المُتَحَرِّك المُتَحَكِّم المُتَصَفِّح المُحَرِّك مُحَرِّك المِحْوَر المَخارِج المَخْرَج مَخْرَج المُخَطَّط المَداخِل المَسار مَسار مَسارُه مَسارُها ومَسار لِمَسار المُساعِد مُساعِد المُساعِدَة مُساعِدَة المَسْح المُشْتَرَك المِشْوار المَضْبوط المَعْدِن المُغْلَق مُغْلَق المُغْلَقَة مُغْلَقَة المِغْناطيس بِمِغْناطيس المِغْناطيسِيّ مِغْناطيسِيّ مِغْناطيسِيًّا المِفْتاح مِفْتاح المَفْتوح مَفْتوح المَفْتوحَة مَفْتوحَة مَفْتوحًا المُفَعَّل المُفَعَّلَة المَلَفّ مَلَفّ مَلَفّات النّابِض والنّابِض النُّطْق نُطْق النِّقاط نِقاط النُّقْطَة نُقْطَة الوَسائِط الوَضْع وَضْع وَضْعِه انْتَظِر انْتَقَل فانْتَقَل انْتِهاء انْتَهى انْطَفَأَت بِاسْتِمْرار بِالتَّدْوير بِالعَدّ بِتَلامُسَيْن بَدَأ بِزِرّ زِرّ بَعْد وبَعْد بَعْدَه وبَعْدَه بَعيدًا بِلا بَيْن تَأَكَّد تَبْدَأ تَبْديل تَجاوَز تَحُدّ تَحْويل تَدْفَع تُرَكَّب تُسْتَخْدَم تَصِل تَضْغَط تُضيء فَتُضيء تُطْفَأ تَظْهَر وتَظْهَر تَعَذَّر تَعْمَل تُغْلَق فَتُغْلَق وتُغْلَق تُفْتَح تَنْحَني فَتَنْحَني تُوجَد تَوَقَّف ثُمّ ثُنائِيَّة جاهِز حَتّى حُجْرَة حَرِّر حَرَكَة حَمْراء حُذِف خاطِئ خَرْج داخِل دارَة دَلْتا دَوْرَة دُون رَأْسَه راجِع زال زِيادَة شَرْح شَيْء صُدْفَة صَغير ضَبْطُه ضَرْبِه طَريقَة طَويلَة عادَةً عَبْر عَبْرَه عَلى عَلَيْه وعَلَيْه عَلَيْها عَن عَناصِر عِنْد وعِنْد عِنْدَما غَيْر فُتِح فَصَل فَتَفْصِلُه فَتَنْفَتِح وتَنْفَتِح وتَنْغَلِق فَقَد فَلا فَوْرًا فَوْق فولْت فَيَبْقى ويَبْقى فَيَتَحَرَّك وتَتَحَرَّك فَيَجْذِب فَيَدور فَيَصِل فَيَضْغَط فَيُضيء فَيَفْتَح فَيَفْصِل فَيَقْرَؤُه فَيَمُرّ ويَمُرّ يَمُرّ فَيَنْقَطِع فيه قَطْع قِطْعَة قيمَة كامَة كُلّ كَلام كَهْرَبائِيّ لِأَنّ لِتَجْرِبَتِه لِذلِك لِرُؤْيَة لِفَتْرَة لِقُطْب لَكِنْ لِلأَمام لِلْخَلْف لَه مَعَه مَع لِيَظْهَر مُتَوَقِّف مُثَبَّت مِثْل مَجال مَجالًا مَجْذوب مُرْتَفِع مُرَحِّلات مُرَكَّبَة مُضاءَة مَضْغوط مُضيئًا مُطْفَأَة مَفْصول مُقاوَمَة مَقْطَع مَقْطَعُها مَقْطوع مُكْتَمِل مِن مُوَصَّل مُوَصَّلَة نازِل نَجْمَة نَفْس نَفْسُها نِهايَة هَذا هَل هُوَ وهُوَ وَإِذا واحِد واضِح وجَرِّب وَصِّل ووَظيفَتُهُما وَقَد يَأْتي يَبْتَعِد يَبْرُد يَتَوَفَّر يَتَوَلَّد يَجْذِب يُحَرَّر يَحْمي يَخْرُج ويَخْرُج يَدْخُل يَدْعَم يَدور يُدير يَرْجِع يَرْفَع يُسْتَخْدَم يُسَخِّن ويُسَخِّن يَشْرَح يُشَغِّل يَصِل يَضْغَط يَضْغَطُه يُعاد يَعُدّ يَعْكِس يَعْمَل يَعود ويَعود يُعيدُه يُغَذّي يُغْلَق ويُغْلَق يُفْتَح يَفْصِل يُفَعِّلُه يَقْرَأ يُكَرِّر يَكون يُمَرِّر يُمْكِن يَنْتَظِر يَنْتَقِل يَنْحَبِس يَنْزِل يُنْطَق يُنَفِّذ يوجَد يُوَلِّد فَيُحَثّ القُوَى تَمْرِين التَّمْرِين افْصِل قَبْل اكْتَمَل المَقْطَع بِنَفْسِك تَقْيِيم عَكْس بِجِهاز لَمْبات بِمُؤَقِّت مَكان مَكانَيْن مُحَرِّكَيْن بِالتَّتابُع بَطِيء سَرِيع يَدَوِي دالَنْدَر بِسُرْعَتَيْن بِدُون نِهايَتَي مِشْوار المُشْتَرَكة مَداخِل مَخارِج أَبَدًا أُخْرَى أَعَدْنا أَقَل أَمامِي أَوْفَرْلودِه أَوَّلًا إِذا إِعادَة إِيقاف الأَمام الأَوْفَرْلودان الأَوَّل الإِصْبَع الإِعاقَة الاتِّجاه البَطِيئَة التَّوازِي التَّوالِي الثّانِي الدّائِرَتَيْن الدِّلْتا الزّائِد السُّرْعَة العالِيَة العَد العَكْسِي الكامِلَة الكَهْرَبائِيَّة الكونْتاكْتورات المُحَرِّكان المُحَرِّكَيْن المَكان المِلَفّات المَوْجودَة المُوَصَّل النَّجْمَة النَّموذَجِي بِالطَّرِيقَة بِبَرْنامَج بِتَلامُس بِتَيّار بَدْء بِدايَة بِقُدْرَتِه تَثْبِيت تَجْرِبَة تُغَذِّي تَفْصِل تَقْطَع تَلامُساتِه تِلْقائِيًّا تَمْنَع تَنْفَتِح جَدِيد ذاتِي ذاتِيًّا رَفْع زَوال سَبَب ضاغِطا ضَبْط عَكْسِي عَمَلُهُما تَعود فَلَو يَبْدَأ يَتَبادَل يَتَحَوَّل يَتَوَقَّف يُطْفِئ يَنْعَكِس لَعاد لِمُشْتَرَك مُباشَرَة مُتَوَقِّفًا مَرَّة مُشْتَرَك مَعًا مُغْلَقًا مِنْهُما نَبْدَأ نُحاكِي نَحْو نَرْفَع نُشَغِّل نُشَغِّلُه نَضْغَط نَفْسَه نُقْطَتا نُقْطَتُه نُقْطَتُها نَنْتَظِر واحِدَة وَحْدَه وُصول يَثْبُت يَنْفَتِح يَنْقَطِع يَبْقَى يُبْقِي يُثَبِّتُه يَجِب يَحْدُث يَقْرَؤُه يَقْصُر يَقْطَع يُلْغِي يُوقِف كَهْرَبائِيَّة النَّتِيجَة'.split(' ').forEach(w=>m.set(w.replace(TSH_RX,''),w));return m;})();
 function spkTash(w){const k=w.replace(TSH_RX,'');if(TSH.has(k))return TSH.get(k);
   for(const [p,d] of [['بال','بِ'],['وال','وَ'],['فال','فَ']])if(k.startsWith(p)&&TSH.has('ال'+k.slice(3)))return d+TSH.get('ال'+k.slice(3));
   if(k.startsWith('لل')&&TSH.has('ال'+k.slice(2)))return 'لِ'+TSH.get('ال'+k.slice(2)).slice(1);
@@ -2875,7 +2881,6 @@ let WCSND=lsG('wcSnd')!=='0';
 const wcCol=c=>{if(c===BRS)return 'قنطرة';const f=COLORS.find(x=>x[0]===c);return f?f[1].split(':')[0]:'';};
 /* explanation colours: one colour for the power circuit, PLC inputs and outputs, every contactor's and timer's own branch,
    the shared control feed, the indicator lamps and the neutral; the step's real wire colour is still named in the caption */
-let WCCLR=lsG('wcClr')!=='0';
 const WCK={pw:['⚡ دائرة القوى','#7a4a22'],feed:['🔌 تغذية التحكم المشتركة','#e0342f'],in:['⬅ مداخل PLC','#ff8a1f'],out:['➡ مخارج PLC','#00a6a6'],lamp:['💡 لمبات البيان','#c9a000'],N:['التعادل N','#4aa3df']};
 const WCKS={pw:'القوى',feed:'تغذية مشتركة',in:'مداخل PLC',out:'مخارج PLC',lamp:'لمبات',N:'N'};
 const WCKC=['#1c3fb8','#2aa84a','#d6249f','#6d28d9','#111111','#ff5c8a','#8e949a'];
@@ -2906,10 +2911,9 @@ function wcClass(steps){const gT=to=>{const L=[];GROUPS.filter(g=>g.to===to).for
     else if(pLamp.has(w))k='lamp';else k=tch||'feed';
     w.k=k;w.c0=w.c;w.cx=(WCK[k]||cat[k])[1];w.kl=(WCK[k]||cat[k])[0];});
   const order=['pw','feed','in','out',...coils,'lamp','N'];return {order,cat};}
-function wcPaint(c){c.steps.forEach(w=>{w.c=WCCLR?w.cx:w.c0;});
+function wcPaint(c){c.steps.forEach(w=>{w.c=w.cx;});
   const seen=c.order.filter(k=>c.steps.some(w=>w.k===k));
-  $('wcLeg').innerHTML=WCCLR?seen.map(k=>{const d=WCK[k]||c.cat[k];return `<span title="${esc(d[0])}"><i style="background:${d[1]}"></i>${esc(WCKS[k]||k)}</span>`;}).join(''):'';
-  $('wcClr').classList.toggle('on',WCCLR);$('wcClr').title=WCCLR?'إظهار ألوان الأسلاك الحقيقية':'ألوان الشرح: لون لكل جزء من الدائرة';}
+  $('wcLeg').innerHTML=seen.map(k=>{const d=WCK[k]||c.cat[k];return `<span title="${esc(d[0])}"><i style="background:${d[1]}"></i>${esc(WCKS[k]||k)}</span>`;}).join('');}
 /* full view: the board shows the exercise's reference wiring step by step and is read-only.
    mini view: the trainee's own board comes back and stays editable; a small window keeps the current step,
    its two terminals pulse on the trainee's board, and the clip moves on by itself once that wire is connected */
@@ -2919,8 +2923,9 @@ function wcHL(P){const c=S.clip;if(!c)return '';
   if(c.mini){const w=wcCur(c);if(!w)return '';const A=T[w.a],B=T[w.b],done=wcHas(w);
     if(done&&!c.adv)c.adv=setTimeout(()=>{c.adv=null;if(S.clip===c&&c.mini&&wcCur(c)===w&&wcHas(w))wcGo(1);},900);
     return (A&&B&&!done?`<path d="M${A.x} ${A.y}L${B.x} ${B.y}" class="wcgh" stroke="${w.c===BRS?'#c9a44a':w.c}"/>`:'')+[A,B].map(t=>t?`<circle cx="${t.x}" cy="${t.y}" r="15" class="wcht${done?' ok':''}"/>`:'').join('');}
-  if(c.hl==null||!P[c.hl])return '';const w=S.wires.find(x=>x.id===c.hl);if(!w)return '';
-  return `<path d="${P[w.id]}" class="wchl"/>`+[w.a,w.b].map(k=>T[k]?`<circle cx="${T[k].x}" cy="${T[k].y}" r="15" class="wcht"/>`:'').join('');}
+  const bt=c.btn?`<circle cx="${c.btn.x}" cy="${c.btn.y}" r="24" class="wcbt"/>`:'';
+  if(c.hl==null||!P[c.hl])return bt;const w=S.wires.find(x=>x.id===c.hl);if(!w)return bt;
+  return bt+`<path d="${P[w.id]}" class="wchl"/>`+[w.a,w.b].map(k=>T[k]?`<circle cx="${T[k].x}" cy="${T[k].y}" r="15" class="wcht"/>`:'').join('');}
 /* put the reference wiring on the board (trainee's board kept in c.saved) */
 function wcRef(c){c.saved=serial();c.keep={power:S.power,Q1:S.Q1,F1:S.F1};const v=c.ex;
   applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,px:v,...(DAHLX.has(v)?{mt:'d'}:{})});
@@ -2928,51 +2933,135 @@ function wcRef(c){c.saved=serial();c.keep={power:S.power,Q1:S.Q1,F1:S.F1};const 
   const W=S.wires.slice(),{order,cat}=wcClass(W);c.order=order;c.cat=cat;
   const rk=w=>{const o=order.indexOf(w.k);return o*2+(w.k==='pw'&&w.c0===BRS?1:0);};c.steps=W.map((w,i)=>[w,i]).sort((a,b)=>rk(a[0])-rk(b[0])||a[1]-b[1]).map(x=>x[0]);wcPaint(c);
   Object.assign(S,{Q1:false,F1:false,fault:null,coils:{},sel:null,pending:null,selDev:null});}
-function wcBack(c){try{applyObj(c.saved);}catch(_){}Object.assign(S,c.keep,{fault:null,sel:null,pending:null,selDev:null});}
+function wcBack(c){try{applyObj(c.saved);}catch(_){}S.pressed.clear();Object.assign(S,c.keep,{fault:null,sel:null,pending:null,selDev:null,coils:{}});}
 function wcStart(){const v=EXP.ex;if(!v||!PRESETS[v]||S.clip)return;hush();
   const c=S.clip={ex:v,steps:[],i:0,play:true,t:null,spd:1,hl:null,mini:false};
   try{wcRef(c);}catch(_){S.clip=null;if(c.saved)wcBack(c);update();return;}
   const d=document.querySelector('.more');if(d)d.open=false;
   document.body.classList.add('wclip');$('wcBar').hidden=false;$('wcBar').classList.remove('mini');$('wcT').textContent='🎬 '+PNAME[v];$('wcSpd').textContent='1×';
   say('🎬 مقطع التوصيل: '+PNAME[v]+'. توصيلاتك محفوظة وتعود كما هي عند تصغير المقطع أو إغلاقه.');wcShow();wcPlan();}
-function wcStop(){const c=S.clip;if(!c)return;clearTimeout(c.t);clearTimeout(c.adv);hush();S.clip=null;document.body.classList.remove('wclip');$('wcBar').hidden=true;
+function wcStop(){const c=S.clip;if(!c)return;c.tok=(c.tok||0)+1;clearTimeout(c.t);clearTimeout(c.adv);hush();S.clip=null;document.body.classList.remove('wclip');$('wcBar').hidden=true;
   if(!c.mini)wcBack(c);
   say(c.mini?'أُغلق المقطع. أكمل التوصيل، ثم اضغط 🎯 تقييم.':'أُغلق المقطع وعادت توصيلاتك كما كانت. وصّل التمرين بنفسك، ثم اضغط 🎯 تقييم.');update();}
-function wcMini(){const c=S.clip;if(!c)return;clearTimeout(c.t);clearTimeout(c.adv);c.adv=null;hush();
+function wcMini(){const c=S.clip;if(!c)return;clearTimeout(c.t);clearTimeout(c.adv);c.adv=null;hush();c.tok=(c.tok||0)+1;c.dk=null;c.btn=null;c.busy=false;
   if(!c.mini){c.steps=c.steps.map(w=>({a:w.a,b:w.b,c:w.c,c0:w.c0,cx:w.cx,k:w.k,kl:w.kl}));c.mini=true;c.play=false;c.hl=null;wcBack(c);document.body.classList.remove('wclip');
     if(c.i===0)c.i=1;else if(c.i>c.steps.length)c.i=c.steps.length;
     say('المقطع مصغّر: وصّل على لوحتك. الطرفان المطلوبان يومضان باللون الأحمر، وينتقل المقطع للخطوة التالية عند توصيل السلك.');}
   else{c.mini=false;try{wcRef(c);}catch(_){}document.body.classList.add('wclip');c.play=false;}
   $('wcBar').classList.toggle('mini',c.mini);wcShow();}
-function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c);
-  if(c.mini)update();else{S.wires=c.steps.slice(0,Math.min(i,n));c.hl=w?w.id:null;update();}
-  $('wcN').textContent=i===0?n+' سلكًا':i>n?'✔ اكتمل':`الخطوة ${i} من ${n}`;$('wcPg').style.width=(100*Math.min(i,n)/n)+'%';
+/* after the last wire the clip operates the panel like a trainer would and explains each step;
+   actions: on = switch the supply on, S0…S3 = press and release, w = wait for the timer, m = wait for the cart to reach a limit switch,
+   t1 = overload trip on M1, ok = reset the overload. The result line after each step is read from the live panel */
+const DMON='نرفع القاطع الرئيسي Q1 وقاطع التحكم F1، فتصل التغذية إلى اللوحة والمحرك متوقف.',DMONP='نرفع القاطع الرئيسي Q1 وقاطع التحكم F1، فتصل التغذية إلى اللوحة وإلى جهاز easy، ويعمل البرنامج (RUN).',
+  DMT1='نحاكي زيادة الحمل على المحرك: يفصل الأوفرلود فتنفتح نقطته المغلقة 95-96 وينقطع التيار عن الملفات فيتوقف المحرك، وتغلق 97-98 فتضيء لمبة العطل H4.',
+  DMT1P='نحاكي زيادة الحمل على المحرك: يفصل الأوفرلود فتنفتح نقطته 95-96 التي تغذي مشترك المخارج، فتفصل الكونتاكتورات ويتوقف المحرك، وتضيء لمبة العطل H4.',
+  DMT1N='نحاكي زيادة الحمل على المحرك: يفصل الأوفرلود فتنفتح نقطته المغلقة 95-96 وينقطع التيار عن الملفات فيتوقف المحرك.',
+  DMT1NP='نحاكي زيادة الحمل على المحرك: يفصل الأوفرلود فتنفتح نقطته 95-96 التي تغذي مشترك المخارج، فتفصل الكونتاكتورات ويتوقف المحرك.',
+  DMOK='بعد زوال سبب الحمل الزائد نضغط RESET في الأوفرلود فتعود نقطته 95-96 مغلقة.',
+  DMS0P='قبل إعادة ضبط الأوفرلود نضغط S0: البرنامج ما زال يُبقي المخارج تعمل، فلو أعدنا الضبط أولًا لعاد المحرك للدوران مباشرة. بالضغط على S0 يُلغي البرنامج التشغيل.',
+  DMOKP='الآن نضغط RESET في الأوفرلود فتعود 95-96 مغلقة وتعود التغذية لمشترك المخارج، ويبقى المحرك متوقفًا حتى نشغّله من جديد.';
+const DEMO={
+ p1:[['on',DMON],['S1','نضغط S1: يمر التيار عبر نقطة S0 المغلقة ثم S1 إلى ملف K1 فيعمل، فتغلق تلامساته الرئيسية ويدور المحرك. وعند رفع الإصبع يبقى K1 يعمل لأن تلامسه المساعد 13-14 على التوازي مع S1 (تثبيت ذاتي).'],
+  ['S0','نضغط S0: تنفتح نقطته المغلقة فينقطع التيار عن ملف K1، فيفصل ويتوقف المحرك، وينفتح 13-14 فلا يعود K1 للعمل بعد رفع الإصبع.'],['S1','نشغّل المحرك من جديد بالضغط على S1.'],['t1',DMT1],['ok',DMOK+' ويبقى المحرك متوقفًا حتى نضغط S1.']],
+ p2:[['on',DMON],['S1','نضغط S1 (التشغيل من المكان الأول): يعمل K1 ويدور المحرك، ويثبّت نفسه بالتلامس 13-14.'],
+  ['S3','نضغط S3 (الإيقاف من المكان الثاني): نقطتا الإيقاف S0 وS3 على التوالي، فأي واحدة منهما تقطع التيار عن K1.'],
+  ['S2','نضغط S2 (التشغيل من المكان الثاني): ضاغطا التشغيل S1 وS2 على التوازي، فأي واحد منهما يشغّل K1.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نشغّل من جديد.'],['t1',DMT1],['ok',DMOK]],
+ p3:[['on',DMON],['S2','نضغط S2 أولًا: لا يعمل M2، لأن مسار K2 يمر بتلامس من K1، وK1 لا يعمل بعد (تشغيل بالتتابع).'],['S1','نضغط S1: يعمل K1 ويدور المحرك M1، ويثبّت نفسه.'],
+  ['S2','الآن نضغط S2: صار تلامس K1 مغلقًا، فيعمل K2 ويدور المحرك M2.'],['S3','نضغط S3: يتوقف M2 وحده ويبقى M1 يعمل.'],['S2','نشغّل M2 من جديد.'],['S0','نضغط S0: يقطع التغذية عن الدائرتين فيتوقف المحركان.'],
+  ['S1','نشغّل M1 من جديد.'],['t1','نحاكي زيادة الحمل على M1: يفصل أوفرلوده فتنفتح 95-96 في بداية دائرة التحكم، فيتوقف كل ما يعمل، وتضيء لمبة العطل H4.'],['ok',DMOK]],
+ p4:[['on',DMON],['S1','نضغط S1 (أمامي): يعمل K1 ويدور المحرك للأمام، وتنفتح نقطته المغلقة الموجودة في مسار K2 (إعاقة كهربائية).'],
+  ['S2','نضغط S2 والمحرك يعمل للأمام: لا يحدث شيء، لأن نقطة K1 المغلقة في مسار K2 مفتوحة الآن. يجب الإيقاف أولًا (عكس بطيء).'],['S0','نضغط S0 فيتوقف المحرك.'],
+  ['S2','نضغط S2 (عكسي): يعمل K2 فيتبادل طوران ويدور المحرك للخلف، وتنفتح نقطته المغلقة في مسار K1.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نشغّل للأمام من جديد.'],['t1',DMT1],['ok',DMOK]],
+ p5:[['on',DMON],['S1','نضغط S1 (أمامي): يعمل K1 ويدور المحرك للأمام.'],
+  ['S2','نضغط S2 مباشرة دون إيقاف: نقطة S2 المغلقة في مسار K1 تفصل K1 أولًا، ثم يعمل K2 فينعكس اتجاه الدوران (عكس سريع)، والإعاقة الكهربائية تمنع عملهما معًا.'],
+  ['S1','نضغط S1: يعكس الاتجاه مرة أخرى إلى الأمام بالطريقة نفسها.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نشغّل من جديد.'],['t1',DMT1],['ok',DMOK]],
+ p6:[['on',DMON],['S1','نضغط S1: يعمل K1 الرئيسي وK2 النجمة، فيبدأ المحرك نجمة بتيار بدء أقل.'],
+  ['S2','نضغط S2: يُفصل K2 النجمة أولًا ثم يعمل K3 الدلتا، فيعمل المحرك دلتا بقدرته الكاملة، ويثبت على الدلتا. لا يعمل K2 وK3 معًا أبدًا (إعاقة).'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نبدأ من جديد نجمة.'],['t1',DMT1],['ok',DMOK]],
+ p7:[['on',DMON],['S1','نضغط S1: يعمل K1 الرئيسي وK2 النجمة فيبدأ المحرك نجمة، ويبدأ المؤقت KT1 العدّ.'],
+  ['w','ننتظر انتهاء زمن المؤقت: تنفتح نقطته 15-16 فيفصل K2 النجمة، وتغلق 15-18 فيعمل K3 الدلتا، فيتحول المحرك تلقائيًا إلى دلتا.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نبدأ من جديد.'],['t1',DMT1],['ok',DMOK]],
+ p15:[['on',DMON],['S1','نضغط S1 (أمامي): يعمل K1 فيدور المحرك للأمام وتتحرك العربة نحو نهاية المشوار SQ2.'],
+  ['m','ننتظر وصول العربة: عندما تضغط على SQ2 تنفتح نقطتها المغلقة الموجودة في مسار K1، فيتوقف المحرك تلقائيًا.'],
+  ['S2','نضغط S2 (عكسي): يعمل K2 فتعود العربة نحو SQ1.'],['m','عند وصول العربة إلى SQ1 تنفتح نقطتها المغلقة في مسار K2 فيتوقف المحرك.'],['S1','نشغّل للأمام من جديد.'],['S0','نضغط S0 فيتوقف المحرك في أي مكان.']],
+ p16:[['on',DMON],['S1','نضغط S1 (أمامي): يعمل K1، ويعمل K3 فيدور المحرك بالسرعة البطيئة، ويبدأ المؤقت KT1 العدّ.'],
+  ['w','ننتظر انتهاء زمن المؤقت: يُفصل K3 ويعمل K4 (يقصر 1U 1V 1W) وK5، فيتحول المحرك إلى السرعة العالية.'],['S0','نضغط S0 فيتوقف المحرك.'],
+  ['S2','نضغط S2 (عكسي): يعمل K2 فيدور المحرك للخلف بالسرعة البطيئة أولًا.'],['w','بعد زمن المؤقت يتحول إلى السرعة العالية في الاتجاه العكسي.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نشغّل من جديد.'],['t1',DMT1N],['ok',DMOK]],
+ p8:[['on',DMONP],['S1','نضغط S1 الموصّل بالدخل I2: يقرؤه البرنامج فيشغّل المخرج Q1، فيعمل K1 ويدور المحرك. وعند رفع الإصبع يبقى Q1 يعمل لأن البرنامج يثبّته ذاتيًا.'],
+  ['S0','نضغط S0 الموصّل بالدخل I1 (مغلق عادةً): ينفتح فيُطفئ البرنامج Q1، فيفصل K1 ويتوقف المحرك.'],['S1','نشغّل من جديد بـ S1.'],['t1',DMT1P],['S0',DMS0P],['ok',DMOKP]],
+ p9:[['on',DMONP],['S1','نضغط S1 (الدخل I2): يشغّل البرنامج Q1 فيعمل K1 ويدور المحرك.'],['S3','نضغط S3 (الدخل I4): البرنامج يوقف Q1 من I1 أو I4، فيتوقف المحرك.'],
+  ['S2','نضغط S2 (الدخل I3): التشغيل من I2 أو I3، فيعمل المحرك من المكان الثاني.'],['S0','نضغط S0 (الدخل I1) فيتوقف المحرك.'],['S1','نشغّل من جديد.'],['t1',DMT1P],['S0',DMS0P],['ok',DMOKP]],
+ p10:[['on',DMONP],['S2','نضغط S2 (I3) أولًا: البرنامج لا يشغّل Q2 إلا إذا كان Q1 يعمل، فلا يعمل M2.'],['S1','نضغط S1 (I2): يعمل Q1 فيعمل K1 والمحرك M1.'],
+  ['S2','الآن نضغط S2: يشغّل البرنامج Q2 فيعمل K2 والمحرك M2.'],['S3','نضغط S3 (I4): يتوقف M2 وحده.'],['S0','نضغط S0 (I1): يتوقف المحركان.'],['S1','نشغّل M1 من جديد.'],
+  ['t1','نحاكي زيادة الحمل على M1: الأوفرلودان F2 وF3 على التوالي في تغذية المخارج، ففصل أي منهما يوقف المحركين، وتضيء لمبة العطل H4.'],['S0',DMS0P],['ok',DMOKP]],
+ p11:[['on',DMONP],['S1','نضغط S1 (I2): يشغّل البرنامج Q1 فيعمل K1 ويدور المحرك للأمام.'],['S2','نضغط S2 (I3) والمحرك يعمل للأمام: الإعاقة في البرنامج تمنع Q2، فلا يحدث شيء.'],
+  ['S0','نضغط S0 (I1) فيتوقف المحرك.'],['S2','نضغط S2: يشغّل البرنامج Q2 فيعمل K2 ويدور المحرك للخلف.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نشغّل للأمام من جديد.'],['t1',DMT1P],['S0',DMS0P],['ok',DMOKP]],
+ p12:[['on',DMONP],['S1','نضغط S1 (I2): يعمل Q1 وK1 ويدور المحرك للأمام.'],['S2','نضغط S2 (I3) مباشرة: البرنامج يُطفئ Q1 ويشغّل Q2، فينعكس الاتجاه دون إيقاف (عكس سريع).'],
+  ['S1','نضغط S1: يعكس الاتجاه إلى الأمام مرة أخرى.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نشغّل من جديد.'],['t1',DMT1P],['S0',DMS0P],['ok',DMOKP]],
+ p13:[['on',DMONP],['S1','نضغط S1 (I2): يشغّل البرنامج Q1 (K1 الرئيسي) وQ2 (K2 النجمة)، فيبدأ المحرك نجمة.'],
+  ['S2','نضغط S2 (I3): يُطفئ البرنامج Q2 ويشغّل Q3 (K3 الدلتا)، فيعمل المحرك دلتا. الإعاقة في البرنامج تمنع النجمة والدلتا معًا.'],['S0','نضغط S0 (I1) فيتوقف المحرك.'],['S1','نبدأ من جديد نجمة.'],['t1',DMT1P],['S0',DMS0P],['ok',DMOKP]],
+ p14:[['on',DMONP],['S1','نضغط S1 (I2): يشغّل البرنامج Q1 وQ2 فيبدأ المحرك نجمة، ويبدأ المؤقت T1 في البرنامج العدّ.'],
+  ['w','ننتظر انتهاء زمن T1: يُطفئ البرنامج Q2 ويشغّل Q3، فيتحول المحرك تلقائيًا إلى دلتا.'],['S0','نضغط S0 (I1) فيتوقف المحرك.'],['S1','نبدأ من جديد.'],['t1',DMT1P],['S0',DMS0P],['ok',DMOKP]],
+ p17:[['on',DMONP],['S1','نضغط S1 (I2): يشغّل البرنامج Q1 (K1 أمامي) وQ3 (K3 السرعة البطيئة)، ويبدأ المؤقت T1 العدّ.'],
+  ['w','بعد زمن T1: يُطفئ البرنامج Q3 ويشغّل Q4، فيعمل K4 ومعه K5 عبر نقطته 53-54، ويتحول المحرك إلى السرعة العالية.'],['S0','نضغط S0 (I1) فيتوقف المحرك.'],
+  ['S2','نضغط S2 (I3، عكسي): يعمل Q2 وK2 فيدور المحرك للخلف بالسرعة البطيئة.'],['w','بعد زمن T1 يتحول إلى السرعة العالية.'],['S0','نضغط S0 فيتوقف المحرك.'],['S1','نشغّل من جديد.'],['t1',DMT1NP],['S0',DMS0P],['ok',DMOKP]]};
+const wcND=c=>c.mini?0:(DEMO[c.ex]||[]).length,wcEnd=c=>c.steps.length+wcND(c)+1;
+/* what the trainee can see now: contactors, motor(s) and lamps */
+function wcObs(c){const k=Object.keys(S.coils).filter(x=>S.coils[x]&&/^K\d+$/.test(x)).sort(),ms=m=>m.state==='run'?'run:'+(m.mode||'ok')+':'+m.dir:m.state,
+    L=[1,2,3,4].filter(i=>S.lamps&&S.lamps['H'+i]).map(i=>'H'+i),two=TWO_M.has(c.ex);
+  return (k.length?'يعمل '+k.join(' و '):'لا يعمل أي كونتاكتور')+' · '+mTxt(ms(S.motor),S.motor.why,two?'المحرك M1':'المحرك')+(two?' · '+mTxt(ms(S.motor2),S.motor2.why,'المحرك M2'):'')+' · '+(L.length?'مضاءة: '+L.join(' و '):'لا تضيء أي لمبة');}
+function wcDemoOff(c){c.tok=(c.tok||0)+1;c.dk=null;c.btn=null;S.pressed.clear();Object.assign(S,{Q1:false,F1:false,coils:{},fault:null});}
+function wcDemoReset(c){c.tok=(c.tok||0)+1;c.btn=null;const P=PPROG[c.ex];
+  Object.assign(S,{power:true,Q1:true,F1:true,fault:null,coils:{},done:{},pressed:new Set(),ls1:false,ls2:false,pos:0.5});
+  ofType('timer').forEach(t=>{S.tm[t].start=null;});ofType('ol').forEach(f=>Object.assign(S.ol[f],{trip:false,heat:0}));
+  S.plc.prog=P?JSON.parse(JSON.stringify(P.prog)):[];S.plc.tm=P?JSON.parse(JSON.stringify(P.tm||{})):{};Object.assign(S.plc,{run:true,q:[false,false,false,false,false],m:{},ts:{},prev:{},inp:{},flow:[]});}
+/* run one demo action on the live panel, then call back with the result */
+function wcDemoAct(c,a,cb){const tok=c.tok,ok=()=>S.clip===c&&c.tok===tok,later=(f,ms)=>setTimeout(()=>{if(ok())f();},ms),sig=()=>JSON.stringify(S.coils)+S.motor.state+S.motor.mode;
+  if(a==='on'){wcDemoReset(c);c.tok=tok;update();later(cb,900);}
+  else if(/^S\d$/.test(a)){const el=svg.querySelector(`[data-press="${a}"]`);
+    if(el){const r=el.getBoundingClientRect(),m=svg.getScreenCTM();if(m){const p=new DOMPoint(r.x+r.width/2,r.y+r.height/2).matrixTransform(m.inverse());c.btn={x:p.x,y:p.y};}
+      el.scrollIntoView({block:'center',inline:'nearest',behavior:'smooth'});}
+    later(()=>{S.pressed.add(a);update();later(()=>{S.pressed.delete(a);update();later(()=>{c.btn=null;update();cb();},900);},1100);},500);}
+  else if(a==='w'||a==='m'){const s0=sig(),t0=Date.now(),lim=a==='w'?Math.max(4,...ofType('timer').map(t=>+S.tm[t].delay||0),...Object.values(S.plc.tm||{}).map(x=>+(x&&x.t)||0))*1000+4000:20000;
+    const poll=()=>{if(!ok())return;if((a==='w'?sig()!==s0:S.motor.state!=='run')||Date.now()-t0>lim)later(cb,900);else later(poll,200);};later(poll,300);}
+  else if(a==='t1'){ofType('ol').forEach(f=>{const o=S.ol[f];if(o.m1||(!TWO_M.has(c.ex)&&o.m2))o.trip=true;});update();later(cb,1500);}
+  else if(a==='ok'){ofType('ol').forEach(f=>Object.assign(S.ol[f],{trip:false,heat:0}));update();later(cb,1200);}
+  else cb();}
+function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c),ND=wcND(c),E=wcEnd(c),dm=!c.mini&&i>n&&i<E?i-n-1:-1;
+  if(c.mini)update();
+  else{if(dm<0&&c.dk!=null)wcDemoOff(c);
+    /* the demo only moves forward one step at a time from a known state; going back starts it again */
+    if(dm>0&&c.dk!==dm-1){c.i=n+1;return wcShow();}
+    S.wires=c.steps.slice(0,Math.min(i,n));c.hl=w?w.id:null;update();}
+  $('wcN').textContent=i===0?n+' سلكًا':dm>=0?`تجربة التشغيل ${dm+1} من ${ND}`:i>=E?'✔ اكتمل':`الخطوة ${i} من ${n}`;$('wcPg').style.width=(100*Math.min(i,E-1)/(E-1))+'%';
   let h,t;
   if(i===0){h=`القطع على اللوحة: <span class="wcw">${esc(S.devs.filter(x=>!x.host||x.type==='ol').map(x=>x.id).join('، ')||'—')}</span>. القاطع الرئيسي مفصول أثناء التوصيل. يُوصَّل ${n} سلكًا: دائرة القوى أولًا ثم دائرة التحكم.`;
     t='مقطع توصيل تمرين '+PNAME[c.ex]+'. افصل القاطع الرئيسي قبل التوصيل. نُوَصِّل دائرة القوى أَوَّلًا، ثم دائرة التحكم.';}
-  else if(!w){h=`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} ${c.mini?'اضغط 🎯 تقييم عندما تنتهي.':'اضغط ✕ للعودة إلى توصيلاتك، أو صغّر المقطع لتوصّل وهو أمامك، ثم اضغط 🎯 تقييم.'}`;
-    t='اكتمل التوصيل. '+(c.mini?'اضغط تقييم عندما تنتهي.':'أغلق المقطع ووصّل التمرين بنفسك، ثم اضغط تقييم.');}
+  else if(dm>=0){const [a,tx]=DEMO[c.ex][dm];c.busy=true;
+    h=`<span class="wcg" style="border-inline-start:5px solid var(--ok)">▶ تجربة التشغيل${dm===0&&PLCX.has(c.ex)?' (ببرنامج easy النموذجي)':''}</span><br>${esc(tx)}<span class="wcres" id="wcRes">⏳</span>`;t=(dm===0?'تجربة التشغيل. ':'')+tx;}
+  else if(!w){h=c.mini?`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} اضغط 🎯 تقييم عندما تنتهي.`:
+      `✔ انتهى المقطع: وصّلنا التمرين (${n} سلكًا) وجرّبنا تشغيله.${PLCX.has(c.ex)?' في لوحتك يلزم أيضًا كتابة برنامج جهاز easy.':''} اضغط ✕ للعودة إلى توصيلاتك، أو صغّر المقطع لتوصّل وهو أمامك، ثم اضغط 🎯 تقييم.`;
+    t=c.mini?'اكتمل التوصيل. اضغط تقييم عندما تنتهي.':'انتهى المقطع. أغلق المقطع ووصّل التمرين بنفسك، ثم جرّب التشغيل واضغط تقييم.';}
   else{const p=w.k==='pw',first=i===1||c.steps[i-2].k!==w.k,col=wcCol(w.c0);
-    h=`<span class="wcg" style="border-inline-start:5px solid ${w.cx}">${esc(w.kl)}</span>${col?'سلك '+esc(col)+(WCCLR?' في اللوحة الحقيقية':''):''}<span class="wcsw" style="background:${w.c0}"></span><br>`+
+    h=`<span class="wcg" style="border-inline-start:5px solid ${w.cx}">${esc(w.kl)}</span>${col?'سلك '+esc(col)+' في اللوحة الحقيقية':''}<span class="wcsw" style="background:${w.c0}"></span><br>`+
       `من <span class="wcw">${esc(dk(w.a))}</span>: ${esc(termDesc(w.a))}<br>إلى <span class="wcw">${esc(dk(w.b))}</span>: ${esc(termDesc(w.b))}`;
     if(c.mini){const miss=[...new Set([w.a,w.b].filter(k=>!T[k]).map(k=>k.split('.')[0]))];
       h+=miss.length?`<br><span class="wcst no">⚠ أضف ${esc(miss.join(' و '))} إلى لوحتك أولًا من الأدوات.</span>`:wcHas(w)?'<br><span class="wcst">✔ وصّلت هذا السلك</span>':'';}
     t=(first?(i===1?'':'الآن ')+w.kl.replace(/^[^\u0600-\u06FF]+/,'')+'. ':'')+'من '+termDesc(w.a)+'، إلى '+termDesc(w.b)+'.';}
   $('wcCap').innerHTML=h;wcBtns();wcPlace();if(WCSND)speak(t);
+  if(dm>=0){c.tok=(c.tok||0)+1;wcDemoAct(c,DEMO[c.ex][dm][0],()=>{c.busy=false;c.dk=dm;wcBtns();const r=wcObs(c),e=$('wcRes');if(e)e.textContent='النتيجة: '+r;wcPlace();if(WCSND)speak('النتيجة: '+r.replace(/ · /g,'، ')+'.',true);});}
   requestAnimationFrame(()=>{const e=svg.querySelector(c.mini?'.wcht':'.wchl');if(!e)return;const r=e.getBoundingClientRect(),
       top=Math.max(...['.top','.wtop'].map(q=>{const x=document.querySelector(q);return x&&x.offsetParent?x.getBoundingClientRect().bottom:0;})),
       bot=document.querySelector('.dock').getBoundingClientRect().top,B=$('wcBar').getBoundingClientRect(),hid=!(r.bottom<B.top||r.top>B.bottom||r.right<B.left||r.left>B.right);
     if(hid||r.top<top||r.bottom>bot||r.left<0||r.right>innerWidth)e.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});});}
-function wcBtns(){const c=S.clip,n=c.steps.length,pl=$('wcPlay'),[pi,pt]=c.i>n?['↻','إعادة المقطع']:c.play?['⏸','إيقاف مؤقت']:['▶','تشغيل'];pl.textContent=pi;pl.title=pl.ariaLabel=pt;
-  $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>n;$('wcSnd').textContent=WCSND?'🔊':'🔇';
+function wcBtns(){const c=S.clip,n=c.steps.length,E=wcEnd(c),pl=$('wcPlay'),[pi,pt]=c.i>=E?['↻','إعادة المقطع']:c.play?['⏸','إيقاف مؤقت']:['▶','تشغيل'];pl.textContent=pi;pl.title=pl.ariaLabel=pt;
+  $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>=E||!!c.busy;$('wcSnd').textContent=WCSND?'🔊':'🔇';
   $('wcMin').innerHTML=c.mini?'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>':'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 12.5h10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';$('wcMin').title=$('wcMin').ariaLabel=c.mini?'تكبير المقطع':'تصغير المقطع والتوصيل على لوحتك';}
 /* next step after a pause, or when the spoken step has finished, whichever is later */
-function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play||c.mini)return;if(c.i>c.steps.length){c.play=false;wcBtns();return;}
+function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play||c.mini)return;if(c.i>=wcEnd(c)){c.play=false;wcBtns();return;}
   const t0=Date.now(),min=(c.i===0?4000:2400)/c.spd;
   const tick=()=>{if(S.clip!==c||!c.play)return;const el=Date.now()-t0,talk=WCSND&&SPK.ok&&(speechSynthesis.speaking||speechSynthesis.pending);
-    if(el>=min&&(!talk||el>=min+15000)){c.i++;wcShow();wcPlan();}else c.t=setTimeout(tick,200);};
+    if(el>=min&&!c.busy&&(!talk||el>=min+15000)){c.i++;wcShow();wcPlan();}else c.t=setTimeout(tick,200);};
   c.t=setTimeout(tick,200);}
-function wcGo(d){const c=S.clip;clearTimeout(c.adv);c.adv=null;c.i=Math.max(c.mini?1:0,Math.min(c.steps.length+1,c.i+d));wcShow();wcPlan();}
+function wcGo(d){const c=S.clip;clearTimeout(c.adv);c.adv=null;c.i=Math.max(c.mini?1:0,Math.min(wcEnd(c),c.i+d));wcShow();wcPlan();}
 /* the clip window starts at the top and can be dragged by its title row; its place is remembered */
 let WCP={};try{WCP=JSON.parse(lsG('wcPos')||'{}')||{};}catch(_){}
 function wcPlace(){const b=$('wcBar');if(b.hidden)return;const r=b.getBoundingClientRect();
@@ -2984,11 +3073,10 @@ function wcPlace(){const b=$('wcBar');if(b.hidden)return;const r=b.getBoundingCl
   const up=()=>{if(!d)return;d=null;const r=$('wcBar').getBoundingClientRect();WCP={x:Math.round(r.left),y:Math.round(r.top)};lsS('wcPos',JSON.stringify(WCP));};
   h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);addEventListener('resize',wcPlace);}
 $('exClip').onclick=wcStart;$('wcX').onclick=wcStop;$('wcMin').onclick=wcMini;$('wcPrev').onclick=()=>wcGo(-1);$('wcNext').onclick=()=>wcGo(1);
-$('wcPlay').onclick=()=>{const c=S.clip;if(c.i>c.steps.length){if(c.mini)wcMini();c.i=0;c.play=true;wcShow();wcPlan();return;}
+$('wcPlay').onclick=()=>{const c=S.clip;if(c.i>=wcEnd(c)){if(c.mini)wcMini();c.i=0;c.play=true;wcShow();wcPlan();return;}
   if(c.mini){wcMini();return;}
   c.play=!c.play;if(c.play)wcGo(1);else{clearTimeout(c.t);hush();wcBtns();}};
 $('wcSpd').onclick=()=>{const c=S.clip,L=[1,1.5,2,0.75];c.spd=L[(L.indexOf(c.spd)+1)%L.length];$('wcSpd').textContent=c.spd+'×';};
-$('wcClr').onclick=()=>{const c=S.clip;WCCLR=!WCCLR;lsS('wcClr',WCCLR?null:'0');if(c){wcPaint(c);wcShow();}};
 $('wcSnd').onclick=()=>{WCSND=!WCSND;lsS('wcSnd',WCSND?null:'0');if(!WCSND)hush();wcBtns();};
 /* full view: the board's own shortcuts (delete, undo…) are off; Space pauses, the arrows step, Esc closes */
 window.addEventListener('keydown',e=>{if(!S.clip||S.clip.mini||e.key==='Tab')return;e.stopPropagation();
