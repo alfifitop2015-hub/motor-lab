@@ -143,6 +143,12 @@ body.wclip .top,body.wclip .wtop,body.wclip #svg,body.wclip .dock{pointer-events
 body.wclip .dock{opacity:.55}
 .wchl{fill:none;stroke:#ffd000;stroke-width:16;stroke-linecap:round;stroke-linejoin:round;opacity:.5;pointer-events:none;animation:wcPulse 1s ease-in-out infinite alternate}
 .wcht{fill:none;stroke:#ff3b30;stroke-width:4;pointer-events:none;animation:wcPulse 1s ease-in-out infinite alternate}
+.wcbar.mini{left:8px;transform:none;width:min(340px,calc(100vw - 16px));padding:6px 8px 8px}
+.wcbar.mini .wccap{font-size:.82rem;min-height:0;margin-bottom:6px}.wcbar.mini #wcSpd{display:none}
+.wcbar.mini .wcctl button{height:32px;padding:0 9px}
+.wccap .wcst{font-weight:700;color:var(--ok)}.wccap .wcst.no{color:var(--warn)}
+.wcgh{fill:none;stroke-width:5;stroke-dasharray:10 8;stroke-linecap:round;opacity:.75;pointer-events:none}
+.wcht.ok{stroke:#2aa84a;animation:none;opacity:.9}
 @keyframes wcPulse{from{opacity:.25}to{opacity:.85}}
 @media (prefers-reduced-motion:reduce){.wchl,.wcht{animation:none}}
 .plcbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px}.plcbar .grow{flex:1}
@@ -533,7 +539,7 @@ body.fs{padding-bottom:0}
 </div>
 
 <div id="wcBar" class="wcbar" hidden role="region" aria-label="مقطع التوصيل خطوة بخطوة">
-  <div class="wch"><b id="wcT">🎬 مقطع التوصيل</b><span class="wcn" id="wcN"></span><button class="ib" id="wcX" title="إغلاق المقطع والعودة إلى توصيلاتك" aria-label="إغلاق المقطع">✕</button></div>
+  <div class="wch"><b id="wcT">🎬 مقطع التوصيل</b><span class="wcn" id="wcN"></span><button class="ib" id="wcMin" title="تصغير المقطع والتوصيل على لوحتك" aria-label="تصغير المقطع">🗕</button><button class="ib" id="wcX" title="إغلاق المقطع والعودة إلى توصيلاتك" aria-label="إغلاق المقطع">✕</button></div>
   <div class="wcprog"><i id="wcPg"></i></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
   <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة">› السابق</button><button class="prim" id="wcPlay">⏸ إيقاف مؤقت</button><button id="wcNext" title="الخطوة التالية">التالي ‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
@@ -2504,7 +2510,7 @@ document.getElementById('bCopy').onclick=async()=>{const ta=document.getElementB
 document.getElementById('bLoad').onclick=async()=>{const raw=document.getElementById('codeIn').value;
   try{const o=await decodeCode(raw);snap();applyObj(o);S.stu=o.st||null;stuCheck();S.sel=null;S.pending=null;say(o.st?'فُتحت تجربة المتدرب '+o.st.n:'حُمّلت توصيلات من كود مشاركة');modal.classList.remove('open');update();}
   catch(_){document.getElementById('loadErr').textContent='الكود غير صالح. الصق رسالة المتدرب كاملة أو الكود فقط.';}};
-function save(){if(S.clip)return;try{localStorage.setItem('panelSim.v4',JSON.stringify(serial()));}catch(_){}}
+function save(){if(S.clip&&!S.clip.mini)return;try{localStorage.setItem('panelSim.v4',JSON.stringify(serial()));}catch(_){}}
 try{const o=JSON.parse(localStorage.getItem('panelSim.v4')||'null');if(o)applyObj(o);}catch(_){}
 
 /* ---------- trainee submit & trainer mode ---------- */
@@ -2858,52 +2864,75 @@ $('exPick').onchange=e=>{exPick(e.target.value,true);if(EXP.ex){say('التمر�
 let WCSND=lsG('wcSnd')!=='0';
 const wcPow=w=>[BR,BK,GR,BRS].includes(w.c)||/^M[12]\./.test(w.a)||/^M[12]\./.test(w.b);
 const wcCol=c=>{if(c===BRS)return 'قنطرة';const f=COLORS.find(x=>x[0]===c);return f?f[1].split(':')[0]:'';};
-function wcHL(P){const c=S.clip;if(!c||c.hl==null||!P[c.hl])return '';const w=S.wires.find(x=>x.id===c.hl);if(!w)return '';
+/* full view: the board shows the exercise's reference wiring step by step and is read-only.
+   mini view: the trainee's own board comes back and stays editable; a small window keeps the current step,
+   its two terminals pulse on the trainee's board, and the clip moves on by itself once that wire is connected */
+const wcHas=w=>S.wires.some(x=>(x.a===w.a&&x.b===w.b)||(x.a===w.b&&x.b===w.a));
+const wcCur=c=>c.i&&c.i<=c.steps.length?c.steps[c.i-1]:null;
+function wcHL(P){const c=S.clip;if(!c)return '';
+  if(c.mini){const w=wcCur(c);if(!w)return '';const A=T[w.a],B=T[w.b],done=wcHas(w);
+    if(done&&!c.adv)c.adv=setTimeout(()=>{c.adv=null;if(S.clip===c&&c.mini&&wcCur(c)===w&&wcHas(w))wcGo(1);},900);
+    return (A&&B&&!done?`<path d="M${A.x} ${A.y}L${B.x} ${B.y}" class="wcgh" stroke="${w.c===BRS?'#c9a44a':w.c}"/>`:'')+[A,B].map(t=>t?`<circle cx="${t.x}" cy="${t.y}" r="15" class="wcht${done?' ok':''}"/>`:'').join('');}
+  if(c.hl==null||!P[c.hl])return '';const w=S.wires.find(x=>x.id===c.hl);if(!w)return '';
   return `<path d="${P[w.id]}" class="wchl"/>`+[w.a,w.b].map(k=>T[k]?`<circle cx="${T[k].x}" cy="${T[k].y}" r="15" class="wcht"/>`:'').join('');}
-function wcStart(){const v=EXP.ex;if(!v||!PRESETS[v]||S.clip)return;hush();
-  const c=S.clip={ex:v,saved:serial(),keep:{power:S.power,Q1:S.Q1,F1:S.F1},steps:[],i:0,play:true,t:null,spd:1,hl:null};
-  try{applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,px:v,...(DAHLX.has(v)?{mt:'d'}:{})});}catch(_){S.clip=null;applyObj(c.saved);update();return;}
+/* put the reference wiring on the board (trainee's board kept in c.saved) */
+function wcRef(c){c.saved=serial();c.keep={power:S.power,Q1:S.Q1,F1:S.F1};const v=c.ex;
+  applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,px:v,...(DAHLX.has(v)?{mt:'d'}:{})});
   /* power circuit first (motor jumpers after the motor cable), then the control circuit */
   const rk=w=>wcPow(w)?(w.c===BRS?1:0):2;c.steps=S.wires.slice().map((w,i)=>[w,i]).sort((a,b)=>rk(a[0])-rk(b[0])||a[1]-b[1]).map(x=>x[0]);
-  Object.assign(S,{Q1:false,F1:false,fault:null,coils:{},sel:null,pending:null,selDev:null});
+  Object.assign(S,{Q1:false,F1:false,fault:null,coils:{},sel:null,pending:null,selDev:null});}
+function wcBack(c){try{applyObj(c.saved);}catch(_){}Object.assign(S,c.keep,{fault:null,sel:null,pending:null,selDev:null});}
+function wcStart(){const v=EXP.ex;if(!v||!PRESETS[v]||S.clip)return;hush();
+  const c=S.clip={ex:v,steps:[],i:0,play:true,t:null,spd:1,hl:null,mini:false};
+  try{wcRef(c);}catch(_){S.clip=null;if(c.saved)wcBack(c);update();return;}
   const d=document.querySelector('.more');if(d)d.open=false;
-  document.body.classList.add('wclip');$('wcBar').hidden=false;$('wcT').textContent='🎬 '+PNAME[v];$('wcSpd').textContent='1×';
-  say('🎬 مقطع التوصيل: '+PNAME[v]+'. توصيلاتك محفوظة وتعود كما هي عند إغلاق المقطع.');wcShow();wcPlan();}
-function wcStop(){const c=S.clip;if(!c)return;clearTimeout(c.t);hush();S.clip=null;document.body.classList.remove('wclip');$('wcBar').hidden=true;
-  try{applyObj(c.saved);}catch(_){}Object.assign(S,c.keep,{fault:null,sel:null,pending:null,selDev:null});
-  say('أُغلق المقطع وعادت توصيلاتك كما كانت. وصّل التمرين بنفسك، ثم اضغط 🎯 تقييم.');update();}
-function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=i&&i<=n?c.steps[i-1]:null;
-  S.wires=c.steps.slice(0,Math.min(i,n));c.hl=w?w.id:null;update();
+  document.body.classList.add('wclip');$('wcBar').hidden=false;$('wcBar').classList.remove('mini');$('wcT').textContent='🎬 '+PNAME[v];$('wcSpd').textContent='1×';
+  say('🎬 مقطع التوصيل: '+PNAME[v]+'. توصيلاتك محفوظة وتعود كما هي عند تصغير المقطع أو إغلاقه.');wcShow();wcPlan();}
+function wcStop(){const c=S.clip;if(!c)return;clearTimeout(c.t);clearTimeout(c.adv);hush();S.clip=null;document.body.classList.remove('wclip');$('wcBar').hidden=true;
+  if(!c.mini)wcBack(c);
+  say(c.mini?'أُغلق المقطع. أكمل التوصيل، ثم اضغط 🎯 تقييم.':'أُغلق المقطع وعادت توصيلاتك كما كانت. وصّل التمرين بنفسك، ثم اضغط 🎯 تقييم.');update();}
+function wcMini(){const c=S.clip;if(!c)return;clearTimeout(c.t);clearTimeout(c.adv);c.adv=null;hush();
+  if(!c.mini){c.steps=c.steps.map(w=>({a:w.a,b:w.b,c:w.c}));c.mini=true;c.play=false;c.hl=null;wcBack(c);document.body.classList.remove('wclip');
+    if(c.i===0)c.i=1;else if(c.i>c.steps.length)c.i=c.steps.length;
+    say('المقطع مصغّر: وصّل على لوحتك. الطرفان المطلوبان يومضان باللون الأحمر، وينتقل المقطع للخطوة التالية عند توصيل السلك.');}
+  else{c.mini=false;try{wcRef(c);}catch(_){}document.body.classList.add('wclip');c.play=false;}
+  $('wcBar').classList.toggle('mini',c.mini);wcShow();}
+function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c);
+  if(c.mini)update();else{S.wires=c.steps.slice(0,Math.min(i,n));c.hl=w?w.id:null;update();}
   $('wcN').textContent=i===0?n+' سلكًا':i>n?'✔ اكتمل':`الخطوة ${i} من ${n}`;$('wcPg').style.width=(100*Math.min(i,n)/n)+'%';
   let h,t;
   if(i===0){h=`القطع على اللوحة: <span class="wcw">${esc(S.devs.filter(x=>!x.host||x.type==='ol').map(x=>x.id).join('، ')||'—')}</span>. القاطع الرئيسي مفصول أثناء التوصيل. يُوصَّل ${n} سلكًا: دائرة القوى أولًا ثم دائرة التحكم.`;
     t='مقطع توصيل تمرين '+PNAME[c.ex]+'. افصل القاطع الرئيسي قبل التوصيل. نوصّل دائرة القوى أولًا، ثم دائرة التحكم.';}
-  else if(!w){h=`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} اضغط ✕ للعودة إلى توصيلاتك، ثم وصّل بنفسك واضغط 🎯 تقييم.`;
-    t='اكتمل التوصيل. أغلق المقطع ووصّل التمرين بنفسك، ثم اضغط تقييم.';}
+  else if(!w){h=`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} ${c.mini?'اضغط 🎯 تقييم عندما تنتهي.':'اضغط ✕ للعودة إلى توصيلاتك أو 🗕 لتوصّل والمقطع مصغّر، ثم اضغط 🎯 تقييم.'}`;
+    t='اكتمل التوصيل. '+(c.mini?'اضغط تقييم عندما تنتهي.':'أغلق المقطع ووصّل التمرين بنفسك، ثم اضغط تقييم.');}
   else{const p=wcPow(w),first=i===1||wcPow(c.steps[i-2])!==p,col=wcCol(w.c);
     h=`<span class="wcg">${p?'⚡ دائرة القوى':'🔌 دائرة التحكم'}</span>${col?'سلك '+esc(col):''}<span class="wcsw" style="background:${w.c}"></span><br>`+
       `من <span class="wcw">${esc(dk(w.a))}</span>: ${esc(termDesc(w.a))}<br>إلى <span class="wcw">${esc(dk(w.b))}</span>: ${esc(termDesc(w.b))}`;
+    if(c.mini){const miss=[...new Set([w.a,w.b].filter(k=>!T[k]).map(k=>k.split('.')[0]))];
+      h+=miss.length?`<br><span class="wcst no">⚠ أضف ${esc(miss.join(' و '))} إلى لوحتك أولًا من الأدوات.</span>`:wcHas(w)?'<br><span class="wcst">✔ وصّلت هذا السلك</span>':'';}
     t=(first?(p?'دائرة القوى. ':'الآن دائرة التحكم. '):'')+'من '+termDesc(w.a)+'، إلى '+termDesc(w.b)+'.';}
   $('wcCap').innerHTML=h;wcBtns();if(WCSND)speak(t);
-  requestAnimationFrame(()=>{const e=svg.querySelector('.wchl');if(!e)return;const r=e.getBoundingClientRect(),
+  requestAnimationFrame(()=>{const e=svg.querySelector(c.mini?'.wcht':'.wchl');if(!e)return;const r=e.getBoundingClientRect(),
       top=Math.max(...['.top','.wtop'].map(q=>{const x=document.querySelector(q);return x&&x.offsetParent?x.getBoundingClientRect().bottom:0;})),bot=$('wcBar').getBoundingClientRect().top;
     if(r.top<top||r.bottom>bot||r.left<0||r.right>innerWidth)e.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});});}
-function wcBtns(){const c=S.clip,n=c.steps.length;$('wcPlay').textContent=c.i>n?'↻ إعادة المقطع':c.play?'⏸ إيقاف مؤقت':'▶ تشغيل';
-  $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>n;$('wcSnd').textContent=WCSND?'🔊':'🔇';}
+function wcBtns(){const c=S.clip,n=c.steps.length;$('wcPlay').textContent=c.i>n?'↻ إعادة المقطع':c.mini?'⛶ مشاهدة الخطوة':c.play?'⏸ إيقاف مؤقت':'▶ تشغيل';
+  $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>n;$('wcSnd').textContent=WCSND?'🔊':'🔇';
+  $('wcMin').textContent=c.mini?'⛶':'🗕';$('wcMin').title=$('wcMin').ariaLabel=c.mini?'تكبير المقطع':'تصغير المقطع والتوصيل على لوحتك';}
 /* next step after a pause, or when the spoken step has finished, whichever is later */
-function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play)return;if(c.i>c.steps.length){c.play=false;wcBtns();return;}
+function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play||c.mini)return;if(c.i>c.steps.length){c.play=false;wcBtns();return;}
   const t0=Date.now(),min=(c.i===0?4000:2400)/c.spd;
   const tick=()=>{if(S.clip!==c||!c.play)return;const el=Date.now()-t0,talk=WCSND&&SPK.ok&&(speechSynthesis.speaking||speechSynthesis.pending);
     if(el>=min&&(!talk||el>=min+15000)){c.i++;wcShow();wcPlan();}else c.t=setTimeout(tick,200);};
   c.t=setTimeout(tick,200);}
-function wcGo(d){const c=S.clip;c.i=Math.max(0,Math.min(c.steps.length+1,c.i+d));wcShow();wcPlan();}
-$('exClip').onclick=wcStart;$('wcX').onclick=wcStop;$('wcPrev').onclick=()=>wcGo(-1);$('wcNext').onclick=()=>wcGo(1);
-$('wcPlay').onclick=()=>{const c=S.clip;if(c.i>c.steps.length){c.i=0;c.play=true;wcShow();wcPlan();return;}
+function wcGo(d){const c=S.clip;clearTimeout(c.adv);c.adv=null;c.i=Math.max(c.mini?1:0,Math.min(c.steps.length+1,c.i+d));wcShow();wcPlan();}
+$('exClip').onclick=wcStart;$('wcX').onclick=wcStop;$('wcMin').onclick=wcMini;$('wcPrev').onclick=()=>wcGo(-1);$('wcNext').onclick=()=>wcGo(1);
+$('wcPlay').onclick=()=>{const c=S.clip;if(c.i>c.steps.length){if(c.mini)wcMini();c.i=0;c.play=true;wcShow();wcPlan();return;}
+  if(c.mini){wcMini();return;}
   c.play=!c.play;if(c.play)wcGo(1);else{clearTimeout(c.t);hush();wcBtns();}};
 $('wcSpd').onclick=()=>{const c=S.clip,L=[1,1.5,2,0.75];c.spd=L[(L.indexOf(c.spd)+1)%L.length];$('wcSpd').textContent=c.spd+'×';};
 $('wcSnd').onclick=()=>{WCSND=!WCSND;lsS('wcSnd',WCSND?null:'0');if(!WCSND)hush();wcBtns();};
-/* while the clip plays, the board's own shortcuts (delete, undo…) are off; Space pauses, the arrows step, Esc closes */
-window.addEventListener('keydown',e=>{if(!S.clip||e.key==='Tab')return;e.stopPropagation();
+/* full view: the board's own shortcuts (delete, undo…) are off; Space pauses, the arrows step, Esc closes */
+window.addEventListener('keydown',e=>{if(!S.clip||S.clip.mini||e.key==='Tab')return;e.stopPropagation();
   if(e.target.closest&&e.target.closest('#wcBar button')&&(e.key===' '||e.key==='Enter'))return;
   const f={Escape:wcStop,' ':()=>$('wcPlay').click(),ArrowLeft:()=>wcGo(1),ArrowRight:()=>wcGo(-1)}[e.key];if(f){e.preventDefault();f();}},true);
 function stuCheck(){const st=S.stu;if(!st||!st.g||!PRESETS[st.g.ex]){if(st)st.gc=null;return;}try{const r=gradeNow(st.g.ex);st.gc=r.s;st.gi=r;}catch(_){st.gc=null;}}
