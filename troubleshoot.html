@@ -26,7 +26,7 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;font-size:15px;line-height:1.5;padding-bottom:var(--dockh,150px)}
 button,select,input{font:inherit;color:inherit}
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}.top:has(.more[open]){z-index:61}
 .bar1{display:flex;align-items:center;gap:8px;padding:8px 10px 4px}
 .bar1 h1{flex:1;font-size:1.02rem;line-height:1.3;margin:0}
 .bar1 h1 .credit{display:block;font-size:.72rem;font-weight:500;color:var(--muted);line-height:1.25;margin-top:1px}
