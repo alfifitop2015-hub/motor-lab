@@ -192,6 +192,8 @@ body.dmin .drow .full,body.dmin .dstat{display:none}
 .sbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.sbtns .btn{height:42px;font-weight:500}
 .sbtns .prim{grid-column:1/-1;background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700}
 body.cloud #sWa{background:var(--panel)}
+.pinWrap{position:relative;display:block}.pinWrap>input{color:transparent!important;caret-color:transparent;-webkit-text-fill-color:transparent}
+.pinDots{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:var(--ink);font-size:1rem;letter-spacing:.35em;direction:ltr}
 .pinIn{width:100%;height:46px;font-size:1.4rem;letter-spacing:.4em;text-align:center;direction:ltr;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
 .modal textarea{width:100%;height:90px;font-size:.8rem;direction:ltr;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:8px}
 .rrow{display:grid;grid-template-columns:28px 1fr;gap:4px 8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line);font-size:.9rem}
@@ -1089,9 +1091,12 @@ $('rList').addEventListener('click',async e=>{const o=e.target.closest('[data-ro
 const PINH='ba1ab459',hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};
 function setTrainer(on){document.body.classList.toggle('trainer',on);try{on?localStorage.setItem('wsTrainer',PINH):localStorage.removeItem('wsTrainer');}catch(_){}$('bTrainer').textContent=on?'🔓 الخروج من وضع المدرب':'🔒 وضع المدرب';hint();if(S.uf)drawDyn();fswKey='';if(!on)insp.classList.remove('open');renderFsw();measureDock();}
 try{if(localStorage.getItem('wsTrainer')===PINH)setTrainer(true);}catch(_){}
-const pM=$('pinModal');$('bTrainer').onclick=()=>{document.querySelector('.more').open=false;if(isTr()){setTrainer(false);return;}$('pinIn').value='';$('pinMsg').textContent='';pM.classList.add('open');setTimeout(()=>$('pinIn').focus(),50);};
+const pM=$('pinModal');$('bTrainer').onclick=()=>{document.querySelector('.more').open=false;if(isTr()){setTrainer(false);return;}$('pinIn').value='';$('pinMsg').textContent='';pM.classList.add('open');pinDots();setTimeout(()=>$('pinIn').focus(),50);};
 const tryPin=()=>{if(hpin($('pinIn').value.trim())===PINH){pM.classList.remove('open');setTrainer(true);}else $('pinMsg').textContent='الرمز غير صحيح';};
 $('pinOk').onclick=tryPin;$('pinIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryPin();});$('pinCancel').onclick=()=>pM.classList.remove('open');
+/* the PIN field never shows the typed digits, not even the moment some phones reveal the last one: the input text is hidden and dots are drawn over it */
+const pinDots=()=>{const i=$('pinIn'),d=i&&i.nextElementSibling;if(d&&d.classList.contains('pinDots'))d.textContent='●'.repeat(i.value.length);};
+{const i=$('pinIn');if(i){const w=document.createElement('span'),d=document.createElement('span');w.className='pinWrap';d.className='pinDots';d.setAttribute('aria-hidden','true');i.before(w);w.append(i,d);['input','focus','change'].forEach(ev=>i.addEventListener(ev,pinDots));}}
 $('bReset').onclick=()=>{document.querySelector('.more').open=false;S.q={Q1:false,Q2:false};S.k={};S.tStart={};S.tDone={};S.trip={F5:false,F6:false};S.pos=50;S.hum=0;S.probes=[null,null];update();say('أُعيدت الشنطة إلى وضع الفصل. الأعطال كما هي.','info');};
 
 /* ===================================================================== messages, help */
