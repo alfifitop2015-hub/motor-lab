@@ -147,7 +147,7 @@ body.wclip .dock{opacity:.55}
 .wcbar.mini #wcPlay,.wcbar.mini #wcSpd{display:none}
 .wcleg{display:flex;flex-wrap:wrap;gap:2px 8px;font-size:.68rem;margin:0 0 4px;color:var(--muted)}.wcleg:empty{display:none}
 .wcleg span{display:inline-flex;align-items:center;gap:4px}.wcleg i{display:inline-block;width:18px;height:7px;border-radius:4px;border:1px solid rgba(0,0,0,.3)}
-.wcbar.mini .wcleg{display:none}#wcClr.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.wcbar.mini .wcleg{display:none}
 .wccap .wcst{font-weight:700;color:var(--ok)}.wccap .wcst.no{color:var(--warn)}
 .wcgh{fill:none;stroke-width:5;stroke-dasharray:10 8;stroke-linecap:round;opacity:.75;pointer-events:none}
 .wcht.ok{stroke:#2aa84a;animation:none;opacity:.9}
@@ -545,7 +545,7 @@ body.fs{padding-bottom:0}
   <div class="wcprog"><i id="wcPg"></i></div>
   <div class="wcleg" id="wcLeg"></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
-  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcClr" title="ألوان الشرح: لون لكل جزء من الدائرة">🎨</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
+  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
@@ -2875,7 +2875,6 @@ let WCSND=lsG('wcSnd')!=='0';
 const wcCol=c=>{if(c===BRS)return 'قنطرة';const f=COLORS.find(x=>x[0]===c);return f?f[1].split(':')[0]:'';};
 /* explanation colours: one colour for the power circuit, PLC inputs and outputs, every contactor's and timer's own branch,
    the shared control feed, the indicator lamps and the neutral; the step's real wire colour is still named in the caption */
-let WCCLR=lsG('wcClr')!=='0';
 const WCK={pw:['⚡ دائرة القوى','#7a4a22'],feed:['🔌 تغذية التحكم المشتركة','#e0342f'],in:['⬅ مداخل PLC','#ff8a1f'],out:['➡ مخارج PLC','#00a6a6'],lamp:['💡 لمبات البيان','#c9a000'],N:['التعادل N','#4aa3df']};
 const WCKS={pw:'القوى',feed:'تغذية مشتركة',in:'مداخل PLC',out:'مخارج PLC',lamp:'لمبات',N:'N'};
 const WCKC=['#1c3fb8','#2aa84a','#d6249f','#6d28d9','#111111','#ff5c8a','#8e949a'];
@@ -2906,10 +2905,9 @@ function wcClass(steps){const gT=to=>{const L=[];GROUPS.filter(g=>g.to===to).for
     else if(pLamp.has(w))k='lamp';else k=tch||'feed';
     w.k=k;w.c0=w.c;w.cx=(WCK[k]||cat[k])[1];w.kl=(WCK[k]||cat[k])[0];});
   const order=['pw','feed','in','out',...coils,'lamp','N'];return {order,cat};}
-function wcPaint(c){c.steps.forEach(w=>{w.c=WCCLR?w.cx:w.c0;});
+function wcPaint(c){c.steps.forEach(w=>{w.c=w.cx;});
   const seen=c.order.filter(k=>c.steps.some(w=>w.k===k));
-  $('wcLeg').innerHTML=WCCLR?seen.map(k=>{const d=WCK[k]||c.cat[k];return `<span title="${esc(d[0])}"><i style="background:${d[1]}"></i>${esc(WCKS[k]||k)}</span>`;}).join(''):'';
-  $('wcClr').classList.toggle('on',WCCLR);$('wcClr').title=WCCLR?'إظهار ألوان الأسلاك الحقيقية':'ألوان الشرح: لون لكل جزء من الدائرة';}
+  $('wcLeg').innerHTML=seen.map(k=>{const d=WCK[k]||c.cat[k];return `<span title="${esc(d[0])}"><i style="background:${d[1]}"></i>${esc(WCKS[k]||k)}</span>`;}).join('');}
 /* full view: the board shows the exercise's reference wiring step by step and is read-only.
    mini view: the trainee's own board comes back and stays editable; a small window keeps the current step,
    its two terminals pulse on the trainee's board, and the clip moves on by itself once that wire is connected */
@@ -2953,7 +2951,7 @@ function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c);
   else if(!w){h=`✔ اكتمل توصيل التمرين (${n} سلكًا).${PLCX.has(c.ex)?' يلزم أيضًا كتابة برنامج جهاز easy.':''} ${c.mini?'اضغط 🎯 تقييم عندما تنتهي.':'اضغط ✕ للعودة إلى توصيلاتك، أو صغّر المقطع لتوصّل وهو أمامك، ثم اضغط 🎯 تقييم.'}`;
     t='اكتمل التوصيل. '+(c.mini?'اضغط تقييم عندما تنتهي.':'أغلق المقطع ووصّل التمرين بنفسك، ثم اضغط تقييم.');}
   else{const p=w.k==='pw',first=i===1||c.steps[i-2].k!==w.k,col=wcCol(w.c0);
-    h=`<span class="wcg" style="border-inline-start:5px solid ${w.cx}">${esc(w.kl)}</span>${col?'سلك '+esc(col)+(WCCLR?' في اللوحة الحقيقية':''):''}<span class="wcsw" style="background:${w.c0}"></span><br>`+
+    h=`<span class="wcg" style="border-inline-start:5px solid ${w.cx}">${esc(w.kl)}</span>${col?'سلك '+esc(col)+' في اللوحة الحقيقية':''}<span class="wcsw" style="background:${w.c0}"></span><br>`+
       `من <span class="wcw">${esc(dk(w.a))}</span>: ${esc(termDesc(w.a))}<br>إلى <span class="wcw">${esc(dk(w.b))}</span>: ${esc(termDesc(w.b))}`;
     if(c.mini){const miss=[...new Set([w.a,w.b].filter(k=>!T[k]).map(k=>k.split('.')[0]))];
       h+=miss.length?`<br><span class="wcst no">⚠ أضف ${esc(miss.join(' و '))} إلى لوحتك أولًا من الأدوات.</span>`:wcHas(w)?'<br><span class="wcst">✔ وصّلت هذا السلك</span>':'';}
@@ -2988,7 +2986,6 @@ $('wcPlay').onclick=()=>{const c=S.clip;if(c.i>c.steps.length){if(c.mini)wcMini(
   if(c.mini){wcMini();return;}
   c.play=!c.play;if(c.play)wcGo(1);else{clearTimeout(c.t);hush();wcBtns();}};
 $('wcSpd').onclick=()=>{const c=S.clip,L=[1,1.5,2,0.75];c.spd=L[(L.indexOf(c.spd)+1)%L.length];$('wcSpd').textContent=c.spd+'×';};
-$('wcClr').onclick=()=>{const c=S.clip;WCCLR=!WCCLR;lsS('wcClr',WCCLR?null:'0');if(c){wcPaint(c);wcShow();}};
 $('wcSnd').onclick=()=>{WCSND=!WCSND;lsS('wcSnd',WCSND?null:'0');if(!WCSND)hush();wcBtns();};
 /* full view: the board's own shortcuts (delete, undo…) are off; Space pauses, the arrows step, Esc closes */
 window.addEventListener('keydown',e=>{if(!S.clip||S.clip.mini||e.key==='Tab')return;e.stopPropagation();
