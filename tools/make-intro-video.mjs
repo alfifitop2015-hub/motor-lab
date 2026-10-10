@@ -36,6 +36,8 @@ try {
   /* ساعة وهمية: مؤقتات المشغّل لا تتقدّم وحدها، فنتحكّم في كل إطار */
   await page.clock.install();
   await page.goto(BASE + 'index.html', {waitUntil: 'load'});
+  /* إيقاف الساعة تمامًا: لولا ذلك لانتقل المشغّل إلى المشهد التالي أثناء التصوير فتختلط الصور */
+  await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 1000);
   await page.addStyleTag({content: `#vidModal .vbox{width:${W}px!important;max-width:none!important;min-width:0!important}#vidModal .vstage{width:${W}px;height:${H}px}`});
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => { document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open')); document.getElementById('bVid').click(); document.getElementById('vMute').click(); });
@@ -51,7 +53,8 @@ try {
     await page.evaluate(k => { document.querySelector(`#vProg .vseg[data-k="${k}"]`).click(); document.getAnimations().forEach(a => a.pause()); }, k);
     const frames = Math.round(len * FPS);
     for (let i = 0; i < frames; i++) {
-      await page.evaluate(t => document.querySelectorAll('#vArt').forEach(el => el.getAnimations({subtree: true}).forEach(a => { a.currentTime = t; })), i * 1000 / FPS);
+      const tag = await page.evaluate(t => { document.getElementById('vArt').getAnimations({subtree: true}).forEach(a => { a.currentTime = t; }); return document.getElementById('vTag').textContent; }, i * 1000 / FPS);
+      if (!tag.startsWith(`${k + 1}/`)) throw new Error(`الإطار ${frame} من المشهد ${k + 1} يعرض «${tag}»`);
       await page.screenshot({clip, path: path.join(tmp, `${String(frame++).padStart(5, '0')}.jpg`), type: 'jpeg', quality: 95});
     }
     console.log(`مشهد ${k + 1}/${n}: ${len.toFixed(1)} ث`);
