@@ -399,9 +399,12 @@ body.fs{padding-bottom:0}
 .vstage svg{position:absolute;inset:0;width:100%;height:100%;direction:ltr}
 .vstage text{font-family:inherit}
 .vtag{position:absolute;top:3%;inset-inline-start:3%;background:#1f5fbf;color:#fff;padding:.15em .75em;border-radius:20px;font-size:clamp(.7rem,1.8vw,.92rem);font-weight:700}
-.vend{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(11,18,32,.6)}
+.vend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;padding:10px;background:#0f1726}
 .vend[hidden]{display:none}
-.vend button{font-size:1.05rem;font-weight:700;padding:10px 22px;border-radius:30px;border:0;background:#e53935;color:#fff;cursor:pointer}
+.vend button,.vend .vdl{font-size:clamp(.8rem,2vw,1rem);font-weight:700;padding:8px 18px;border-radius:30px;border:0;background:#e53935;color:#fff;cursor:pointer;text-decoration:none}
+.vend .vdl,#vShare{background:#1f5fbf}
+.vhead .vdl{display:inline-flex;align-items:center;justify-content:center;background:#1b2638;border:1px solid #2c3b52;color:#fff;border-radius:8px;height:36px;min-width:40px;font-size:1rem;text-decoration:none;flex:none}
+.vend [hidden]{display:none}
 .vcap{margin:0;padding:8px 14px;min-height:4.4em;text-align:center;font-size:clamp(.85rem,2.2vw,1.08rem);line-height:1.65;background:#0f1726;border-top:1px solid #1f2c40}
 .vctl{display:flex;gap:6px;align-items:center;padding:8px 10px;background:#0f1726}
 .vctl>button,.vhead button{background:#1b2638;border:1px solid #2c3b52;color:#fff;border-radius:8px;height:36px;min-width:40px;cursor:pointer;font-size:1rem;flex:none}
@@ -554,8 +557,9 @@ body.fs{padding-bottom:0}
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
-    <div class="vhead"><h2 id="vT">🎬 تعرّف على المحاكي</h2><select id="vVoice" title="اختيار صوت التعليق" aria-label="صوت التعليق" hidden></select><button id="vClose" title="إغلاق" aria-label="إغلاق الفيديو">✕</button></div>
-    <div class="vstage"><div id="vArt" aria-hidden="true"></div><span class="vtag" id="vTag"></span><div class="vend" id="vEnd" hidden><button id="vAgain">↻ مشاهدة مرة أخرى</button></div></div>
+    <div class="vhead"><h2 id="vT">🎬 تعرّف على المحاكي</h2><select id="vVoice" title="اختيار صوت التعليق" aria-label="صوت التعليق" hidden></select><a class="vdl" id="vDl0" href="video/motor-lab-intro.mp4" download="محاكي-ورشة-التحكم.mp4" title="تحميل الفيديو لمشاركته مع المتدربين" aria-label="تحميل الفيديو">⬇</a><button id="vClose" title="إغلاق" aria-label="إغلاق الفيديو">✕</button></div>
+    <div class="vstage"><div id="vArt" aria-hidden="true"></div><span class="vtag" id="vTag"></span></div>
+    <div class="vend" id="vEnd" hidden><button id="vAgain">↻ مشاهدة مرة أخرى</button><a class="vdl" id="vDl" href="video/motor-lab-intro.mp4" download="محاكي-ورشة-التحكم.mp4">⬇ تحميل الفيديو</a><button id="vShare" hidden>↗ مشاركة</button></div>
     <p class="vcap" id="vCap"></p>
     <div class="vctl">
       <button id="vPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button>
@@ -4061,6 +4065,12 @@ const timer=(x,s)=>`<rect x="${x-28}" y="105" width="56" height="90" rx="5" fill
 const qr=(x,y)=>{let s=`<rect x="${x}" y="${y}" width="100" height="100" rx="6" fill="#fff"/>`;const f=(a,b)=>`<rect x="${a+4}" y="${b+4}" width="26" height="26" fill="#111"/><rect x="${a+8}" y="${b+8}" width="18" height="18" fill="#fff"/><rect x="${a+12}" y="${b+12}" width="10" height="10" fill="#111"/>`;
   let r=7;for(let i=0;i<8;i++)for(let j=0;j<8;j++){r=(r*37+11)%101;if(r%3&&!((i<3&&j<3)||(i<3&&j>4)||(i>4&&j<3)))s+=`<rect x="${x+8+j*11}" y="${y+8+i*11}" width="10" height="10" fill="#111"/>`;}
   return s+f(x,y)+f(x+66,y)+f(x,y+66);};
+/* باركود حقيقي لرابط المحاكي، والرسم التوضيحي بديله إن لم تتوفر مكتبة الباركود */
+const SITE='https://alfifitop2015-hub.github.io/motor-lab/';
+const realQr=(x,y,w)=>{try{const q=qrcode(0,'M');q.addData(SITE);q.make();const n=q.getModuleCount(),N=n+4;let d='';
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+=`M${c+2} ${r+2}h1v1h-1z`;
+  return `<g transform="translate(${x} ${y}) scale(${w/N})" shape-rendering="crispEdges"><rect width="${N}" height="${N}" fill="#fff"/><path d="${d}" fill="#111"/></g>`;}
+  catch(_){return `<g transform="translate(${x} ${y}) scale(${w/100})">${qr(0,0)}</g>`;}};
 /* المشاهد: عنوان، نص التعليق، أقل مدة بالثواني، الرسم */
 const SC=[
 {t:'مرحبًا',min:7,say:'مَرْحَبَاً بِكْ فِي مُحَاكِي وَرْشَةْ التَّحَكُّمْ فِي المُحَرِّكَاتِ الكَهْرَبَائِيَّة: وَرْشَةٌ افْتِرَاضِيَّة تَتَدَرَّبُ فِيهَا عَلَى تَوْصِيلْ دَوَائِرْ التَّحَكُّمْ، وَكَأَنَّكَ أَمَامْ لَوْحَةٍ حَقِيقِيَّة.',
@@ -4113,10 +4123,15 @@ const SC=[
  <text class="v-blink" x="522" y="190" font-size="34" text-anchor="middle">⚠️</text>${T(472,272,14,'قِس وحدّد مكان العطل','fill-opacity=".8"')}</g></g>`)},
 {t:'لماذا المحاكي؟',min:8,say:'تَدَرَّبْ فِي أَيّْ وَقْتْ وَمِنْ أَيّْ جِهَازْ، بِأَمَانٍ تَامّْ، دُونَ خَطَرِ الكَهْرَبَاء وَدُونَ تَلَفٍ لِلْمُعَدَّات. نَتَمَنَّى لَكْ تَدْرِيبَا مُمْتِعَا وَمُفِيدَا!',
  svg:SV([['⏰','في أي وقت',.4],['📱','من أي جهاز',1.4],['🛡️','آمن تمامًا',2.6],['🔧','بلا تلف للمعدات',4]].map(([e,l,d],k)=>{const x=95+k*150;return `<g class="v-pop" ${D(d)}><circle cx="${x}" cy="130" r="54" fill="#13233a" stroke="#4cd07d" stroke-width="3"/><text x="${x}" y="146" font-size="44" text-anchor="middle">${e}</text>${T(x,218,16,l,'font-weight="700"')}</g>`;}).join('')
- +`<g class="v-fade" ${D(5.4)}>${T(320,285,15,'فكرة وتنفيذ م. جابر الفيفي بواسطة Claude','fill-opacity=".75"')}</g>`)}
+ +`<g class="v-fade" ${D(5.4)}>${T(320,285,15,'فكرة وتنفيذ م. جابر الفيفي بواسطة Claude','fill-opacity=".75"')}</g>`)},
+{t:'ادخل الآن',min:12,quiet:true,say:'امسح الباركود بكاميرا جوالك لتدخل إلى المحاكي مباشرة، وابدأ تدريبك الآن.',
+ svg:SV(`<rect x="205" y="24" width="230" height="230" rx="20" fill="none" stroke="#4ea1ff" stroke-width="3" class="v-pulse"/>
+ <g class="v-pop" ${D(.3)}><rect x="215" y="34" width="210" height="210" rx="16" fill="#fff"/>${realQr(225,44,190)}</g>
+ <g class="v-fade" ${D(1)}>${T(320,292,24,'📱 امسح الباركود وابدأ تدريبك الآن','font-weight="700"')}</g>
+ <g class="v-fade" ${D(1.6)}><text x="320" y="326" font-size="15" text-anchor="middle" direction="ltr" fill="#9cc6ff">${SITE.replace(/^https:\/\//,'')}</text></g>`)}
 ];
-/* تسجيل المشهد رقم n في audio/n.mp3 */
-SC.forEach((s,k)=>s.audio=`audio/${k+1}.mp3`);
+/* تسجيل المشهد رقم n في audio/n.mp3، والمشهد الصامت (quiet) يكتفي بالنص المكتوب */
+SC.forEach((s,k)=>{if(!s.quiet)s.audio=`audio/${k+1}.mp3`;});
 /* الصوت البديل عند تعذّر التسجيل: يُفضَّل صوت عربي رجالي، ويمكن اختيار غيره من القائمة */
 const SS=window.speechSynthesis,vSel=g('vVoice');let voice=null,arV=[],fb=false;
 const MALE=/naayf|hamed|shakir|hamdan|taim|fahed|moaz|\bali\b|abdullah|rami|omar|jamal|laith|hedi|saleh|ismael|bassel|maged|majed|tarik|x-ar[de]-|\bmale\b/i,
@@ -4158,7 +4173,7 @@ function show(n){
     if(SS&&!muted){const u=new SpeechSynthesisUtterance(s.say);u.lang=voice?voice.lang:'ar-SA';if(voice)u.voice=voice;u.rate=.95;
     u.onend=next;u.onerror=()=>{if(my===tok)tms.push(setTimeout(next,Math.max(0,ms-(Date.now()-t0))));};SS.speak(u);tms.push(setTimeout(next,ms*1.7+3000));}
     else tms.push(setTimeout(next,ms));};
-  if(muted)tms.push(setTimeout(next,ms));
+  if(muted||s.quiet)tms.push(setTimeout(next,ms));
   else if(s.audio){au.src=s.audio;
     au.onloadedmetadata=()=>{if(my===tok&&isFinite(au.duration)){const left=Math.max(ms,au.duration*1000)-(Date.now()-t0);segs[n].style.transition=`width ${Math.max(0,left)}ms linear`;}};
     au.onended=next;au.onerror=()=>{if(my===tok){au.onerror=null;tts();}};
@@ -4177,6 +4192,13 @@ function open(){
 function close(){clr();setPlay(false);vM.classList.remove('open','vpaused');art.innerHTML='';}
 g('bVid').onclick=open;g('bVid2').onclick=()=>{g('bVid').closest('.bar1').querySelector('details.more')?.removeAttribute('open');open();};
 g('vClose').onclick=close;g('vAgain').onclick=()=>show(0);
+/* مشاركة ملف الفيديو مباشرة (واتساب وغيره) في الأجهزة التي تدعم مشاركة الملفات */
+const VID='video/motor-lab-intro.mp4',bShare=g('vShare');
+try{bShare.hidden=!(navigator.canShare&&navigator.canShare({files:[new File([''],'v.mp4',{type:'video/mp4'})]}));}catch(_){}
+bShare.onclick=async()=>{bShare.disabled=true;
+  try{const b=await(await fetch(VID)).blob();await navigator.share({files:[new File([b],'محاكي-ورشة-التحكم.mp4',{type:'video/mp4'})],text:'محاكي ورشة التحكم في المحركات: '+SITE});}
+  catch(e){if(e.name!=='AbortError')g('vDl').click();}
+  bShare.disabled=false;};
 bPlay.onclick=()=>playing?pause():show(cur);
 g('vPrev').onclick=()=>show(Math.max(0,cur-1));
 g('vNext').onclick=()=>cur+1<SC.length?show(cur+1):finish();
