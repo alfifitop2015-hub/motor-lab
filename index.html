@@ -1558,16 +1558,24 @@ function spkText(t){return String(t).replace(/<[^>]+>/g,' ')
   .replace(/\b(KT|SQ|K|S|H|F|Q|M|A|L|I|T|X|U|V|W)(\d+)(A?)\b/g,(m,a,n,x)=>LTR[a]+' '+n+(x?' إيه':''))
   .replace(/\bR\b/g,'آر').replace(/\bN\b/g,'إن').replace(/[✓✔✗✘→←⟶⚡🔊•·♨]/g,' ').replace(/\s+/g,' ').trim().replace(/[،\s]+([.،:!؟])/g,'$1').replace(/^،\s*/,'').replace(/[\u0621-\u0652\u0670]+/g,spkTash);}
 let SPQ=0;
-function spkFail(r){say('تعذّر تشغيل الصوت على هذا الجهاز'+(spkVoice()?'':' (لا يوجد صوت عربي مثبت)')+'. تأكد أن صوت الوسائط مرتفع، وجرّب Chrome أو Safari.');try{renderTop();}catch(_){}}
+/* حالة النطق الفعلية من أحداث البدء والانتهاء: بعض الأجهزة اللوحية تُبقي speechSynthesis.speaking صحيحة دون أن يخرج صوت */
+const SPS={t0:0,on:false,end:true,len:0,fail:0,miss:0};
+function spkBusy(){if(!SPK.ok||SPS.end)return false;const el=Date.now()-SPS.t0;
+  if(!SPS.on)return el<3500; /* لم يبدأ النطق خلال 3 ثوانٍ ونصف: لا ننتظره */
+  return el<SPS.len*110+4000;} /* سقف للمدة المتوقعة إن لم يصل حدث الانتهاء */
+function spkFail(r){SPS.end=true;if(Date.now()-SPS.fail<30000)return;SPS.fail=Date.now();say('تعذّر تشغيل الصوت على هذا الجهاز'+(spkVoice()?'':' (لا يوجد صوت عربي مثبت، أضِفه من إعدادات الجهاز ← تحويل النص إلى كلام)')+'. تأكد أن صوت الوسائط مرتفع، وجرّب Chrome أو Safari. يستمر الشرح مكتوبًا.');try{renderTop();}catch(_){}}
 function speak(t,queue){if(!SPK.ok){spkFail('nosupport');return false;}if(!t)return false;
   try{const parts=[];spkText(t).replace(/([.،:!؟])\s+/g,'$1\n').split('\n').forEach(p=>{p=p.trim();if(!p)return;if(parts.length&&(parts[parts.length-1]+' '+p).length<170)parts[parts.length-1]+=' '+p;else parts.push(p);});
     const go=()=>{const v=spkVoice(),id=++SPQ;let started=false;
-      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{started=true;};
-        if(i===0)u.onerror=e=>{if(e&&e.error!=='interrupted'&&e.error!=='canceled'&&id===SPQ)spkFail(e.error);};speechSynthesis.speak(u);});
+      Object.assign(SPS,{t0:Date.now(),on:queue&&!SPS.end&&SPS.on,end:false,len:(queue&&!SPS.end?SPS.len:0)+parts.join(' ').length});
+      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{started=true;SPS.miss=0;if(id===SPQ)SPS.on=true;};
+        if(i===parts.length-1)u.onend=()=>{if(id===SPQ)SPS.end=true;};
+        u.onerror=e=>{if(id!==SPQ)return;if(i===parts.length-1)SPS.end=true;if(i===0&&e&&e.error!=='interrupted'&&e.error!=='canceled')spkFail(e.error);};speechSynthesis.speak(u);});
       try{speechSynthesis.resume();}catch(_){}
-      setTimeout(()=>{if(id===SPQ&&!started&&!speechSynthesis.speaking)spkFail('nostart');},3000);};
+      /* لم يبدأ النطق: نبلّغ المستخدم، أو بعد محاولتين إن ادّعى المحرك أنه ينطق دون صوت */
+      setTimeout(()=>{if(started)return;SPS.miss++;if(id===SPQ&&!speechSynthesis.speaking||SPS.miss>=2)spkFail('nostart');},3000);};
     if(!queue&&(speechSynthesis.speaking||speechSynthesis.pending)){speechSynthesis.cancel();setTimeout(go,120);}else go();return true;}catch(_){spkFail('ex');return false;}}
-function hush(){try{if(SPK.ok)speechSynthesis.cancel();}catch(_){}}
+function hush(){SPS.end=true;try{if(SPK.ok)speechSynthesis.cancel();}catch(_){}}
 function voiceNote(){if(!SPK.ok)return 'المتصفح لا يدعم النطق الصوتي.';if(!spkVoice())return 'لا يتوفر صوت عربي على هذا الجهاز، فقد يكون النطق غير واضح. يمكن إضافة الصوت العربي من إعدادات الجهاز (تحويل النص إلى كلام).';return '';}
 /* ---- graph of the circuit ---- */
 const BTNX=[[7,8,'S0','NC'],[9,10,'S1','NC'],[11,12,'S1','NO'],[13,14,'S2','NC'],[15,16,'S2','NO'],[17,18,'S3','NC'],[19,20,'S4','NO'],[21,22,'SQ1','NC'],[23,24,'SQ1','NO'],[25,26,'SQ2','NC'],[27,28,'SQ2','NO']];
@@ -3080,8 +3088,8 @@ function wcBtns(){const c=S.clip,n=c.steps.length,E=wcEnd(c),pl=$('wcPlay'),[pi,
 /* next step after a pause, or when the spoken step has finished, whichever is later */
 function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play||c.mini)return;if(c.i>=wcEnd(c)){c.play=false;wcBtns();return;}
   const t0=Date.now(),min=(c.i===0?4000:2400)/c.spd;
-  const tick=()=>{if(S.clip!==c||!c.play)return;const el=Date.now()-t0,talk=WCSND&&SPK.ok&&(speechSynthesis.speaking||speechSynthesis.pending);
-    if(el>=min&&!c.busy&&(!talk||el>=min+15000)){c.i++;wcShow();wcPlan();}else c.t=setTimeout(tick,200);};
+  const tick=()=>{if(S.clip!==c||!c.play)return;const el=Date.now()-t0,talk=WCSND&&spkBusy();
+    if(el>=min&&!c.busy&&!talk){c.i++;wcShow();wcPlan();}else c.t=setTimeout(tick,200);};
   c.t=setTimeout(tick,200);}
 function wcGo(d){const c=S.clip;clearTimeout(c.adv);c.adv=null;c.i=Math.max(c.mini?1:0,Math.min(wcEnd(c),c.i+d));wcShow();wcPlan();}
 /* the clip window starts at the top and can be dragged by its title row; its place is remembered */
