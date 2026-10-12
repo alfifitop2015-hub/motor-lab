@@ -1578,11 +1578,14 @@ function spaEl(){if(!SPA.el){try{SPA.el=new Audio();SPA.el.preload='auto';}catch
 function netSpeak(parts,id,wait){const a=spaEl();if(!a||navigator.onLine===false||SPA.bad>=2){spkFail('offline');return;}
   const L=[];parts.forEach(p=>{while(p.length>190){let k=p.lastIndexOf(' ',190);if(k<60)k=190;L.push(p.slice(0,k));p=p.slice(k).trim();}if(p)L.push(p);});
   SPA.tok=id;if(wait&&SPA.run){SPA.q.push(...L);return;}SPA.q=L;
-  let tm=null,bad=false;const fail=()=>{clearTimeout(tm);SPA.run=false;if(SPA.tok!==SPQ||bad)return;bad=true;SPA.bad++;spkFail('net');};
+  let tm=null,bad=false,alt=false,cur='',att=0;const fail=k=>{if(k!==att)return;clearTimeout(tm);if(SPA.tok!==SPQ||bad)return;
+    if(!alt){alt=true;play(cur);return;} /* الخادم الأول لم يعمل: نجرّب الخادم الثاني لنفس الجملة */
+    SPA.run=false;bad=true;SPA.bad++;spkFail('net');};
+  const play=t=>{cur=t;const k=++att;a.onerror=()=>fail(k);a.src=(alt?'https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=':'https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ar&q=')+encodeURIComponent(t);
+    try{a.defaultPlaybackRate=a.playbackRate=0.95;}catch(_){}tm=setTimeout(()=>fail(k),8000);const p=a.play();if(p&&p.catch)p.catch(()=>fail(k));};
   const next=()=>{clearTimeout(tm);if(SPA.tok!==SPQ){SPA.run=false;return;}if(!SPA.q.length){SPA.run=false;SPS.end=true;return;}SPA.run=true;
-    a.onplaying=()=>{clearTimeout(tm);SPA.bad=0;if(SPA.tok===SPQ)SPS.on=true;};a.onended=next;a.onerror=fail;
-    a.src='https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q='+encodeURIComponent(SPA.q.shift());try{a.playbackRate=0.95;}catch(_){}
-    tm=setTimeout(fail,8000);const p=a.play();if(p&&p.catch)p.catch(fail);};
+    a.onplaying=()=>{if(!/translate_tts/.test(a.currentSrc||a.src))return;clearTimeout(tm);SPA.bad=0;if(SPA.tok===SPQ)SPS.on=true;};a.onended=next;
+    play(SPA.q.shift());};
   next();}
 function speak(t,queue){if(!t)return false;
   try{const parts=[];spkText(t).replace(/([.،:!؟])\s+/g,'$1\n').split('\n').forEach(p=>{p=p.trim();if(!p)return;if(parts.length&&(parts[parts.length-1]+' '+p).length<170)parts[parts.length-1]+=' '+p;else parts.push(p);});
@@ -1592,10 +1595,11 @@ function speak(t,queue){if(!t)return false;
       const net=!SPK.ok||SPK_NET,wait=!retry&&queue&&!SPS.end&&SPS.on;
       Object.assign(SPS,{t0:Date.now(),on:wait,end:false,len:(wait?SPS.len:0)+parts.join(' ').length});
       if(net){netSpeak(parts,id,wait);return;}
-      let done=false;const giveUp=()=>{if(done||id!==SPQ)return;done=true;try{speechSynthesis.cancel();}catch(_){}
+      let done=false,t1=Date.now();const giveUp=()=>{if(done||id!==SPQ)return;done=true;try{speechSynthesis.cancel();}catch(_){}
         if(v)SPK_BAD.add(v.voiceURI);else SPK_NET=true;setTimeout(()=>{if(id===SPQ)go(true);},120);};
-      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{started=true;if(id===SPQ)SPS.on=true;};
-        if(i===parts.length-1)u.onend=()=>{if(id===SPQ)SPS.end=true;};
+      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{if(i===0)t1=Date.now();started=true;if(id===SPQ)SPS.on=true;};
+        /* بعض المحركات تبدأ وتنتهي فورًا دون صوت إن لم تدعم العربية: انتهاء أسرع بكثير من مدة الكلام يعني أنه لم يُنطق */
+        u.onend=()=>{if(id!==SPQ)return;if(i===0&&Date.now()-t1<Math.max(500,p.length*25)){started=false;giveUp();return;}if(i===parts.length-1)SPS.end=true;};
         u.onerror=e=>{if(id!==SPQ||started)return;const er=e&&e.error;if(er==='interrupted'||er==='canceled')return;
           if(er==='not-allowed'){SPS.end=true;return;}giveUp();};speechSynthesis.speak(u);});
       try{speechSynthesis.resume();}catch(_){}
@@ -3112,7 +3116,7 @@ function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c),ND=wcND(c),E=
       bot=document.querySelector('.dock').getBoundingClientRect().top,B=$('wcBar').getBoundingClientRect(),hid=!(r.bottom<B.top||r.top>B.bottom||r.right<B.left||r.left>B.right);
     if(hid||r.top<top||r.bottom>bot||r.left<0||r.right>innerWidth)e.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});});}
 function wcBtns(){const c=S.clip,n=c.steps.length,E=wcEnd(c),pl=$('wcPlay'),[pi,pt]=c.i>=E?['↻','إعادة المقطع']:c.play?['⏸','إيقاف مؤقت']:['▶','تشغيل'];pl.textContent=pi;pl.title=pl.ariaLabel=pt;
-  $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>=E||!!c.busy;$('wcSnd').textContent=WCSND?'🔊':'🔇';
+  $('wcPrev').disabled=c.i===0;$('wcNext').disabled=c.i>=E||!!c.busy;const sb=$('wcSnd');sb.textContent=!WCSND?'🔇':SPK_NET?'🌐':'🔊';sb.title=sb.ariaLabel=!WCSND?'الصوت متوقف':SPK_NET?'صوت عبر الإنترنت (اضغط لإيقاف الصوت)':'صوت الجهاز (اضغط للصوت عبر الإنترنت)';
   $('wcMin').innerHTML=c.mini?'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>':'<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3 12.5h10" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';$('wcMin').title=$('wcMin').ariaLabel=c.mini?'تكبير المقطع':'تصغير المقطع والتوصيل على لوحتك';}
 /* next step after a pause, or when the spoken step has finished, whichever is later */
 function wcPlan(){const c=S.clip;clearTimeout(c.t);if(!c.play||c.mini)return;if(c.i>=wcEnd(c)){c.play=false;wcBtns();return;}
@@ -3136,7 +3140,11 @@ $('wcPlay').onclick=()=>{const c=S.clip;if(c.i>=wcEnd(c)){if(c.mini)wcMini();c.i
   if(c.mini){wcMini();return;}
   c.play=!c.play;if(c.play)wcGo(1);else{clearTimeout(c.t);hush();wcBtns();}};
 $('wcSpd').onclick=()=>{const c=S.clip,L=[1,1.5,2,0.75];c.spd=L[(L.indexOf(c.spd)+1)%L.length];$('wcSpd').textContent=c.spd+'×';};
-$('wcSnd').onclick=()=>{WCSND=!WCSND;lsS('wcSnd',WCSND?null:'0');if(!WCSND)hush();wcBtns();};
+/* زر الصوت: صوت الجهاز ← صوت عبر الإنترنت ← بلا صوت؛ ويُنطق تنبيه قصير فورًا لتجربة المصدر المختار */
+$('wcSnd').onclick=()=>{hush();SPA.bad=0;SPS.fail=0;
+  if(!WCSND){WCSND=true;SPK_NET=false;SPK_BAD.clear();}else if(!SPK_NET)SPK_NET=true;else{WCSND=false;SPK_NET=false;}
+  SPK_PICK=SPK_NET?'__net':SPK_PICK==='__net'?null:SPK_PICK;try{if(SPK_PICK)localStorage.setItem('spkVoice',SPK_PICK);else localStorage.removeItem('spkVoice');}catch(_){}
+  lsS('wcSnd',WCSND?null:'0');wcBtns();if(WCSND)speak(SPK_NET?'الصوت عبر الإنترنت يعمل':'صوت الجهاز يعمل');};
 /* full view: the board's own shortcuts (delete, undo…) are off; Space pauses, the arrows step, Esc closes */
 window.addEventListener('keydown',e=>{if(!S.clip||S.clip.mini||e.key==='Tab')return;e.stopPropagation();
   if(e.target.closest&&e.target.closest('#wcBar button')&&(e.key===' '||e.key==='Enter'))return;
