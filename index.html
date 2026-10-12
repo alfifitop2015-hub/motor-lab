@@ -1531,16 +1531,17 @@ const SPK={ok:typeof window!=='undefined'&&'speechSynthesis' in window&&typeof S
 const SPK_M=/(^|[^a-z])(male|maged|majed|tarik|naayf|hamed|shakir|bassel|fahed|hamdan|ali|jamal|moaz|taim|saleh|omar|laith|ismael|hedi|rami|kareem|x-ar[cd])([^a-z]|$)/i,SPK_F=/female|laila|layla|mariam|maryam|zariyah|salma|hala|amany|sana|fatima|iman|nouf|mouna|rana|sara|amina|reem|hoda|zeina|x-arz/i;
 const spkArVoices=()=>{try{return speechSynthesis.getVoices().filter(x=>/^ar/i.test(x.lang));}catch(_){return [];}};
 let SPK_PICK=null;try{SPK_PICK=localStorage.getItem('spkVoice');}catch(_){}
-function spkVoice(){if(!SPK.ok)return null;try{const v=spkArVoices();if(!v.length)return null;if(SPK_PICK){const p=v.find(x=>x.voiceURI===SPK_PICK);if(p)return p;}
-  const sc=x=>(SPK_M.test(x.name+' '+x.voiceURI)&&!/female/i.test(x.name)?100:SPK_F.test(x.name+' '+x.voiceURI)?-50:0)+(/^ar[-_]SA/i.test(x.lang)?10:0)+(/natural|online|premium|enhanced/i.test(x.name)?5:0)+(x.localService?1:0);
+/* أصوات جرّبناها فلم يخرج منها صوت (غير مثبتة أو تحتاج تنزيلًا): تُتخطّى، وعند نفادها نستخدم الصوت عبر الإنترنت */
+const SPK_BAD=new Set();let SPK_NET=SPK_PICK==='__net';
+function spkVoice(){if(!SPK.ok)return null;try{const v=spkArVoices().filter(x=>!SPK_BAD.has(x.voiceURI));if(!v.length)return null;if(SPK_PICK){const p=v.find(x=>x.voiceURI===SPK_PICK);if(p)return p;}
+  const sc=x=>(SPK_M.test(x.name+' '+x.voiceURI)&&!/female/i.test(x.name)?100:SPK_F.test(x.name+' '+x.voiceURI)?-50:0)+(/^ar[-_]SA/i.test(x.lang)?10:0)+(/natural|online|premium|enhanced/i.test(x.name)?5:0)+(x.localService?3:0)-(/network/i.test(x.voiceURI)?3:0);
   return v.slice().sort((a,b)=>sc(b)-sc(a))[0];}catch(_){return null;}}
 const spkMale=v=>!!v&&SPK_M.test(v.name+' '+v.voiceURI)&&!/female/i.test(v.name);
 if(SPK.ok){try{speechSynthesis.getVoices();speechSynthesis.addEventListener&&speechSynthesis.addEventListener('voiceschanged',()=>{try{spkFillSel();}catch(_){}});}catch(_){}}
 /* voice picker in the cross-section panel: lists the device's Arabic voices, male ones first */
 function spkFillSel(){const el=document.getElementById('xsVoice');if(!el)return;const v=spkArVoices(),cur=spkVoice(),hint=document.getElementById('xsVoiceHint');
   const L=v.slice().sort((a,b)=>spkMale(b)-spkMale(a));
-  el.innerHTML=L.length?L.map(x=>`<option value="${x.voiceURI.replace(/"/g,'&quot;')}"${cur&&x.voiceURI===cur.voiceURI?' selected':''}>${spkMale(x)?'👨 ':''}${x.name.replace(/</g,'&lt;')}</option>`).join(''):'<option value="">لا يوجد صوت عربي</option>';
-  el.disabled=!L.length;if(hint)hint.hidden=L.some(spkMale)||!L.length;}
+  el.innerHTML=(L.length?L.map(x=>`<option value="${x.voiceURI.replace(/"/g,'&quot;')}"${!SPK_NET&&cur&&x.voiceURI===cur.voiceURI?' selected':''}>${spkMale(x)?'👨 ':''}${x.name.replace(/</g,'&lt;')}</option>`).join(''):'<option value="">لا يوجد صوت عربي</option>')+`<option value="__net"${SPK_NET?' selected':''}>🌐 صوت عبر الإنترنت</option>`;if(hint)hint.hidden=L.some(spkMale)||!L.length;}
 const LTR={KT:'كيه تي',T:'تي',SQ:'إس كيو',K:'كيه',S:'إس',H:'إتش',F:'إف',Q:'كيو',M:'إم',A:'إيه',L:'إل',I:'آي',X:'إكس',U:'يو',V:'في',W:'دبليو'};
 /* tashkeel (diacritics) so the Arabic voice reads technical words correctly; lookup ignores any existing marks */
 const TSH_RX=/[\u064B-\u0652\u0670\u0640]/g,TSH=(()=>{const m=new Map();'الآلِيّ آلِيّ أَحْمال الأَحْمال أَسْفَل أَضاءَت أَغْلِق أَمْبير أَو أَوْفَرْلود الأَوْفَرْلود أَيّ بِأَيّ أَيْضًا إِضافَة إِطْفاء إِعاقَة والإِعاقَة إِعْدادات إِلّا إِلى إِمْساك اتِّجاه بِاتِّجاه اسْم اشْتَغَل اضْغَط اكْتِمال اكْتَمَلَت الآخَر الآن الأَجْزاء الأَطْراف الأَطْوار الأَقْطاب الإِيقاف لِلإِيقاف الاخْتِيار الانْقِطاع البَرْنامَج البَكَرَة البَيان بَيان التَّأْخير بِتَأْخير التَّحَكُّم التَّرْك التَّسْخين التَّشْغيل تَشْغيل لِتَشْغيلِه التَّعادُل بِالتَّعادُل التَّعْليق التَّغْذِيَة تَغْذِيَة لِلتَّغْذِيَة التَّلامُس تَلامُس والتَّلامُس تَلامُسُه التَّلامُسات تَلامُسات والتَّلامُسات فالتَّلامُسات تَلامُساتُها التِّلْقائِيّ التَّوْصيل تَوْصيل بِتَوْصيل الَّتي التَّيّار تَيّار والتَّيّار الثّابِت الثّابِتَة الثَّلاثَة الثُّلاثِيّ ثُلاثِيّ الجُزْء الجِسْر الجِهاز جِهاز لِجِهاز الجُهْد جُهْد الحامِل حامِل حامِلِه فالحامِل الحَثِّيّ الحَرارَة بِالحَرارَة الحَرارِيّ حَرارِيَّة الحِمْل حِمْل الدّائِرَة دائِرَة بِدائِرَة الدّاخِلِيَّة الدَّخْل دَخْل الدَّوّار دَوّارًا الدَّوَران الذّاتِيَّة ذاتِيَّة الذِّراع الَّذي الرَّئيسِيّ رَئيسِيّ الرَّئيسِيَّة الرَّسْم الزَّمَن زَمَن السِّلْسِلَة السُّلَّمِيّ السِّلْك الشَّرائِح الشَّرارَة الشَّريحَة شَريحَة الشُّعْبَة شُعْبَة الصِّمام الصَّوْت صَوْت الصَّوْتِيّ صَوْتِيّ الضّاغِط ضاغِط الضَّبْط الضَّغْط الضَّوْئِيّ الطَّرَف طَرَف طَرَفاه طَرَفُه طَرَفَيْها الطَّرَفَيْن الطَّوارِئ الطَّوْر طَوْر طَوْران طَوْرَيْن العَرَبَة العَرَبِيّ عَرَبِيّ العُضْو العُطْل عُطْل العَمَل الفَصْل الفَعّالَة فَعّال القاطِع قاطِع القَصْر القَضيب قَضيب قُضْبان القَلْب والقَلْب القَوْس الكونْتاكْتور كونْتاكْتور اللَّحْظَة اللَّمْبَة لَمْبَة ولَمْبات اللَّوْحَة المُؤَقِّت مُؤَقِّت والمُؤَقِّت المُبَرْمَج المُتَحَرِّك المُتَحَكِّم المُتَصَفِّح المُحَرِّك مُحَرِّك المِحْوَر المَخارِج المَخْرَج مَخْرَج المُخَطَّط المَداخِل المَسار مَسار مَسارُه مَسارُها ومَسار لِمَسار المُساعِد مُساعِد المُساعِدَة مُساعِدَة المَسْح المُشْتَرَك المِشْوار المَضْبوط المَعْدِن المُغْلَق مُغْلَق المُغْلَقَة مُغْلَقَة المِغْناطيس بِمِغْناطيس المِغْناطيسِيّ مِغْناطيسِيّ مِغْناطيسِيًّا المِفْتاح مِفْتاح المَفْتوح مَفْتوح المَفْتوحَة مَفْتوحَة مَفْتوحًا المُفَعَّل المُفَعَّلَة المَلَفّ مَلَفّ مَلَفّات النّابِض والنّابِض النُّطْق نُطْق النِّقاط نِقاط النُّقْطَة نُقْطَة الوَسائِط الوَضْع وَضْع وَضْعِه انْتَظِر انْتَقَل فانْتَقَل انْتِهاء انْتَهى انْطَفَأَت بِاسْتِمْرار بِالتَّدْوير بِالعَدّ بِتَلامُسَيْن بَدَأ بِزِرّ زِرّ بَعْد وبَعْد بَعْدَه وبَعْدَه بَعيدًا بِلا بَيْن تَأَكَّد تَبْدَأ تَبْديل تَجاوَز تَحُدّ تَحْويل تَدْفَع تُرَكَّب تُسْتَخْدَم تَصِل تَضْغَط تُضيء فَتُضيء تُطْفَأ تَظْهَر وتَظْهَر تَعَذَّر تَعْمَل تُغْلَق فَتُغْلَق وتُغْلَق تُفْتَح تَنْحَني فَتَنْحَني تُوجَد تَوَقَّف ثُمّ ثُنائِيَّة جاهِز حَتّى حُجْرَة حَرِّر حَرَكَة حَمْراء حُذِف خاطِئ خَرْج داخِل دارَة دَلْتا دَوْرَة دُون رَأْسَه راجِع زال زِيادَة شَرْح شَيْء صُدْفَة صَغير ضَبْطُه ضَرْبِه طَريقَة طَويلَة عادَةً عَبْر عَبْرَه عَلى عَلَيْه وعَلَيْه عَلَيْها عَن عَناصِر عِنْد وعِنْد عِنْدَما غَيْر فُتِح فَصَل فَتَفْصِلُه فَتَنْفَتِح وتَنْفَتِح وتَنْغَلِق فَقَد فَلا فَوْرًا فَوْق فولْت فَيَبْقى ويَبْقى فَيَتَحَرَّك وتَتَحَرَّك فَيَجْذِب فَيَدور فَيَصِل فَيَضْغَط فَيُضيء فَيَفْتَح فَيَفْصِل فَيَقْرَؤُه فَيَمُرّ ويَمُرّ يَمُرّ فَيَنْقَطِع فيه قَطْع قِطْعَة قيمَة كامَة كُلّ كَلام كَهْرَبائِيّ لِأَنّ لِتَجْرِبَتِه لِذلِك لِرُؤْيَة لِفَتْرَة لِقُطْب لَكِنْ لِلأَمام لِلْخَلْف لَه مَعَه مَع لِيَظْهَر مُتَوَقِّف مُثَبَّت مِثْل مَجال مَجالًا مَجْذوب مُرْتَفِع مُرَحِّلات مُرَكَّبَة مُضاءَة مَضْغوط مُضيئًا مُطْفَأَة مَفْصول مُقاوَمَة مَقْطَع مَقْطَعُها مَقْطوع مُكْتَمِل مِن مُوَصَّل مُوَصَّلَة نازِل نَجْمَة نَفْس نَفْسُها نِهايَة هَذا هَل هُوَ وهُوَ وَإِذا واحِد واضِح وجَرِّب وَصِّل ووَظيفَتُهُما وَقَد يَأْتي يَبْتَعِد يَبْرُد يَتَوَفَّر يَتَوَلَّد يَجْذِب يُحَرَّر يَحْمي يَخْرُج ويَخْرُج يَدْخُل يَدْعَم يَدور يُدير يَرْجِع يَرْفَع يُسْتَخْدَم يُسَخِّن ويُسَخِّن يَشْرَح يُشَغِّل يَصِل يَضْغَط يَضْغَطُه يُعاد يَعُدّ يَعْكِس يَعْمَل يَعود ويَعود يُعيدُه يُغَذّي يُغْلَق ويُغْلَق يُفْتَح يَفْصِل يُفَعِّلُه يَقْرَأ يُكَرِّر يَكون يُمَرِّر يُمْكِن يَنْتَظِر يَنْتَقِل يَنْحَبِس يَنْزِل يُنْطَق يُنَفِّذ يوجَد يُوَلِّد فَيُحَثّ القُوَى تَمْرِين التَّمْرِين افْصِل قَبْل اكْتَمَل المَقْطَع بِنَفْسِك تَقْيِيم عَكْس بِجِهاز لَمْبات بِمُؤَقِّت مَكان مَكانَيْن مُحَرِّكَيْن بِالتَّتابُع بَطِيء سَرِيع يَدَوِيّ دالَنْدَر بِسُرْعَتَيْن بِدُون نِهايَتَي مِشْوار المُشْتَرَكة مَداخِل مَخارِج أَبَدًا أُخْرَى أَعَدْنا أَقَلّ أَمامِيّ أَوْفَرْلودِه أَوَّلًا إِذا إِعادَة إِيقاف الأَمام الأَوْفَرْلودان الأَوَّل الإِصْبَع الإِعاقَة الاتِّجاه البَطِيئَة التَّوازِي التَّوالِي الثّانِي الدّائِرَتَيْن الدِّلْتا الزّائِد السُّرْعَة العالِيَة العَدّ العَكْسِيّ الكامِلَة الكَهْرَبائِيَّة الكونْتاكْتورات المُحَرِّكان المُحَرِّكَيْن المَكان المِلَفّات المَوْجودَة المُوَصَّل النَّجْمَة النَّموذَجِي بِالطَّرِيقَة بِبَرْنامَج بِتَلامُس بِتَيّار بَدْء بِدايَة بِقُدْرَتِه تَثْبِيت تَجْرِبَة تُغَذِّي تَفْصِل تَقْطَع تَلامُساتِه تِلْقائِيًّا تَمْنَع تَنْفَتِح جَدِيد ذاتِيّ ذاتِيًّا رَفْع زَوال سَبَب ضاغِطا ضَبْط عَكْسِيّ عَمَلُهُما تَعود فَلَو يَبْدَأ يَتَبادَل يَتَحَوَّل يَتَوَقَّف يُطْفِئ يَنْعَكِس لَعاد لِمُشْتَرَك مُباشَرَة مُتَوَقِّفًا مَرَّة مُشْتَرَك مَعًا مُغْلَقًا مِنْهُما نَبْدَأ نُحاكِي نَحْو نَرْفَع نُشَغِّل نُشَغِّلُه نَضْغَط نَفْسَه نُقْطَتا نُقْطَتُه نُقْطَتُها نَنْتَظِر واحِدَة وَحْدَه وُصول يَثْبُت يَنْفَتِح يَنْقَطِع يَبْقَى يُبْقِي يُثَبِّتُه يَجِب يَحْدُث يَقْرَؤُه يَقْصُر يَقْطَع يُلْغِي يُوقِف كَهْرَبائِيَّة النَّتِيجَة'.split(' ').forEach(w=>m.set(w.replace(TSH_RX,''),w));return m;})();
@@ -1560,22 +1561,50 @@ function spkText(t){return String(t).replace(/<[^>]+>/g,' ')
 let SPQ=0;
 /* حالة النطق الفعلية من أحداث البدء والانتهاء: بعض الأجهزة اللوحية تُبقي speechSynthesis.speaking صحيحة دون أن يخرج صوت */
 const SPS={t0:0,on:false,end:true,len:0,fail:0,miss:0};
-function spkBusy(){if(!SPK.ok||SPS.end)return false;const el=Date.now()-SPS.t0;
-  if(!SPS.on)return el<3500; /* لم يبدأ النطق خلال 3 ثوانٍ ونصف: لا ننتظره */
+function spkBusy(){if(SPS.end)return false;const el=Date.now()-SPS.t0;
+  if(!SPS.on)return el<(SPK_NET?9000:4500); /* لم يبدأ النطق في وقته: لا ننتظره */
   return el<SPS.len*110+4000;} /* سقف للمدة المتوقعة إن لم يصل حدث الانتهاء */
-function spkFail(r){SPS.end=true;if(Date.now()-SPS.fail<30000)return;SPS.fail=Date.now();say('تعذّر تشغيل الصوت على هذا الجهاز'+(spkVoice()?'':' (لا يوجد صوت عربي مثبت، أضِفه من إعدادات الجهاز ← تحويل النص إلى كلام)')+'. تأكد أن صوت الوسائط مرتفع، وجرّب Chrome أو Safari. يستمر الشرح مكتوبًا.');try{renderTop();}catch(_){}}
-function speak(t,queue){if(!SPK.ok){spkFail('nosupport');return false;}if(!t)return false;
+function spkFail(r){SPS.end=true;if(Date.now()-SPS.fail<30000)return;SPS.fail=Date.now();
+  const m='تعذّر تشغيل الصوت على هذا الجهاز'+(navigator.onLine===false?' (لا يوجد اتصال بالإنترنت لتشغيل الصوت البديل)':spkVoice()?'':' (لا يوجد صوت عربي مثبت، أضِفه من إعدادات الجهاز ← تحويل النص إلى كلام)')+'. تأكد أن صوت الوسائط مرتفع، وجرّب Chrome أو Safari. يستمر الشرح مكتوبًا.';
+  say(m);try{const e=document.getElementById('wcCap');if(e&&S.clip)e.insertAdjacentHTML('beforeend','<br><span class="wcst no">⚠ '+m+'</span>');}catch(_){}try{renderTop();}catch(_){}}
+/* الصوت البديل عبر الإنترنت: بعض الأجهزة (خصوصًا اللوحية) ليس فيها محرك نطق عربي يعمل، فنشغّل النطق كملف صوتي */
+const SPA={el:null,ok:false,bad:0,q:[],run:false,tok:0};
+function spaEl(){if(!SPA.el){try{SPA.el=new Audio();SPA.el.preload='auto';}catch(_){}}return SPA.el;}
+/* المتصفح لا يسمح بتشغيل الصوت إلا بعد لمسة من المستخدم: نفتح عنصر الصوت بملف صامت قصير عند أول لمسة */
+{const un=()=>{const a=spaEl();if(!a||SPA.ok)return;SPA.ok=true;try{const n=800,b=new DataView(new ArrayBuffer(44+n)),w=(o,t)=>[...t].forEach((c,k)=>b.setUint8(o+k,c.charCodeAt(0)));
+    w(0,'RIFF');b.setUint32(4,36+n,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);b.setUint32(24,8000,true);b.setUint32(28,8000,true);b.setUint16(32,1,true);b.setUint16(34,8,true);w(36,'data');b.setUint32(40,n,true);for(let k=0;k<n;k++)b.setUint8(44+k,128);
+    if(a.paused){a.src=URL.createObjectURL(new Blob([b],{type:'audio/wav'}));const p=a.play();if(p&&p.catch)p.catch(()=>{});}}catch(_){}};
+  ['pointerdown','keydown','touchend'].forEach(t=>addEventListener(t,un,{capture:true,passive:true}));}
+function netSpeak(parts,id,wait){const a=spaEl();if(!a||navigator.onLine===false||SPA.bad>=2){spkFail('offline');return;}
+  const L=[];parts.forEach(p=>{while(p.length>190){let k=p.lastIndexOf(' ',190);if(k<60)k=190;L.push(p.slice(0,k));p=p.slice(k).trim();}if(p)L.push(p);});
+  SPA.tok=id;if(wait&&SPA.run){SPA.q.push(...L);return;}SPA.q=L;
+  let tm=null,bad=false;const fail=()=>{clearTimeout(tm);SPA.run=false;if(SPA.tok!==SPQ||bad)return;bad=true;SPA.bad++;spkFail('net');};
+  const next=()=>{clearTimeout(tm);if(SPA.tok!==SPQ){SPA.run=false;return;}if(!SPA.q.length){SPA.run=false;SPS.end=true;return;}SPA.run=true;
+    a.onplaying=()=>{clearTimeout(tm);SPA.bad=0;if(SPA.tok===SPQ)SPS.on=true;};a.onended=next;a.onerror=fail;
+    a.src='https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q='+encodeURIComponent(SPA.q.shift());try{a.playbackRate=0.95;}catch(_){}
+    tm=setTimeout(fail,8000);const p=a.play();if(p&&p.catch)p.catch(fail);};
+  next();}
+function speak(t,queue){if(!t)return false;
   try{const parts=[];spkText(t).replace(/([.،:!؟])\s+/g,'$1\n').split('\n').forEach(p=>{p=p.trim();if(!p)return;if(parts.length&&(parts[parts.length-1]+' '+p).length<170)parts[parts.length-1]+=' '+p;else parts.push(p);});
-    const go=()=>{const v=spkVoice(),id=++SPQ;let started=false;
-      Object.assign(SPS,{t0:Date.now(),on:queue&&!SPS.end&&SPS.on,end:false,len:(queue&&!SPS.end?SPS.len:0)+parts.join(' ').length});
-      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{started=true;SPS.miss=0;if(id===SPQ)SPS.on=true;};
+    if(!parts.length)return false;
+    /* محرك الجهاز لم ينطق: نجرّب صوتًا عربيًا آخر، ثم الصوت عبر الإنترنت */
+    const go=(retry)=>{const v=spkVoice(),id=++SPQ;let started=false;
+      const net=!SPK.ok||SPK_NET,wait=!retry&&queue&&!SPS.end&&SPS.on;
+      Object.assign(SPS,{t0:Date.now(),on:wait,end:false,len:(wait?SPS.len:0)+parts.join(' ').length});
+      if(net){netSpeak(parts,id,wait);return;}
+      let done=false;const giveUp=()=>{if(done||id!==SPQ)return;done=true;try{speechSynthesis.cancel();}catch(_){}
+        if(v)SPK_BAD.add(v.voiceURI);else SPK_NET=true;setTimeout(()=>{if(id===SPQ)go(true);},120);};
+      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{started=true;if(id===SPQ)SPS.on=true;};
         if(i===parts.length-1)u.onend=()=>{if(id===SPQ)SPS.end=true;};
-        u.onerror=e=>{if(id!==SPQ)return;if(i===parts.length-1)SPS.end=true;if(i===0&&e&&e.error!=='interrupted'&&e.error!=='canceled')spkFail(e.error);};speechSynthesis.speak(u);});
+        u.onerror=e=>{if(id!==SPQ||started)return;const er=e&&e.error;if(er==='interrupted'||er==='canceled')return;
+          if(er==='not-allowed'){SPS.end=true;return;}giveUp();};speechSynthesis.speak(u);});
       try{speechSynthesis.resume();}catch(_){}
-      /* لم يبدأ النطق: نبلّغ المستخدم، أو بعد محاولتين إن ادّعى المحرك أنه ينطق دون صوت */
-      setTimeout(()=>{if(started)return;SPS.miss++;if(id===SPQ&&!speechSynthesis.speaking||SPS.miss>=2)spkFail('nostart');},3000);};
-    if(!queue&&(speechSynthesis.speaking||speechSynthesis.pending)){speechSynthesis.cancel();setTimeout(go,120);}else go();return true;}catch(_){spkFail('ex');return false;}}
-function hush(){SPS.end=true;try{if(SPK.ok)speechSynthesis.cancel();}catch(_){}}
+      /* لم يبدأ النطق خلال 4 ثوانٍ (ولم يكن ينتظر نطقًا سابقًا): هذا الصوت لا يعمل على الجهاز */
+      if(!wait)setTimeout(()=>{if(!started)giveUp();},4000);};
+    const busy=SPK.ok&&(speechSynthesis.speaking||speechSynthesis.pending);
+    if(!queue){SPA.run=false;try{SPA.el&&SPA.el.pause();}catch(_){}}
+    if(!queue&&busy){speechSynthesis.cancel();setTimeout(()=>go(),120);}else go();return true;}catch(_){spkFail('ex');return false;}}
+function hush(){SPS.end=true;SPQ++;try{if(SPK.ok)speechSynthesis.cancel();}catch(_){}SPA.run=false;try{SPA.el&&SPA.el.pause();}catch(_){}}
 function voiceNote(){if(!SPK.ok)return 'المتصفح لا يدعم النطق الصوتي.';if(!spkVoice())return 'لا يتوفر صوت عربي على هذا الجهاز، فقد يكون النطق غير واضح. يمكن إضافة الصوت العربي من إعدادات الجهاز (تحويل النص إلى كلام).';return '';}
 /* ---- graph of the circuit ---- */
 const BTNX=[[7,8,'S0','NC'],[9,10,'S1','NC'],[11,12,'S1','NO'],[13,14,'S2','NC'],[15,16,'S2','NO'],[17,18,'S3','NC'],[19,20,'S4','NO'],[21,22,'SQ1','NC'],[23,24,'SQ1','NO'],[25,26,'SQ2','NC'],[27,28,'SQ2','NO']];
@@ -1920,7 +1949,7 @@ function xsSpeakTab(){const A=XS.A;if(!A)return;const devs=xsDevs(),d=devs.find(
   document.getElementById('xrTab').onclick=()=>{XS.xray=!XS.xray;say(XS.xray?'وضع الأشعة: تظهر الأجزاء الداخلية لكل قطعة في مكانها على اللوحة. شغّل الدائرة لترى حركة التلامسات ومسار التيار داخلها.':'أُغلق وضع الأشعة');render();};document.getElementById('xsClose').onclick=xsClose;
   document.getElementById('xsSpk').onclick=()=>{if(!SPK.ok)return say('المتصفح لا يدعم النطق الصوتي');xsSpeakTab();};
   document.getElementById('xsStop').onclick=hush;
-  document.getElementById('xsVoice').onchange=e=>{SPK_PICK=e.target.value||null;try{if(SPK_PICK)localStorage.setItem('spkVoice',SPK_PICK);else localStorage.removeItem('spkVoice');}catch(_){}spkFillSel();speak('هذا هو صوت الشرح المختار');};
+  document.getElementById('xsVoice').onchange=e=>{SPK_PICK=e.target.value||null;SPK_NET=SPK_PICK==='__net';SPA.bad=0;if(!SPK_NET)SPK_BAD.clear();try{if(SPK_PICK)localStorage.setItem('spkVoice',SPK_PICK);else localStorage.removeItem('spkVoice');}catch(_){}spkFillSel();speak('هذا هو صوت الشرح المختار');};
   document.getElementById('xsAuto').onclick=()=>{XS.auto=!XS.auto;try{localStorage.setItem('xsAuto',XS.auto?'1':'0');}catch(_){}document.getElementById('xsAuto').classList.toggle('on',XS.auto);if(XS.auto)speak('التعليق الصوتي التلقائي يعمل');else hush();};
   document.getElementById('xsSide').onclick=()=>{XS.side=XS.side==='r'?'l':'r';try{localStorage.setItem('xsSide',XS.side);}catch(_){}P.classList.toggle('r',XS.side==='r');P.classList.toggle('l',XS.side!=='r');};
   P.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-xpress]');if(b){e.preventDefault();press(b.dataset.xpress);}});
