@@ -555,7 +555,7 @@ body.fs{padding-bottom:0}
   <div class="wcprog"><i id="wcPg"></i></div>
   <div class="wcleg" id="wcLeg"></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
-  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button><a class="wcdl" id="wcDl" download title="تحميل مقطع شرح هذا التمرين كاملًا (فيديو بالصوت والشرح)" aria-label="تحميل مقطع الشرح كاملًا">⬇ تحميل</a></div>
+  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة الشرح: اضغط للتسريع أو التبطيء (الخطوات والصوت معًا)" aria-label="سرعة الشرح">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button><a class="wcdl" id="wcDl" download title="تحميل مقطع شرح هذا التمرين كاملًا (فيديو بالصوت والشرح)" aria-label="تحميل مقطع الشرح كاملًا">⬇ تحميل</a></div>
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
@@ -1561,11 +1561,13 @@ function spkText(t){return String(t).replace(/<[^>]+>/g,' ')
   .replace(/\b(KT|SQ|K|S|H|F|Q|M|A|L|I|T|X|U|V|W)(\d+)(A?)\b/g,(m,a,n,x)=>LTR[a]+' '+n+(x?' إيه':''))
   .replace(/\bR\b/g,'آر').replace(/\bN\b/g,'إن').replace(/[✓✔✗✘→←⟶⚡🔊•·♨]/g,' ').replace(/\s+/g,' ').trim().replace(/[،\s]+([.،:!؟])/g,'$1').replace(/^،\s*/,'').replace(/[\u0621-\u0652\u0670]+/g,spkTash);}
 let SPQ=0;
+/* سرعة النطق: يغيّرها زر السرعة في مقطع التوصيل فيتسارع الشرح الصوتي أو يتباطأ مع الخطوات */
+let SPR=1;
 /* حالة النطق الفعلية من أحداث البدء والانتهاء: بعض الأجهزة اللوحية تُبقي speechSynthesis.speaking صحيحة دون أن يخرج صوت */
 const SPS={t0:0,on:false,end:true,len:0,fail:0,miss:0};
 function spkBusy(){if(SPS.end)return false;const el=Date.now()-SPS.t0;
   if(!SPS.on)return el<(SPK_NET?9000:4500); /* لم يبدأ النطق في وقته: لا ننتظره */
-  return el<SPS.len*110+4000;} /* سقف للمدة المتوقعة إن لم يصل حدث الانتهاء */
+  return el<SPS.len*110/SPR+4000;} /* سقف للمدة المتوقعة إن لم يصل حدث الانتهاء */
 function spkFail(r){SPS.end=true;if(Date.now()-SPS.fail<30000)return;SPS.fail=Date.now();
   const m='تعذّر تشغيل الصوت على هذا الجهاز'+(navigator.onLine===false?' (لا يوجد اتصال بالإنترنت لتشغيل الصوت البديل)':spkVoice()?'':' (لا يوجد صوت عربي مثبت، أضِفه من إعدادات الجهاز ← تحويل النص إلى كلام)')+'. تأكد أن صوت الوسائط مرتفع، وجرّب Chrome أو Safari. يستمر الشرح مكتوبًا.';
   say(m);try{const e=document.getElementById('wcCap');if(e&&S.clip)e.insertAdjacentHTML('beforeend','<br><span class="wcst no">⚠ '+m+'</span>');}catch(_){}try{renderTop();}catch(_){}}
@@ -1584,7 +1586,7 @@ function netSpeak(parts,id,wait){const a=spaEl();if(!a||navigator.onLine===false
     if(!alt){alt=true;play(cur);return;} /* الخادم الأول لم يعمل: نجرّب الخادم الثاني لنفس الجملة */
     SPA.run=false;bad=true;SPA.bad++;spkFail('net');};
   const play=t=>{cur=t;const k=++att;a.onerror=()=>fail(k);a.src=(alt?'https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=':'https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ar&q=')+encodeURIComponent(t);
-    try{a.defaultPlaybackRate=a.playbackRate=0.95;}catch(_){}tm=setTimeout(()=>fail(k),8000);const p=a.play();if(p&&p.catch)p.catch(()=>fail(k));};
+    try{a.defaultPlaybackRate=a.playbackRate=0.95*SPR;}catch(_){}tm=setTimeout(()=>fail(k),8000);const p=a.play();if(p&&p.catch)p.catch(()=>fail(k));};
   const next=()=>{clearTimeout(tm);if(SPA.tok!==SPQ){SPA.run=false;return;}if(!SPA.q.length){SPA.run=false;SPS.end=true;return;}SPA.run=true;
     a.onplaying=()=>{if(!/translate_tts/.test(a.currentSrc||a.src))return;clearTimeout(tm);SPA.bad=0;if(SPA.tok===SPQ)SPS.on=true;};a.onended=next;
     play(SPA.q.shift());};
@@ -1599,7 +1601,7 @@ function speak(t,queue){if(!t)return false;
       if(net){netSpeak(parts,id,wait);return;}
       let done=false,t1=Date.now();const giveUp=()=>{if(done||id!==SPQ)return;done=true;try{speechSynthesis.cancel();}catch(_){}
         if(v)SPK_BAD.add(v.voiceURI);else SPK_NET=true;setTimeout(()=>{if(id===SPQ)go(true);},120);};
-      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=0.95;u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{if(i===0)t1=Date.now();started=true;if(id===SPQ)SPS.on=true;};
+      parts.forEach((p,i)=>{const u=new SpeechSynthesisUtterance(p);u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=Math.min(2,0.95*SPR);u.pitch=spkMale(v)?0.95:0.55;u.onstart=()=>{if(i===0)t1=Date.now();started=true;if(id===SPQ)SPS.on=true;};
         /* بعض المحركات تبدأ وتنتهي فورًا دون صوت إن لم تدعم العربية: انتهاء أسرع بكثير من مدة الكلام يعني أنه لم يُنطق */
         u.onend=()=>{if(id!==SPQ)return;if(i===0&&Date.now()-t1<Math.max(500,p.length*25)){started=false;giveUp();return;}if(i===parts.length-1)SPS.end=true;};
         u.onerror=e=>{if(id!==SPQ||started)return;const er=e&&e.error;if(er==='interrupted'||er==='canceled')return;
@@ -2936,7 +2938,7 @@ function exPick(v,quiet){v=PNAME[v]?v:'';EXP.ex=v;$('exPick').value=v;$('exClip'
 $('exPick').insertAdjacentHTML('beforeend',Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${esc(PNAME[k])}</option>`).join(''));
 $('exPick').onchange=e=>{exPick(e.target.value,true);if(EXP.ex){say('التمرين المختار: '+PNAME[EXP.ex]+'. شاهد ▶ مقطع التوصيل، وعند 🎯 التقييم يُقيَّم هذا التمرين مباشرة.');exMotor(EXP.ex);}renderTop();};
 {const v=lsG('wsEx');if(v&&PNAME[v])exPick(v,true);}
-let WCSND=lsG('wcSnd')!=='0';
+let WCSND=lsG('wcSnd')!=='0';const WCSPD=[1,1.25,1.5,2,0.5,0.75];
 const wcCol=c=>{if(c===BRS)return 'قنطرة';const f=COLORS.find(x=>x[0]===c);return f?f[1].split(':')[0]:'';};
 /* explanation colours: one colour for the power circuit, PLC inputs and outputs, every contactor's and timer's own branch,
    the shared control feed, the indicator lamps and the neutral; the step's real wire colour is still named in the caption */
@@ -3000,14 +3002,14 @@ function wcRef(c){c.saved=serial();c.keep={power:S.power,Q1:S.Q1,F1:S.F1};const 
   Object.assign(S,{Q1:false,F1:false,fault:null,coils:{},sel:null,pending:null,selDev:null});}
 function wcBack(c){try{applyObj(c.saved);}catch(_){}S.pressed.clear();Object.assign(S,c.keep,{fault:null,sel:null,pending:null,selDev:null,coils:{}});}
 function wcStart(){const v=EXP.ex;if(!v||!PRESETS[v]||S.clip)return;hush();
-  const c=S.clip={ex:v,steps:[],i:0,play:true,t:null,spd:1,hl:null,mini:false};
+  const c=S.clip={ex:v,steps:[],i:0,play:true,t:null,spd:WCSPD.includes(+lsG('wcSpd'))?+lsG('wcSpd'):1,hl:null,mini:false};
   try{wcRef(c);}catch(_){S.clip=null;if(c.saved)wcBack(c);update();return;}
   const d=document.querySelector('.more');if(d)d.open=false;
-  document.body.classList.add('wclip');$('wcBar').hidden=false;$('wcBar').classList.remove('mini');$('wcT').textContent='🎬 '+PNAME[v];$('wcSpd').textContent='1×';
+  document.body.classList.add('wclip');$('wcBar').hidden=false;$('wcBar').classList.remove('mini');$('wcT').textContent='🎬 '+PNAME[v];$('wcSpd').textContent=c.spd+'×';SPR=c.spd;
   /* the whole clip of this exercise as a video file (made by tools/make-clip-videos.mjs), to keep or send to trainees */
   const dl=$('wcDl');dl.href='video/clips/'+v+'.mp4';dl.download='مقطع-توصيل-'+PNAME[v].replace(/[\\/:*?"<>|()\s]+/g,'-').replace(/-+$/,'')+'.mp4';
   say('🎬 مقطع التوصيل: '+PNAME[v]+'. توصيلاتك محفوظة وتعود كما هي عند تصغير المقطع أو إغلاقه.');wcShow();wcPlan();}
-function wcStop(){const c=S.clip;if(!c)return;c.tok=(c.tok||0)+1;clearTimeout(c.t);clearTimeout(c.adv);hush();S.clip=null;document.body.classList.remove('wclip');$('wcBar').hidden=true;
+function wcStop(){const c=S.clip;if(!c)return;c.tok=(c.tok||0)+1;clearTimeout(c.t);clearTimeout(c.adv);hush();S.clip=null;SPR=1;document.body.classList.remove('wclip');$('wcBar').hidden=true;
   if(!c.mini)wcBack(c);
   say(c.mini?'أُغلق المقطع. أكمل التوصيل، ثم اضغط 🎯 تقييم.':'أُغلق المقطع وعادت توصيلاتك كما كانت. وصّل التمرين بنفسك، ثم اضغط 🎯 تقييم.');update();}
 function wcMini(){const c=S.clip;if(!c)return;clearTimeout(c.t);clearTimeout(c.adv);c.adv=null;hush();c.tok=(c.tok||0)+1;c.dk=null;c.btn=null;c.busy=false;
@@ -3143,7 +3145,11 @@ $('exClip').onclick=wcStart;$('wcX').onclick=wcStop;$('wcMin').onclick=wcMini;$(
 $('wcPlay').onclick=()=>{const c=S.clip;if(c.i>=wcEnd(c)){if(c.mini)wcMini();c.i=0;c.play=true;wcShow();wcPlan();return;}
   if(c.mini){wcMini();return;}
   c.play=!c.play;if(c.play)wcGo(1);else{clearTimeout(c.t);hush();wcBtns();}};
-$('wcSpd').onclick=()=>{const c=S.clip,L=[1,1.5,2,0.75];c.spd=L[(L.indexOf(c.spd)+1)%L.length];$('wcSpd').textContent=c.spd+'×';};
+/* السرعة: تُسرّع الشرح أو تُبطئه كله، الانتقال بين الخطوات والشرح الصوتي معًا، وتُحفظ للمرة القادمة */
+$('wcSpd').onclick=()=>{const c=S.clip,L=WCSPD;c.spd=L[(L.indexOf(c.spd)+1)%L.length];SPR=c.spd;$('wcSpd').textContent=c.spd+'×';lsS('wcSpd',c.spd===1?null:String(c.spd));
+  try{if(SPA.el&&!SPA.el.paused)SPA.el.playbackRate=0.95*SPR;}catch(_){}
+  /* نطق الجهاز لا تتغير سرعته أثناء الجملة: نعيد الخطوة الحالية بالسرعة الجديدة */
+  if(WCSND&&!c.mini&&c.play&&c.i<=c.steps.length&&spkBusy()&&!SPK_NET){hush();wcShow();wcPlan();}};
 /* زر الصوت: صوت الجهاز ← صوت عبر الإنترنت ← بلا صوت؛ ويُنطق تنبيه قصير فورًا لتجربة المصدر المختار */
 $('wcSnd').onclick=()=>{hush();SPA.bad=0;SPS.fail=0;
   if(!WCSND){WCSND=true;SPK_NET=false;SPK_BAD.clear();}else if(!SPK_NET)SPK_NET=true;else{WCSND=false;SPK_NET=false;}
