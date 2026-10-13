@@ -1579,17 +1579,28 @@ function spaEl(){if(!SPA.el){try{SPA.el=new Audio();SPA.el.preload='auto';}catch
     w(0,'RIFF');b.setUint32(4,36+n,true);w(8,'WAVEfmt ');b.setUint32(16,16,true);b.setUint16(20,1,true);b.setUint16(22,1,true);b.setUint32(24,8000,true);b.setUint32(28,8000,true);b.setUint16(32,1,true);b.setUint16(34,8,true);w(36,'data');b.setUint32(40,n,true);for(let k=0;k<n;k++)b.setUint8(44+k,128);
     if(a.paused){a.src=URL.createObjectURL(new Blob([b],{type:'audio/wav'}));const p=a.play();if(p&&p.catch)p.catch(()=>{});}}catch(_){}};
   ['pointerdown','keydown','touchend'].forEach(t=>addEventListener(t,un,{capture:true,passive:true}));}
-function netSpeak(parts,id,wait){const a=spaEl();if(!a||navigator.onLine===false||SPA.bad>=2){spkFail('offline');return;}
+/* الصوت عبر الإنترنت بصوت رجالي: جمل الشرح مسجّلة مسبقًا بصوت «حامد» في audio/v/ (تصنعها tools/make-clip-videos.mjs)،
+   واسم الملف بصمة نص الجملة؛ الجملة التي ليس لها ملف تُنطق بصوت Google */
+function spkHash(t){let a=0x811c9dc5,b=0x9747b28c;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);a=Math.imul(a^c,0x01000193);b=Math.imul(b^c,0x5bd1e995);b^=b>>>15;}
+  return (a>>>0).toString(16).padStart(8,'0')+(b>>>0).toString(16).padStart(8,'0');}
+const HVX={set:null,req:null};
+function voxLoad(){if(!HVX.req)HVX.req=fetch('audio/v/index.json').then(r=>r.ok?r.json():[]).then(L=>{HVX.set=new Set(L);}).catch(()=>{HVX.req=null;});return HVX.req;}
+voxLoad();
+function netSpeak(parts,id,wait){
+  /* أول نطق قبل وصول فهرس ملفات «حامد»: ننتظره قليلًا حتى لا تُنطق الجملة الأولى بصوت Google */
+  if(!HVX.set&&HVX.req&&!HVX.waited){HVX.waited=true;Promise.race([HVX.req,new Promise(r=>setTimeout(r,1500))]).then(()=>{if(SPQ===id)netSpeak(parts,id,wait);});return;}
+  const a=spaEl();if(!a||navigator.onLine===false||SPA.bad>=2){spkFail('offline');return;}
   const L=[];parts.forEach(p=>{while(p.length>190){let k=p.lastIndexOf(' ',190);if(k<60)k=190;L.push(p.slice(0,k));p=p.slice(k).trim();}if(p)L.push(p);});
   SPA.tok=id;if(wait&&SPA.run){SPA.q.push(...L);return;}SPA.q=L;
-  let tm=null,bad=false,alt=false,cur='',att=0;const fail=k=>{if(k!==att)return;clearTimeout(tm);if(SPA.tok!==SPQ||bad)return;
+  let tm=null,bad=false,alt=false,loc=false,cur='',att=0;const fail=k=>{if(k!==att)return;clearTimeout(tm);if(SPA.tok!==SPQ||bad)return;
+    if(loc){loc=false;play(cur);return;} /* تعذّر ملف «حامد»: نفس الجملة بصوت Google */
     if(!alt){alt=true;play(cur);return;} /* الخادم الأول لم يعمل: نجرّب الخادم الثاني لنفس الجملة */
     SPA.run=false;bad=true;SPA.bad++;spkFail('net');};
-  const play=t=>{cur=t;const k=++att;a.onerror=()=>fail(k);a.src=(alt?'https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=':'https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ar&q=')+encodeURIComponent(t);
-    try{a.defaultPlaybackRate=a.playbackRate=0.95*SPR;}catch(_){}tm=setTimeout(()=>fail(k),8000);const p=a.play();if(p&&p.catch)p.catch(()=>fail(k));};
+  const play=t=>{cur=t;const k=++att;a.onerror=()=>fail(k);a.src=loc?'audio/v/'+spkHash(t)+'.mp3':(alt?'https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=':'https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ar&q=')+encodeURIComponent(t);
+    try{a.defaultPlaybackRate=a.playbackRate=(loc?1:0.95)*SPR;}catch(_){}tm=setTimeout(()=>fail(k),8000);const p=a.play();if(p&&p.catch)p.catch(()=>fail(k));};
   const next=()=>{clearTimeout(tm);if(SPA.tok!==SPQ){SPA.run=false;return;}if(!SPA.q.length){SPA.run=false;SPS.end=true;return;}SPA.run=true;
-    a.onplaying=()=>{if(!/translate_tts/.test(a.currentSrc||a.src))return;clearTimeout(tm);SPA.bad=0;if(SPA.tok===SPQ)SPS.on=true;};a.onended=next;
-    play(SPA.q.shift());};
+    a.onplaying=()=>{if(!/translate_tts|audio\/v\//.test(a.currentSrc||a.src))return;clearTimeout(tm);SPA.bad=0;if(SPA.tok===SPQ)SPS.on=true;};a.onended=next;
+    const t=SPA.q.shift();loc=!!(HVX.set&&HVX.set.has(spkHash(t)));play(t);};
   next();}
 function speak(t,queue){if(!t)return false;
   try{const parts=[];spkText(t).replace(/([.،:!؟])\s+/g,'$1\n').split('\n').forEach(p=>{p=p.trim();if(!p)return;if(parts.length&&(parts[parts.length-1]+' '+p).length<170)parts[parts.length-1]+=' '+p;else parts.push(p);});
@@ -3147,7 +3158,7 @@ $('wcPlay').onclick=()=>{const c=S.clip;if(c.i>=wcEnd(c)){if(c.mini)wcMini();c.i
   c.play=!c.play;if(c.play)wcGo(1);else{clearTimeout(c.t);hush();wcBtns();}};
 /* السرعة: تُسرّع الشرح أو تُبطئه كله، الانتقال بين الخطوات والشرح الصوتي معًا، وتُحفظ للمرة القادمة */
 $('wcSpd').onclick=()=>{const c=S.clip,L=WCSPD;c.spd=L[(L.indexOf(c.spd)+1)%L.length];SPR=c.spd;$('wcSpd').textContent=c.spd+'×';lsS('wcSpd',c.spd===1?null:String(c.spd));
-  try{if(SPA.el&&!SPA.el.paused)SPA.el.playbackRate=0.95*SPR;}catch(_){}
+  try{if(SPA.el&&!SPA.el.paused)SPA.el.playbackRate=(/audio\/v\//.test(SPA.el.currentSrc||'')?1:0.95)*SPR;}catch(_){}
   /* نطق الجهاز لا تتغير سرعته أثناء الجملة: نعيد الخطوة الحالية بالسرعة الجديدة */
   if(WCSND&&!c.mini&&c.play&&c.i<=c.steps.length&&spkBusy()&&!SPK_NET){hush();wcShow();wcPlan();}};
 /* زر الصوت: صوت الجهاز ← صوت عبر الإنترنت ← بلا صوت؛ ويُنطق تنبيه قصير فورًا لتجربة المصدر المختار */
