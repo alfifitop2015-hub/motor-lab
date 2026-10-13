@@ -140,6 +140,8 @@ body.trainer .exb{border-bottom:1px solid rgba(255,255,255,.18)}
 .wcctl button{height:30px;min-width:34px;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--ink);font-weight:700;font-size:.85rem;padding:0 8px;cursor:pointer}.wcctl button:disabled{opacity:.45}
 .wcctl button.prim{background:var(--accent);border-color:var(--accent);color:#fff;min-width:46px}
 .wcctl button:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.wcctl .wcdl{display:inline-flex;align-items:center;height:30px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--ink);font-weight:700;font-size:.85rem;padding:0 8px;text-decoration:none;margin-inline-start:auto;white-space:nowrap}
+.wcctl .wcdl:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
 body.wclip .top,body.wclip .wtop,body.wclip #svg,body.wclip .dock{pointer-events:none}
 body.wclip .dock{opacity:.55}
 .wchl{fill:none;stroke:#ffd000;stroke-width:16;stroke-linecap:round;stroke-linejoin:round;opacity:.5;pointer-events:none;animation:wcPulse 1s ease-in-out infinite alternate}
@@ -553,7 +555,7 @@ body.fs{padding-bottom:0}
   <div class="wcprog"><i id="wcPg"></i></div>
   <div class="wcleg" id="wcLeg"></div>
   <p class="wccap" id="wcCap" aria-live="polite"></p>
-  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button></div>
+  <div class="wcctl"><button id="wcPrev" title="الخطوة السابقة" aria-label="الخطوة السابقة">›</button><button class="prim" id="wcPlay" title="إيقاف مؤقت" aria-label="إيقاف مؤقت">⏸</button><button id="wcNext" title="الخطوة التالية" aria-label="الخطوة التالية">‹</button><button id="wcSpd" title="سرعة العرض">1×</button><button id="wcSnd" title="الشرح الصوتي لكل خطوة">🔊</button><a class="wcdl" id="wcDl" download title="تحميل مقطع شرح هذا التمرين كاملًا (فيديو بالصوت والشرح)" aria-label="تحميل مقطع الشرح كاملًا">⬇ تحميل</a></div>
 </div>
 <div class="modal" id="vidModal" role="dialog" aria-modal="true" aria-labelledby="vT">
   <div class="vbox">
@@ -3002,6 +3004,8 @@ function wcStart(){const v=EXP.ex;if(!v||!PRESETS[v]||S.clip)return;hush();
   try{wcRef(c);}catch(_){S.clip=null;if(c.saved)wcBack(c);update();return;}
   const d=document.querySelector('.more');if(d)d.open=false;
   document.body.classList.add('wclip');$('wcBar').hidden=false;$('wcBar').classList.remove('mini');$('wcT').textContent='🎬 '+PNAME[v];$('wcSpd').textContent='1×';
+  /* the whole clip of this exercise as a video file (made by tools/make-clip-videos.mjs), to keep or send to trainees */
+  const dl=$('wcDl');dl.href='video/clips/'+v+'.mp4';dl.download='مقطع-توصيل-'+PNAME[v].replace(/[\\/:*?"<>|()\s]+/g,'-').replace(/-+$/,'')+'.mp4';
   say('🎬 مقطع التوصيل: '+PNAME[v]+'. توصيلاتك محفوظة وتعود كما هي عند تصغير المقطع أو إغلاقه.');wcShow();wcPlan();}
 function wcStop(){const c=S.clip;if(!c)return;c.tok=(c.tok||0)+1;clearTimeout(c.t);clearTimeout(c.adv);hush();S.clip=null;document.body.classList.remove('wclip');$('wcBar').hidden=true;
   if(!c.mini)wcBack(c);
