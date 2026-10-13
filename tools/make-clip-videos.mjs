@@ -8,7 +8,7 @@
    متغيرات اختيارية: FPS (الافتراضي 10)، VOICE (الافتراضي ar-SA-HamedNeural)، PITCH (خفض نبرة صوت Google فقط، الافتراضي 0.7)، TTS_CACHE (مجلد حفظ مقاطع النطق لإعادة الاستخدام) */
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
-import {readFile, writeFile, mkdtemp, rm, mkdir} from 'node:fs/promises';
+import {readFile, writeFile, mkdtemp, rm, mkdir, rename} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
@@ -59,15 +59,17 @@ function chunks(t) {
 }
 async function ttsPart(q) {
   const f = path.join(CACHE, createHash('sha1').update(VOICE + '|' + q).digest('hex') + '.mp3');
-  if (existsSync(f)) return f;
+  try { if (existsSync(f) && dur(f) > 0.2) return f; } catch {}
   /* صوت مايكروسوفت بالسرعة نفسها في المحاكي 0.95 */
   if (!GOOGLE) {
     for (let a = 0; a < 6; a++) {
       try {
-        execFileSync('edge-tts', ['--voice', VOICE, '--rate=-5%', '--text', q, '--write-media', f, ...(process.env.HTTPS_PROXY ? ['--proxy', process.env.HTTPS_PROXY] : [])], {stdio: 'ignore'});
-        if (existsSync(f) && dur(f) > 0.2) return f;
+        /* ملف مؤقت ثم نقل: عدة نسخ من الأداة تعمل معًا وتتشارك مجلد الحفظ */
+        const t = `${f}.${process.pid}.mp3`;
+        execFileSync('edge-tts', ['--voice', VOICE, '--rate=-5%', '--text', q, '--write-media', t, ...(process.env.HTTPS_PROXY ? ['--proxy', process.env.HTTPS_PROXY] : [])], {stdio: 'ignore'});
+        if (dur(t) > 0.2) { await rename(t, f); return f; }
       } catch {}
-      await rm(f, {force: true}); await sleep(2000 * (a + 1));
+      await rm(`${f}.${process.pid}.mp3`, {force: true}); await sleep(2000 * (a + 1));
     }
     throw new Error('تعذّر جلب الصوت للنص: ' + q);
   }
