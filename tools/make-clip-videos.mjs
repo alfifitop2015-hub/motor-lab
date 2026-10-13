@@ -4,7 +4,7 @@
    المتطلبات: Node، وحزمة playwright مع Chromium، وffmpeg، واتصال بالإنترنت (الصوت من خدمة النطق نفسها التي يستخدمها المحاكي عبر الإنترنت).
    الاستخدام:  node tools/make-clip-videos.mjs            (كل التمارين)
                node tools/make-clip-videos.mjs p1 p7      (تمارين محددة)
-   متغيرات اختيارية: FPS (الافتراضي 10)، TTS_CACHE (مجلد حفظ مقاطع النطق لإعادة الاستخدام) */
+   متغيرات اختيارية: FPS (الافتراضي 10)، PITCH (خفض النبرة، الافتراضي 0.7)، TTS_CACHE (مجلد حفظ مقاطع النطق لإعادة الاستخدام) */
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdtemp, rm, mkdir} from 'node:fs/promises';
@@ -18,6 +18,8 @@ const {chromium} = createRequire(import.meta.url)('playwright');
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const OUTD = path.join(ROOT, 'video', 'clips');
 const FPS = +process.env.FPS || 10, W = 720, GAP = 600, END_HOLD = 2500;
+/* خدمة النطق صوتها نسائي: نخفض النبرة ليقترب من صوت رجالي (PITCH=1 يُبقيه كما هو) */
+const PITCH = +process.env.PITCH || 0.7;
 const CACHE = process.env.TTS_CACHE || path.join(tmpdir(), 'motor-lab-tts');
 const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.png': 'image/png', '.webmanifest': 'application/manifest+json'};
 
@@ -73,7 +75,7 @@ async function tts(t, tmp) {
   const files = [];
   for (const q of chunks(t)) files.push(await ttsPart(q));
   execFileSync('ffmpeg', ['-v', 'error', '-y', ...files.flatMap(x => ['-i', x]),
-    '-filter_complex', files.map((_, i) => `[${i}:a]`).join('') + `concat=n=${files.length}:v=0:a=1,atempo=0.95,aresample=24000`, '-ac', '1', f]);
+    '-filter_complex', files.map((_, i) => `[${i}:a]`).join('') + `concat=n=${files.length}:v=0:a=1,atempo=0.95,${PITCH < 1 ? `rubberband=pitch=${PITCH},` : ''}aresample=24000`, '-ac', '1', f]);
   return {f, ms: dur(f) * 1000};
 }
 
