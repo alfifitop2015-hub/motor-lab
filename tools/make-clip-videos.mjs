@@ -1,10 +1,11 @@
 /* يصنع ملفات فيديو «مقطع التوصيل» لكل تمرين video/clips/<التمرين>.mp4 من المقطع نفسه داخل المحاكي:
    التوصيل سلكًا سلكًا ثم تجربة التشغيل، مع الشرح المكتوب والشرح الصوتي، فيُحمَّل من زر ⬇ في نافذة المقطع.
    يُعاد تشغيله بعد أي تعديل على التوصيلات النموذجية أو نصوص الشرح أو تجربة التشغيل.
-   المتطلبات: Node، وحزمة playwright مع Chromium، وffmpeg، واتصال بالإنترنت (الصوت من خدمة النطق نفسها التي يستخدمها المحاكي عبر الإنترنت).
+   المتطلبات: Node، وحزمة playwright مع Chromium، وffmpeg، وأداة edge-tts (pip install edge-tts)، واتصال بالإنترنت يصل إلى speech.platform.bing.com
+   (الصوت الرجالي «حامد» من مايكروسوفت؛ VOICE=google يعود إلى صوت Google مع خفض نبرته).
    الاستخدام:  node tools/make-clip-videos.mjs            (كل التمارين)
                node tools/make-clip-videos.mjs p1 p7      (تمارين محددة)
-   متغيرات اختيارية: FPS (الافتراضي 10)، PITCH (خفض النبرة، الافتراضي 0.7)، TTS_CACHE (مجلد حفظ مقاطع النطق لإعادة الاستخدام) */
+   متغيرات اختيارية: FPS (الافتراضي 10)، VOICE (الافتراضي ar-SA-HamedNeural)، PITCH (خفض نبرة صوت Google فقط، الافتراضي 0.7)، TTS_CACHE (مجلد حفظ مقاطع النطق لإعادة الاستخدام) */
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
 import {readFile, writeFile, mkdtemp, rm, mkdir} from 'node:fs/promises';
@@ -18,7 +19,8 @@ const {chromium} = createRequire(import.meta.url)('playwright');
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const OUTD = path.join(ROOT, 'video', 'clips');
 const FPS = +process.env.FPS || 10, W = 720, GAP = 600, END_HOLD = 2500;
-/* خدمة النطق صوتها نسائي: نخفض النبرة ليقترب من صوت رجالي (PITCH=1 يُبقيه كما هو) */
+/* الصوت: «حامد» الرجالي من مايكروسوفت؛ أو صوت Google النسائي مع خفض نبرته ليقترب من صوت رجالي (PITCH=1 يُبقيه كما هو) */
+const VOICE = process.env.VOICE || 'ar-SA-HamedNeural', GOOGLE = VOICE === 'google';
 const PITCH = +process.env.PITCH || 0.7;
 const CACHE = process.env.TTS_CACHE || path.join(tmpdir(), 'motor-lab-tts');
 const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.png': 'image/png', '.webmanifest': 'application/manifest+json'};
@@ -56,8 +58,19 @@ function chunks(t) {
   return L;
 }
 async function ttsPart(q) {
-  const f = path.join(CACHE, createHash('sha1').update(q).digest('hex') + '.mp3');
+  const f = path.join(CACHE, createHash('sha1').update(VOICE + '|' + q).digest('hex') + '.mp3');
   if (existsSync(f)) return f;
+  /* صوت مايكروسوفت بالسرعة نفسها في المحاكي 0.95 */
+  if (!GOOGLE) {
+    for (let a = 0; a < 6; a++) {
+      try {
+        execFileSync('edge-tts', ['--voice', VOICE, '--rate=-5%', '--text', q, '--write-media', f, ...(process.env.HTTPS_PROXY ? ['--proxy', process.env.HTTPS_PROXY] : [])], {stdio: 'ignore'});
+        if (existsSync(f) && dur(f) > 0.2) return f;
+      } catch {}
+      await rm(f, {force: true}); await sleep(2000 * (a + 1));
+    }
+    throw new Error('تعذّر جلب الصوت للنص: ' + q);
+  }
   const urls = ['https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=ar&q=', 'https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q='];
   for (let a = 0; a < 8; a++) {
     try {
@@ -68,14 +81,14 @@ async function ttsPart(q) {
   }
   throw new Error('تعذّر جلب الصوت للنص: ' + q);
 }
-/* ملف صوتي واحد لكل نص (مقاطعه متتالية) بالسرعة نفسها في المحاكي 0.95 */
+/* ملف صوتي واحد لكل نص (مقاطعه متتالية) */
 async function tts(t, tmp) {
   const f = path.join(tmp, createHash('sha1').update(t).digest('hex') + '.wav');
   if (existsSync(f)) return {f, ms: dur(f) * 1000};
   const files = [];
   for (const q of chunks(t)) files.push(await ttsPart(q));
   execFileSync('ffmpeg', ['-v', 'error', '-y', ...files.flatMap(x => ['-i', x]),
-    '-filter_complex', files.map((_, i) => `[${i}:a]`).join('') + `concat=n=${files.length}:v=0:a=1,atempo=0.95,${PITCH < 1 ? `rubberband=pitch=${PITCH},` : ''}aresample=24000`, '-ac', '1', f]);
+    '-filter_complex', files.map((_, i) => `[${i}:a]`).join('') + `concat=n=${files.length}:v=0:a=1,${GOOGLE ? `atempo=0.95,${PITCH < 1 ? `rubberband=pitch=${PITCH},` : ''}` : ''}aresample=24000`, '-ac', '1', f]);
   return {f, ms: dur(f) * 1000};
 }
 
