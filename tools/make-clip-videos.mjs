@@ -5,10 +5,13 @@
    (الصوت الرجالي «حامد» من مايكروسوفت؛ VOICE=google يعود إلى صوت Google مع خفض نبرته).
    الاستخدام:  node tools/make-clip-videos.mjs            (كل التمارين)
                node tools/make-clip-videos.mjs p1 p7      (تمارين محددة)
+               node tools/make-clip-videos.mjs --voice    (ملفات الصوت فقط، دون الفيديو)
+   ويحفظ أيضًا جمل الشرح الصوتي ملفاتٍ في audio/v/ (وفهرسها audio/v/index.json): «الصوت عبر الإنترنت» في المحاكي
+   يشغّلها بصوت «حامد» بدل صوت Google النسائي، وما ليس له ملف يُنطق بصوت Google.
    متغيرات اختيارية: FPS (الافتراضي 10)، VOICE (الافتراضي ar-SA-HamedNeural)، PITCH (خفض نبرة صوت Google فقط، الافتراضي 0.7)، TTS_CACHE (مجلد حفظ مقاطع النطق لإعادة الاستخدام) */
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
-import {readFile, writeFile, mkdtemp, rm, mkdir, rename} from 'node:fs/promises';
+import {readFile, writeFile, readdir, mkdtemp, rm, mkdir, rename} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
@@ -17,7 +20,7 @@ import path from 'node:path';
 const {chromium} = createRequire(import.meta.url)('playwright');
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-const OUTD = path.join(ROOT, 'video', 'clips');
+const OUTD = path.join(ROOT, 'video', 'clips'), VOXD = path.join(ROOT, 'audio', 'v');
 const FPS = +process.env.FPS || 10, W = 720, GAP = 600, END_HOLD = 2500;
 /* الصوت: «حامد» الرجالي من مايكروسوفت؛ أو صوت Google النسائي مع خفض نبرته ليقترب من صوت رجالي (PITCH=1 يُبقيه كما هو) */
 const VOICE = process.env.VOICE || 'ar-SA-HamedNeural', GOOGLE = VOICE === 'google';
@@ -28,6 +31,7 @@ const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.
 /* الصفحة كما هي، مع منفذ صغير للأداة داخل الشيفرة: يلتقط نصوص الشرح الصوتي بدل نطقها، ويعطي الوصول إلى المقطع */
 const HOOK = `
 window.__wc={get S(){return S;},PNAME,PRESETS,DEMO,exPick,exMotor,wcStart,wcShow,wcEnd,said:[],
+  hash:spkHash,tx:spkText,
   hook(){speak=(t,q)=>{if(t)window.__wc.said.push({t:spkText(t),q:!!q});return true;};spkBusy=()=>false;WCSND=true;}};
 })();
 `;
@@ -83,6 +87,25 @@ async function ttsPart(q) {
   }
   throw new Error('تعذّر جلب الصوت للنص: ' + q);
 }
+/* جمل الشرح بصوت «حامد» ملفاتٍ للمحاكي: اسم الملف من spkHash في المحاكي نفسه لكل مقطع كما يقسّمه الصوت عبر الإنترنت */
+async function voxSave(page, t) {
+  if (GOOGLE) return;
+  for (const q of chunks(t)) {
+    const out = path.join(VOXD, (await page.evaluate(q => window.__wc.hash(q), q)) + '.mp3');
+    if (existsSync(out)) continue;
+    const src = await ttsPart(q), tmpf = `${out}.${process.pid}.mp3`;
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', src, '-ac', '1', '-ar', '24000', '-c:a', 'libmp3lame', '-b:a', '32k', tmpf]);
+    await rename(tmpf, out);
+  }
+}
+async function voxIndex() {
+  const L = (await readdir(VOXD)).filter(f => /^[0-9a-f]{16}\.mp3$/.test(f)).map(f => f.slice(0, 16)).sort();
+  await writeFile(path.join(VOXD, 'index.json'), JSON.stringify(L));
+  console.log(`ملفات الصوت: ${L.length}`);
+}
+const VONLY = process.argv.includes('--voice');
+/* جمل يقولها المحاكي عند تجربة الصوت */
+const EXTRA = ['الصوت عبر الإنترنت يعمل', 'صوت الجهاز يعمل', 'هذا هو صوت الشرح المختار', 'التعليق الصوتي التلقائي يعمل', 'نطق التوصيل يعمل'];
 /* ملف صوتي واحد لكل نص (مقاطعه متتالية) */
 async function tts(t, tmp) {
   const f = path.join(tmp, createHash('sha1').update(t).digest('hex') + '.wav');
@@ -96,14 +119,16 @@ async function tts(t, tmp) {
 
 await mkdir(CACHE, {recursive: true});
 await mkdir(OUTD, {recursive: true});
+await mkdir(VOXD, {recursive: true});
 const browser = await chromium.launch();
 try {
   const page0 = await browser.newPage();
   await page0.route(/sw\.js$/, r => r.abort());
   await page0.goto(BASE + 'index.html', {waitUntil: 'load'});
   const all = await page0.evaluate(() => Object.keys(window.__wc.PNAME).filter(k => window.__wc.PRESETS[k]));
+  for (const t of EXTRA) await voxSave(page0, await page0.evaluate(t => window.__wc.tx(t), t));
   await page0.close();
-  const want = process.argv.slice(2);
+  const want = process.argv.slice(2).filter(a => !a.startsWith('--'));
   const list = want.length ? want.filter(k => all.includes(k)) : all;
   if (want.length && list.length !== want.length) throw new Error('تمرين غير معروف. المتاح: ' + all.join(' '));
 
@@ -145,7 +170,7 @@ try {
         for (let i = 0; i <= n + 1; i++) { c.i = i > n ? X.wcEnd(c) : i; X.wcShow(); h = Math.max(h, hb()); }
         b.classList.add('demo');
         (X.DEMO[c.ex] || []).forEach(([, tx]) => { cap.innerHTML = '<span class="wcg">▶ تجربة التشغيل (ببرنامج easy النموذجي)</span><br>' + tx + '<span class="wcres">النتيجة: يعمل K1 و K2 · المحرك يعمل للأمام · مضاءة: H1 و H2</span>'; h = Math.max(h, hb()); });
-        b.classList.remove('demo'); c.i = 0; X.wcShow(); X.said.length = 0; return Math.ceil(h);
+        b.classList.remove('demo'); c.i = 0; X.said.length = 0; X.wcShow(); return Math.ceil(h); /* نُبقي شرح الخطوة الأولى ليُنطق */
       }, info.n);
       await page.addStyleTag({content: `#wcBar{height:${barH}px!important}#wrap{padding-top:${barH}px!important}`});
       const H = (Math.ceil(await page.evaluate(() => document.getElementById('svg').getBoundingClientRect().bottom)) + 1) & ~1;
@@ -156,6 +181,7 @@ try {
       const audio = [];
       const say = async L => {
         for (const s of L) {
+          await voxSave(page, s.t);
           const a = await tts(s.t, tmp), st = Math.max(vt, aEnd);
           audio.push({f: a.f, st}); aEnd = st + a.ms;
         }
@@ -167,7 +193,7 @@ try {
           return {said: L, busy: !!(c && c.busy)};
         }, vt);
         await say(st.said);
-        await page.screenshot({clip, path: path.join(tmp, `${String(frame++).padStart(6, '0')}.jpg`), type: 'jpeg', quality: 88});
+        if (!VONLY) await page.screenshot({clip, path: path.join(tmp, `${String(frame++).padStart(6, '0')}.jpg`), type: 'jpeg', quality: 88});
         await page.clock.runFor(1000 / FPS); vt += 1000 / FPS;
         return st;
       };
@@ -182,6 +208,7 @@ try {
         if (i % 10 === 0) console.log(`${ex}: ${i}/${info.E} (${(vt / 1000).toFixed(0)} ث)`);
       }
       await page.close();
+      if (VONLY) { console.log(`تم ${ex}: ${info.name} — الصوت فقط`); continue; }
 
       /* الصوت: كل جملة في موضعها من الزمن، والباقي صمت */
       const total = frame / FPS, wavs = [], lst = path.join(tmp, 'a.txt');
@@ -197,6 +224,7 @@ try {
       console.log(`تم ${ex}: ${info.name} — ${info.n} سلكًا، ${dur(out).toFixed(0)} ث`);
     } finally { await rm(tmp, {recursive: true, force: true}); }
   }
+  await voxIndex();
 } finally {
   await browser.close(); server.close();
 }
