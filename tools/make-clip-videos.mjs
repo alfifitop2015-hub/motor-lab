@@ -6,8 +6,9 @@
    الاستخدام:  node tools/make-clip-videos.mjs            (كل التمارين)
                node tools/make-clip-videos.mjs p1 p7      (تمارين محددة)
                node tools/make-clip-videos.mjs --voice    (ملفات الصوت فقط، دون الفيديو)
-   ويحفظ أيضًا جمل الشرح الصوتي ملفاتٍ في audio/v/ (وفهرسها audio/v/index.json): «الصوت عبر الإنترنت» في المحاكي
-   يشغّلها بصوت «حامد» بدل صوت Google النسائي، وما ليس له ملف يُنطق بصوت Google.
+   ويحفظ أيضًا جمل الشرح الصوتي ملفاتٍ في audio/v/ (وفهرسها audio/v/index.json)، ومعها شرح المقطع العرضي في كل حالة من تجربة
+   التشغيل: «الصوت عبر الإنترنت» في المحاكي يشغّلها بصوت «حامد» بدل صوت Google النسائي، وما ليس له ملف يُنطق بصوت Google.
+   امسح audio/v/ قبل إعادة صنعها كلها حتى لا تبقى ملفات جمل تغيّر نصها.
    متغيرات اختيارية: FPS (الافتراضي 10)، VOICE (الافتراضي ar-SA-HamedNeural)، PITCH (خفض نبرة صوت Google فقط، الافتراضي 0.7)، TTS_CACHE (مجلد حفظ مقاطع النطق لإعادة الاستخدام) */
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
@@ -31,7 +32,10 @@ const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.
 /* الصفحة كما هي، مع منفذ صغير للأداة داخل الشيفرة: يلتقط نصوص الشرح الصوتي بدل نطقها، ويعطي الوصول إلى المقطع */
 const HOOK = `
 window.__wc={get S(){return S;},PNAME,PRESETS,DEMO,exPick,exMotor,wcStart,wcShow,wcEnd,said:[],
-  hash:spkHash,tx:spkText,
+  hash:spkHash,tx:spkText,sent:spkSent,
+  /* نصوص المقطع العرضي في حالة اللوحة الآن: مسار كل حمل، والرسالة القصيرة عند تغيّره، وصفحة كل قطعة */
+  xs(){try{const A=xsCompute(),o=[];A.res.forEach(r=>o.push(xsNarr(r),xsShort(r)));xsDevs().forEach(d=>{if(d.k!=='path')try{o.push(xsDevBody(d,A).say);}catch(_){}});
+    if(!A.res.length)o.push('لا توجد أحمال موصلة.');return o.filter(Boolean).map(spkText);}catch(_){return [];}},
   hook(){speak=(t,q)=>{if(t)window.__wc.said.push({t:spkText(t),q:!!q});return true;};spkBusy=()=>false;WCSND=true;}};
 })();
 `;
@@ -87,14 +91,16 @@ async function ttsPart(q) {
   }
   throw new Error('تعذّر جلب الصوت للنص: ' + q);
 }
-/* جمل الشرح بصوت «حامد» ملفاتٍ للمحاكي: اسم الملف من spkHash في المحاكي نفسه لكل مقطع كما يقسّمه الصوت عبر الإنترنت */
+/* جمل الشرح بصوت «حامد» ملفاتٍ للمحاكي: جملة لكل ملف، واسمه من spkHash في المحاكي نفسه */
+const VSEEN = new Set();
 async function voxSave(page, t) {
-  if (GOOGLE) return;
-  for (const q of chunks(t)) {
+  if (GOOGLE || VSEEN.has(t)) return;
+  VSEEN.add(t);
+  for (const q of await page.evaluate(t => window.__wc.sent(t), t)) {
     const out = path.join(VOXD, (await page.evaluate(q => window.__wc.hash(q), q)) + '.mp3');
     if (existsSync(out)) continue;
     const src = await ttsPart(q), tmpf = `${out}.${process.pid}.mp3`;
-    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', src, '-ac', '1', '-ar', '24000', '-c:a', 'libmp3lame', '-b:a', '32k', tmpf]);
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', src, '-ac', '1', '-ar', '24000', '-c:a', 'libmp3lame', '-b:a', '24k', tmpf]);
     await rename(tmpf, out);
   }
 }
@@ -190,9 +196,10 @@ try {
         const st = await page.evaluate(t => {
           document.getAnimations().forEach(a => { try { a.pause(); a.currentTime = t; } catch (_) {} });
           const X = window.__wc, c = X.S.clip, L = X.said.splice(0);
-          return {said: L, busy: !!(c && c.busy)};
+          return {said: L, busy: !!(c && c.busy), xs: c && c.i > c.steps.length ? X.xs() : []};
         }, vt);
         await say(st.said);
+        for (const t of st.xs) await voxSave(page, t);
         if (!VONLY) await page.screenshot({clip, path: path.join(tmp, `${String(frame++).padStart(6, '0')}.jpg`), type: 'jpeg', quality: 88});
         await page.clock.runFor(1000 / FPS); vt += 1000 / FPS;
         return st;
