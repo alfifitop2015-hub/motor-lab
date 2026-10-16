@@ -493,7 +493,6 @@ body.fs{padding-bottom:0}
   <div class="drow">
     <button class="db fs-only" id="dExit" title="خروج من ملء الشاشة"><span class="ic">✕</span>خروج</button>
     <button class="db" id="dMin" title="تصغير أو توسيع الأدوات"><span class="ic">▾</span>الأدوات</button>
-    <button class="db" id="dDel" disabled title="حذف السلك المحدد"><span class="ic">🗑</span>حذف السلك</button>
     <button class="db" id="dSd" title="مخطط دائرة القوى والتحكم للتمرين"><span class="ic">📐</span>المخطط</button>
     <button class="db" id="dUndo" title="تراجع"><span class="ic">↶</span>تراجع</button>
         <span class="dsep"></span>
@@ -2164,7 +2163,6 @@ function render(){
   svg.innerHTML=s;svg.style.width=(W*S.zoom)+'px';measureTop();
   renderTop();save();updateSound();try{xsTick();}catch(e){console.warn(e);}}
 function syncDock(){document.getElementById('dMM').classList.toggle('on',S.mm.on);
-  document.getElementById('dDel').disabled=S.sel==null;document.getElementById('dDel').classList.toggle('hl',S.sel!=null);
   const m=S.motor,m2=S.motor2;let h='';
   if(S.fault)h+=`<span class="c bad">${S.fault}</span>`;
   h+=`<span class="c ${m.state==='run'?'ok':m.state==='fault'?'bad':''}">M1: ${m.state==='run'?modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}</span>`;
@@ -2486,7 +2484,6 @@ function measureDock(){document.documentElement.style.setProperty('--dockh',(doc
 if(window.ResizeObserver){new ResizeObserver(measureTop).observe(topEl);new ResizeObserver(()=>{measureDock();}).observe(dockEl);}
 document.getElementById('dExit').onclick=exitFS;
 document.getElementById('dMin').onclick=()=>{document.body.classList.toggle('dmin');document.querySelector('#dMin .ic').textContent=document.body.classList.contains('dmin')?'▴':'▾';setTimeout(()=>{measureDock();if(fitMode==='all')fitAll();},60);};
-document.getElementById('dDel').onclick=()=>{if(S.sel!=null)delWire(S.sel);};
 document.getElementById('dUndo').onclick=()=>undo();
 document.getElementById('dZo').onclick=zout;document.getElementById('dZi').onclick=zin;document.getElementById('dAll').onclick=fitAll;
 document.getElementById('dClear').onclick=()=>document.getElementById('bClear').click();
