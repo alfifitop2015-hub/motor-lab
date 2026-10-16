@@ -255,6 +255,11 @@ body.fs .wrap{position:fixed;left:0;right:0;top:0;bottom:var(--dockh,120px);over
 .dsep{width:1px;height:38px;background:rgba(255,255,255,.2);flex:none}
 .dsw{width:32px;height:32px;border-radius:50%;flex:none;border:2px solid rgba(255,255,255,.55);cursor:pointer;padding:0}
 .dsw.cur{box-shadow:0 0 0 3px #ffb300}
+.cdot{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.6)}
+.cpop{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,120px) + 8px);max-width:calc(100vw - 16px);box-sizing:border-box;background:rgba(11,19,30,.97);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:8px 10px;direction:rtl;display:none}
+.cpop.open{display:block}
+.cprow{display:flex;gap:8px;overflow-x:auto;padding:4px 3px;scrollbar-width:thin}
+.cpn{font-size:.8rem;text-align:center;margin-top:4px;color:#ffd666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dsel{flex:none;height:40px;border-radius:9px;background:#1d2a38;color:#fff;border:1px solid rgba(255,255,255,.25);padding:0 6px;max-width:170px}
 body.dmin .drow .full,body.dmin .dstat{display:none}
 body:not(.fs) .fs-only{display:none!important}
@@ -482,6 +487,7 @@ body.fs{padding-bottom:0}
   <div class="status" id="status"></div>
 </div>
 
+<div class="cpop" id="cPop" role="group" aria-label="ألوان الأسلاك"><div class="cprow" id="dSw"></div><div class="cpn" id="cpN"></div></div>
 <div class="dock" id="dock" aria-label="أدوات اللوحة">
   <div class="dstat" id="dstat"></div>
   <div class="drow">
@@ -491,7 +497,7 @@ body.fs{padding-bottom:0}
     <button class="db" id="dSd" title="مخطط دائرة القوى والتحكم للتمرين"><span class="ic">📐</span>المخطط</button>
     <button class="db" id="dUndo" title="تراجع"><span class="ic">↶</span>تراجع</button>
         <span class="dsep"></span>
-    <span class="full" id="dSw" style="display:flex;gap:6px;flex:none;align-items:center"></span>
+    <button class="db full" id="dCol" aria-haspopup="true" aria-expanded="false" aria-controls="cPop" title="اختيار لون السلك"><span class="ic"><i class="cdot" id="dColDot"></i></span>لون السلك ▾</button>
     <span class="dsep full"></span>
     <button class="db full" data-add="k" title="إضافة كونتاكتور"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="1" width="32" height="42" rx="4" fill="#dcdcd6"/><rect x="4" y="12" width="20" height="20" rx="2" fill="#8d9398"/><rect x="8" y="20" width="12" height="5" rx="1" fill="#2fbf5b"/></svg>كونتاكتور<b class="cnt" style="font-weight:400"></b></button>
     <button class="db full" data-add="timer" title="إضافة مؤقت"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="1" width="32" height="42" rx="4" fill="#f1f0ea"/><circle cx="15" cy="22" r="9" fill="#fff" stroke="#999"/><path d="M15 13a9 9 0 0 1 9 9" fill="none" stroke="#ff9f1a" stroke-width="3"/></svg>مؤقت<b class="cnt" style="font-weight:400"></b></button>
@@ -2414,10 +2420,20 @@ function undo(){if(!S.hist.length)return;applyObj(JSON.parse(S.hist.pop()));S.se
 
 document.getElementById('bClear').onclick=()=>{if(!S.wires.length)return;snap();S.wires=[];S.sel=null;S.pending=null;say('مُسحت كل الأسلاك (يمكن التراجع)');update();};
 const dsw=document.getElementById('dSw');
-function pickColor(c){curColor=c;document.querySelectorAll('[data-col]').forEach(x=>x.classList.toggle('cur',x.dataset.col===c));
+const cPop=document.getElementById('cPop'),dCol=document.getElementById('dCol');
+const colBg=c=>c===PEW?'repeating-linear-gradient(135deg,#2aa84a 0 6px,#f2c200 6px 12px)':c;
+function colPop(o){cPop.classList.toggle('open',o);dCol.setAttribute('aria-expanded',o?'true':'false');dCol.classList.toggle('hl',o);
+  if(o){const b=dsw.querySelector('.cur');if(b){b.scrollIntoView({block:'nearest',inline:'center'});b.focus({preventScroll:true});}}}
+function showCol(){const k=COLORS.find(x=>x[0]===curColor);document.getElementById('dColDot').style.background=colBg(curColor);
+  document.getElementById('cpN').textContent=k?k[1]:'';dCol.title='لون السلك: '+(k?k[1]:'');}
+dCol.onclick=e=>{e.stopPropagation();colPop(!cPop.classList.contains('open'));};
+document.addEventListener('pointerdown',e=>{if(cPop.classList.contains('open')&&!cPop.contains(e.target)&&!dCol.contains(e.target))colPop(false);});
+cPop.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();colPop(false);dCol.focus();}});
+function pickColor(c){curColor=c;document.querySelectorAll('[data-col]').forEach(x=>x.classList.toggle('cur',x.dataset.col===c));showCol();colPop(false);
   if(S.sel!=null){const w=S.wires.find(w=>w.id===S.sel);if(w){snap();w.c=c;render();}}}
-COLORS.forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.style.background=c===PEW?'repeating-linear-gradient(135deg,#2aa84a 0 6px,#f2c200 6px 12px)':c;b.title=n;b.setAttribute('aria-label','سلك '+n);
-  b.onclick=()=>pickColor(c);box.appendChild(b);});});
+COLORS.forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.style.background=colBg(c);b.title=n;b.setAttribute('aria-label','سلك '+n);
+  b.onclick=()=>pickColor(c);b.onmouseenter=b.onfocus=()=>{document.getElementById('cpN').textContent=n;};b.onmouseleave=b.onblur=showCol;box.appendChild(b);});});
+showCol();
 const wrap=document.getElementById('wrap');
 const topEl=document.querySelector('.top');
 function measureTop(){document.documentElement.style.setProperty('--toph',topEl.offsetHeight+'px');}
