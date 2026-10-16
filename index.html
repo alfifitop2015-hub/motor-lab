@@ -535,7 +535,6 @@ body.fs{padding-bottom:0}
     <button class="db full fs-only" id="dAll"><span class="ic">▣</span>كاملة</button>
     <button class="db full fs-only" id="dZi" aria-label="تكبير"><span class="ic">+</span>تكبير</button>
     <button class="db full" id="dClear" title="مسح كل الأسلاك"><span class="ic">⌫</span>مسح الأسلاك</button>
-    <button class="db full" id="dShare"><span class="ic">⇪</span>مشاركة</button>
   </div>
 </div>
 <div class="insp" id="insp" role="dialog" aria-label="إعدادات القطعة"></div>
@@ -2491,7 +2490,6 @@ document.getElementById('dDel').onclick=()=>{if(S.sel!=null)delWire(S.sel);};
 document.getElementById('dUndo').onclick=()=>undo();
 document.getElementById('dZo').onclick=zout;document.getElementById('dZi').onclick=zin;document.getElementById('dAll').onclick=fitAll;
 document.getElementById('dClear').onclick=()=>document.getElementById('bClear').click();
-document.getElementById('dShare').onclick=()=>document.getElementById('bShare').click();
 
 /* ---------- presets ---------- */
 const BR='#7a4a22',BK='#1b1b1b',GR='#8e949a',RD='#e0342f',BL='#4aa3df',OR='#e0342f';
