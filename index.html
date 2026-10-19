@@ -593,9 +593,16 @@ body.fs{padding-bottom:0}
   <div class="box appbox" style="max-width:640px">
     <div class="ah"><h2 id="rT">📋 نتائج المتدربين</h2><button class="btn" id="rClose">إغلاق</button></div>
     <div class="fld" id="rKeyRow"><label>كلمة سر المدرب (التي وضعتها في كود Google)<input id="rKey" type="password" autocomplete="off"></label></div>
-    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
+    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
+  </div>
+</div>
+<div class="modal" id="shrModal" role="dialog" aria-modal="true" aria-labelledby="shrT">
+  <div class="box appbox" style="max-width:640px">
+    <div class="ah"><h2 id="shrT">📋 نتائج مشتركة</h2><button class="btn" id="shrClose">إغلاق</button></div>
+    <p id="shrMsg" class="astat" aria-live="polite"></p>
+    <div id="shrList"></div>
   </div>
 </div>
 <div class="modal" id="realModal" role="dialog" aria-modal="true" aria-labelledby="rvT">
@@ -3267,12 +3274,14 @@ const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn
 async function recheck(r){if(RS.chk[r.uid]!==undefined||!r.code||!PRESETS[r.ex])return;RS.chk[r.uid]=null;
   try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o).s;}catch(_){RS.chk[r.uid]=null;}}
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q));
+  const vis=L.length&&L.every(r=>RS.sel.has(r.uid));$('rAll').textContent=vis?'☐ إلغاء التحديد':'☑ تحديد الكل';$('rAll').disabled=!L.length;
+  $('rShareSel').disabled=!RS.sel.size;$('rShareSel').textContent=RS.sel.size?'📤 مشاركة المحدد ('+RS.sel.size+')':'📤 مشاركة المحدد';
   $('rDelSel').disabled=!RS.sel.size;$('rDelSel').textContent=RS.sel.size?'🗑 حذف المحدد ('+RS.sel.size+')':'🗑 حذف المحدد';
   $('rList').innerHTML=L.length?L.map(r=>{const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,ok=c==null||sv==='—'?'':c===+r.s?' <span title="أُعيد الفحص على التوصيل المرسل">✔</span>':` <span style="color:var(--warn)" title="إعادة الفحص أعطت ${c}">⚠${c}</span>`;
     const th=r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="صورة لوحة ${esc(r.n)}" loading="lazy">`:'<div class="rth none">بلا صورة</div>';
     return `<div class="rrow"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))} · ${fmtT(r.t)}</div></div>
       <div class="rg">${sv}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
-      <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button>${PNAME[r.ex]&&r.code?`<button data-rulk="${esc(r.uid)}">🔓 فك القفل</button>`:''}<button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}).join(''):
+      <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button data-rshare="${esc(r.uid)}">📤 مشاركة</button>${PNAME[r.ex]&&r.code?`<button data-rulk="${esc(r.uid)}">🔓 فك القفل</button>`:''}<button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}).join(''):
     `<p class="greq">${RS.rows.length?'لا نتائج تطابق البحث.':'لا توجد تجارب مرسلة حاليًا.'}</p>`;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة سر المدرب.';$('rKey').focus();return;}
   try{localStorage.setItem('wsKey',key);}catch(_){}
@@ -3298,7 +3307,37 @@ $('rList').addEventListener('click',async e=>{const im=e.target.closest('[data-r
   const u=e.target.closest('[data-rulk]');if(u){const r=RS.rows.find(x=>x.uid===u.dataset.rulk);if(r)ulkOpen(r);return;}
   const o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
   if(d)return arm(d,()=>rDelete([d.dataset.rdel]));
-  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);if(!r)return;if(!r.code)return showImg(r);try{const ob=await decodeCode(r.code);snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);rM.classList.remove('open');update();}catch(_){$('rMsg').textContent='تعذّر فتح هذه التجربة.';}}});
+  const sh=e.target.closest('[data-rshare]');if(sh){const r=RS.rows.find(x=>x.uid===sh.dataset.rshare);if(r)rShare([r]);return;}
+  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);if(!r)return;if(!r.code)return showImg(r);try{openObj(await decodeCode(r.code),r);rM.classList.remove('open');}catch(_){$('rMsg').textContent='تعذّر فتح هذه التجربة.';}}});
+/* a trainee's work opened on the board with everything the board offers (grade, cross-section, operating...) */
+function openObj(ob,r){snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);update();}
+$('rAll').onclick=()=>{const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q)),all=L.every(r=>RS.sel.has(r.uid));
+  L.forEach(r=>all?RS.sel.delete(r.uid):RS.sel.add(r.uid));rRender();};
+/* share results as one link (#b=...): name, number, exercise, grade, time and the wiring code of each, without the photos */
+async function rShare(L){if(!L.length)return;$('rMsg').textContent='جارٍ تجهيز الرابط…';
+  try{const code=await encodeCode({v:1,r:L.map(r=>({n:r.n,id:r.id,ex:r.ex,s:r.s,t:r.t,code:r.code||''}))});
+    const base=isHosted()?location.origin+location.pathname.replace(/\/$/,'/index.html'):QRURL+'index.html',link=base+'#b='+encodeURIComponent(code);
+    const sv=r=>r.s===''||r.s==null?'—':r.s,text='نتائج المتدربين ('+L.length+')\n'+L.map(r=>'• '+r.n+' — '+exName(r.ex)+' — '+sv(r)+'/20').join('\n')+'\n\nافتح الرابط لعرض النتائج وفتح التوصيلات:';
+    if(navigator.share){try{await navigator.share({title:'نتائج المتدربين',text,url:link});$('rMsg').textContent='✔ شوركت '+L.length+' نتيجة.';return;}catch(e){if(e&&e.name==='AbortError'){$('rMsg').textContent='';return;}}}
+    openLink('https://wa.me/?text='+encodeURIComponent(text+'\n'+link));$('rMsg').textContent='فُتح واتساب لمشاركة '+L.length+' نتيجة.';}
+  catch(_){$('rMsg').textContent='تعذّر تجهيز رابط المشاركة.';}}
+$('rShareSel').onclick=()=>rShare(RS.rows.filter(r=>RS.sel.has(r.uid)));
+/* shared results opened from a link: read only, no password and no delete */
+const shM=$('shrModal');let SHR=[];
+function shrRender(){$('shrList').innerHTML=SHR.length?SHR.map((r,i)=>{const sv=r.s===''||r.s==null?'—':r.s;
+  return `<div class="rrow" style="grid-template-columns:1fr auto"><div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))}${r.t?' · '+fmtT(r.t):''}</div></div>
+    <div class="rg">${esc(sv)}<small style="color:var(--muted);font-weight:400">/20</small></div>
+    <div class="ra" style="grid-column:1/3">${r.code?`<button data-shopen="${i}">👁 فتح التوصيل</button>`:'<span class="rs">لا يوجد توصيل محفوظ</span>'}</div></div>`;}).join(''):'<p class="greq">لا توجد نتائج في هذا الرابط.</p>';}
+$('shrList').addEventListener('click',async e=>{const b=e.target.closest('[data-shopen]');if(!b)return;const r=SHR[+b.dataset.shopen];if(!r||!r.code)return;
+  try{openObj(await decodeCode(r.code),r);shM.classList.remove('open');}catch(_){$('shrMsg').textContent='تعذّر فتح هذه التجربة.';}});
+$('shrClose').onclick=()=>shM.classList.remove('open');shM.addEventListener('click',e=>{if(e.target===shM)shM.classList.remove('open');});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&shM.classList.contains('open'))shM.classList.remove('open');});
+async function shrFromHash(){const m=/^#b=(.+)$/.exec(location.hash);if(!m)return;
+  try{const o=await decodeCode(decodeURIComponent(m[1]));SHR=(o&&Array.isArray(o.r)?o.r:[]).filter(r=>r&&typeof r==='object').map(r=>({n:String(r.n||''),id:String(r.id||''),ex:String(r.ex||''),s:r.s,t:+r.t||0,code:typeof r.code==='string'?r.code:''}));
+    $('shrMsg').textContent=SHR.length+' نتيجة · للعرض فقط';}
+  catch(_){SHR=[];$('shrMsg').textContent='الرابط غير صالح أو ناقص.';}
+  shrRender();if(document.body.classList.contains('fs'))exitFS();shM.classList.add('open');}
+shrFromHash();window.addEventListener('hashchange',shrFromHash);
 $('rCsv').onclick=async()=>{if(!RS.rows.length){$('rMsg').textContent='حمّل النتائج أولًا.';return;}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const csv='﻿'+[['الاسم','الرقم التدريبي','التمرين','الدرجة من 20','إعادة الفحص','الوقت'].map(q).join(',')].concat(RS.rows.map(r=>[r.n,r.id,exName(r.ex),r.s,RS.chk[r.uid]==null?'':RS.chk[r.uid],fmtT(r.t)].map(q).join(','))).join('\r\n');
