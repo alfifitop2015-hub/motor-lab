@@ -2681,7 +2681,7 @@ let DL=null;if(window.claude&&window.claude.use)window.claude.use('downloads').t
 async function saveBlob(b,name){if(DL){try{await DL.save({filename:name,data:b});return 'saved';}catch(e){return e&&e.code==='declined'?'declined':'failed';}}
   const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return 'saved';}
 const sendM=$('sendModal');
-function openSend(){if(document.body.classList.contains('fs'))exitFS();$('sendSum').textContent=sendSummary()+(curGrade()&&!sameAsGraded()?' · عدّلت التوصيل بعد التقييم، لذلك سيُرسل التوصيل الذي قُيّم.':'');$('sendMsg').textContent='';sendM.classList.add('open');
+function openSend(){if(document.body.classList.contains('fs'))exitFS();$('sendSum').textContent=sendSummary()+(curGrade()&&!sameAsGraded()?' · سيُرسل توصيل أعلى محاولة لك في التقييم ('+curGrade().s+'/20)، لا التوصيل الحالي.':'');$('sendMsg').textContent='';sendM.classList.add('open');
   const o=stGet();$('stName2').value=o.n||$('stName').value;$('stId2').value=o.id||$('stId').value;if(!$('stName2').value)$('stName2').focus();}
 $('bSend').onclick=openSend;
 $('sClose').onclick=()=>sendM.classList.remove('open');sendM.addEventListener('click',e=>{if(e.target===sendM)sendM.classList.remove('open');});
@@ -2914,7 +2914,8 @@ function gradeProg(ex,prog,tm){const T=PTEST[ex];let ok=0,rel=0,bad=0;
   return{ok,rel,bad,r:rel?ok/rel:0};}
 const GK='wsGrades',gAll=()=>{try{return JSON.parse(localStorage.getItem(GK)||'{}');}catch(_){return{};}};
 function gSave(o){try{localStorage.setItem(GK,JSON.stringify(o));}catch(_){}}
-function curGrade(){const A=gAll();return A._cur&&A[A._cur]?A[A._cur]:null;}
+/* the attempt that is sent: the highest one (kept in .top when a later attempt scored less) */
+function curGrade(){const A=gAll(),L=A._cur&&A[A._cur];return L?(L.top||L):null;}
 const sameAsGraded=()=>{const G=curGrade();return !G||JSON.stringify(serial().w)===JSON.stringify(G.w.w);};
 const gradeLine=()=>{const G=curGrade();return G?` · الدرجة: ${G.s} من 20 (${PNAME[G.ex]})`:'';};
 async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn();const cur=serial();
@@ -2954,14 +2955,14 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   `<ul class="glist">${G.items.map(([t,p,ok])=>`<li class="${ok?'':'no'}"><span>${ok?'✔':'✖'}</span><span>${esc(t)}</span><b>${ok?p:0} / ${p}</b></li>`).join('')}</ul>`}
   <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}</p>`;}
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
-  let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+A[k].s+'/20':''}</option>`).join('')}</select></label>`;
+  let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+(A[k].top||A[k]).s+'/20':''}</option>`).join('')}</select></label>`;
   if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يشغّل المحاكي لوحتك آليًا كما يفعل المدرب: يضغط الضواغط ويرفعها، ويوقف، ويفصل الأوفرلود، وينتظر المؤقت، ثم يقارن عمل المحرك واللمبات بالمطلوب في التمرين. لا يُقارن توصيلك بالمخطط سلكًا بسلك، فأي توصيل بديل يؤدي العمل يأخذ الدرجة كاملة. إذا لم تعمل اللوحة كاملة تُفحص دائرة القوى ودائرة التحكم كلٌّ على حدة لتأخذ درجة ما نفّذته صحيحًا، وتظهر لك الأخطاء خطوة بخطوة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
-  else if(G){const best=Math.max(G.s,G.best==null?G.s:G.best);
-    h+=`<div class="glock">آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}${best>G.s?'، وأعلى درجة لك فيه '+best+' من 20':''}. صحّح الأخطاء ثم أعد التقييم متى شئت، وأرسل النتيجة: المدرب يعتمد درجتك الأعلى.</div>`+gResHTML(G)+
+  else if(G){const T=G.top||G;
+    h+=`<div class="glock">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b> (المحاولة ${T.try||1})، وتوصيلها محفوظ، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت: لا تضيع عليك الدرجة الأعلى.</div>`+gResHTML(G)+
     `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
-    <div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالتوصيل الحالي</button></div>`;}
+    <div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20) للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالتوصيل الحالي</button></div>`;}
   else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}${PLCX.has(ex)?'<br><b>التقييم:</b> التوصيل 10 درجات، والبرنامج 10 درجات (يُختبر تشغيله آليًا).':''}</div>
-    <div class="glock">يمكنك إعادة التقييم بعد تصحيح أخطائك، والمدرب يعتمد درجتك الأعلى. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
+    <div class="glock">يمكنك إعادة التقييم بعد تصحيح أخطائك، وتُحفظ أعلى محاولة لك وتوصيلها، وهي التي تُرسل للمدرب. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
     <div class="sbtns"><button class="btn prim" id="gGo">🎯 ابدأ التقييم الآن</button></div>`;}
   $('gBody').innerHTML=h;}
@@ -2973,9 +2974,11 @@ $('gBody').addEventListener('click',e=>{const id=e.target.id;
   if(id==='gGo'){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
     if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return;}
     if(!S.wires.length){$('gMsg').textContent='لا توجد توصيلات بعد.';return;}
-    const A=gAll(),P=A[GV.ex],best=P?Math.max(P.s,P.best==null?P.s:P.best):-1;
-    const r=gradeNow(GV.ex);A[GV.ex]={ex:GV.ex,...r,t:Date.now(),n,id:sid,w:serial(),tries:(P?P.tries||1:0)+1,best:Math.max(best,r.s)};A._cur=GV.ex;gSave(A);
-    say('قُيّمت التجربة: '+r.s+' من 20'+(best>r.s?' (أعلى درجة لك في هذا التمرين '+best+')':''));renderTop();gRender();gUpdBtn();}
+    /* every attempt is graded; the highest one (the newest on a tie) keeps its wiring so it is the one sent, even if a later attempt scores less */
+    const A=gAll(),P=A[GV.ex],pTop=P?(P.top||P):null,tries=(P?P.tries||1:0)+1,strip=({top,tries,best,...x})=>x;
+    const r=gradeNow(GV.ex),keep=pTop&&pTop.s>r.s;
+    A[GV.ex]={ex:GV.ex,...r,t:Date.now(),n,id:sid,w:serial(),try:tries,tries,best:keep?pTop.s:r.s,...(keep?{top:strip(pTop)}:{})};A._cur=GV.ex;gSave(A);
+    say('قُيّمت التجربة: '+r.s+' من 20'+(keep?'. أعلى محاولة لك ('+pTop.s+' من 20) محفوظة، وهي التي تُرسل للمدرب':''));renderTop();gRender();gUpdBtn();}
   else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
 });
 // remote unlock: the trainer derives a code from a submitted grade (trainee id + exercise + grading time); the trainee's device recomputes it to match
