@@ -329,7 +329,7 @@ body.cloud #sWa{background:var(--panel)}
 const $=id=>document.getElementById(id);
 const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ELEC_URL='https://claude.ai/artifact/1cD93wpsG4jx9KQ6d21xWF';
-const CLOUD_URL='https://script.google.com/macros/s/AKfycbzW0GhYTzvq_t332RqtqbKZxxSC5bBXBNZC55qxiSQ9FevJ7YuMD_JJcQh3kbBMUiajog/exec';
+const CLOUD_URL='https://script.google.com/macros/s/AKfycbyesF3VDtXbCItHAKyqflcU4P6in__xsDZCruF2rrSKGVQBQ4tuyJxWwrP-y0CXy4_UbA/exec';
 const EMB=(()=>{try{return window.parent!==window&&!!window.parent.__ftClose;}catch(_){return false;}})();
 const LOC=(()=>{try{return EMB?window.parent.location:location;}catch(_){return location;}})();
 const isHosted=()=>/^https?:$/.test(LOC.protocol)&&!/(claude\.ai|claudeusercontent|anthropic)/.test(LOC.hostname);
