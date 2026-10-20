@@ -893,7 +893,7 @@ let last=performance.now(),lastSec=0;
 setInterval(()=>{const now=performance.now(),dt=Math.min(.3,(now-last)/1000);last=now;let dirty=false;
   for(const d in S.tStart)if(!S.tDone[d]&&Date.now()-S.tStart[d]>=TDELAY)dirty=true;
   if(S.mot.st==='hum'){S.hum+=dt;if(S.hum>3.5){const f=S.mot.set===2&&C().E.some(e=>e.dev==='F6')?'F6':'F5';S.trip[f]=true;S.hum=0;S.msg='فصل الحمل الزائد '+f+' بسبب تشغيل المحرك على وجهين.';dirty=true;}}else S.hum=0;
-  if(C().ls&&S.mot.st==='run'){S.pos=Math.max(0,Math.min(100,S.pos+S.mot.dir*dt*(S.mot.sp==='high'?14:7)));const a=S.ls.S4,b=S.ls.S5;syncLS();if((!a&&S.ls.S4)||(!b&&S.ls.S5))S.lsHits=(S.lsHits||0)+1;if(a!==S.ls.S4||b!==S.ls.S5)dirty=true;else renderPanel();}
+  if(C().ls&&S.mot.st==='run'&&!(S.cl&&S.cl.hold)){S.pos=Math.max(0,Math.min(100,S.pos+S.mot.dir*dt*(S.mot.sp==='high'?14:7)));const a=S.ls.S4,b=S.ls.S5;syncLS();if((!a&&S.ls.S4)||(!b&&S.ls.S5))S.lsHits=(S.lsHits||0)+1;if(a!==S.ls.S4||b!==S.ls.S5)dirty=true;else renderPanel();}
   if(dirty)update();
   if(Date.now()-lastSec>1000){lastSec=Date.now();if(S.ex&&!S.ex.done)renderStat();}},100);
 
@@ -1181,14 +1181,32 @@ if(/^#t=/.test(location.hash))decodeCode(location.hash).then(o=>{openObj(o);hist
 const CLSPD=[1,1.25,1.5,.75];
 function clLs(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(_){return null;}}
 function clVoice(){try{const V=speechSynthesis.getVoices().filter(v=>/^ar/i.test(v.lang));return V.find(v=>/SA/i.test(v.lang))||V[0]||null;}catch(_){return null;}}
-function clHush(){try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(_){}}
-/* speak a caption; cb runs when the speech ends, or after the time the text needs if this device is silent */
-function clSpeak(tx,cb){const c=S.cl,tok=c.tok,sp=c.spd,est=(1100+tx.length*62)/sp;let fin=false,started=false;
+function clHush(){try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(_){}try{if(CLV.a){CLV.a.onended=CLV.a.onerror=null;CLV.a.pause();}}catch(_){}}
+/* Hamed's voice: every sentence the clips say is recorded beforehand in audio/c/ (made by tools/make-clip-voice.mjs),
+   one file per sentence named after its text's fingerprint; a sentence without a file is said by the device's Arabic voice */
+const CLV={set:null,req:null,a:null};
+const clSent=t=>t.replace(/([.!؟:])\s+/g,'$1\n').split('\n').map(x=>x.trim()).filter(Boolean);
+function clHash(t){let a=0x811c9dc5,b=0x9747b28c;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);a=Math.imul(a^c,0x01000193);b=Math.imul(b^c,0x5bd1e995);b^=b>>>15;}
+  return (a>>>0).toString(16).padStart(8,'0')+(b>>>0).toString(16).padStart(8,'0');}
+function clVox(){if(!CLV.req)CLV.req=fetch('audio/c/index.json').then(r=>r.ok?r.json():[]).then(L=>{CLV.set=new Set(L);}).catch(()=>{CLV.req=null;});return CLV.req;}
+/* the browser plays sound only after a touch: the player is opened with a short silence by the touch that starts the clip */
+function clAudio(){if(!CLV.a){try{CLV.a=new Audio();CLV.a.preload='auto';}catch(_){}}return CLV.a;}
+function clUnlock(){const a=clAudio();if(!a||CLV.ok)return;CLV.ok=true;try{a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';const p=a.play();if(p&&p.catch)p.catch(()=>{});}catch(_){}}
+/* speak a caption sentence by sentence; cb runs when it is over, or after the time the text needs if this device is silent */
+function clSpeak(tx,cb){const c=S.cl,tok=c.tok,L=clSent(tx.replace(/\s+/g,' ')),est=(1100+tx.length*62)/c.spd;let fin=false;
   const done=()=>{if(fin||S.cl!==c||c.tok!==tok)return;fin=true;cb();};
-  if(c.snd&&window.speechSynthesis&&window.SpeechSynthesisUtterance){try{clHush();
-      const u=new SpeechSynthesisUtterance(tx.replace(/[←→⟷•✔✋🎬]/g,' ').replace(/\s+/g,' ')),v=clVoice();u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=Math.min(1.8,.95*sp);
-      const t0=Date.now(),late=()=>setTimeout(done,Math.max(0,est-(Date.now()-t0)));
-      u.onstart=()=>{started=true;};u.onend=done;u.onerror=late;speechSynthesis.speak(u);
+  if(!c.snd)return void setTimeout(done,est);
+  setTimeout(done,est*2.5+4000);
+  const one=i=>{if(S.cl!==c||c.tok!==tok)return;if(i>=L.length)return done();const s=L[i],h=clHash(s),a=clAudio(),nx=()=>one(i+1);
+    if(a&&CLV.set&&CLV.set.has(h)){let k=false;const dev=()=>{if(k)return;k=true;clDev(s,nx,c,tok);};
+      a.onended=()=>{if(!k){k=true;nx();}};a.onerror=dev;a.src='audio/c/'+h+'.mp3';try{a.defaultPlaybackRate=a.playbackRate=c.spd;}catch(_){}
+      const p=a.play();if(p&&p.catch)p.catch(dev);}
+    else clDev(s,nx,c,tok);};
+  if(!CLV.set&&CLV.req)Promise.race([CLV.req,new Promise(r=>setTimeout(r,1500))]).then(()=>one(0));else one(0);}
+function clDev(s,cb,c,tok){const est=(500+s.length*62)/c.spd;let fin=false,started=false;const done=()=>{if(fin||S.cl!==c||c.tok!==tok)return;fin=true;cb();};
+  if(window.speechSynthesis&&window.SpeechSynthesisUtterance){try{speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(s.replace(/[←→⟷•✔✋🎬📍🎲]/g,' ')),v=clVoice(),t0=Date.now();u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=Math.min(1.8,.95*c.spd);
+      u.onstart=()=>{started=true;};u.onend=done;u.onerror=()=>setTimeout(done,Math.max(0,est-(Date.now()-t0)));speechSynthesis.speak(u);
       setTimeout(()=>{if(!started)done();},est);setTimeout(done,est*2.2+2500);return;}catch(_){}}
   setTimeout(done,est);}
 function clShow(){const c=S.cl,n=c.steps.length,i=c.i,st=c.steps[i]||{};
@@ -1204,7 +1222,7 @@ function clStep(i,fwd,keep){const c=S.cl;c.tok++;clearTimeout(c.t);clHush();c.i=
 function clAuto(){const c=S.cl;if(!c)return;if(c.i<c.steps.length-1)return clStep(c.i+1,true);clClose(true);}
 function clFocus(){setTimeout(()=>{const f=document.getElementById('clFocus')||document.querySelector('.clfoc');if(f&&f.scrollIntoView)try{f.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});}catch(_){}},60);}
 /* opts: {title, intro, steps, done(): the trainee's turn, abort(): close early} */
-function clStart(o){if(S.cl)clClose(false);clHush();
+function clStart(o){if(S.cl)clClose(false);clHush();clUnlock();
   const c=S.cl={...o,i:-1,t:null,tok:0,play:true,spd:CLSPD.includes(+clLs('clSpd'))?+clLs('clSpd'):1,snd:clLs('clSnd')!=='0'};
   $('clT').textContent='🎬 '+o.title;$('clBar').hidden=false;document.body.classList.add('clip');clShow();
   c.t=setTimeout(()=>{if(S.cl===c)clStep(0,true);},400);}
@@ -1219,7 +1237,7 @@ function clInit(){
   $('clSpd').onclick=()=>{const c=S.cl;if(!c)return;c.spd=CLSPD[(CLSPD.indexOf(c.spd)+1)%CLSPD.length];clLs('clSpd',String(c.spd));clShow();};
   $('clSnd').onclick=()=>{const c=S.cl;if(!c)return;c.snd=!c.snd;clLs('clSnd',c.snd?'1':'0');if(!c.snd)clHush();clShow();};
   window.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.cl)clClose(false);});
-  try{if(window.speechSynthesis)speechSynthesis.getVoices();}catch(_){}}
+  try{if(window.speechSynthesis)speechSynthesis.getVoices();}catch(_){}clVox();}
 /* ---------- fault kit: one clip per circuit ----------
    the circuit's idea and sequence, then the kit is operated (Q1/Q2, the push buttons, the timer, the limit switches)
    with what happens after each action, then a sample fault is found with the multimeter's real readings.
@@ -1252,16 +1270,16 @@ function ftClip(){if(S.zero){say('المقبض على 0 — اختر رقم ال
   /* a section's steps run forward; stepping back into one starts it again from its first step */
   const sec=(k,F,L)=>{const j0=steps.length;L.forEach((o,q)=>steps.push({k,ms:o.ms||600,til:o.til||null,tx:'',go(fwd){const cl=S.cl;
       if(!q||!fwd||cl.dj!==j0+q-1){ftReset(F);for(let r=0;r<q;r++){L[r].a&&L[r].a();L[r].ff&&L[r].ff();solve();}}
-      cl.dj=j0+q;o.a&&o.a();solve();this.tx=o.t();ftFoc(o.f?o.f():null);update();}}));};
+      cl.dj=j0+q;cl.hold=!!o.hold;o.a&&o.a();solve();this.tx=o.t();ftFoc(o.f?o.f():null);update();}}));};
   const plain=(k,t,f)=>steps.push({k,tx:t,ms:400,go(){S.cl.dj=-9;ftReset([]);ftFoc(f);update();}});
   plain('الفكرة',S.cid+' — '+I.n+'. '+I.d,['#svg']);
   (I.seq||[]).forEach((t,i)=>plain('تسلسل العمل '+(i+1)+' من '+I.seq.length,t,['#svg']));
   /* operating the kit */
   const ops=[];
-  ops.push({a(){S.q={Q1:true,Q2:true};},t:()=>'نشغّل المفتاح الرئيسي Q1 ومفتاح التحكم Q2: '+ftObs()+'.',f:()=>[ftKc('#cQ1'),ftKc('#cQ2')]});
-  const btn=(b,l)=>{ops.push({a(){S.pb.add(b);},t:()=>'نضغط '+b+(l?' ('+l+')':'')+' مع الاستمرار: '+ftObs()+'.',f:()=>[ftKc('[data-pb="'+b+'"]'),'.mot']});
-    ops.push({a(){S.pb.delete(b);},t:()=>{const o=ftObs();return 'نترك '+b+': '+o+(b!=='S1'&&S.mot.st==='run'?'، ويبقى يعمل بفضل تلامس المسك.':'.');},f:()=>['.mot']});
-    if(hasT&&b!=='S1')ops.push({til:()=>ftTimersDone(),ff:ftAge,t:()=>Object.keys(S.tStart).length?'ننتظر زمن المؤقت ('+TDELAY/1000+' ثوانٍ)، ثم: '+ftPeek(ftAge)+'.':'لا يوجد مؤقت يعد الآن.',f:()=>['.mot']});};
+  ops.push({hold:1,a(){S.q={Q1:true,Q2:true};},t:()=>'نشغّل المفتاح الرئيسي Q1 ومفتاح التحكم Q2: '+ftObs()+'.',f:()=>[ftKc('#cQ1'),ftKc('#cQ2')]});
+  const btn=(b,l)=>{ops.push({hold:!c.ls||b!=='S1'?1:0,a(){S.pb.add(b);},t:()=>'نضغط '+b+(l?' ('+l+')':'')+' مع الاستمرار: '+ftObs()+'.',f:()=>[ftKc('[data-pb="'+b+'"]'),'.mot']});
+    ops.push({hold:!c.ls||b!=='S1'?1:0,a(){S.pb.delete(b);},t:()=>{const o=ftObs();return 'نترك '+b+': '+o+(b!=='S1'&&S.mot.st==='run'?'، ويبقى يعمل بفضل تلامس المسك.':'.');},f:()=>['.mot']});
+    if(hasT&&b!=='S1')ops.push({hold:1,til:()=>ftTimersDone(),ff:ftAge,t:()=>Object.keys(S.tStart).length?'ننتظر زمن المؤقت ('+TDELAY/1000+' ثوانٍ)، ثم: '+ftPeek(ftAge)+'.':'لا يوجد مؤقت يعد الآن.',f:()=>['.mot']});};
   btn('S2',I.S2);if(has('S3'))btn('S3',I.S3);
   /* the cart: wait for the next limit switch it presses, then for it to move off again before stopping */
   if(c.ls){['first','second'].forEach(()=>{let tg='S5',h0=0;const go=()=>{S.pos=tg==='S5'?100:0;syncLS();};
