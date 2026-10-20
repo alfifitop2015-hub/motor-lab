@@ -203,6 +203,20 @@ body.cloud #sWa{background:var(--panel)}
 .danger{color:var(--warn)!important}
 .score{font-size:2.2rem;font-weight:700;text-align:center;margin:4px 0}
 .rtab{width:100%;border-collapse:collapse;font-size:.88rem}.rtab td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.rtab td:first-child{color:var(--muted);white-space:nowrap;width:1%}
+.clbtn{align-self:flex-start;margin-top:4px;height:36px;border:1px solid #3d6fae;background:#3d6fae;color:#fff;border-radius:9px;padding:0 12px;cursor:pointer;font-weight:700}
+.clbar{position:fixed;z-index:62;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 6px);width:min(94vw,460px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:8px 10px;direction:rtl}
+.clbar[hidden]{display:none}
+.clh{display:flex;align-items:center;gap:8px}.clh b{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.clh span{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.clh button,.clc button{height:34px;min-width:36px;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:9px;cursor:pointer;padding:0 8px}
+.clh button{background:none;border:0;font-size:1.05rem}
+.clpg{height:4px;background:var(--chip);border-radius:2px;margin:6px 0}.clpg i{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .3s}
+#clTx{margin:0 0 8px;font-size:.92rem;line-height:1.65;min-height:3.3em}.clk{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;padding:0 7px;font-size:.78rem;margin-inline-end:4px}
+.clc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.clc button:disabled{opacity:.4}.clc #clGo{margin-inline-start:auto;background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
+body.clip .dock,body.clip .clbtn,body.clip .stu{display:none}body.clip .kit{pointer-events:none}
+.clfoc:not(g){outline:4px solid #ffb300;outline-offset:3px;border-radius:10px;animation:clp .9s ease-in-out infinite alternate}
+g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
+@keyframes clp{from{outline-color:rgba(255,179,0,.35)}to{outline-color:#ffb300}}
+@media (prefers-reduced-motion:reduce){.clfoc{animation:none}}
 </style>
 </head>
 <body>
@@ -228,8 +242,14 @@ body.cloud #sWa{background:var(--panel)}
 
 <div class="stu student-only"><input class="sn" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb" id="bSend">📤 إرسال</button></div>
 
+<div class="clbar" id="clBar" hidden role="region" aria-label="مقطع الشرح">
+  <div class="clh"><b id="clT"></b><span id="clN"></span><button id="clX" title="إغلاق المقطع والرجوع إلى الشنطة" aria-label="إغلاق المقطع">✕</button></div>
+  <div class="clpg"><i id="clPg"></i></div>
+  <p id="clTx" aria-live="polite"></p>
+  <div class="clc"><button id="clPrev" title="الخطوة السابقة">السابق</button><button id="clPlay" title="إيقاف مؤقت">⏸</button><button id="clNext" title="الخطوة التالية">التالي</button><button id="clSpd" title="سرعة الشرح">×1</button><button id="clSnd" title="الشرح الصوتي">🔊</button><button id="clGo" title="إنهاء الشرح والبدء بالتنفيذ">✋ نفّذ الآن</button></div>
+</div>
 <section class="kit" aria-label="لوحة تشغيل الشنطة">
-  <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span></div></div>
+  <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span><button class="clbtn" id="exClip" title="مقطع يشرح الدائرة وطريقة البحث عن العطل، ثم تنفذ بنفسك">🎬 مقطع الشرح</button></div></div>
   <div class="fsw trainer-only" id="fswBox"><div class="fswh"><b>🧰 مفاتيح الأعطال</b><span class="de">Programmierung</span><span class="kl" id="fswInfo"></span></div><div class="fswg" id="fswg"></div></div>
   <div class="board"><div class="hint" id="hint"></div>
   <div class="wrap" id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
@@ -873,7 +893,7 @@ let last=performance.now(),lastSec=0;
 setInterval(()=>{const now=performance.now(),dt=Math.min(.3,(now-last)/1000);last=now;let dirty=false;
   for(const d in S.tStart)if(!S.tDone[d]&&Date.now()-S.tStart[d]>=TDELAY)dirty=true;
   if(S.mot.st==='hum'){S.hum+=dt;if(S.hum>3.5){const f=S.mot.set===2&&C().E.some(e=>e.dev==='F6')?'F6':'F5';S.trip[f]=true;S.hum=0;S.msg='فصل الحمل الزائد '+f+' بسبب تشغيل المحرك على وجهين.';dirty=true;}}else S.hum=0;
-  if(C().ls&&S.mot.st==='run'){S.pos=Math.max(0,Math.min(100,S.pos+S.mot.dir*dt*(S.mot.sp==='high'?14:7)));const a=S.ls.S4,b=S.ls.S5;syncLS();if(a!==S.ls.S4||b!==S.ls.S5)dirty=true;else renderPanel();}
+  if(C().ls&&S.mot.st==='run'){S.pos=Math.max(0,Math.min(100,S.pos+S.mot.dir*dt*(S.mot.sp==='high'?14:7)));const a=S.ls.S4,b=S.ls.S5;syncLS();if((!a&&S.ls.S4)||(!b&&S.ls.S5))S.lsHits=(S.lsHits||0)+1;if(a!==S.ls.S4||b!==S.ls.S5)dirty=true;else renderPanel();}
   if(dirty)update();
   if(Date.now()-lastSec>1000){lastSec=Date.now();if(S.ex&&!S.ex.done)renderStat();}},100);
 
@@ -1124,7 +1144,7 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelecto
 
 /* ===================================================================== persistence */
 const SK='ftSim.v1';
-function save(){try{localStorage.setItem(SK,JSON.stringify({cid:S.cid,F:[...S.F],ex:S.ex,show:S.show,allowView:S.allowView,mode:S.mode,mm:{on:S.mm.on,x:S.mm.x,y:S.mm.y}}));}catch(_){}}
+function save(){if(S.cl)return;try{localStorage.setItem(SK,JSON.stringify({cid:S.cid,F:[...S.F],ex:S.ex,show:S.show,allowView:S.allowView,mode:S.mode,mm:{on:S.mm.on,x:S.mm.x,y:S.mm.y}}));}catch(_){}}
 try{const o=JSON.parse(localStorage.getItem(SK)||'null');if(o&&CIRC[o.cid]){S.cid=o.cid;S.F=new Set((o.F||[]).filter(id=>CIRC[o.cid].E.some(e=>e.id===id)));S.ex=o.ex&&o.ex.c===o.cid?o.ex:null;S.show=o.show!==false;S.allowView=o.allowView!==false;S.mode=o.mode==='R'?'R':o.mode==='OFF'?'OFF':'V';if(o.mm&&Math.round(+o.mm.x)===1385&&Math.round(+o.mm.y)===520){o.mm.x=1385;o.mm.y=135;}
   if(o.mm)S.mm={on:o.mm.on!==false,x:clampN(+o.mm.x||1385,0,W-150*MS),y:clampN(+o.mm.y||135,0,H-262*MS)};}}catch(_){}
 
@@ -1154,6 +1174,124 @@ function measureDock(){document.body.style.setProperty('--dockh',$('dock').offse
 renderSel();drawStatic();S.zoom=Math.max(fitZ(),wrap.clientWidth<700?.55:0);applyZoom();hint();$('dView').classList.toggle('on',S.view);update();measureDock();
 window.addEventListener('resize',measureDock);
 if(/^#t=/.test(location.hash))decodeCode(location.hash).then(o=>{openObj(o);history.replaceState(null,'',location.pathname+location.search);}).catch(()=>{});
+/* ---------- explanation clip engine (shared by the pneumatic and fault-kit workshops) ----------
+   a small window above the board: caption, spoken explanation, progress, play/pause, back, next, speed, sound.
+   Each step is {tx: caption, go(fwd): sets the board for the step, ms: extra time to watch the board}.
+   When the last step ends the clip closes by itself and opts.done() hands the board to the trainee */
+const CLSPD=[1,1.25,1.5,.75];
+function clLs(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(_){return null;}}
+function clVoice(){try{const V=speechSynthesis.getVoices().filter(v=>/^ar/i.test(v.lang));return V.find(v=>/SA/i.test(v.lang))||V[0]||null;}catch(_){return null;}}
+function clHush(){try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(_){}}
+/* speak a caption; cb runs when the speech ends, or after the time the text needs if this device is silent */
+function clSpeak(tx,cb){const c=S.cl,tok=c.tok,sp=c.spd,est=(1100+tx.length*62)/sp;let fin=false,started=false;
+  const done=()=>{if(fin||S.cl!==c||c.tok!==tok)return;fin=true;cb();};
+  if(c.snd&&window.speechSynthesis&&window.SpeechSynthesisUtterance){try{clHush();
+      const u=new SpeechSynthesisUtterance(tx.replace(/[←→⟷•✔✋🎬]/g,' ').replace(/\s+/g,' ')),v=clVoice();u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=Math.min(1.8,.95*sp);
+      const t0=Date.now(),late=()=>setTimeout(done,Math.max(0,est-(Date.now()-t0)));
+      u.onstart=()=>{started=true;};u.onend=done;u.onerror=late;speechSynthesis.speak(u);
+      setTimeout(()=>{if(!started)done();},est);setTimeout(done,est*2.2+2500);return;}catch(_){}}
+  setTimeout(done,est);}
+function clShow(){const c=S.cl,n=c.steps.length,i=c.i,st=c.steps[i]||{};
+  $('clN').textContent=i<0?n+' خطوة':(i+1)+' / '+n;$('clPg').style.width=(100*Math.max(0,i+1)/n)+'%';
+  $('clTx').innerHTML=i<0?esc(c.intro):(st.k?'<span class="clk">'+esc(st.k)+'</span> ':'')+esc(st.tx);
+  $('clPlay').textContent=c.play?'⏸':'▶';$('clPlay').title=c.play?'إيقاف مؤقت':'تشغيل';$('clSpd').textContent='×'+c.spd;
+  $('clSnd').textContent=c.snd?'🔊':'🔇';$('clPrev').disabled=i<=0;$('clNext').disabled=i>=n-1;}
+function clStep(i,fwd,keep){const c=S.cl;c.tok++;clearTimeout(c.t);clHush();c.i=i;const st=c.steps[i];
+  if(!keep){c.til=null;try{st.go&&st.go(!!fwd);}catch(e){console.warn(e);}c.til=st.til||null;}clShow();clFocus();
+  /* moves on when the explanation is over and the step's event (st.til) has happened on the board */
+  if(c.play)clSpeak((st.k?st.k+'. ':'')+st.tx,()=>{const tok=c.tok,t0=Date.now(),chk=()=>{if(S.cl!==c||c.tok!==tok)return;
+      if(!st.til||st.til()||Date.now()-t0>20000)clAuto();else c.t=setTimeout(chk,200);};c.t=setTimeout(chk,(st.ms||500)/c.spd);});}
+function clAuto(){const c=S.cl;if(!c)return;if(c.i<c.steps.length-1)return clStep(c.i+1,true);clClose(true);}
+function clFocus(){setTimeout(()=>{const f=document.getElementById('clFocus')||document.querySelector('.clfoc');if(f&&f.scrollIntoView)try{f.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});}catch(_){}},60);}
+/* opts: {title, intro, steps, done(): the trainee's turn, abort(): close early} */
+function clStart(o){if(S.cl)clClose(false);clHush();
+  const c=S.cl={...o,i:-1,t:null,tok:0,play:true,spd:CLSPD.includes(+clLs('clSpd'))?+clLs('clSpd'):1,snd:clLs('clSnd')!=='0'};
+  $('clT').textContent='🎬 '+o.title;$('clBar').hidden=false;document.body.classList.add('clip');clShow();
+  c.t=setTimeout(()=>{if(S.cl===c)clStep(0,true);},400);}
+function clClose(end){const c=S.cl;if(!c)return;c.tok++;clearTimeout(c.t);clHush();S.cl=null;$('clBar').hidden=true;document.body.classList.remove('clip');
+  try{end?c.done():c.abort();}catch(e){console.warn(e);}}
+function clInit(){
+  $('clX').onclick=()=>clClose(false);
+  $('clGo').onclick=()=>clClose(true);
+  $('clPlay').onclick=()=>{const c=S.cl;if(!c)return;c.play=!c.play;if(c.play){c.i<0?clStep(0,true):clStep(c.i,false,true);}else{c.tok++;clearTimeout(c.t);clHush();clShow();}};
+  $('clPrev').onclick=()=>{const c=S.cl;if(c&&c.i>0)clStep(c.i-1,false);};
+  $('clNext').onclick=()=>{const c=S.cl;if(c&&c.i<c.steps.length-1)clStep(c.i+1,true);};
+  $('clSpd').onclick=()=>{const c=S.cl;if(!c)return;c.spd=CLSPD[(CLSPD.indexOf(c.spd)+1)%CLSPD.length];clLs('clSpd',String(c.spd));clShow();};
+  $('clSnd').onclick=()=>{const c=S.cl;if(!c)return;c.snd=!c.snd;clLs('clSnd',c.snd?'1':'0');if(!c.snd)clHush();clShow();};
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.cl)clClose(false);});
+  try{if(window.speechSynthesis)speechSynthesis.getVoices();}catch(_){}}
+/* ---------- fault kit: one clip per circuit ----------
+   the circuit's idea and sequence, then the kit is operated (Q1/Q2, the push buttons, the timer, the limit switches)
+   with what happens after each action, then a sample fault is found with the multimeter's real readings.
+   At the end the clip closes and a hidden random fault is put in the circuit for the trainee to find */
+const FTK=['F','k','tStart','tDone','pb','ls','q','trip','mot','lamp','uf','msg','zero','hum','pos'];
+function ftPeek(fn){const keep={};FTK.forEach(k=>keep[k]=S[k]);try{S.k={...S.k};S.tStart={...S.tStart};S.tDone={...S.tDone};S.pb=new Set(S.pb);S.ls={...S.ls};S.q={...S.q};S.trip={...S.trip};S.F=new Set(S.F);
+  fn();solve();return obsTxt(obsNow());}finally{Object.assign(S,keep);}}
+const ftObs=()=>{solve();return obsTxt(obsNow());};
+function ftAge(){for(let k=0;k<3;k++){for(const d in S.tStart)S.tStart[d]-=TDELAY+50;solve();}}
+const ftTimersDone=()=>Object.keys(S.tStart).every(d=>S.tDone[d]);
+function ftReset(F){S.F=new Set(F||[]);S.k={};S.tStart={};S.tDone={};S.pb=new Set();S.ls={S4:false,S5:false};S.trip={F5:false,F6:false};S.pos=50;S.hum=0;S.q={Q1:false,Q2:false};S.probes=[null,null];lsMan={};solve();}
+function ftFoc(L){document.querySelectorAll('.clfoc').forEach(x=>x.classList.remove('clfoc'));(L||[]).forEach(q=>{const el=typeof q==='string'?document.querySelector(q):q;if(el)el.classList.add('clfoc');});}
+const ftKc=sel=>{const b=document.querySelector(sel);return b?b.closest('.kc')||b:null;};
+/* the multimeter next to the measured terminals */
+function ftMeter(mode,a,b){S.mm.on=true;S.mode=mode;S.probes=[a,b];const P=sockXY(a)||[W/2,H/2];
+  S.mm.x=clampN(P[0]+(P[0]<W-420?70:-300),0,W-150*MS);S.mm.y=clampN(P[1]-150,0,H-262*MS);}
+/* a fault the clip can show: the first common fault that leaves the full 24V across itself while S2 is held */
+function ftDemoFault(c){const keep={};FTK.forEach(k=>keep[k]=S[k]);
+  try{for(const x of commonFaults(c)){const e=byId(x.id);if(!e||e.z!=='c'||!['coil','tcoil','no','nc','pbno','pbnc','w'].includes(e.k))continue;
+      Object.assign(S,{F:new Set([e.id]),k:{},tStart:{},tDone:{},pb:new Set(['S2']),ls:{S4:false,S5:false},q:{Q1:true,Q2:true},trip:{F5:false,F6:false},zero:false,msg:''});solve();
+      if(nodal('V',e.a,e.b)>20&&(sockXY(e.a)&&sockXY(e.b)))return e;}}finally{Object.assign(S,keep);}return null;}
+/* terminals on the live path from the 24V source to node n (for the voltage walk) */
+function ftPath(n){const c=C(),adj=new Map(),add=(a,b)=>{if(!adj.has(a))adj.set(a,[]);adj.get(a).push(b);};
+  c.E.forEach(e=>{if(isCond(e)){add(e.a,e.b);add(e.b,e.a);}});const prev=new Map([['TR:24',null]]),q=['TR:24'];
+  while(q.length){const u=q.shift();if(u===n)break;(adj.get(u)||[]).forEach(v=>{if(!prev.has(v)){prev.set(v,u);q.push(v);}});}
+  if(!prev.has(n))return [];const L=[];for(let u=n;u;u=prev.get(u))L.unshift(u);return L.filter(k=>c.T[k]);}
+function ftClip(){if(S.zero){say('المقبض على 0 — اختر رقم الدائرة أولًا، ثم اضغط 🎬 مقطع الشرح.','wn');return;}if(S.cl)clClose(false);
+  const c=C(),I=INFO[S.cid]||{n:S.cid,d:'',seq:[]},has=d=>c.E.some(e=>e.dev===d),hasT=c.E.some(e=>e.k==='tcoil'),keep=JSON.stringify({F:[...S.F],ex:S.ex,q:S.q,mm:S.mm,mode:S.mode,view:S.view,diag:S.diag}),steps=[];
+  const view0=S.view;S.view=true;setDiag(false);
+  /* a section's steps run forward; stepping back into one starts it again from its first step */
+  const sec=(k,F,L)=>{const j0=steps.length;L.forEach((o,q)=>steps.push({k,ms:o.ms||600,til:o.til||null,tx:'',go(fwd){const cl=S.cl;
+      if(!q||!fwd||cl.dj!==j0+q-1){ftReset(F);for(let r=0;r<q;r++){L[r].a&&L[r].a();L[r].ff&&L[r].ff();solve();}}
+      cl.dj=j0+q;o.a&&o.a();solve();this.tx=o.t();ftFoc(o.f?o.f():null);update();}}));};
+  const plain=(k,t,f)=>steps.push({k,tx:t,ms:400,go(){S.cl.dj=-9;ftReset([]);ftFoc(f);update();}});
+  plain('الفكرة',S.cid+' — '+I.n+'. '+I.d,['#svg']);
+  (I.seq||[]).forEach((t,i)=>plain('تسلسل العمل '+(i+1)+' من '+I.seq.length,t,['#svg']));
+  /* operating the kit */
+  const ops=[];
+  ops.push({a(){S.q={Q1:true,Q2:true};},t:()=>'نشغّل المفتاح الرئيسي Q1 ومفتاح التحكم Q2: '+ftObs()+'.',f:()=>[ftKc('#cQ1'),ftKc('#cQ2')]});
+  const btn=(b,l)=>{ops.push({a(){S.pb.add(b);},t:()=>'نضغط '+b+(l?' ('+l+')':'')+' مع الاستمرار: '+ftObs()+'.',f:()=>[ftKc('[data-pb="'+b+'"]'),'.mot']});
+    ops.push({a(){S.pb.delete(b);},t:()=>{const o=ftObs();return 'نترك '+b+': '+o+(b!=='S1'&&S.mot.st==='run'?'، ويبقى يعمل بفضل تلامس المسك.':'.');},f:()=>['.mot']});
+    if(hasT&&b!=='S1')ops.push({til:()=>ftTimersDone(),ff:ftAge,t:()=>Object.keys(S.tStart).length?'ننتظر زمن المؤقت ('+TDELAY/1000+' ثوانٍ)، ثم: '+ftPeek(ftAge)+'.':'لا يوجد مؤقت يعد الآن.',f:()=>['.mot']});};
+  btn('S2',I.S2);if(has('S3'))btn('S3',I.S3);
+  /* the cart: wait for the next limit switch it presses, then for it to move off again before stopping */
+  if(c.ls){['first','second'].forEach(()=>{let tg='S5',h0=0;const go=()=>{S.pos=tg==='S5'?100:0;syncLS();};
+      ops.push({til:()=>(S.lsHits||0)>h0,ff:go,a(){h0=S.lsHits||0;tg=S.mot.dir<0?'S4':'S5';},t:()=>'يتحرك الحامل حتى يضغط مفتاح النهاية '+tg+'، فيصبح: '+ftPeek(go)+'.',f:()=>['#track','.mot']});});
+    ops.push({til:()=>!S.ls.S4&&!S.ls.S5,ff:()=>{S.pos=50;syncLS();},t:()=>'وهكذا يتحرك الحامل ذهابًا وإيابًا بين S4 وS5 حتى نضغط S1.',f:()=>['#track']});}
+  btn('S1');
+  sec('التشغيل',[],ops);
+  /* finding a fault with the multimeter */
+  const e=ftDemoFault(c);
+  if(e){const hot=n=>{solve();return S.uf.find(n)===S.uf.find('TR:24');},a=()=>hot(e.a)?e.a:e.b,b=()=>hot(e.a)?e.b:e.a,F=[e.id],press=()=>{S.q={Q1:true,Q2:true};S.pb.add('S2');};
+    const rd=()=>{const r=measure();return r&&r.t==='V'?fmtV(r.v):'—';},fl=[];
+    fl.push({a:press,t:()=>{const n=ftPeek(()=>{S.F=new Set();press();});return 'لنرَ كيف نجد عطلًا. وضعنا في الدائرة عطلًا للتجربة، وشغّلنا Q1 وQ2، ونضغط S2 مع الاستمرار: '+ftObs()+'، والطبيعي: '+n+'.';},f:()=>['.mot',ftKc('[data-pb="S2"]')]});
+    fl.push({a(){press();ftMeter('V','TR:24','TR:0');},t:()=>'طريقة الجهد: المجس الأسود على 0V والأحمر على 24V بعد المحول: '+rd()+'، فمصدر التحكم سليم.',f:()=>[REF.t.get('TR:24')]});
+    const walk=()=>{press();const L=ftPath(a()).filter(k=>k!=='TR:24');return L.length>2?[L[Math.floor(L.length/2)],L[L.length-1]]:L.slice(-1);};
+    [0,1].forEach(q=>fl.push({a(){const n=walk()[q]||a();ftMeter('V',n,'TR:0');},t:()=>{const n=S.probes[0];return 'نحرك المجس الأحمر على المسار نحو الملف، إلى '+nm(n)+': '+rd()+'، فالجهد يصل إلى هنا.';},f:()=>[REF.t.get(S.probes[0])]}));
+    if(e.k!=='coil'&&e.k!=='tcoil')fl.push({a(){press();ftMeter('V',b(),'TR:0');},t:()=>'والنقطة التالية بعدها، '+nm(S.probes[0])+': '+rd()+'. الجهد انقطع بين النقطتين، فالعطل بينهما.',f:()=>[REF.t.get(S.probes[0]),REF.h.get(e.id)]});
+    fl.push({a(){press();ftMeter('V',e.a,e.b);},t:()=>'نتأكد بالقياس على طرفي '+elName(e)+': '+rd()+'. '+(e.k==='coil'||e.k==='tcoil'?'الجهد كامل على الملف لكنه لا يعمل: الملف مقطوع.':e.k==='w'?'جهد كامل على طرفي سلك: السلك مقطوع.':'جهد كامل على تلامس يجب أن يكون مغلقًا الآن: التلامس مفتوح ومعطوب.'),f:()=>[REF.h.get(e.id)]});
+    if(['coil','tcoil','nc','pbnc','w'].includes(e.k))fl.push({a(){S.q={Q1:false,Q2:false};S.pb.clear();ftMeter('R',e.a,e.b);},t:()=>{const r=measure(),v=r&&r.t==='R'?r.v:null,F0=S.F;S.F=new Set();solve();const h=measure();S.F=F0;solve();const hv=h&&h.t==='R'?h.v:null;
+      return 'طريقة المقاومة: نفصل Q1 وQ2 أولًا، ثم نقيس على '+elName(e)+': '+(v==null?'—':fmtR(v))+'، ولو كان سليمًا لقرأنا '+(hv==null?'—':fmtR(hv))+'. القراءة أكبر بكثير، فالعنصر مفتوح'+(v!=null&&v<2e7?' والقراءة هي مقاومة ما هو موصول معه على التوازي.':'.');},f:()=>[REF.h.get(e.id)]});
+    fl.push({a(){S.probes=[null,null];},t:()=>'وجدنا العطل: '+fDesc(e)+'. في التمرين تضغط 📍 تحديد العطل ثم تلمس العنصر المعطوب.',f:()=>[REF.h.get(e.id)]});
+    sec('البحث عن العطل',F,fl);}
+  steps.push({k:'دورك الآن',ms:1500,tx:'انتهى الشرح. سنضع الآن عطلًا مخفيًا عشوائيًا في الدائرة '+S.cid+': شغّل الشنطة، ولاحظ العَرَض، ثم قِس حتى تجده.',go(){S.cl.dj=-9;ftReset([]);S.mm.on=false;ftFoc(['#svg']);update();}});
+  const back=()=>{const o=JSON.parse(keep);ftReset(o.F);Object.assign(S,{ex:o.ex,q:o.q,mm:o.mm,mode:o.mode});S.view=o.view;$('dView').classList.toggle('on',S.view);ftFoc(null);};
+  clStart({title:S.cid+' — '+I.n,intro:'مقطع شرح الدائرة: فكرتها، ثم تشغيلها، ثم طريقة البحث عن عطل فيها.',steps,
+    done(){back();if(S.ex&&!S.ex.done&&S.ex.k==='exam'){say('لديك تمرين من المدرب لم ينته بعد: أكمله، أو اضغط 🏁 إنهاء.','wn');update();return;}
+      newEx('rand',[randFault()]);S.view=false;$('dView').classList.remove('on');setDiag(false);say('🎲 دورك: وُضع عطل مخفي في الدائرة '+S.cid+'. شغّل الشنطة، ولاحظ العَرَض، ثم قِس حتى تجده.','info');update();},
+    abort(){back();say('أُغلق المقطع ورجعت الشنطة كما كانت.','info');update();}});
+  S.view=true;$('dView').classList.add('on');}
+$('exClip').onclick=ftClip;
+clInit();
 window.__ftDbg={S,CIRC,solve,update,nodal,measure,swMap,setCircuit,probe,newEx,pickEl,act,byId,report};
 })();
 </script>

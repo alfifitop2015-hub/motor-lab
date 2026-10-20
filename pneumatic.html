@@ -113,6 +113,24 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .port{cursor:crosshair}.port:hover .pr{stroke:#ff8a00;stroke-width:3}
 .act{cursor:pointer}[data-drag]{cursor:move;touch-action:none}[data-press]{cursor:pointer;touch-action:none}
 .lbl{font-family:"IBM Plex Sans Arabic",sans-serif}
+.clrow{display:flex;gap:6px;align-items:center;padding:6px 8px;background:var(--bg);border-bottom:1px solid var(--line);direction:rtl}
+.clrow select{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:0 8px}
+.clrow .btn{white-space:nowrap}
+.clbar{position:fixed;z-index:62;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 6px);width:min(94vw,460px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:8px 10px;direction:rtl}
+.clbar[hidden]{display:none}
+.clh{display:flex;align-items:center;gap:8px}.clh b{flex:1;min-width:0;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.clh span{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.clh button,.clc button{height:34px;min-width:36px;border:1px solid var(--line);background:var(--chip);border-radius:9px;cursor:pointer;padding:0 8px}
+.clh button{background:none;border:0;font-size:1.05rem}
+.clpg{height:4px;background:var(--chip);border-radius:2px;margin:6px 0}.clpg i{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .3s}
+#clTx{margin:0 0 8px;font-size:.92rem;line-height:1.65;min-height:3.3em}.clk{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;padding:0 7px;font-size:.78rem;margin-inline-end:4px}
+.clc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.clc button:disabled{opacity:.4}.clc #clGo{margin-inline-start:auto;background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
+body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none}
+.clbox{fill:rgba(255,179,0,.12);stroke:#ffb300;stroke-width:4;stroke-dasharray:10 6;animation:clp .9s ease-in-out infinite alternate}
+.clhl{fill:none;stroke:#ffb300;stroke-width:14;stroke-linecap:round;opacity:.5;animation:clp .9s ease-in-out infinite alternate}
+.clpt{fill:none;stroke:#ff3b30;stroke-width:4;animation:clp .7s ease-in-out infinite alternate}
+@keyframes clp{from{opacity:.3}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.clbox,.clhl,.clpt{animation:none}}
+.dstat .c[data-prx]{cursor:pointer}
 </style>
 </head>
 <body>
@@ -153,9 +171,16 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
   </div>
 </div>
 <div class="insp" id="insp" role="dialog" aria-label="إعدادات العنصر"></div>
+<div class="clbar" id="clBar" hidden role="region" aria-label="مقطع الشرح">
+  <div class="clh"><b id="clT"></b><span id="clN"></span><button id="clX" title="إغلاق المقطع والرجوع إلى لوحتك" aria-label="إغلاق المقطع">✕</button></div>
+  <div class="clpg"><i id="clPg"></i></div>
+  <p id="clTx" aria-live="polite"></p>
+  <div class="clc"><button id="clPrev" title="الخطوة السابقة">السابق</button><button id="clPlay" title="إيقاف مؤقت">⏸</button><button id="clNext" title="الخطوة التالية">التالي</button><button id="clSpd" title="سرعة الشرح">×1</button><button id="clSnd" title="الشرح الصوتي">🔊</button><button id="clGo" title="إنهاء الشرح والبدء بالتنفيذ">✋ نفّذ الآن</button></div>
+</div>
 
 <div class="wrap" id="wrap">
   <div class="wtop">
+    <div class="clrow"><select id="exPick" aria-label="اختر التمرين"></select><button class="btn" id="exClip" title="مقطع يشرح التمرين خطوة خطوة ثم تنفذه بنفسك">🎬 مقطع الشرح</button></div>
     <div class="stu student-only"><input class="sn student-only" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid student-only" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb" id="bSend">📤 إرسال</button></div>
     <div class="hint" id="hint"></div>
   </div>
@@ -230,7 +255,7 @@ const SHORT={cyl1:'أسطوانة مفردة',cyl2:'أسطوانة مزدوجة'
 const PLBL={X:'1',Y:'1',A:'',B:'',a:'',b:'',c:'',d:''};
 
 /* ---------- state ---------- */
-const S={comps:[],tubes:[],air:true,bar:6,zoom:1,sel:null,selC:null,pending:null,hist:[],pressed:new Set(),snd:false,stu:null,last:'',nid:1,warn:[]};
+const S={comps:[],tubes:[],air:true,bar:6,zoom:1,sel:null,selC:null,pending:null,hist:[],pressed:new Set(),snd:false,stu:null,last:'',nid:1,warn:[],cl:null,prac:null};
 function blank(){S.comps=[{id:'0Z',t:'supply',x:20,y:1094,o:{},s:{}}];S.tubes=[];}
 blank();
 const comp=id=>S.comps.find(c=>c.id===id);
@@ -295,7 +320,8 @@ function cylSpeed(c){if(!S.air||S.bar<1.5)return 0;const base=Math.min(1.3,Math.
   if(c.t==='cyl2'){const a=fillF(k('A')),b=fillF(k('B'));if(a>0&&b===0)return base*Math.min(a,ventF(k('B')));if(b>0&&a===0)return -base*Math.min(b,ventF(k('A')));return 0;}
   const a=fillF(k('1'));if(a>0)return base*a;return -1.2*base*ventF(k('1'));}
 let lastT=performance.now(),mov=false;
-function tick(){const now=performance.now(),dt=Math.min(.1,(now-lastT)/1000);lastT=now;let disc=false;mov=false;
+function tick(){const now=performance.now(),dt=Math.min(.1,(now-lastT)/1000)*(S.cl?.6:1);lastT=now;let disc=false;mov=false;
+  if(S.cl&&S.cl.til&&S.cl.til()){hiss(false);return;}
   S.comps.forEach(c=>{if(c.t==='tim'){const pil=isP(c.id+'.12');if(pil){c.s.acc+=dt;if(!c.s.on&&c.s.acc>=c.o.t){c.s.on=true;disc=true;}}else if(c.s.acc||c.s.on){c.s.acc=0;if(c.s.on){c.s.on=false;disc=true;}}}
     if(/^cyl/.test(c.t)){const v=cylSpeed(c);if(v){const nx=Math.min(1,Math.max(0,c.s.x+v*dt));if(nx!==c.s.x){const b0=c.s.x<=.015||c.s.x>=.985;c.s.x=nx;mov=true;const b1=nx<=.015||nx>=.985;if(b0!==b1)disc=true;}}}});
   if(disc){const ch=solve();if(ch)clickSnd();render();}else partial();
@@ -390,7 +416,7 @@ function render(){let o=bg();
   S.comps.forEach(c=>{Object.entries(DEF[c.t].ports).forEach(([p,d])=>{const k=c.id+'.'+p,x=c.x+d[0],y=c.y+d[1],pr=isP(k),pend=S.pending===k,exh=['3','5'].includes(p)&&c.t!=='supply';
     const lx=d[2]==='l'?x-12:d[2]==='r'?x+12:x+10,ly=d[2]==='u'?y-9:d[2]==='d'?y+14:y-10,lab=PLBL[p]!=null?PLBL[p]:p;
     o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="13" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="7.5" fill="${pend?'#fff1c2':pr?'#1f6fe5':'#e8edf1'}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><circle cx="${x}" cy="${y}" r="3" fill="${exh?'#777':'#2a3440'}"/>${lab?T(lx,ly,lab,9.5,'#0b1d33',700):''}</g>`;});});
-  o+=`<g id="thandles">${handlesSVG()}</g>`;
+  o+=pnHL();o+=`<g id="thandles">${handlesSVG()}</g>`;
   svg.innerHTML=o;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.style.width=(W*S.zoom)+'px';renderTop();save();}
 function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.sel);if(!t)return '';const P=tubePts(t);if(!P)return '';let o='';
   const inner=P.slice(1,-1);for(let k=0;k<inner.length-1;k++){const mx=(inner[k][0]+inner[k+1][0])/2,my=(inner[k][1]+inner[k+1][1])/2;
@@ -407,7 +433,7 @@ function renderTop(){let h='';if(S.stu)h+=`<div class="msg info"><span>📥 دا
   S.warn.forEach(w=>h+=`<div class="msg ${/قصر|يتسرب/.test(w)?'err':'wn'}">${esc(w)}</div>`);$('status').innerHTML=h;
   let d=`<span class="c ${S.air?'ok':'bad'}">${S.air?'الهواء مفتوح':'الهواء مغلق'} · ${S.bar.toFixed(1)} bar</span>`;
   S.comps.filter(c=>/^cyl/.test(c.t)).forEach(c=>d+=`<span class="c ${c.s.x>=.985?'ok':''}">${esc(c.id)}: ${c.s.x>=.985?'خارجة +':c.s.x<=.015?'داخلة −':'تتحرك'}</span>`);
-  if(S.last)d+=`<span class="c">${esc(S.last)}</span>`;$('dstat').innerHTML=d;
+  d=pnPracStat()+d;if(S.last)d+=`<span class="c">${esc(S.last)}</span>`;$('dstat').innerHTML=d;
   $('dAir').classList.toggle('on',S.air);$('dDel').disabled=S.sel==null;$('dDel').classList.toggle('hl',S.sel!=null);
   $('hint').textContent=S.pending?'اختر المنفذ الثاني لتوصيله بـ '+S.pending+' (اضغط نفس المنفذ للإلغاء)':S.sel!=null?'الخرطوم محدد: اسحبه أو اسحب نقاطه لتغيير مساره، و«+» لإضافة انحناءة، و↺ للمسار التلقائي.':'اسحب العناصر من إطارها، واضغط منفذًا ثم منفذًا آخر لتركيب خرطوم. اضغط الضواغط مع الاستمرار لتشغيلها.';
   renderInsp();}
@@ -472,7 +498,7 @@ const bStop=e=>{if(bLock&&e.cancelable&&e.touches.length<2)e.preventDefault();};
 document.addEventListener('touchstart',e=>{if(!bLock)return;const t=e.target;t.addEventListener('touchmove',bStop,{passive:false});const off=()=>{t.removeEventListener('touchmove',bStop);t.removeEventListener('touchend',off);t.removeEventListener('touchcancel',off);};t.addEventListener('touchend',off);t.addEventListener('touchcancel',off);},{capture:true,passive:true});
 window.addEventListener('scroll',()=>{if(bLock&&(scrollX!==bLock.x||scrollY!==bLock.y))scrollTo(bLock.x,bLock.y);},{passive:true});
 wrap.addEventListener('scroll',()=>{if(!bLock)return;if(wrap.scrollLeft!==bLock.l)wrap.scrollLeft=bLock.l;if(wrap.scrollTop!==bLock.t)wrap.scrollTop=bLock.t;},{passive:true});
-window.addEventListener('pointerup',()=>{if(S.pressed.size){S.pressed.clear();update();}});
+window.addEventListener('pointerup',()=>{if(S.cl)return;if(S.pressed.size){S.pressed.clear();update();}});
 svg.addEventListener('click',e=>{if(S.justT)return;if(e.target.closest('[data-wp],[data-wadd]'))return;const pt=e.target.closest('[data-port]');if(pt)return portClick(pt.dataset.port);
   const a=e.target.closest('[data-act]');if(a)return act(a.dataset.act);
   const tb=e.target.closest('[data-tube]');if(tb){S.sel=+tb.dataset.tube;S.selC=null;S.pending=null;return render();}
@@ -527,7 +553,7 @@ function applyObj(o){if(!o||o.app!=='pn'||!Array.isArray(o.comps))throw 0;S.air=
   S.comps=o.comps.filter(c=>DEF[c.t]).map(c=>{const n={id:c.id,t:c.t,x:c.x,y:c.y,o:{...(c.o||{})},s:{}};initState(n);return n;});
   if(!S.comps.some(c=>c.t==='supply'))S.comps.unshift({id:'0Z',t:'supply',x:20,y:1094,o:{},s:{}});
   S.tubes=[];(o.tubes||[]).forEach(([a,b,m])=>{if(portXY(a)&&portXY(b))S.tubes.push(Array.isArray(m)&&m.length?{id:S.nid++,a,b,m:m.map(q=>[+q[0],+q[1]])}:{id:S.nid++,a,b});});S.sel=null;S.selC=null;S.pending=null;}
-function save(){try{localStorage.setItem('pnSim.v1',JSON.stringify(serial()));}catch(_){}}
+function save(){if(S.cl)return;try{localStorage.setItem('pnSim.v1',JSON.stringify(serial()));}catch(_){}}
 try{const o=JSON.parse(localStorage.getItem('pnSim.v1')||'null');if(o)applyObj(o);}catch(_){}
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const ub64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -723,6 +749,129 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
   if(bI)bI.onclick=async()=>{if(dp){dp.prompt();try{await dp.userChoice;}catch(_){}dp=null;upd();}
     else alert('لتثبيت التطبيق على الآيفون أو الآيباد:\n\n١) افتح الموقع في متصفح Safari\n٢) اضغط زر المشاركة ⬆ أسفل الشاشة\n٣) اختر «إضافة إلى الشاشة الرئيسية»\n٤) اضغط «إضافة»');};
   upd();}
+/* ---------- explanation clip engine (shared by the pneumatic and fault-kit workshops) ----------
+   a small window above the board: caption, spoken explanation, progress, play/pause, back, next, speed, sound.
+   Each step is {tx: caption, go(fwd): sets the board for the step, ms: extra time to watch the board}.
+   When the last step ends the clip closes by itself and opts.done() hands the board to the trainee */
+const CLSPD=[1,1.25,1.5,.75];
+function clLs(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(_){return null;}}
+function clVoice(){try{const V=speechSynthesis.getVoices().filter(v=>/^ar/i.test(v.lang));return V.find(v=>/SA/i.test(v.lang))||V[0]||null;}catch(_){return null;}}
+function clHush(){try{if(window.speechSynthesis)speechSynthesis.cancel();}catch(_){}}
+/* speak a caption; cb runs when the speech ends, or after the time the text needs if this device is silent */
+function clSpeak(tx,cb){const c=S.cl,tok=c.tok,sp=c.spd,est=(1100+tx.length*62)/sp;let fin=false,started=false;
+  const done=()=>{if(fin||S.cl!==c||c.tok!==tok)return;fin=true;cb();};
+  if(c.snd&&window.speechSynthesis&&window.SpeechSynthesisUtterance){try{clHush();
+      const u=new SpeechSynthesisUtterance(tx.replace(/[←→⟷•✔✋🎬]/g,' ').replace(/\s+/g,' ')),v=clVoice();u.lang=v?v.lang:'ar-SA';if(v)u.voice=v;u.rate=Math.min(1.8,.95*sp);
+      const t0=Date.now(),late=()=>setTimeout(done,Math.max(0,est-(Date.now()-t0)));
+      u.onstart=()=>{started=true;};u.onend=done;u.onerror=late;speechSynthesis.speak(u);
+      setTimeout(()=>{if(!started)done();},est);setTimeout(done,est*2.2+2500);return;}catch(_){}}
+  setTimeout(done,est);}
+function clShow(){const c=S.cl,n=c.steps.length,i=c.i,st=c.steps[i]||{};
+  $('clN').textContent=i<0?n+' خطوة':(i+1)+' / '+n;$('clPg').style.width=(100*Math.max(0,i+1)/n)+'%';
+  $('clTx').innerHTML=i<0?esc(c.intro):(st.k?'<span class="clk">'+esc(st.k)+'</span> ':'')+esc(st.tx);
+  $('clPlay').textContent=c.play?'⏸':'▶';$('clPlay').title=c.play?'إيقاف مؤقت':'تشغيل';$('clSpd').textContent='×'+c.spd;
+  $('clSnd').textContent=c.snd?'🔊':'🔇';$('clPrev').disabled=i<=0;$('clNext').disabled=i>=n-1;}
+function clStep(i,fwd,keep){const c=S.cl;c.tok++;clearTimeout(c.t);clHush();c.i=i;const st=c.steps[i];
+  if(!keep){c.til=null;try{st.go&&st.go(!!fwd);}catch(e){console.warn(e);}c.til=st.til||null;}clShow();clFocus();
+  /* moves on when the explanation is over and the step's event (st.til) has happened on the board */
+  if(c.play)clSpeak((st.k?st.k+'. ':'')+st.tx,()=>{const tok=c.tok,t0=Date.now(),chk=()=>{if(S.cl!==c||c.tok!==tok)return;
+      if(!st.til||st.til()||Date.now()-t0>20000)clAuto();else c.t=setTimeout(chk,200);};c.t=setTimeout(chk,(st.ms||500)/c.spd);});}
+function clAuto(){const c=S.cl;if(!c)return;if(c.i<c.steps.length-1)return clStep(c.i+1,true);clClose(true);}
+function clFocus(){setTimeout(()=>{const f=document.getElementById('clFocus')||document.querySelector('.clfoc');if(f&&f.scrollIntoView)try{f.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});}catch(_){}},60);}
+/* opts: {title, intro, steps, done(): the trainee's turn, abort(): close early} */
+function clStart(o){if(S.cl)clClose(false);clHush();
+  const c=S.cl={...o,i:-1,t:null,tok:0,play:true,spd:CLSPD.includes(+clLs('clSpd'))?+clLs('clSpd'):1,snd:clLs('clSnd')!=='0'};
+  $('clT').textContent='🎬 '+o.title;$('clBar').hidden=false;document.body.classList.add('clip');clShow();
+  c.t=setTimeout(()=>{if(S.cl===c)clStep(0,true);},400);}
+function clClose(end){const c=S.cl;if(!c)return;c.tok++;clearTimeout(c.t);clHush();S.cl=null;$('clBar').hidden=true;document.body.classList.remove('clip');
+  try{end?c.done():c.abort();}catch(e){console.warn(e);}}
+function clInit(){
+  $('clX').onclick=()=>clClose(false);
+  $('clGo').onclick=()=>clClose(true);
+  $('clPlay').onclick=()=>{const c=S.cl;if(!c)return;c.play=!c.play;if(c.play){c.i<0?clStep(0,true):clStep(c.i,false,true);}else{c.tok++;clearTimeout(c.t);clHush();clShow();}};
+  $('clPrev').onclick=()=>{const c=S.cl;if(c&&c.i>0)clStep(c.i-1,false);};
+  $('clNext').onclick=()=>{const c=S.cl;if(c&&c.i<c.steps.length-1)clStep(c.i+1,true);};
+  $('clSpd').onclick=()=>{const c=S.cl;if(!c)return;c.spd=CLSPD[(CLSPD.indexOf(c.spd)+1)%CLSPD.length];clLs('clSpd',String(c.spd));clShow();};
+  $('clSnd').onclick=()=>{const c=S.cl;if(!c)return;c.snd=!c.snd;clLs('clSnd',c.snd?'1':'0');if(!c.snd)clHush();clShow();};
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.cl)clClose(false);});
+  try{if(window.speechSynthesis)speechSynthesis.getVoices();}catch(_){}}
+/* ---------- pneumatic: one clip per exercise ----------
+   parts first, then every hose with its two ports highlighted, then the air is opened and the circuit is operated
+   like a trainer would. At the end the clip closes, the exercise's parts are put on the board without hoses, and
+   the trainee connects them: the bottom bar counts the hoses until the circuit matches the exercise */
+const PNKIND={cyl1:'الأسطوانة',cyl2:'الأسطوانة',v32nc:'الضاغط',v32no:'الضاغط',v32sel:'مفتاح الاختيار',v32rol:'صمام البكرة',v32pil:'الصمام',v52man:'الصمام',v52ps:'الصمام',v52pp:'صمام الذاكرة',or:'صمام OR',and:'صمام AND',fcv:'الخانق',tim:'صمام التأخير',gauge:'المانومتر',tee:'الموزع'};
+function pnPort(k){const [id,p]=k.split('.'),c=comp(id),t=c?c.t:'';
+  if(t==='supply')return 'المخرج '+p+' في وحدة الإمداد';
+  const who=(PNKIND[t]||'العنصر')+' '+id;
+  if(t==='cyl1')return 'منفذ '+who;
+  if(t==='cyl2')return (p==='A'?'المنفذ الخلفي':'المنفذ الأمامي')+' في '+who+(p==='A'?' (للخروج)':' (للرجوع)');
+  if(t==='or'||t==='and')return (p==='2'?'الخرج 2':p==='X'?'المدخل الأيسر':'المدخل الأيمن')+' في '+who;
+  if(t==='fcv')return 'المنفذ '+p+(p==='1'?' (جهة الصمام)':' (جهة الأسطوانة)')+' في '+who;
+  if(p==='12'||p==='14')return 'منفذ الإشارة '+p+' في '+who;
+  return 'المنفذ '+p+(p==='1'?' (دخول الهواء)':'')+' في '+who;}
+function pnPart(c){const P=PARTS.find(x=>x.k===c.t)||{n:DEF[c.t].n,use:''},u=(P.use||'').split(/[.:]/)[0];
+  return c.id+': '+P.n+(c.t==='v32rol'&&c.o.cyl?'، تضغطها الأسطوانة '+c.o.cyl+(c.o.end==='+'?' عند الخروج الكامل':' عند الرجوع الكامل'):'')+(u?'. '+u+'.':'.');}
+/* operating demo: [action, caption, ms to watch]. air = open the air, p/r = press/release a push button,
+   pp = a short press, tog = move a lever or selector, w = just watch */
+const PNDEMO=[
+ [['air','نفتح الهواء: الضغط يصل إلى المنفذ 1 للضاغط 1S1 ويقف عنده.'],['p:1S1','نضغط 1S1 مع الاستمرار: يتصل 1 بـ 2 فيدخل الهواء الأسطوانة وتخرج.','1A+'],['r:1S1','نرفع الإصبع: يتصل 2 بالعادم 3، فيرجع النابض الأسطوانة.','1A-']],
+ [['air','نفتح الهواء: الصمام في وضعه يوصل 1 بـ 2، فالأسطوانة مثبتة في الداخل.'],['tog:1V1','نحرك الذراع: يتصل 1 بـ 4 فتخرج الأسطوانة وتبقى خارجة حتى لو تركنا الذراع.','1A+'],['tog:1V1','نحرك الذراع مرة أخرى: يتصل 1 بـ 2 فترجع الأسطوانة.','1A-']],
+ [['air','نفتح الهواء.'],['p:1S1','نضغط 1S1: إشارته تصل إلى 14 فيتحول الصمام 1V1 وتخرج الأسطوانة.','1A+'],['r:1S1','نترك 1S1: تزول الإشارة، فيرجع النابض الصمام وترجع الأسطوانة.','1A-']],
+ [['air','نفتح الهواء.'],['p:1S1','نضغط 1S1: الإشارة تمر من صمام OR إلى 14 فتخرج الأسطوانة.','1A+'],['r:1S1','نتركه فترجع.','1A-'],['p:1S2','ونضغط 1S2 من المكان الثاني: تخرج أيضًا، فأي ضاغط منهما يكفي.','1A+'],['r:1S2','نتركه فترجع.','1A-']],
+ [['air','نفتح الهواء.'],['p:1S1','نضغط 1S1 وحده: صمام AND لا يعطي خرجًا، فلا تتحرك الأسطوانة.',null,1200],['p:1S2','ونضغط 1S2 معه: وصل الضغط إلى المدخلين، فتخرج الأسطوانة.','1A+'],['r:1S2','نترك أحدهما: تزول الإشارة وترجع الأسطوانة. هكذا تبقى اليدان بعيدتين عن الخطر.','1A-']],
+ [['air','نفتح الهواء.'],['p:1S1','نضغط 1S1 مع الاستمرار: تخرج الأسطوانة، وسرعتها يحددها الخانق 1V3 الذي يخنق الهواء الخارج من الأمام.','1A+'],['r:1S1','نتركه: ترجع الأسطوانة أبطأ، لأن فتحة الخانق 1V2 أصغر.','1A-']],
+ [['air','نفتح الهواء.'],['pp:1S1','ضغطة قصيرة على 1S1 تكفي: إشارة 14 تحوّل صمام الذاكرة فتخرج الأسطوانة.','1A+'],['w','وصلت إلى النهاية فضغطت كامتها البكرة 1S2، فأعطت إشارة 12 وترجع الأسطوانة وحدها.','1A-']],
+ [['air','نفتح الهواء. الأسطوانة راجعة، فالبكرة 1S1 مضغوطة.'],['tog:1S3','نشغل مفتاح الاختيار 1S3: مع البكرة 1S1 يعطي صمام AND إشارة 14 فتخرج الأسطوانة.','1A+'],['w','عند الخروج الكامل تضغط البكرة 1S2 فترجع.','1A-'],['w','وعند الرجوع تضغط 1S1 فتخرج من جديد، وهكذا ما دام 1S3 مشغلًا.','1A+'],['tog:1S3','نطفئ 1S3: تكمل الأسطوانة دورتها وتقف عند الرجوع.','1A-']],
+ [['air','نفتح الهواء.'],['pp:1S1','ضغطة قصيرة على 1S1: تخرج الأسطوانة.','1A+'],['w','عند النهاية تضغط البكرة 1S2 الإشارة 12 لصمام التأخير 1V2، فيبدأ العد.','1V2*'],['w','انتهى الزمن: يعطي 1V2 إشارة 12 لصمام الذاكرة فترجع الأسطوانة.','1A-']],
+ [['air','نفتح الهواء. الأسطوانتان راجعتان، فالبكرتان 1S1 و2S1 مضغوطتان.'],['pp:1S3','ضغطة على 1S3 مع البكرة 2S1 عبر صمام AND: الأسطوانة A تخرج.','1A+'],['w','A وصلت إلى النهاية فضغطت 1S2: الأسطوانة B تخرج.','2A+'],['w','B وصلت إلى النهاية فضغطت 2S2: A ترجع.','1A-'],['w','A رجعت فضغطت 1S1: B ترجع، وتكتمل الدورة A+ B+ A− B−.','2A-']]];
+/* step events: 1A+ fully out, 1A- fully in, 1V2* the timer valve has switched */
+function pnTil(k){if(!k)return null;const m=/^(\w+)([+\-*])$/.exec(k);return ()=>{const c=comp(m[1]);if(!c)return true;return m[2]==='*'?!!c.s.on:m[2]==='+'?c.s.x>=.985:c.s.x<=.015;};}
+function pnRef(i){const x=EX[i];applyObj({app:'pn',air:false,bar:6,comps:[{id:'0Z',t:'supply',x:20,y:1094},...x.c],tubes:[]});S.pressed.clear();S.sel=null;S.selC=null;S.pending=null;}
+function pnTubes(i,k){S.tubes=EX[i].t.slice(0,k).map(([a,b],j)=>({id:j+1,a,b}));S.nid=k+1;}
+function pnClip(i){const x=EX[i];if(!x)return;if(S.cl)clClose(false);S.prac=null;const keep=JSON.stringify(serial()),D=PNDEMO[i]||[];
+  pnRef(i);const parts=S.comps.filter(c=>c.t!=='supply'),steps=[],N=x.t.length;
+  const hlC=id=>{S.cl.hl={c:[id]};};
+  steps.push({k:'الفكرة',tx:(EXPL[i]||{}).idea||x.n,go(){pnRef(i);S.cl.hl={c:parts.map(c=>c.id)};update();}});
+  parts.forEach(c=>steps.push({k:'العناصر',tx:pnPart(c),go(){pnRef(i);hlC(c.id);update();}}));
+  x.t.forEach(([a,b],j)=>steps.push({k:'التوصيل '+(j+1)+' من '+N,tx:'من '+pnPort(a)+'، إلى '+pnPort(b)+'.',go(){pnRef(i);pnTubes(i,j+1);S.cl.hl={t:j+1,p:[a,b]};update();}}));
+  /* the demo runs forward from the wired circuit; stepping back into it starts it again from its first step */
+  const d0=steps.length;
+  D.forEach(([a,tx,til,ms],j)=>steps.push({k:'التشغيل',tx,ms:ms||500,til:pnTil(til),go(fwd){const c=S.cl;
+    if(!fwd||c.dj!==j-1){pnRef(i);pnTubes(i,N);for(let q=0;q<j;q++){pnAct(D[q][0],true);pnRunTil(pnTil(D[q][2]));}}
+    c.dj=j;pnAct(a);c.hl=null;const id=a.split(':')[1];if(id)hlC(id);update();}}));
+  steps.push({k:'دورك الآن',tx:'انتهى الشرح. ستجد العناصر على اللوحة بدون خراطيم: وصّلها بنفسك كما رأيت، ثم افتح الهواء وجرّب.',ms:1500,go(){S.cl.hl=null;S.air=false;S.pressed.clear();update();}});
+  clStart({title:x.n,intro:'مقطع شرح التمرين: العناصر، ثم التوصيل خرطومًا خرطومًا، ثم التشغيل.',steps,
+    done(){pnPractice(i,keep);},abort(){S.pressed.clear();try{applyObj(JSON.parse(keep));}catch(_){}S.prac=null;say('أُغلق المقطع وعادت لوحتك كما كانت.');update();}});}
+/* demo actions; quick=true replays an earlier step at once (cylinders jump to where that step left them) */
+function pnAct(a,quick){const [k,id]=a.split(':'),c=id&&comp(id);
+  if(k==='air'){S.air=true;}
+  else if(k==='p'){S.pressed.add(id);}
+  else if(k==='r'){S.pressed.delete(id);}
+  else if(k==='pp'){S.pressed.add(id);if(!quick){const cl=S.cl;setTimeout(()=>{if(S.cl===cl){S.pressed.delete(id);update();}},500);}else{solve();pnRun(1);S.pressed.delete(id);}}
+  else if(k==='tog'&&c){if(c.t==='v32sel')c.s.on=!c.s.on;else c.s.pos=c.s.pos==='a'?'b':'a';}
+  if(quick)solve();}
+function pnRunTil(f){for(let n=0;n<200&&f&&!f();n++)pnRun(.1);}
+/* run the simulation ahead by sec seconds at once */
+function pnRun(sec){for(let n=0;n<sec*10;n++){lastT=performance.now()-100;tick();}}
+/* the trainee's turn: the exercise's parts without hoses (the previous board stays one ↶ away) */
+function pnPractice(i,keep){S.hist.push(keep);if(S.hist.length>60)S.hist.shift();pnRef(i);S.tubes=[];S.prac={i,need:EX[i].t.map(([a,b])=>[a,b].sort().join('|')),ok:false};
+  say('دورك: وصّل خراطيم '+EX[i].n);update();}
+function pnPracStat(){const P=S.prac;if(!P)return '';const have=new Set(S.tubes.map(t=>[t.a,t.b].sort().join('|'))),n=P.need.filter(k=>have.has(k)).length,extra=S.tubes.length-n,all=n===P.need.length&&!extra;
+  if(all&&!P.ok){P.ok=true;setTimeout(()=>say('✔ أحسنت! الدائرة مطابقة للتمرين. افتح الهواء وجرّب تشغيلها.'),0);}if(!all)P.ok=false;
+  return `<span class="c ${all?'ok':'wn'}" data-prx title="اضغط لإنهاء التمرين">🎯 ${esc(EX[P.i].n.replace(/^\d+\.\s*/,''))}: الخراطيم ${n}/${P.need.length}${extra>0?' · زائد '+extra:''} ✕</span>`;}
+/* highlight on the board: the parts and ports of the current step, and the hose just connected */
+function pnHL(){const c=S.cl;if(!c||!c.hl)return '';const h=c.hl;let o='',fx=[];
+  (h.c||[]).forEach(id=>{const q=comp(id);if(!q)return;const D=DEF[q.t];fx.push([q.x-8,q.y-18,D.w+16,D.h+26]);o+=`<rect x="${q.x-8}" y="${q.y-18}" width="${D.w+16}" height="${D.h+26}" rx="12" class="clbox"/>`;});
+  if(h.t){const t=S.tubes[h.t-1],d=t&&tubePath(t);if(d)o+=`<path d="${d}" class="clhl"/>`;}
+  (h.p||[]).forEach(k=>{const P=portXY(k);if(P){fx.push([P.x-30,P.y-30,60,60]);o+=`<circle cx="${P.x}" cy="${P.y}" r="16" class="clpt"/>`;}});
+  if(fx.length){const x1=Math.min(...fx.map(f=>f[0])),y1=Math.min(...fx.map(f=>f[1])),x2=Math.max(...fx.map(f=>f[0]+f[2])),y2=Math.max(...fx.map(f=>f[1]+f[3]));
+    o+=`<rect id="clFocus" x="${x1}" y="${y1}" width="${x2-x1}" height="${y2-y1}" fill="none" pointer-events="none"/>`;}
+  return `<g pointer-events="none">${o}</g>`;}
+$('exPick').innerHTML='<option value="">اختر التمرين…</option>'+EX.map((x,i)=>`<option value="${i}">${esc(x.n)}</option>`).join('');
+$('exPick').onchange=()=>{$('exClip').disabled=$('exPick').value==='';};$('exClip').disabled=true;
+$('exClip').onclick=()=>{const v=$('exPick').value;if(v!=='')pnClip(+v);};
+$('dstat').addEventListener('click',e=>{if(e.target.closest('[data-prx]')){S.prac=null;say('أُنهي التمرين.');renderTop();}});
+clInit();
 S.zoom=fitZ();update();measureDock();
 window.addEventListener('resize',()=>{measureDock();});
 })();
