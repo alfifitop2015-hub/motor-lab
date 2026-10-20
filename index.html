@@ -2700,7 +2700,7 @@ const tryPin=async()=>{const p=$('pinIn').value.trim(),h=hpin(p),bad=t=>{$('pinM
   if(h===PINH||(h===PIN0&&!(+lsG('wsPinV')>0)))return pinIn(h);bad();};
 $('pinOk').onclick=tryPin;$('pinIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryPin();});
 /* the PIN fields never show the typed digits, not even the moment some phones reveal the last one: the input text is hidden and dots are drawn over it */
-const PINF=['pinIn','pcOld','pcNew','pcNew2'],pinDots=()=>PINF.forEach(id=>{const i=$(id),d=i&&i.nextElementSibling;if(d&&d.classList.contains('pinDots'))d.textContent='●'.repeat(i.value.length);});
+const PINF=['pinIn','pcOld','pcNew','pcNew2','rKey'],pinDots=()=>PINF.forEach(id=>{const i=$(id),d=i&&i.nextElementSibling;if(d&&d.classList.contains('pinDots'))d.textContent='●'.repeat(i.value.length);});
 PINF.forEach(id=>{const i=$(id);if(!i)return;const w=document.createElement('span'),d=document.createElement('span');w.className='pinWrap';d.className='pinDots';d.setAttribute('aria-hidden','true');i.before(w);w.append(i,d);['input','focus','change'].forEach(ev=>i.addEventListener(ev,pinDots));});
 const pcM=$('pinChgModal');
 $('bPinChg').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;['pcOld','pcNew','pcNew2'].forEach(i=>$(i).value='');$('pcMsg').textContent='';pcM.classList.add('open');pinDots();setTimeout(()=>$('pcOld').focus(),50);};
@@ -3291,7 +3291,7 @@ async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textC
   catch(e){$('rMsg').textContent=e.srv?'خطأ في خادم Google: '+e.srv:e.message==='key'?'كلمة السر غير صحيحة.':e.message==='setup'?'خادم Google لم يرد بشكل صحيح. في Apps Script: نشر ← إدارة عمليات النشر ← ✏️، وتأكد أن «من يمكنه الوصول» = أي شخص (Anyone)، ثم اختر إصدار جديد ← نشر.':'تعذّر الوصول لخادم Google. تأكد من الإنترنت، وأن النشر على «أي شخص (Anyone)».';}}
 async function rDelete(uids){$('rMsg').textContent='جارٍ الحذف…';try{await cloud({action:'del',key:$('rKey').value.trim(),uids});uids.forEach(u=>RS.sel.delete(u));await rLoad();$('rMsg').textContent='حُذف '+uids.length+' · '+$('rMsg').textContent;}catch(e){$('rMsg').textContent='تعذّر الحذف.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
-$('bResults').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();rM.classList.add('open');
+$('bResults').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();rM.classList.add('open');pinDots();
   if(!CLOUD_ON){$('rList').innerHTML='';$('rMsg').innerHTML=CLOUD_URL?'النتائج لا تُعرض من هذه النسخة. افتح موقعك: <a href="https://alfifitop2015-hub.github.io/motor-lab/" target="_blank" rel="noopener">alfifitop2015-hub.github.io/motor-lab</a>':'حفظ النتائج غير مفعّل.';return;}if($('rKey').value)rLoad();else $('rKey').focus();};
 $('rClose').onclick=()=>rM.classList.remove('open');rM.addEventListener('click',e=>{if(e.target===rM)rM.classList.remove('open');});
 $('rLoad').onclick=rLoad;$('rKey').addEventListener('keydown',e=>{if(e.key==='Enter')rLoad();});$('rFind').addEventListener('input',rRender);
