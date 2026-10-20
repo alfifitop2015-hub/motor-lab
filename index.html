@@ -208,7 +208,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .rgrp .rgb span{background:var(--chip);border-radius:12px;padding:1px 8px;font-size:.78rem}
 .rgrp .rgt{display:flex;gap:6px;flex-wrap:wrap;padding:0 10px 6px}.rgrp .rgt button{height:32px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.82rem}
 .rgrp .rgt button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.rgrp .rgt button:disabled{opacity:.45}
-.rgrp .rrow{padding-inline:8px}.rrow.low{opacity:.62}.rbest{color:var(--ok);font-size:.78rem;font-weight:700}
+.rgrp .rrow{padding-inline:8px}.rrow.low{opacity:.62}.rrow .rold{display:block;font-size:.72rem;color:var(--warn);font-weight:500}.rbest{color:var(--ok);font-size:.78rem;font-weight:700}
 @media (max-width:480px){.stu{gap:5px;padding:8px 8px}.stu .sendb{padding:0 8px;font-size:.86rem}.stu input{padding:0 7px}}
 .gsel{width:100%;height:42px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);padding:0 8px;font-size:.95rem}
 .greq{background:var(--chip);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.88rem;line-height:1.7}
@@ -603,7 +603,7 @@ body.fs{padding-bottom:0}
   <div class="box appbox" style="max-width:640px">
     <div class="ah"><h2 id="rT">📋 نتائج المتدربين</h2><button class="btn" id="rClose">إغلاق</button></div>
     <div class="fld" id="rKeyRow"><label>كلمة سر المدرب (التي وضعتها في كود Google)<input id="rKey" type="password" autocomplete="off"></label></div>
-    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rBestAll" class="danger" disabled title="يحذف المحاولات الأقل لكل متدرب في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى للجميع</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
+    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rSave" hidden disabled title="يكتب الدرجات المحسوبة بالقواعد الحالية في عمود الدرجة في جدول Google">💾 حفظ الدرجات الجديدة في الجدول</button><button id="rBestAll" class="danger" disabled title="يحذف المحاولات الأقل لكل متدرب في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى للجميع</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
   </div>
@@ -3345,16 +3345,21 @@ $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const G=curGrad
     okMsg('✔ وصلت تجربتك للمدرب'+(G?' مع درجتك '+G.s+' من 20':'')+'. رقم المرجع: '+j.uid);}
   catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}const m=$('sendMsg');m.style.color='var(--warn)';m.textContent=(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أبلغ المدرب، وأرسل الآن عبر واتساب.':'تعذّر الوصول لخادم الحفظ. تأكد من الإنترنت وحاول مرة أخرى، أو أرسل عبر واتساب.');}
   finally{b.disabled=false;}};
-const rM=$('resModal');let RS={rows:[],sel:new Set(),chk:{},open:new Set()};
+const rM=$('resModal');let RS={rows:[],sel:new Set(),chk:{},open:new Set(),ready:false};
 try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const exName=ex=>PNAME[ex]?'تمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]:'بدون تقييم';
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
+/* every result is graded again with the current rules from the wiring (and easy program) it was sent with;
+   that grade is the one shown, used to keep the highest and exported, and can be saved into the sheet */
 async function recheck(r){if(RS.chk[r.uid]!==undefined||!r.code||!PRESETS[r.ex])return;RS.chk[r.uid]=null;
   try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o).s;}catch(_){RS.chk[r.uid]=null;}}
 /* trainees are grouped by their training number, because names are written in different ways:
    Arabic digits count as Latin ones and spaces or marks are ignored */
 const rKeyId=id=>String(id||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[^0-9A-Za-z]/g,'').toLowerCase()||'—';
-const rNum=r=>r.s===''||r.s==null||isNaN(+r.s)?-1:+r.s;
+const rCur=r=>RS.chk[r.uid]!=null?RS.chk[r.uid]:r.s;
+const rNum=r=>{const v=rCur(r);return v===''||v==null||isNaN(+v)?-1:+v;};
+/* results whose grade under the current rules differs from the one in the sheet */
+const rChanged=()=>RS.rows.filter(r=>RS.chk[r.uid]!=null&&RS.chk[r.uid]!==(r.s===''||r.s==null?null:+r.s));
 /* the best attempt of each graded exercise (highest grade, the latest one on a tie); the other attempts can be deleted */
 function rBest(L){const b={};L.forEach(r=>{if(!PNAME[r.ex])return;const o=b[r.ex];if(!o||rNum(r)>rNum(o)||(rNum(r)===rNum(o)&&(r.t||0)>(o.t||0)))b[r.ex]=r;});return b;}
 const rExtra=L=>{const b=rBest(L);return L.filter(r=>PNAME[r.ex]&&b[r.ex]!==r);};
@@ -3362,30 +3367,33 @@ function rGroups(){const m=new Map();RS.rows.forEach(r=>{const k=rKeyId(r.id);if
   return [...m.entries()].map(([k,rows])=>({k,rows,t:Math.max(...rows.map(r=>r.t||0))})).sort((a,b)=>b.t-a.t);}
 const rMatch=(r,q)=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q);
 const rVis=()=>{const q=$('rFind').value.trim();return RS.rows.filter(r=>rMatch(r,q));};
-function rRowHTML(r,best){const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,ok=c==null||sv==='—'?'':c===+r.s?' <span title="أُعيد الفحص على التوصيل المرسل">✔</span>':` <span style="color:var(--warn)" title="إعادة الفحص أعطت ${c}">⚠${c}</span>`;
+function rRowHTML(r,best){const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,cur=c!=null?c:sv,
+    ok=c==null?'':c===+r.s?' <span title="أُعيد التقييم بالقواعد الحالية على التوصيل المرسل، والدرجة نفسها">✔</span>':`<small class="rold" title="الدرجة التي أُرسلت بالقواعد القديمة">أُرسلت ${esc(sv)}</small>`;
   const th=r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="صورة لوحة ${esc(r.n)}" loading="lazy">`:'<div class="rth none">بلا صورة</div>',low=PNAME[r.ex]&&!best;
   return `<div class="rrow${low?' low':''}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))} · ${fmtT(r.t)}${best?' · <span class="rbest">⭐ الأعلى</span>':''}</div></div>
-    <div class="rg">${sv}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
+    <div class="rg">${esc(cur)}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
     <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button data-rshare="${esc(r.uid)}">📤 مشاركة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}
 function rRender(){const q=$('rFind').value.trim(),L=rVis();
   const vis=L.length&&L.every(r=>RS.sel.has(r.uid));$('rAll').textContent=vis?'☐ إلغاء التحديد':'☑ تحديد الكل';$('rAll').disabled=!L.length;
   $('rShareSel').disabled=!RS.sel.size;$('rShareSel').textContent=RS.sel.size?'📤 مشاركة المحدد ('+RS.sel.size+')':'📤 مشاركة المحدد';
   $('rDelSel').disabled=!RS.sel.size;$('rDelSel').textContent=RS.sel.size?'🗑 حذف المحدد ('+RS.sel.size+')':'🗑 حذف المحدد';
-  const G=rGroups(),xa=G.reduce((n,g)=>n+rExtra(g.rows).length,0);$('rBestAll').disabled=!xa;$('rBestAll').textContent='🧹 إبقاء الأعلى للجميع'+(xa?' ('+xa+')':'');
+  const G=rGroups(),xa=G.reduce((n,g)=>n+rExtra(g.rows).length,0);$('rBestAll').disabled=!xa||!RS.ready;const ch=rChanged().length;$('rSave').hidden=!ch;$('rSave').disabled=!RS.ready;$('rSave').textContent='💾 حفظ الدرجات الجديدة في الجدول ('+ch+')';$('rBestAll').textContent='🧹 إبقاء الأعلى للجميع'+(xa?' ('+xa+')':'');
   const H=G.map(g=>{const rows=g.rows.filter(r=>rMatch(r,q));if(!rows.length)return '';
     const best=rBest(g.rows),bs=new Set(Object.values(best)),xs=rExtra(g.rows),last=g.rows.reduce((a,r)=>(r.t||0)>(a.t||0)?r:a,g.rows[0]);
     const names=[...new Set(g.rows.map(r=>String(r.n).trim()).filter(Boolean))];
     const order=Object.keys(PNAME);rows.sort((a,b)=>(order.indexOf(a.ex)+1||99)-(order.indexOf(b.ex)+1||99)||(b.t||0)-(a.t||0));
-    const chips=order.filter(k=>best[k]).map(k=>`<span>تمرين ${order.indexOf(k)+1}: <b dir="ltr">${best[k].s===''||best[k].s==null?'—':esc(best[k].s)}/20</b>${g.rows.filter(r=>r.ex===k).length>1?' ⭐':''}</span>`).join('');
+    const chips=order.filter(k=>best[k]).map(k=>`<span>تمرين ${order.indexOf(k)+1}: <b dir="ltr">${rNum(best[k])<0?'—':esc(rCur(best[k]))}/20</b>${g.rows.filter(r=>r.ex===k).length>1?' ⭐':''}</span>`).join('');
     return `<details class="rgrp" data-gk="${esc(g.k)}"${RS.open.has(g.k)||q?' open':''}><summary><span class="rgn"><b>${esc(last.n)}</b> <span dir="ltr">· ${esc(g.k)}</span>${names.length>1?`<small>كتب اسمه أيضًا: ${esc(names.filter(n=>n!==String(last.n).trim()).join('، '))}</small>`:''}</span><span class="rgc">${g.rows.length} ${g.rows.length===1?'محاولة':'محاولات'}</span>${chips?`<span class="rgb">${chips}</span>`:''}</summary>
-      <div class="rgt"><button data-gsel="${esc(g.k)}">☑ تحديد محاولاته</button><button class="danger" data-gbest="${esc(g.k)}"${xs.length?'':' disabled'} title="يحذف المحاولات الأقل في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى${xs.length?' (حذف '+xs.length+')':''}</button></div>
+      <div class="rgt"><button data-gsel="${esc(g.k)}">☑ تحديد محاولاته</button><button class="danger" data-gbest="${esc(g.k)}"${xs.length&&RS.ready?'':' disabled'} title="يحذف المحاولات الأقل في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى${xs.length?' (حذف '+xs.length+')':''}</button></div>
       ${rows.map(r=>rRowHTML(r,bs.has(r))).join('')}</details>`;}).join('');
   $('rList').innerHTML=H||`<p class="greq">${RS.rows.length?'لا نتائج تطابق البحث.':'لا توجد تجارب مرسلة حاليًا.'}</p>`;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة سر المدرب.';$('rKey').focus();return;}
   try{localStorage.setItem('wsKey',key);}catch(_){}
   $('rMsg').textContent='جارٍ التحميل…';
   try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).filter(r=>r.ex!=='pn'&&r.ex!=='ft').sort((a,b)=>b.t-a.t);RS.sel=new Set([...RS.sel].filter(u=>RS.rows.some(r=>r.uid===u)));
-    $('rMsg').textContent=RS.rows.length+' تجربة محفوظة لـ '+rGroups().length+' متدرب';rRender();for(const r of RS.rows)await recheck(r);rRender();}
+    RS.ready=false;RS.chk={};$('rMsg').textContent=RS.rows.length+' تجربة محفوظة لـ '+rGroups().length+' متدرب · جارٍ إعادة التقييم بالقواعد الحالية…';rRender();
+    for(const r of RS.rows){await recheck(r);await new Promise(z=>setTimeout(z,0));}RS.ready=true;const ch=rChanged().length;
+    $('rMsg').textContent=RS.rows.length+' تجربة محفوظة لـ '+rGroups().length+' متدرب · أُعيد تقييمها بالقواعد الحالية'+(ch?'، وتغيّرت درجة '+ch+' منها':'');rRender();}
   catch(e){$('rMsg').textContent=e.srv?'خطأ في خادم Google: '+e.srv:e.message==='key'?'كلمة السر غير صحيحة.':e.message==='setup'?'خادم Google لم يرد بشكل صحيح. في Apps Script: نشر ← إدارة عمليات النشر ← ✏️، وتأكد أن «من يمكنه الوصول» = أي شخص (Anyone)، ثم اختر إصدار جديد ← نشر.':'تعذّر الوصول لخادم Google. تأكد من الإنترنت، وأن النشر على «أي شخص (Anyone)».';}}
 async function rDelete(uids){$('rMsg').textContent='جارٍ الحذف…';try{await cloud({action:'del',key:$('rKey').value.trim(),uids});uids.forEach(u=>RS.sel.delete(u));await rLoad();$('rMsg').textContent='حُذف '+uids.length+' · '+$('rMsg').textContent;}catch(e){$('rMsg').textContent='تعذّر الحذف.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
@@ -3399,6 +3407,10 @@ $('rList').addEventListener('click',e=>{const gs=e.target.closest('[data-gsel]')
   const g=rGroups().find(x=>x.k===(gs||gb).dataset[gs?'gsel':'gbest']);if(!g)return;
   if(gs){const all=g.rows.every(r=>RS.sel.has(r.uid));g.rows.forEach(r=>all?RS.sel.delete(r.uid):RS.sel.add(r.uid));rRender();return;}
   const xs=rExtra(g.rows).map(r=>r.uid);if(xs.length)arm(gb,()=>rDelete(xs));});
+$('rSave').onclick=async()=>{const L=rChanged();if(!L.length||!RS.ready)return;const b=$('rSave');b.disabled=true;$('rMsg').textContent='جارٍ حفظ '+L.length+' درجة في الجدول…';
+  try{const scores={};L.forEach(r=>scores[r.uid]=RS.chk[r.uid]);const j=await cloud({action:'setScores',key:$('rKey').value.trim(),scores});
+    L.forEach(r=>{r.s=RS.chk[r.uid];});$('rMsg').textContent='✔ حُفظت '+(j.n!=null?j.n:L.length)+' درجة جديدة في الجدول.';rRender();}
+  catch(e){$('rMsg').textContent=e.message==='action'?'خادم Google لم يُحدَّث بعد لحفظ الدرجات: أضف جزء setScores إلى كود Apps Script (الملف apps-script.gs في المستودع) ثم انشر إصدارًا جديدًا.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الحفظ. تأكد من الإنترنت وحاول مرة أخرى.';b.disabled=false;}};
 $('rBestAll').onclick=()=>{const xs=rGroups().flatMap(g=>rExtra(g.rows)).map(r=>r.uid);if(xs.length)arm($('rBestAll'),()=>rDelete(xs));};
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 const imM=$('imgModal');let IMG={b:null,name:''};
@@ -3444,7 +3456,7 @@ async function shrFromHash(){const m=/^#b=(.+)$/.exec(location.hash);if(!m)retur
 shrFromHash();window.addEventListener('hashchange',shrFromHash);
 $('rCsv').onclick=async()=>{if(!RS.rows.length){$('rMsg').textContent='حمّل النتائج أولًا.';return;}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const csv='﻿'+[['الاسم','الرقم التدريبي','التمرين','الدرجة من 20','إعادة الفحص','الوقت'].map(q).join(',')].concat(RS.rows.map(r=>[r.n,r.id,exName(r.ex),r.s,RS.chk[r.uid]==null?'':RS.chk[r.uid],fmtT(r.t)].map(q).join(','))).join('\r\n');
+  const csv='﻿'+[['الاسم','الرقم التدريبي','التمرين','الدرجة من 20','الدرجة المرسلة','الوقت'].map(q).join(',')].concat(RS.rows.map(r=>[r.n,r.id,exName(r.ex),rCur(r),r.s,fmtT(r.t)].map(q).join(','))).join('\r\n');
   const res=await saveBlob(new Blob([csv],{type:'text/csv'}),'نتائج-المتدربين.csv');$('rMsg').textContent=res==='saved'?'نُزّل الملف، ويفتح في Excel.':res==='declined'?'':'التنزيل غير متاح هنا.';};
 window.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(imM.classList.contains('open'))imM.classList.remove('open');else if(rM.classList.contains('open'))rM.classList.remove('open');});
 
