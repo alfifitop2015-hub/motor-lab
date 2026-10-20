@@ -2745,13 +2745,48 @@ const GREQ={p1:'S1 تشغيل مع تثبيت ذاتي، S0 إيقاف. المح
  p16:'محرك دالندر مع عكس حركة: S1 أمامي (K1) وS2 عكسي (K2) مع تثبيت ذاتي وإعاقة كهربائية 21-22، وS0 إيقاف. عمل K1 أو K2 (نقطتا 53-54 على التوازي) يغذي: K3 السرعة البطيئة عبر 15-16 للمؤقت K1T ثم 21-22 لـ K4 و21-22 لـ K5، والمؤقت عبر النقطة المغلقة لـ K5. بعد الزمن تغلق 15-18 فيعمل K4 (قصر 1U 1V 1W) ويثبت بـ 13-14 عبر 21-22 لـ K3، ثم يعمل K5 (السرعة العالية) عبر 53-54 لـ K4. F5 وF6 على التوالي قبل S0.',
  p17:'بجهاز easy: S0 إلى I1، وS1 (أمامي) إلى I2، وS2 (عكسي) إلى I3. Q1 ← K1، وQ2 ← K2، وQ3 ← K3 (بطيئة)، وQ4 ← K4 (قصر 1U 1V 1W)، وK5 (عالية) يعمل مع K4 عبر نقطته 53-54. المؤقت T1 في البرنامج يحوّل من البطيئة إلى العالية، والإعاقات في البرنامج. F5 وF6 على التوالي في تغذية المخارج.',
  p15:'مثل العكس البطيء (S1 أمامي، S2 عكسي، S0 إيقاف، تثبيت ذاتي وإعاقة كهربائية)، مع نهايتي مشوار: النقطة المغلقة لـ SQ2 (25-26) في مسار K1 توقف الحركة الأمامية عند وصول العربة إليها، والنقطة المغلقة لـ SQ1 (21-22) في مسار K2 توقف العكسية. H1 أمامي، H2 عكسي، H4 عطل.'};
-/* grading is functional: the trainee's panel is switched on and operated like a trainer would (buttons, limit switches,
-   overload trip, waiting for the timer), and what it does is compared with what the exercise requires.
-   The approved diagram is only used to know the required behaviour, never as the wiring to copy: any wiring that works gets the marks. */
+/* grading counts the trainee's correct connections: score = 20 × correct ÷ (required + wrong or extra), compared with the approved
+   diagram net by net, so a wire may land on any terminal of the same point. Equivalent choices count as correct:
+   - a free auxiliary contact of the same kind (NO 13-14 / 53-54 / 83-84, NC 61-62 / 71-72) on the same contactor
+   - for one-motor exercises: M1 in delta or M2 in star (both match the 400 V supply)
+   Indicator lamp wires are left out of the score, except in exercise 1 where they count like any other connection.
+   easy exercises: 10 for the wiring (counted the same way) and 10 for the program.
+   The panel is also switched on and operated like a trainer would (gradeOp), only to show the trainee what works and what not. */
 const isLampW=([a,b],ex)=>{const t=k=>/^H\d+\.X[12]$/.test(k)||/^X1\.(29|30|31|32)$/.test(k)||/^F\d+\.(97|98)$/.test(k)||(PLCX.has(ex)&&/^K\d+\.(13|14)$/.test(k));return t(a)||t(b)||(a==='F1.2'&&/^K\d+A\.61$/.test(b))||(b==='F1.2'&&/^K\d+A\.61$/.test(a));};
 function staticLinks(D){D=D||S.devs;const L=[['Q1.5','F1.1']];for(let i=34;i<=36;i++)L.push(['X1.'+i,'X1.33']);MB.forEach(n=>L.push(['X1.'+n,'X1.'+n+'b']));
   D.forEach(d=>{if(d.type==='ol'&&d.host)L.push([d.host+'.2',d.id+'.1'],[d.host+'.4',d.id+'.3'],[d.host+'.6',d.id+'.5']);});return L;}
-const LAMP_BONUS=2,LAMPT=['X1.29','X1.30','X1.31','X1.32'];
+const LAMP_BONUS=2,LAMPT=['X1.29','X1.30','X1.31','X1.32'],LAMPX=new Set(['p1']);
+const CPAIR={'13':'14','14':'13','53':'54','54':'53','83':'84','84':'83','61':'62','62':'61','71':'72','72':'71','95':'96','96':'95','97':'98','98':'97'};
+const CGRP=[[['','13','14'],['A','53','54'],['A','83','84']],[['A','61','62'],['A','71','72']]];
+function refWires(ex){const R=[...PRESETS[ex],...presetExtra(ex)].map(([a,b])=>[m21k(a),m21k(b)]);return LAMPX.has(ex)?R:R.filter(w=>!isLampW(w,ex));}
+function refVariants(ex){const base=refWires(ex),V=[base];
+  if(!['p3','p10','p6','p7','p13','p14','p16','p17'].includes(ex)&&base.some(w=>w.some(k=>/^M1\./.test(k)))){
+    V.push([...base.filter(([a,b])=>!(/^M1\./.test(a)&&/^M1\./.test(b))).map(w=>w.map(k=>k.replace(/^M1\./,'M2.'))),...m2Star.map(([a,b])=>[a,b])]);}
+  return V;}
+function gCmp(ex,W,ref0,D){const st=staticLinks(D),uf=list=>{const u=makeUF();st.forEach(([a,b])=>u.union(a,b));list.forEach(([a,b])=>u.union(a,b));return u;};
+  const u0=uf([]),seen=new Set(),ref=[];
+  ref0.forEach(([a,b])=>{if(a===b||u0.find(a)===u0.find(b))return;const k=[a,b].sort().join('|');if(!seen.has(k)){seen.add(k);ref.push([a,b]);}});
+  const refT=new Set();ref.forEach(w=>w.forEach(k=>refT.add(k)));
+  /* lamp wires (left out except in exercise 1): anything touching a lamp terminal, or a free contact whose other side feeds a lamp */
+  const ua=uf(W.map(x=>x.w)),lampNet=k=>LAMPT.some(l=>ua.find(l)===ua.find(k));
+  const free=k=>{const m=/^(.+)\.(\d+)$/.exec(k);return !!m&&!!CPAIR[m[2]]&&!refT.has(k)&&lampNet(m[1]+'.'+CPAIR[m[2]]);};
+  const M=LAMPX.has(ex)?W:W.filter(x=>!(isLampW(x.w,ex)||free(x.w[0])||free(x.w[1])));
+  const us=uf(M.map(x=>x.w)),ur=uf(ref);
+  const miss=ref.filter(([a,b])=>us.find(a)!==us.find(b));
+  const wrongW=M.filter(x=>ur.find(x.w[0])!==ur.find(x.w[1])).map(x=>x.o);
+  const tot=ref.length,ok=tot-miss.length,bad=wrongW.length;
+  return{ok,tot,bad,miss,wrongW,wr:tot?ok/(tot+bad):0,refT};}
+function gradeWiring(ex,W0,D){let best=null;
+  refVariants(ex).forEach(ref=>{let W=W0.map(w=>({w:[w[0],w[1]],o:[w[0],w[1]]})),r=gCmp(ex,W,ref,D);
+    /* try moving each contact the trainee used onto an equivalent one the diagram uses */
+    const used=new Set();W.forEach(x=>x.w.forEach(k=>used.add(k)));const ks=new Set();[...used,...r.refT].forEach(k=>{const m=/^(K\d+)A?\./.exec(k);if(m)ks.add(m[1]);});
+    ks.forEach(K=>CGRP.forEach(G=>{const P=G.map(([sf,a,b])=>[K+sf+'.'+a,K+sf+'.'+b]),inRef=p=>p.some(k=>r.refT.has(k)),inStu=p=>p.some(k=>W.some(x=>x.w.includes(k)));
+      P.filter(p=>inStu(p)&&!inRef(p)).forEach(sp=>{let bw=null,br=r;
+        P.filter(p=>inRef(p)&&!inStu(p)).forEach(rp=>[[rp[0],rp[1]],[rp[1],rp[0]]].forEach(([x,y])=>{const mp={[sp[0]]:x,[sp[1]]:y};
+          const W2=W.map(q=>({w:q.w.map(k=>mp[k]||k),o:q.o})),r2=gCmp(ex,W2,ref,D);if(r2.wr>br.wr+1e-9){br=r2;bw=W2;}}));
+        if(bw){W=bw;r=br;}});}));
+    if(!best||r.wr>best.r.wr)best={r,W};});
+  return best;}
 const m21k=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62');
 /* test scenarios: p:X press and hold, r:X release, w wait for every timer, t1 / t2 trip the overload of M1 / M2, ok reset the overloads */
 const SC_ON=['p:S1','r:S1'],SC_OFF=['p:S0','r:S0'];
@@ -2881,7 +2916,14 @@ function gHints(ex,ref,st,steps,fl,sk,ctl,pwr,sys){const H=new Map(),plc=PLCX.ha
 function refObj(ex){return{v:6,w:[...PRESETS[ex],...presetExtra(ex)],d:5};}
 /* every fraction is rounded up in the trainee's favour; the final score is a whole number */
 const gUp=(v,k)=>Math.ceil(v*k-1e-9)/k;
-function gradeNow(ex,obj){obj=obj||serial();const plc=PLCX.has(ex)&&PTEST[ex],RP=PPROG[ex]?{prog:PPROG[ex].prog,tm:PPROG[ex].tm}:null,P0=obj.plc||{prog:[],tm:{}};
+function gradeNow(ex,obj){obj=obj||serial();const W=(obj.w||[]).map(w=>[m21k(w[0]),m21k(w[1])]),{ok,tot,bad,miss,wrongW,wr}=gradeWiring(ex,W,obj.devs||S.devs).r;
+  let op=null;try{const o=gradeOp(ex,obj);op={sys:o.sys,wsys:o.wsys,ctl:o.ctl,pwr:o.pwr,H:o.H,E:o.E,LE:o.LE,DE:o.DE,PE:o.PE,warn:o.warn};}catch(e){console.warn(e);}
+  const base={ok,tot,bad,miss,wrongW,lampsIn:LAMPX.has(ex),op};
+  if(PLCX.has(ex)&&PTEST[ex]){const P0=obj.plc||{prog:[],tm:{}},gp=gradeProg(ex,P0.prog,P0.tm);
+    return{...base,s:Math.min(20,gUp(10*wr+10*gp.r,1)),ws:gUp(10*wr,10),ps:gUp(10*gp.r,10),pOk:gp.ok,pRel:gp.rel,pBad:gp.bad};}
+  return{...base,s:Math.min(20,gUp(20*wr,1)),sm:gUp(20*wr,10)};}
+/* the operating test: what the trainee's panel does in every step compared with what the exercise requires (shown, not scored) */
+function gradeOp(ex,obj){obj=obj||serial();const plc=PLCX.has(ex)&&PTEST[ex],RP=PPROG[ex]?{prog:PPROG[ex].prog,tm:PPROG[ex].tm}:null,P0=obj.plc||{prog:[],tm:{}};
   // easy exercises: the wiring is tested with the model program, and the whole panel with the trainee's own program; a working whole counts for both
   const F=fTest(ex,obj,plc?RP:P0,RP),FS=plc?fTest(ex,obj,P0,RP):null;
   const lam=x=>x&&x.lamp?(x.lamp.rel?x.lamp.ok/x.lamp.rel:1):null,l0=lam(F),l1=lam(FS),lr=l0==null&&l1==null?null:Math.max(l0||0,l1||0),lb=lr==null?0:gUp(LAMP_BONUS*lr,10);
@@ -2922,7 +2964,7 @@ async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn
   try{applyObj(G.w);update();return await fn();}finally{applyObj(cur);update();}}
 const gM=$('gradeModal');let GV={ex:''};
 const wl=L=>L.map(([a,b])=>`<li><span dir="ltr">${esc(a)} ⟷ ${esc(b)}</span></li>`).join('');
-const gLampTxt=G=>G.sm==null?'. المجموع = '+G.s+' من 20.':`. لمبات البيان درجة إضافية حتى ${LAMP_BONUS}: تُضاف ${G.lb} إذا كانت الدرجة أقل من 20، ولا تتجاوز الدرجة 20. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب). يُقبل أي تلامس مساعد مكافئ، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.`;
+const gLampTxt=G=>G.lb==null?'. المجموع = '+G.s+' من 20 (يُجبر الكسر لصالح المتدرب).':G.sm==null?'. المجموع = '+G.s+' من 20.':`. لمبات البيان درجة إضافية حتى ${LAMP_BONUS}: تُضاف ${G.lb} إذا كانت الدرجة أقل من 20، ولا تتجاوز الدرجة 20. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب). يُقبل أي تلامس مساعد مكافئ، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.`;
 /* functional result: what was tested, how the score is made, and the trainee's errors step by step */
 const gErrL=(t,L,op)=>L&&L.length?`<details${op?' open':''} style="margin-top:6px"><summary>${t} (${L.length})</summary><ul class="glist">${L.map(x=>`<li class="no"><span>✖</span><span>${esc(x)}</span></li>`).join('')}</ul></details>`:'';
 function gFnHTML(G){const f=x=>x&&x.rel?`${x.ok} / ${x.rel}`:'—',pc=x=>x&&x.rel?Math.round(100*x.ok/x.rel):0,full=x=>x&&x.ok===x.rel,plc=G.ps!=null;
@@ -2942,6 +2984,12 @@ function gFnHTML(G){const f=x=>x&&x.rel?`${x.ok} / ${x.rel}`:'—',pc=x=>x&&x.re
   ${gErrL('تنبيهات السلامة التي ظهرت أثناء الاختبار',G.warn,1)}
   <p class="gmeta" style="margin-top:6px">طريقة الحساب: ${plc?`التوصيل ${G.ws} من 10 (يُختبر ببرنامج نموذجي)، والبرنامج ${G.ps} من 10، وإذا اشتغلت اللوحة كاملة ببرنامجك يأخذ الاثنان الدرجة كاملة`:G.sh?`حدث قصر دائرة أثناء الاختبار، لذلك تُحسب الدرجة من اختبار التشغيل الكامل فقط: 20 × ${pc(G.sys)}% = ${G.sm}`:`20 × الأعلى بين نجاح التشغيل الكامل (${pc(G.sys)}%) ومتوسط دائرتي القوى والتحكم (${Math.round((pc(G.pwr)+pc(G.ctl))/2)}%) = ${G.sm}`}${G.lr!=null?`، ولمبات البيان درجة إضافية حتى ${LAMP_BONUS}: +${G.lb}`:''}. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب، ولا تتجاوز الدرجة 20${full(G.sys)?'':'، ولا تكتمل 20 مع وجود خطأ في التشغيل'}).</p>
   <p class="gmeta">لا يُقارن توصيلك بالمخطط سلكًا بسلك. يشغّل المحاكي لوحتك آليًا ويقارن عمل المحرك واللمبات بالمطلوب في التمرين، فأي توصيل بديل يؤدي العمل نفسه يأخذ الدرجة كاملة.${G.fl?' اتجاه دوران المحرك عندك معكوس عن المخطط، وقُبل لأن التشغيل صحيح.':''}${G.ren&&G.ren.length?' استخدمت أرقامًا أخرى للكونتاكتورات ('+esc(G.ren.join('، '))+')، وقُبلت.':''}</p>`;}
+/* the operating test under the grade: for learning only */
+function gOpHTML(G){const o=G.op;if(!o||!o.sys)return '';const full=x=>x&&x.ok===x.rel,good=full(o.sys)&&!(o.E||[]).length;
+  return `<div class="greq" style="border-inline-start:4px solid ${good?'var(--ok)':'var(--amber)'};margin-top:8px"><b>اختبار التشغيل</b> <span style="color:var(--muted);font-size:.82rem">(للتعلّم، لا يؤثر في الدرجة)</span><br>
+    ${good?'✔ اشتغلت اللوحة كما هو مطلوب في كل خطوات الاختبار.':`✖ لم تعمل اللوحة كاملة: نجحت ${o.sys.ok} من ${o.sys.rel} خطوة من الضغط والرفع والإيقاف وفصل الأوفرلود.`}
+    ${o.H&&o.H.length?`<ul style="margin:4px 0 0;padding-inline-start:18px">${o.H.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</div>
+  ${gErrL('تفاصيل التشغيل: ما حدث في كل خطوة وما المطلوب',o.E,0)}${gErrL('دائرة التحكم: الكونتاكتورات التي لم تعمل كما يجب',o.DE,0)}${gErrL('دائرة القوى: أخطاء توصيل المحرك',o.PE,0)}${gErrL('لمبات البيان',o.LE,0)}${gErrL('تنبيهات السلامة التي ظهرت أثناء الاختبار',o.warn,1)}`;}
 function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)';
   return `<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <p style="margin:0 0 6px;font-weight:700">${esc(PNAME[G.ex])}</p>
@@ -2951,12 +2999,13 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   <p class="gmeta">يُختبر البرنامج آليًا: تُمرَّر عليه حالات الضغط والرفع والإيقاف ونهاية المشوار والمؤقت، وتُقارن مخارجه Q1-Q4 بالبرنامج النموذجي. أي برنامج يؤدي العمل نفسه يأخذ الدرجة كاملة.</p>`:
   `<p class="gmeta" style="margin-top:6px">طريقة الحساب: التوصيل = 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.sm!=null?G.sm:G.s}${gLampTxt(G)}</p>`}
   ${G.wrongW&&G.wrongW.length?`<details style="margin-top:6px"><summary>التوصيلات الخاطئة (${G.wrongW.length})</summary><ul class="glist">${wl(G.wrongW)}</ul></details>`:''}
-  ${G.miss&&G.miss.length?`<details class="trainer-only" style="margin-top:6px"><summary>التوصيلات الناقصة (${G.miss.length}) · تظهر للمدرب فقط</summary><ul class="glist">${wl(G.miss)}</ul></details>`:''}`:
+  ${G.miss&&G.miss.length?`<details class="trainer-only" style="margin-top:6px"><summary>التوصيلات الناقصة (${G.miss.length}) · تظهر للمدرب فقط</summary><ul class="glist">${wl(G.miss)}</ul></details>`:''}
+  ${G.lampsIn!=null?`<p class="gmeta">${G.lampsIn?'أسلاك لمبات البيان محسوبة في درجة هذا التمرين.':'أسلاك لمبات البيان لا تدخل في درجة هذا التمرين.'} يُقبل التوصيل المكافئ: سلك على أي طرف من نفس النقطة، وتلامس مساعد آخر من نفس النوع على نفس الكونتاكتور، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.</p>`:''}${gOpHTML(G)}`:
   `<ul class="glist">${G.items.map(([t,p,ok])=>`<li class="${ok?'':'no'}"><span>${ok?'✔':'✖'}</span><span>${esc(t)}</span><b>${ok?p:0} / ${p}</b></li>`).join('')}</ul>`}
   <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}</p>`;}
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
   let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+(A[k].top||A[k]).s+'/20':''}</option>`).join('')}</select></label>`;
-  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يشغّل المحاكي لوحتك آليًا كما يفعل المدرب: يضغط الضواغط ويرفعها، ويوقف، ويفصل الأوفرلود، وينتظر المؤقت، ثم يقارن عمل المحرك واللمبات بالمطلوب في التمرين. لا يُقارن توصيلك بالمخطط سلكًا بسلك، فأي توصيل بديل يؤدي العمل يأخذ الدرجة كاملة. إذا لم تعمل اللوحة كاملة تُفحص دائرة القوى ودائرة التحكم كلٌّ على حدة لتأخذ درجة ما نفّذته صحيحًا، وتظهر لك الأخطاء خطوة بخطوة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
+  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. تُحسب الدرجة من توصيلاتك: 20 × التوصيلات الصحيحة ÷ (المطلوبة + الخاطئة أو الزائدة)، ويُجبر الكسر لصالحك. يُقبل التوصيل المكافئ: سلك على أي طرف من نفس النقطة، أو تلامس مساعد آخر من نفس النوع، أو المحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد. أسلاك لمبات البيان لا تدخل في الدرجة إلا في التمرين الأول. بعد التقييم يشغّل المحاكي لوحتك آليًا ويريك هل تعمل وأين أخطاؤك خطوة بخطوة، للتعلّم دون أن يؤثر في الدرجة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
   else if(G){const T=G.top||G;
     h+=`<div class="glock">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b> (المحاولة ${T.try||1})، وتوصيلها محفوظ، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت: لا تضيع عليك الدرجة الأعلى.</div>`+gResHTML(G)+
     `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
