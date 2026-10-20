@@ -199,6 +199,16 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .rtools input{flex:1;min-width:140px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:0 10px}
 .rtools button.danger,.rrow .ra button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
 .rtools button:disabled{opacity:.45}
+.rgrp{border:1px solid var(--line);border-radius:10px;margin:8px 0;background:var(--panel)}
+.rgrp>summary{cursor:pointer;padding:8px 10px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;list-style:none}
+.rgrp>summary::-webkit-details-marker{display:none}
+.rgrp>summary::before{content:'◀';font-size:.75rem;color:var(--muted);transition:transform .15s}.rgrp[open]>summary::before{transform:rotate(-90deg)}
+.rgrp .rgn{flex:1;min-width:150px}.rgrp .rgn b{font-size:.98rem}.rgrp .rgn small{display:block;color:var(--muted);font-size:.76rem}
+.rgrp .rgc{font-size:.8rem;color:var(--muted)}.rgrp .rgb{display:flex;flex-wrap:wrap;gap:4px;flex-basis:100%}
+.rgrp .rgb span{background:var(--chip);border-radius:12px;padding:1px 8px;font-size:.78rem}
+.rgrp .rgt{display:flex;gap:6px;flex-wrap:wrap;padding:0 10px 6px}.rgrp .rgt button{height:32px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.82rem}
+.rgrp .rgt button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.rgrp .rgt button:disabled{opacity:.45}
+.rgrp .rrow{padding-inline:8px}.rrow.low{opacity:.62}.rbest{color:var(--ok);font-size:.78rem;font-weight:700}
 @media (max-width:480px){.stu{gap:5px;padding:8px 8px}.stu .sendb{padding:0 8px;font-size:.86rem}.stu input{padding:0 7px}}
 .gsel{width:100%;height:42px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);padding:0 8px;font-size:.95rem}
 .greq{background:var(--chip);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.88rem;line-height:1.7}
@@ -593,7 +603,7 @@ body.fs{padding-bottom:0}
   <div class="box appbox" style="max-width:640px">
     <div class="ah"><h2 id="rT">📋 نتائج المتدربين</h2><button class="btn" id="rClose">إغلاق</button></div>
     <div class="fld" id="rKeyRow"><label>كلمة سر المدرب (التي وضعتها في كود Google)<input id="rKey" type="password" autocomplete="off"></label></div>
-    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
+    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rBestAll" class="danger" disabled title="يحذف المحاولات الأقل لكل متدرب في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى للجميع</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
   </div>
@@ -2716,7 +2726,8 @@ $('pcOk').onclick=async()=>{const o=$('pcOld').value.trim(),n=$('pcNew').value.t
   finally{b.disabled=false;}};
 $('pinCancel').onclick=()=>pinM.classList.remove('open');pinM.addEventListener('click',e=>{if(e.target===pinM)pinM.classList.remove('open');});
 $('bOpenStu').onclick=()=>{$('codeOut').value='';$('codeIn').value='';$('loadErr').textContent='';modal.classList.add('open');setTimeout(()=>$('codeIn').focus(),50);};
-/* ---------- grading out of 20 (locked after the first evaluation) ---------- */
+/* ---------- grading out of 20: the trainee may grade again after fixing the wiring; the device keeps the latest attempt
+   (the one that is sent) and the highest grade, and the trainer keeps the highest attempt in the results ---------- */
 const GREQ={p1:'S1 تشغيل مع تثبيت ذاتي، S0 إيقاف. المحرك M1 محمي بأوفرلود. H1 تشغيل، H3 إيقاف، H4 عطل.',
  p2:'التشغيل من S1 أو S2، والإيقاف من S0 أو S3، مع تثبيت ذاتي. المحرك M1 محمي بأوفرلود. H1 تشغيل، H3 إيقاف، H4 عطل.',
  p3:'S1 يشغّل M1، وS2 يشغّل M2 بشرط أن يعمل M1 أولًا. S3 يوقف M2 وحده، وS0 يوقف الاثنين. فصل أي أوفرلود يوقف المحركين. H1 للمحرك M1، H2 للمحرك M2، H3 إيقاف، H4 عطل.',
@@ -2905,7 +2916,7 @@ const GK='wsGrades',gAll=()=>{try{return JSON.parse(localStorage.getItem(GK)||'{
 function gSave(o){try{localStorage.setItem(GK,JSON.stringify(o));}catch(_){}}
 function curGrade(){const A=gAll();return A._cur&&A[A._cur]?A[A._cur]:null;}
 const sameAsGraded=()=>{const G=curGrade();return !G||JSON.stringify(serial().w)===JSON.stringify(G.w.w);};
-const gradeLine=()=>{const G=curGrade();return G?` · الدرجة: ${G.s} من 20 (${PNAME[G.ex]}، مقفلة)`:'';};
+const gradeLine=()=>{const G=curGrade();return G?` · الدرجة: ${G.s} من 20 (${PNAME[G.ex]})`:'';};
 async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn();const cur=serial();
   try{applyObj(G.w);update();return await fn();}finally{applyObj(cur);update();}}
 const gM=$('gradeModal');let GV={ex:''};
@@ -2941,17 +2952,16 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   ${G.wrongW&&G.wrongW.length?`<details style="margin-top:6px"><summary>التوصيلات الخاطئة (${G.wrongW.length})</summary><ul class="glist">${wl(G.wrongW)}</ul></details>`:''}
   ${G.miss&&G.miss.length?`<details class="trainer-only" style="margin-top:6px"><summary>التوصيلات الناقصة (${G.miss.length}) · تظهر للمدرب فقط</summary><ul class="glist">${wl(G.miss)}</ul></details>`:''}`:
   `<ul class="glist">${G.items.map(([t,p,ok])=>`<li class="${ok?'':'no'}"><span>${ok?'✔':'✖'}</span><span>${esc(t)}</span><b>${ok?p:0} / ${p}</b></li>`).join('')}</ul>`}
-  <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}${view?'':' · 🔒 الدرجة مقفلة'}</p>`;}
+  <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}</p>`;}
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
-  let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+A[k].s+'/20 🔒':''}</option>`).join('')}</select></label>`;
+  let h=`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+A[k].s+'/20':''}</option>`).join('')}</select></label>`;
   if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. يشغّل المحاكي لوحتك آليًا كما يفعل المدرب: يضغط الضواغط ويرفعها، ويوقف، ويفصل الأوفرلود، وينتظر المؤقت، ثم يقارن عمل المحرك واللمبات بالمطلوب في التمرين. لا يُقارن توصيلك بالمخطط سلكًا بسلك، فأي توصيل بديل يؤدي العمل يأخذ الدرجة كاملة. إذا لم تعمل اللوحة كاملة تُفحص دائرة القوى ودائرة التحكم كلٌّ على حدة لتأخذ درجة ما نفّذته صحيحًا، وتظهر لك الأخطاء خطوة بخطوة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
-  else if(G){h+=`<div class="glock">🔒 قُيّم هذا التمرين من قبل، والدرجة مقفلة ولا تتغير حتى لو عدّلت التوصيل. التوصيل الذي قُيّم هو الذي يُرسل للمدرب.</div>`+gResHTML(G)+
-    `<div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button>${tr?'<button class="btn trainer-only" id="gRedo" style="grid-column:1/-1">🔓 مسح الدرجة وإعادة التقييم (للمدرب)</button>':''}</div>
-    <div class="fld" style="margin-top:10px"><label>رمز فك القفل من المدرب<input id="gUlkIn" dir="ltr" autocomplete="off" maxlength="12" style="text-transform:uppercase;letter-spacing:.15em"></label></div>
-    <p id="gUlkMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
-    <div class="sbtns"><button class="btn" id="gUlk">🔓 فك القفل بالرمز</button></div>`;}
+  else if(G){const best=Math.max(G.s,G.best==null?G.s:G.best);
+    h+=`<div class="glock">آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}${best>G.s?'، وأعلى درجة لك فيه '+best+' من 20':''}. صحّح الأخطاء ثم أعد التقييم متى شئت، وأرسل النتيجة: المدرب يعتمد درجتك الأعلى.</div>`+gResHTML(G)+
+    `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
+    <div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال النتيجة للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالتوصيل الحالي</button></div>`;}
   else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}${PLCX.has(ex)?'<br><b>التقييم:</b> التوصيل 10 درجات، والبرنامج 10 درجات (يُختبر تشغيله آليًا).':''}</div>
-    <div class="glock">⚠️ التقييم يُحسب <b>مرة واحدة</b> لهذا التمرين. بعده تُقفل الدرجة ولا تتغير حتى لو عدّلت التوصيل، فراجع توصيلاتك قبل البدء. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
+    <div class="glock">يمكنك إعادة التقييم بعد تصحيح أخطائك، والمدرب يعتمد درجتك الأعلى. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
     <div class="sbtns"><button class="btn prim" id="gGo">🎯 ابدأ التقييم الآن</button></div>`;}
   $('gBody').innerHTML=h;}
@@ -2963,18 +2973,17 @@ $('gBody').addEventListener('click',e=>{const id=e.target.id;
   if(id==='gGo'){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
     if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return;}
     if(!S.wires.length){$('gMsg').textContent='لا توجد توصيلات بعد.';return;}
-    const A=gAll();if(A[GV.ex]){gRender();return;}
-    const r=gradeNow(GV.ex);A[GV.ex]={ex:GV.ex,...r,t:Date.now(),n,id:sid,w:serial()};A._cur=GV.ex;gSave(A);
-    say('قُيّمت التجربة: '+r.s+' من 20 (الدرجة مقفلة)');renderTop();gRender();gUpdBtn();}
+    const A=gAll(),P=A[GV.ex],best=P?Math.max(P.s,P.best==null?P.s:P.best):-1;
+    const r=gradeNow(GV.ex);A[GV.ex]={ex:GV.ex,...r,t:Date.now(),n,id:sid,w:serial(),tries:(P?P.tries||1:0)+1,best:Math.max(best,r.s)};A._cur=GV.ex;gSave(A);
+    say('قُيّمت التجربة: '+r.s+' من 20'+(best>r.s?' (أعلى درجة لك في هذا التمرين '+best+')':''));renderTop();gRender();gUpdBtn();}
   else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
-  else if(id==='gRedo'){const A=gAll();delete A[GV.ex];if(A._cur===GV.ex)delete A._cur;gSave(A);gRender();gUpdBtn();}
-  else if(id==='gUlk'){const ex=ulkApply($('gUlkIn').value);if(ex){GV.ex=ex;gRender();}else $('gUlkMsg').textContent='الرمز غير صحيح لهذا التمرين أو لهذا الجهاز.';}});
+});
 // remote unlock: the trainer derives a code from a submitted grade (trainee id + exercise + grading time); the trainee's device recomputes it to match
 const ulkCode=(id,ex,t)=>{let h=5381,k=7;for(const ch of 'wsu:'+id+'|'+ex+'|'+t){h=((h*33)^ch.charCodeAt(0))>>>0;k=(k*31+ch.charCodeAt(0))>>>0;}return ((h^(k<<7))>>>0).toString(36).toUpperCase().padStart(6,'0').slice(-6);};
 function ulkApply(raw){const c=String(raw||'').toUpperCase().replace(/[^0-9A-Z]/g,'');if(c.length!==6)return null;const A=gAll();
   const ex=Object.keys(A).find(k=>k!=='_cur'&&A[k]&&ulkCode(A[k].id,k,A[k].t)===c);if(!ex)return null;
   delete A[ex];if(A._cur===ex)delete A._cur;gSave(A);gUpdBtn();say('فُك قفل '+PNAME[ex]+'. يمكنك إعادة التقييم الآن.');renderTop();return ex;}
-$('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex=EXP.ex;gUpdBtn();say('مُسحت الدرجات المقفلة من هذا الجهاز');renderTop();};
+$('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex=EXP.ex;gUpdBtn();say('مُسحت الدرجات من هذا الجهاز');renderTop();};
 function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20':'🎯 تقييم';}
 gUpdBtn();
 /* ---------- exercise picker (top of the board) + step-by-step wiring clip ----------
@@ -3267,27 +3276,47 @@ $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const G=curGrad
     okMsg('✔ وصلت تجربتك للمدرب'+(G?' مع درجتك '+G.s+' من 20':'')+'. رقم المرجع: '+j.uid);}
   catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}const m=$('sendMsg');m.style.color='var(--warn)';m.textContent=(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أبلغ المدرب، وأرسل الآن عبر واتساب.':'تعذّر الوصول لخادم الحفظ. تأكد من الإنترنت وحاول مرة أخرى، أو أرسل عبر واتساب.');}
   finally{b.disabled=false;}};
-const rM=$('resModal');let RS={rows:[],sel:new Set(),chk:{}};
+const rM=$('resModal');let RS={rows:[],sel:new Set(),chk:{},open:new Set()};
 try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const exName=ex=>PNAME[ex]?'تمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]:'بدون تقييم';
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 async function recheck(r){if(RS.chk[r.uid]!==undefined||!r.code||!PRESETS[r.ex])return;RS.chk[r.uid]=null;
   try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o).s;}catch(_){RS.chk[r.uid]=null;}}
-function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q));
+/* trainees are grouped by their training number, because names are written in different ways:
+   Arabic digits count as Latin ones and spaces or marks are ignored */
+const rKeyId=id=>String(id||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[^0-9A-Za-z]/g,'').toLowerCase()||'—';
+const rNum=r=>r.s===''||r.s==null||isNaN(+r.s)?-1:+r.s;
+/* the best attempt of each graded exercise (highest grade, the latest one on a tie); the other attempts can be deleted */
+function rBest(L){const b={};L.forEach(r=>{if(!PNAME[r.ex])return;const o=b[r.ex];if(!o||rNum(r)>rNum(o)||(rNum(r)===rNum(o)&&(r.t||0)>(o.t||0)))b[r.ex]=r;});return b;}
+const rExtra=L=>{const b=rBest(L);return L.filter(r=>PNAME[r.ex]&&b[r.ex]!==r);};
+function rGroups(){const m=new Map();RS.rows.forEach(r=>{const k=rKeyId(r.id);if(!m.has(k))m.set(k,[]);m.get(k).push(r);});
+  return [...m.entries()].map(([k,rows])=>({k,rows,t:Math.max(...rows.map(r=>r.t||0))})).sort((a,b)=>b.t-a.t);}
+const rMatch=(r,q)=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q);
+const rVis=()=>{const q=$('rFind').value.trim();return RS.rows.filter(r=>rMatch(r,q));};
+function rRowHTML(r,best){const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,ok=c==null||sv==='—'?'':c===+r.s?' <span title="أُعيد الفحص على التوصيل المرسل">✔</span>':` <span style="color:var(--warn)" title="إعادة الفحص أعطت ${c}">⚠${c}</span>`;
+  const th=r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="صورة لوحة ${esc(r.n)}" loading="lazy">`:'<div class="rth none">بلا صورة</div>',low=PNAME[r.ex]&&!best;
+  return `<div class="rrow${low?' low':''}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))} · ${fmtT(r.t)}${best?' · <span class="rbest">⭐ الأعلى</span>':''}</div></div>
+    <div class="rg">${sv}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
+    <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button data-rshare="${esc(r.uid)}">📤 مشاركة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}
+function rRender(){const q=$('rFind').value.trim(),L=rVis();
   const vis=L.length&&L.every(r=>RS.sel.has(r.uid));$('rAll').textContent=vis?'☐ إلغاء التحديد':'☑ تحديد الكل';$('rAll').disabled=!L.length;
   $('rShareSel').disabled=!RS.sel.size;$('rShareSel').textContent=RS.sel.size?'📤 مشاركة المحدد ('+RS.sel.size+')':'📤 مشاركة المحدد';
   $('rDelSel').disabled=!RS.sel.size;$('rDelSel').textContent=RS.sel.size?'🗑 حذف المحدد ('+RS.sel.size+')':'🗑 حذف المحدد';
-  $('rList').innerHTML=L.length?L.map(r=>{const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,ok=c==null||sv==='—'?'':c===+r.s?' <span title="أُعيد الفحص على التوصيل المرسل">✔</span>':` <span style="color:var(--warn)" title="إعادة الفحص أعطت ${c}">⚠${c}</span>`;
-    const th=r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="صورة لوحة ${esc(r.n)}" loading="lazy">`:'<div class="rth none">بلا صورة</div>';
-    return `<div class="rrow"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))} · ${fmtT(r.t)}</div></div>
-      <div class="rg">${sv}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
-      <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button data-rshare="${esc(r.uid)}">📤 مشاركة</button>${PNAME[r.ex]&&r.code?`<button data-rulk="${esc(r.uid)}">🔓 فك القفل</button>`:''}<button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}).join(''):
-    `<p class="greq">${RS.rows.length?'لا نتائج تطابق البحث.':'لا توجد تجارب مرسلة حاليًا.'}</p>`;}
+  const G=rGroups(),xa=G.reduce((n,g)=>n+rExtra(g.rows).length,0);$('rBestAll').disabled=!xa;$('rBestAll').textContent='🧹 إبقاء الأعلى للجميع'+(xa?' ('+xa+')':'');
+  const H=G.map(g=>{const rows=g.rows.filter(r=>rMatch(r,q));if(!rows.length)return '';
+    const best=rBest(g.rows),bs=new Set(Object.values(best)),xs=rExtra(g.rows),last=g.rows.reduce((a,r)=>(r.t||0)>(a.t||0)?r:a,g.rows[0]);
+    const names=[...new Set(g.rows.map(r=>String(r.n).trim()).filter(Boolean))];
+    const order=Object.keys(PNAME);rows.sort((a,b)=>(order.indexOf(a.ex)+1||99)-(order.indexOf(b.ex)+1||99)||(b.t||0)-(a.t||0));
+    const chips=order.filter(k=>best[k]).map(k=>`<span>تمرين ${order.indexOf(k)+1}: <b dir="ltr">${best[k].s===''||best[k].s==null?'—':esc(best[k].s)}/20</b>${g.rows.filter(r=>r.ex===k).length>1?' ⭐':''}</span>`).join('');
+    return `<details class="rgrp" data-gk="${esc(g.k)}"${RS.open.has(g.k)||q?' open':''}><summary><span class="rgn"><b>${esc(last.n)}</b> <span dir="ltr">· ${esc(g.k)}</span>${names.length>1?`<small>كتب اسمه أيضًا: ${esc(names.filter(n=>n!==String(last.n).trim()).join('، '))}</small>`:''}</span><span class="rgc">${g.rows.length} ${g.rows.length===1?'محاولة':'محاولات'}</span>${chips?`<span class="rgb">${chips}</span>`:''}</summary>
+      <div class="rgt"><button data-gsel="${esc(g.k)}">☑ تحديد محاولاته</button><button class="danger" data-gbest="${esc(g.k)}"${xs.length?'':' disabled'} title="يحذف المحاولات الأقل في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى${xs.length?' (حذف '+xs.length+')':''}</button></div>
+      ${rows.map(r=>rRowHTML(r,bs.has(r))).join('')}</details>`;}).join('');
+  $('rList').innerHTML=H||`<p class="greq">${RS.rows.length?'لا نتائج تطابق البحث.':'لا توجد تجارب مرسلة حاليًا.'}</p>`;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة سر المدرب.';$('rKey').focus();return;}
   try{localStorage.setItem('wsKey',key);}catch(_){}
   $('rMsg').textContent='جارٍ التحميل…';
   try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).filter(r=>r.ex!=='pn'&&r.ex!=='ft').sort((a,b)=>b.t-a.t);RS.sel=new Set([...RS.sel].filter(u=>RS.rows.some(r=>r.uid===u)));
-    $('rMsg').textContent=RS.rows.length+' تجربة محفوظة';rRender();for(const r of RS.rows)await recheck(r);rRender();}
+    $('rMsg').textContent=RS.rows.length+' تجربة محفوظة لـ '+rGroups().length+' متدرب';rRender();for(const r of RS.rows)await recheck(r);rRender();}
   catch(e){$('rMsg').textContent=e.srv?'خطأ في خادم Google: '+e.srv:e.message==='key'?'كلمة السر غير صحيحة.':e.message==='setup'?'خادم Google لم يرد بشكل صحيح. في Apps Script: نشر ← إدارة عمليات النشر ← ✏️، وتأكد أن «من يمكنه الوصول» = أي شخص (Anyone)، ثم اختر إصدار جديد ← نشر.':'تعذّر الوصول لخادم Google. تأكد من الإنترنت، وأن النشر على «أي شخص (Anyone)».';}}
 async function rDelete(uids){$('rMsg').textContent='جارٍ الحذف…';try{await cloud({action:'del',key:$('rKey').value.trim(),uids});uids.forEach(u=>RS.sel.delete(u));await rLoad();$('rMsg').textContent='حُذف '+uids.length+' · '+$('rMsg').textContent;}catch(e){$('rMsg').textContent='تعذّر الحذف.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
@@ -3296,6 +3325,12 @@ $('bResults').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();rM
 $('rClose').onclick=()=>rM.classList.remove('open');rM.addEventListener('click',e=>{if(e.target===rM)rM.classList.remove('open');});
 $('rLoad').onclick=rLoad;$('rKey').addEventListener('keydown',e=>{if(e.key==='Enter')rLoad();});$('rFind').addEventListener('input',rRender);
 $('rDelSel').onclick=()=>arm($('rDelSel'),()=>rDelete([...RS.sel]));
+$('rList').addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.rgrp'))d.open?RS.open.add(d.dataset.gk):RS.open.delete(d.dataset.gk);},true);
+$('rList').addEventListener('click',e=>{const gs=e.target.closest('[data-gsel]'),gb=e.target.closest('[data-gbest]');if(!gs&&!gb)return;e.preventDefault();
+  const g=rGroups().find(x=>x.k===(gs||gb).dataset[gs?'gsel':'gbest']);if(!g)return;
+  if(gs){const all=g.rows.every(r=>RS.sel.has(r.uid));g.rows.forEach(r=>all?RS.sel.delete(r.uid):RS.sel.add(r.uid));rRender();return;}
+  const xs=rExtra(g.rows).map(r=>r.uid);if(xs.length)arm(gb,()=>rDelete(xs));});
+$('rBestAll').onclick=()=>{const xs=rGroups().flatMap(g=>rExtra(g.rows)).map(r=>r.uid);if(xs.length)arm($('rBestAll'),()=>rDelete(xs));};
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 const imM=$('imgModal');let IMG={b:null,name:''};
 async function showImg(r){IMG={b:null,name:'تجربة-'+r.id+'.jpg'};$('imgT').textContent=r.n+' · '+r.id;$('imgBig').src=r.th?'data:image/jpeg;base64,'+r.th:'';$('imgMsg').textContent=r.fid?'جارٍ تحميل الصورة بالحجم الكامل…':'';imM.classList.add('open');
@@ -3311,7 +3346,7 @@ $('rList').addEventListener('click',async e=>{const im=e.target.closest('[data-r
   if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);if(!r)return;if(!r.code)return showImg(r);try{openObj(await decodeCode(r.code),r);rM.classList.remove('open');}catch(_){$('rMsg').textContent='تعذّر فتح هذه التجربة.';}}});
 /* a trainee's work opened on the board with everything the board offers (grade, cross-section, operating...) */
 function openObj(ob,r){snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);update();}
-$('rAll').onclick=()=>{const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id+' '+exName(r.ex)).includes(q)),all=L.every(r=>RS.sel.has(r.uid));
+$('rAll').onclick=()=>{const L=rVis(),all=L.every(r=>RS.sel.has(r.uid));
   L.forEach(r=>all?RS.sel.delete(r.uid):RS.sel.add(r.uid));rRender();};
 /* share results as one link (#b=...): name, number, exercise, grade, time and the wiring code of each, without the photos */
 async function rShare(L){if(!L.length)return;$('rMsg').textContent='جارٍ تجهيز الرابط…';
