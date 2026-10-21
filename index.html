@@ -562,8 +562,8 @@ body.fs{padding-bottom:0}
     <div class="stu student-only" aria-label="بيانات المتدرب">
     <input class="sn student-only" id="stName" placeholder="اسم المتدرب" autocomplete="name" aria-label="اسم المتدرب">
     <input class="sid student-only" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي">
-    <button class="sendb gradeb" id="bGrade" title="تقييم التجربة من 20">🎯 تقييم</button>
-    <button class="sendb" id="bSend" title="إرسال التجربة للمدرب">📤 إرسال</button>
+    <button class="sendb gradeb" id="bGrade" title="تقييم التجربة من 20 ثم إرسالها للمدرب">🎯 تقييم وإرسال</button>
+    <button class="sendb" id="bSend" hidden aria-hidden="true" tabindex="-1">📤 إرسال</button>
     </div>
     <div class="hint" id="hint"></div>
   </div>
@@ -2692,7 +2692,7 @@ function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim(
   if(!n||!id){[['stName','stName2',n],['stId','stId2',id]].forEach(([a,b,v])=>{if(!v){$(a).classList.add('bad');$(b).classList.add('bad');}});
     const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='اكتب اسمك ورقمك التدريبي أولًا.';(n?$('stId2'):$('stName2')).focus();return null;}
   if(!S.wires.length){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='لا توجد توصيلات بعد. نفّذ التجربة ثم أرسلها.';return null;}
-  if(!curGrade()&&!S.stu&&!document.body.classList.contains('trainer')){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='يرجى التقييم أولًا: اضغط زر 🎯 تقييم واختر التمرين، ثم أرسل.';return null;}
+  if(!curGrade()&&!S.stu&&!document.body.classList.contains('trainer')){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='يرجى التقييم أولًا: اضغط 🎯 تقييم وإرسال.';return null;}
   return{n,id};}
 async function buildMsg(st){const G=curGrade();const code=await encodeCode(G?{...G.w,st:{n:st.n,id:st.id,t:Date.now(),g:{ex:G.ex,s:G.s,t:G.t,n:G.n,id:G.id}}}:{...serial(),st:{n:st.n,id:st.id,t:Date.now()}});
   const link=isHosted()&&code.startsWith('Z1')?location.href.split('#')[0]+'#t='+code.slice(2):'';
@@ -2705,7 +2705,7 @@ async function saveBlob(b,name){if(DL){try{await DL.save({filename:name,data:b})
 const sendM=$('sendModal');
 function openSend(){if(document.body.classList.contains('fs'))exitFS();$('sendSum').textContent=sendSummary()+(curGrade()&&!sameAsGraded()?' · سيُرسل توصيل أعلى محاولة لك في التقييم ('+curGrade().s+'/20)، لا التوصيل الحالي.':'');$('sendMsg').textContent='';sendM.classList.add('open');
   const o=stGet();$('stName2').value=o.n||$('stName').value;$('stId2').value=o.id||$('stId').value;if(!$('stName2').value)$('stName2').focus();}
-$('bSend').onclick=openSend;
+/* sending goes through grading only: «🎯 تقييم وإرسال» grades the board, then «📤 إرسال» is in the result */
 $('sClose').onclick=()=>sendM.classList.remove('open');sendM.addEventListener('click',e=>{if(e.target===sendM)sendM.classList.remove('open');});
 const okMsg=t=>{const m=$('sendMsg');m.style.color='var(--ok)';m.textContent=t;};
 $('sShare').onclick=async()=>{const st=sendReady();if(!st)return;okMsg('جارٍ تجهيز الرسالة…');const {text}=await buildMsg(st);const b=await withGraded(()=>panelBlob(st.n,st.id));
@@ -2996,14 +2996,14 @@ function gradeProg(ex,prog,tm){const T=PTEST[ex];let ok=0,rel=0,bad=0;
 const GK='wsGrades',gAll=()=>{try{return JSON.parse(localStorage.getItem(GK)||'{}');}catch(_){return{};}};
 function gSave(o){try{localStorage.setItem(GK,JSON.stringify(o));}catch(_){}}
 /* the attempt that is sent: the highest one (kept in .top when a later attempt scored less) */
-function curGrade(){const A=gAll(),L=A._cur&&A[A._cur];return L?(L.top||L):null;}
+function curGrade(){const A=gAll();let k=A._cur;try{if(EXP.ex)k=EXP.ex;}catch(_){}const L=k&&A[k];return L?(L.top||L):null;}
 const sameAsGraded=()=>{const G=curGrade();return !G||JSON.stringify(serial().w)===JSON.stringify(G.w.w);};
 const gradeLine=()=>{const G=curGrade();return G?` · الدرجة: ${G.s} من 20 (${PNAME[G.ex]})`:'';};
 async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn();const cur=serial();
   try{applyObj(G.w);update();return await fn();}finally{applyObj(cur);update();}}
 const gM=$('gradeModal');let GV={ex:''};
 const wl=L=>L.map(([a,b])=>`<li><span dir="ltr">${esc(a)} ⟷ ${esc(b)}</span></li>`).join('');
-const gLampTxt=G=>G.lb==null?'. المجموع = '+G.s+' من 20 (يُجبر الكسر لصالح المتدرب).':G.sm==null?'. المجموع = '+G.s+' من 20.':`. لمبات البيان درجة إضافية حتى ${LAMP_BONUS}: تُضاف ${G.lb} إذا كانت الدرجة أقل من 20، ولا تتجاوز الدرجة 20. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب). يُقبل أي تلامس مساعد مكافئ، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.`;
+const gLampTxt=G=>G.lb==null?'. المجموع = '+G.s+' من 20 (يُجبر الكسر لصالح المتدرب).':G.sm==null&&G.lampsIn==null?'. المجموع = '+G.s+' من 20.':`، ولمبات البيان +${G.lb}. المجموع = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب).`;
 /* functional result: what was tested, how the score is made, and the trainee's errors step by step */
 const gErrL=(t,L,op)=>L&&L.length?`<details${op?' open':''} style="margin-top:6px"><summary>${t} (${L.length})</summary><ul class="glist">${L.map(x=>`<li class="no"><span>✖</span><span>${esc(x)}</span></li>`).join('')}</ul></details>`:'';
 function gFnHTML(G){const f=x=>x&&x.rel?`${x.ok} / ${x.rel}`:'—',pc=x=>x&&x.rel?Math.round(100*x.ok/x.rel):0,full=x=>x&&x.ok===x.rel,plc=G.ps!=null;
@@ -3055,34 +3055,38 @@ function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classLis
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
     <div class="sbtns"><button class="btn prim" id="gGo">🎯 ابدأ التقييم الآن</button></div>`;}
   $('gBody').innerHTML=h;}
-function openGrade(){if(document.body.classList.contains('fs'))exitFS();const A=gAll();GV.ex=EXP.ex||GV.ex||A._cur||'';gRender();gM.classList.add('open');}
+function openGrade(){if(document.body.classList.contains('fs'))exitFS();const A=gAll();GV.ex=EXP.ex||GV.ex||A._cur||'';gRender();gM.classList.add('open');
+  /* graded at once when the board changed since this exercise's last grade, so what is sent always has its grade */
+  const L=GV.ex&&A[GV.ex],o=serial();if(GV.ex&&$('stName').value.trim()&&$('stId').value.trim()&&S.wires.length&&(!L||JSON.stringify(L.w.w)!==JSON.stringify(o.w)||JSON.stringify(L.w.plc||null)!==JSON.stringify(o.plc||null)))gDo();}
 $('bGrade').onclick=openGrade;
 $('gClose').onclick=()=>gM.classList.remove('open');gM.addEventListener('click',e=>{if(e.target===gM)gM.classList.remove('open');});
 $('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'){GV.ex=e.target.value;exMotor(GV.ex);exPick(GV.ex,true);gRender();}});
 $('gBody').addEventListener('click',e=>{const id=e.target.id;
-  if(id==='gGo'){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
-    if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return;}
-    if(!S.wires.length){$('gMsg').textContent='لا توجد توصيلات بعد.';return;}
+  if(id==='gGo')gDo();
+  else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
+});
+function gDo(){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
+    if(!GV.ex)return false;
+    if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return false;}
+    if(!S.wires.length){$('gMsg').textContent='لا توجد توصيلات بعد.';return false;}
     /* every attempt is graded; the highest one (the newest on a tie) keeps its wiring so it is the one sent, even if a later attempt scores less */
     const A=gAll(),P=A[GV.ex],pTop=P?(P.top||P):null,tries=(P?P.tries||1:0)+1,strip=({top,tries,best,...x})=>x;
     const r=gradeNow(GV.ex),keep=pTop&&pTop.s>r.s;
     A[GV.ex]={ex:GV.ex,...r,t:Date.now(),n,id:sid,w:serial(),try:tries,tries,best:keep?pTop.s:r.s,...(keep?{top:strip(pTop)}:{})};A._cur=GV.ex;gSave(A);
-    say('قُيّمت التجربة: '+r.s+' من 20'+(keep?'. أعلى محاولة لك ('+pTop.s+' من 20) محفوظة، وهي التي تُرسل للمدرب':''));renderTop();gRender();gUpdBtn();}
-  else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
-});
+    say('قُيّمت التجربة: '+r.s+' من 20'+(keep?'. أعلى محاولة لك ('+pTop.s+' من 20) محفوظة، وهي التي تُرسل للمدرب':''));renderTop();gRender();gUpdBtn();return true;}
 // remote unlock: the trainer derives a code from a submitted grade (trainee id + exercise + grading time); the trainee's device recomputes it to match
 const ulkCode=(id,ex,t)=>{let h=5381,k=7;for(const ch of 'wsu:'+id+'|'+ex+'|'+t){h=((h*33)^ch.charCodeAt(0))>>>0;k=(k*31+ch.charCodeAt(0))>>>0;}return ((h^(k<<7))>>>0).toString(36).toUpperCase().padStart(6,'0').slice(-6);};
 function ulkApply(raw){const c=String(raw||'').toUpperCase().replace(/[^0-9A-Z]/g,'');if(c.length!==6)return null;const A=gAll();
   const ex=Object.keys(A).find(k=>k!=='_cur'&&A[k]&&ulkCode(A[k].id,k,A[k].t)===c);if(!ex)return null;
   delete A[ex];if(A._cur===ex)delete A._cur;gSave(A);gUpdBtn();say('فُك قفل '+PNAME[ex]+'. يمكنك إعادة التقييم الآن.');renderTop();return ex;}
 $('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex=EXP.ex;gUpdBtn();say('مُسحت الدرجات من هذا الجهاز');renderTop();};
-function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20':'🎯 تقييم';}
+function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20 · إرسال':'🎯 تقييم وإرسال';}
 gUpdBtn();
 /* ---------- exercise picker (top of the board) + step-by-step wiring clip ----------
    The picked exercise is the one graded, so the trainee does not choose it again in 🎯.
    The clip plays the exercise's reference wiring on the board one wire at a time, then puts the trainee's own wiring back. */
 const EXP={ex:''};
-function exPick(v,quiet){v=PNAME[v]?v:'';EXP.ex=v;$('exPick').value=v;$('exClip').hidden=!PRESETS[v];lsS('wsEx',v||null);
+function exPick(v,quiet){v=PNAME[v]?v:'';EXP.ex=v;$('exPick').value=v;$('exClip').hidden=!PRESETS[v];lsS('wsEx',v||null);try{gUpdBtn();}catch(_){}
   if(!v)return;GV.ex=v;if(!quiet)exMotor(v);try{SD.ex=v;sdSave();if(SD.open)sdRender();}catch(_){}}
 $('exPick').insertAdjacentHTML('beforeend',Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${esc(PNAME[k])}</option>`).join(''));
 /* picking another exercise opens its saved version, or a clean board: a board made for one exercise is never carried into another
