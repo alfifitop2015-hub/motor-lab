@@ -131,6 +131,11 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 @keyframes clp{from{opacity:.3}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.clbox,.clhl,.clpt{animation:none}}
 .dstat .c[data-prx]{cursor:pointer}
+.wkrow{display:grid;grid-template-columns:1fr;gap:4px 8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line)}
+.wkrow b{font-size:.95rem}.wkrow .wkm{font-size:.8rem;color:var(--muted)}.wkrow .wka{display:flex;gap:6px;flex-wrap:wrap}
+.wkrow .wka button{height:34px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.85rem}
+.wkrow .wka button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.wkrow .wka button:disabled{opacity:.45}.wkrow.cur{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:8px}
+#bWork{min-width:44px;padding:0 10px}
 </style>
 </head>
 <body>
@@ -180,7 +185,7 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 
 <div class="wrap" id="wrap">
   <div class="wtop">
-    <div class="clrow"><select id="exPick" aria-label="اختر التمرين"></select><button class="btn" id="exClip" title="مقطع يشرح التمرين خطوة خطوة ثم تنفذه بنفسك">🎬 مقطع الشرح</button></div>
+    <div class="clrow"><select id="exPick" aria-label="اختر التمرين"></select><button class="btn" id="exClip" title="مقطع يشرح التمرين خطوة خطوة ثم تنفذه بنفسك">🎬 مقطع الشرح</button><button class="btn student-only" id="bWork" title="تماريني المحفوظة: آخر نسخة من كل تمرين، افتحها وعدّل عليها متى شئت" aria-label="تماريني المحفوظة">📂</button></div>
     <div class="stu student-only"><input class="sn student-only" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid student-only" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb" id="bSend">📤 إرسال</button></div>
     <div class="hint" id="hint"></div>
   </div>
@@ -201,6 +206,10 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
   <h2 id="pinT" style="margin:0 0 6px;font-size:1.1rem">وضع المدرب</h2><p style="margin:0 0 12px;color:var(--muted);font-size:.88rem">أدخل رمز المدرب</p>
   <input class="pinIn" id="pinIn" type="password" inputmode="numeric" autocomplete="off" aria-label="رمز المدرب"><p id="pinMsg" style="margin:8px 0 0;color:var(--warn);font-size:.88rem;min-height:1.2em"></p>
   <div style="display:flex;gap:8px;justify-content:center;margin-top:8px"><button class="btn" id="pinOk">دخول</button><button class="btn" id="pinCancel">إلغاء</button></div></div></div>
+<div class="modal" id="wkModal" role="dialog" aria-modal="true" aria-labelledby="wkT"><div class="box appbox" style="max-width:560px">
+  <div class="ah"><h2 id="wkT">📂 تماريني المحفوظة</h2><button class="btn" id="wkClose">إغلاق</button></div>
+  <p style="margin:0 0 6px;color:var(--muted);font-size:.86rem">تُحفظ آخر نسخة من كل تمرين نفّذته تلقائيًا على هذا الجهاز. افتح أي تمرين لتكمله أو تعدّل عليه، وعند اختيار تمرين من القائمة أعلى اللوحة تُفتح نسخته المحفوظة.</p>
+  <p id="wkMsg" style="font-size:.88rem;min-height:1.2em;margin:4px 0"></p><div id="wkList"></div></div></div>
 <div class="modal" id="codeModal" role="dialog" aria-modal="true" aria-labelledby="cT"><div class="box">
   <h2 id="cT" style="margin:0 0 8px;font-size:1.05rem">مشاركة الدائرة</h2>
   <p style="margin:0 0 6px;font-size:.9rem;color:var(--muted)">انسخ هذا الكود وأرسله:</p><textarea id="codeOut" readonly></textarea>
@@ -553,7 +562,15 @@ function applyObj(o){if(!o||o.app!=='pn'||!Array.isArray(o.comps))throw 0;S.air=
   S.comps=o.comps.filter(c=>DEF[c.t]).map(c=>{const n={id:c.id,t:c.t,x:c.x,y:c.y,o:{...(c.o||{})},s:{}};initState(n);return n;});
   if(!S.comps.some(c=>c.t==='supply'))S.comps.unshift({id:'0Z',t:'supply',x:20,y:1094,o:{},s:{}});
   S.tubes=[];(o.tubes||[]).forEach(([a,b,m])=>{if(portXY(a)&&portXY(b))S.tubes.push(Array.isArray(m)&&m.length?{id:S.nid++,a,b,m:m.map(q=>[+q[0],+q[1]])}:{id:S.nid++,a,b});});S.sel=null;S.selC=null;S.pending=null;}
-function save(){if(S.cl)return;try{localStorage.setItem('pnSim.v1',JSON.stringify(serial()));}catch(_){}}
+function save(){if(S.cl)return;try{const o=serial();localStorage.setItem('pnSim.v1',JSON.stringify(o));pnwSave(o);}catch(_){}}
+/* the trainee's exercises: the latest version of the board of every exercise, kept on this device
+   (not during a clip, while a trainee's circuit is opened, in trainer mode, or for a board with nothing but the air supply) */
+const PNWK='pnWork',PNXK='pnEx';
+function pnwAll(){try{return JSON.parse(localStorage.getItem(PNWK)||'{}')||{};}catch(_){return{};}}
+function pnwSave(o){const x=$('exPick')&&$('exPick').value;if(x===''||x==null||S.cl||S.stu||document.body.classList.contains('trainer'))return;
+  if(o.comps.length<2&&!o.tubes.length)return;const A=pnwAll(),cur=A[x];
+  if(cur&&JSON.stringify(cur.o.comps)===JSON.stringify(o.comps)&&JSON.stringify(cur.o.tubes)===JSON.stringify(o.tubes))return;
+  A[x]={o,t:Date.now()};try{localStorage.setItem(PNWK,JSON.stringify(A));}catch(_){}}
 try{const o=JSON.parse(localStorage.getItem('pnSim.v1')||'null');if(o)applyObj(o);}catch(_){}
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
 const ub64u=t=>{t=t.replace(/-/g,'+').replace(/_/g,'/');while(t.length%4)t+='=';const s=atob(t),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
@@ -873,6 +890,7 @@ function pnRunTil(f){for(let n=0;n<200&&f&&!f();n++)pnRun(.1);}
 function pnRun(sec){for(let n=0;n<sec*10;n++){lastT=performance.now()-100;tick();}}
 /* the trainee's turn: the exercise's parts without hoses (the previous board stays one ↶ away) */
 function pnPractice(i,keep){S.hist.push(keep);if(S.hist.length>60)S.hist.shift();pnRef(i);S.tubes=[];S.prac={i,need:EX[i].t.map(([a,b])=>[a,b].sort().join('|')),ok:false};
+  const W=pnwAll()[String(i)];if(W&&W.o.tubes.length){try{applyObj(W.o);}catch(_){}S.hist=[];say('دورك: هذه نسختك المحفوظة من '+EX[i].n+'، أكملها أو صحّحها');update();return;}
   say('دورك: وصّل خراطيم '+EX[i].n);update();}
 function pnPracStat(){const P=S.prac;if(!P)return '';const have=new Set(S.tubes.map(t=>[t.a,t.b].sort().join('|'))),n=P.need.filter(k=>have.has(k)).length,extra=S.tubes.length-n,all=n===P.need.length&&!extra;
   if(all&&!P.ok){P.ok=true;setTimeout(()=>say('✔ أحسنت! الدائرة مطابقة للتمرين. افتح الهواء وجرّب تشغيلها.'),0);}if(!all)P.ok=false;
@@ -886,7 +904,27 @@ function pnHL(){const c=S.cl;if(!c||!c.hl)return '';const h=c.hl;let o='',fx=[];
     o+=`<rect id="clFocus" x="${x1}" y="${y1}" width="${x2-x1}" height="${y2-y1}" fill="none" pointer-events="none"/>`;}
   return `<g pointer-events="none">${o}</g>`;}
 $('exPick').innerHTML='<option value="">اختر التمرين…</option>'+EX.map((x,i)=>`<option value="${i}">${esc(x.n)}</option>`).join('');
-$('exPick').onchange=()=>{$('exClip').disabled=$('exPick').value==='';};$('exClip').disabled=true;
+let PNX=$('exPick').value;
+/* picking another exercise opens its saved version, or a clean board (only the air supply): a board made for one exercise is never
+   carried into another one, and ↶ never goes back to another exercise's board (it is kept in 📂) */
+function pnPick(x){const prev=PNX;PNX=x;$('exPick').value=x;$('exClip').disabled=x==='';try{x===''?localStorage.removeItem(PNXK):localStorage.setItem(PNXK,x);}catch(_){}
+  if(x===''||document.body.classList.contains('trainer'))return;const W=pnwAll()[x];S.prac=null;
+  if(W){if(JSON.stringify(serial().tubes)!==JSON.stringify(W.o.tubes)||JSON.stringify(serial().comps)!==JSON.stringify(W.o.comps)){try{applyObj(W.o);}catch(_){}S.hist=[];S.stu=null;S.sel=null;S.selC=null;S.pending=null;}
+    say('فُتحت نسختك المحفوظة من '+EX[+x].n+' (آخر تعديل '+fmtT(W.t)+')');update();return;}
+  if(prev!==''&&prev!==x&&(S.comps.length>1||S.tubes.length)){blank();S.hist=[];S.stu=null;S.sel=null;S.selC=null;S.pending=null;say('بدأت لوحة جديدة لـ '+EX[+x].n+'، ونسخة التمرين السابق محفوظة في 📂');update();}}
+$('exPick').onchange=()=>pnPick($('exPick').value);$('exClip').disabled=true;
+{const x=(()=>{try{return localStorage.getItem(PNXK);}catch(_){return null;}})();if(x!=null&&EX[+x]){PNX=x;$('exPick').value=x;$('exClip').disabled=false;}}
+const wkM=$('wkModal');
+function wkRender(){const A=pnwAll(),ks=Object.keys(A).filter(k=>EX[+k]).sort((a,b)=>a-b);
+  $('wkList').innerHTML=ks.length?ks.map(k=>{const W=A[k],cur=PNX===k,parts=W.o.comps.length-1;
+    return `<div class="wkrow${cur?' cur':''}"><div><b>${esc(EX[+k].n)}</b>${cur?' <span class="wkm">· مفتوح الآن</span>':''}<div class="wkm">آخر تعديل ${esc(fmtT(W.t))} · ${parts} عنصرًا · ${W.o.tubes.length} خرطومًا</div></div>
+      <div class="wka"><button data-wkopen="${k}"${cur?' disabled':''}>📂 فتح للتعديل</button><button class="danger" data-wkdel="${k}">🗑 حذف النسخة</button></div></div>`;}).join(''):
+    '<p style="background:var(--chip);border-radius:10px;padding:8px 12px;font-size:.88rem">لا توجد تمارين محفوظة بعد. اختر التمرين من القائمة أعلى اللوحة ثم نفّذه، وتُحفظ آخر نسخة منه تلقائيًا.</p>';}
+$('bWork').onclick=()=>{$('wkMsg').textContent='';wkRender();wkM.classList.add('open');};
+$('wkClose').onclick=()=>wkM.classList.remove('open');wkM.addEventListener('click',e=>{if(e.target===wkM)wkM.classList.remove('open');});
+$('wkList').addEventListener('click',e=>{const o=e.target.closest('[data-wkopen]'),d=e.target.closest('[data-wkdel]');
+  if(o){pnPick(o.dataset.wkopen);wkM.classList.remove('open');return;}
+  if(d)arm(d,()=>{const A=pnwAll();delete A[d.dataset.wkdel];try{localStorage.setItem(PNWK,JSON.stringify(A));}catch(_){}$('wkMsg').textContent='حُذفت النسخة المحفوظة.';wkRender();});});
 $('exClip').onclick=()=>{const v=$('exPick').value;if(v!=='')pnClip(+v);};
 $('dstat').addEventListener('click',e=>{if(e.target.closest('[data-prx]')){S.prac=null;say('أُنهي التمرين.');renderTop();}});
 clInit();

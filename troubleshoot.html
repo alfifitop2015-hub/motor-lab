@@ -217,6 +217,10 @@ body.clip .dock,body.clip .clbtn,body.clip .stu{display:none}body.clip .kit{poin
 g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 @keyframes clp{from{outline-color:rgba(255,179,0,.35)}to{outline-color:#ffb300}}
 @media (prefers-reduced-motion:reduce){.clfoc{animation:none}}
+.wkrow{display:grid;grid-template-columns:1fr;gap:4px 8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line)}
+.wkrow b{font-size:.95rem}.wkrow .wkm{font-size:.8rem;color:var(--muted)}.wkrow .wka{display:flex;gap:6px;flex-wrap:wrap}
+.wkrow .wka button{height:34px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.85rem}
+.wkrow .wka button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.wkrow .wka button:disabled{opacity:.45}.wkrow.cur{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:8px}
 </style>
 </head>
 <body>
@@ -289,6 +293,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
     <button class="db" id="dDiag"><span class="ic">📍</span><span id="dDiagT">تحديد العطل</span></button>
     <button class="db" id="dEnd" style="display:none"><span class="ic">🏁</span>إنهاء</button>
     <button class="db student-only" id="dRand"><span class="ic">🎲</span>عطل عشوائي</button>
+    <button class="db student-only" id="dWork" title="تماريني المحفوظة: تمرين كل دائرة كما تركته"><span class="ic">📂</span>تماريني</button>
     <button class="db trainer-only" id="dFaults"><span class="ic">🧰</span>الأعطال</button>
     <button class="db" id="dView"><span class="ic">👁</span>عرض الجهد</button>
     <span class="dsep full"></span>
@@ -313,6 +318,10 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
   <p class="note2">يمكنك أيضًا وضع عطل على أي سلك أو عنصر: اضغط «📍 وضع عطل» أسفل الشاشة ثم المس السلك أو العنصر في المخطط.</p>
   <ul class="flist" id="flist"></ul></div></div>
 
+<div class="modal" id="wkModal" role="dialog" aria-modal="true" aria-labelledby="wkT"><div class="box appbox" style="max-width:560px">
+  <div class="ah"><h2 id="wkT">📂 تماريني المحفوظة</h2><button class="btn" id="wkClose">إغلاق</button></div>
+  <p style="margin:0 0 6px;color:var(--muted);font-size:.86rem">لكل دائرة تمرينها كما تركته: العطل المخفي، وما وجدته، والمحاولات، والقياسات، والزمن (يتوقف الزمن وأنت في دائرة أخرى). أدر المقبض إلى الدائرة أو افتحها من هنا لتكمل.</p>
+  <p id="wkMsg" style="font-size:.88rem;min-height:1.2em;margin:4px 0"></p><div id="wkList"></div></div></div>
 <div class="modal" id="repModal" role="dialog" aria-modal="true" aria-labelledby="repT"><div class="box appbox" style="max-width:560px">
   <div class="ah"><h2 id="repT">🏁 النتيجة</h2><button class="btn" id="repClose">إغلاق</button></div>
   <div id="repBody"></div>
@@ -826,7 +835,7 @@ function renderSel(){const cur=curPos();let g='';
   wrap.classList.toggle('zero',!!S.zero);}
 function trySelect(id){if(id===curPos())return;
   if(id!=='0'&&!CIRC[id]){say('الدائرة '+id+': لم تصل صورة لوحتها بعد، فهي غير متوفرة في المحاكي.','wn');return;}
-  if(S.ex&&!S.ex.done&&!isTr()){say('أنهِ التمرين الحالي أولًا (🏁 إنهاء) قبل تغيير الدائرة.','wn');return;}
+  ftwLeave();
   if(id==='0'){S.zero=true;S.q={Q1:false,Q2:false};S.pb.clear();S.F=new Set();S.ex=null;S.probes=[null,null];insp.classList.remove('open');fswSel=-1;setDiag(false);renderSel();update();say('مفتاح الدائرة على 0: الشنطة بلا دائرة. أدر المقبض لاختيار رقم الدائرة.','info');return;}
   S.zero=false;if(id===S.cid){renderSel();update();return;}setCircuit(id);}
 const dialEl=$('dial');let dDrag=null;
@@ -843,7 +852,20 @@ dialEl.addEventListener('click',e=>{const p=e.target.closest('[data-p]');if(p)tr
 dialEl.addEventListener('keydown',e=>{const p=e.target.closest('[data-p]');if(p&&(e.key==='Enter'||e.key===' ')){e.preventDefault();trySelect(p.dataset.p);}
   if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const L=DPOS.filter(id=>id==='0'||CIRC[id]),i=L.indexOf(curPos());trySelect(L[Math.max(0,Math.min(L.length-1,i+(e.key==='ArrowRight'?1:-1)))]);}});
 function setCircuit(id,keepF){S.cid=id;S.zero=false;S.k={};S.tStart={};S.tDone={};S.pb.clear();S.ls={S4:false,S5:false};S.trip={F5:false,F6:false};S.pos=50;S.hum=0;S.probes=[null,null];
-  if(!keepF){S.F=new Set();S.ex=null;}renderSel();drawStatic();update();}
+  if(!keepF){S.F=new Set();S.ex=null;ftwBack(id);}renderSel();drawStatic();update();}
+/* the trainee's exercises: each circuit keeps its own fault exercise (hidden faults, what was found, wrong tries, measurements, time),
+   so turning the dial to another circuit and back brings it back where it stopped; its timer pauses while the trainee is elsewhere */
+const FTWK='ftWork';
+function ftwAll(){try{return JSON.parse(localStorage.getItem(FTWK)||'{}')||{};}catch(_){return{};}}
+const ftwOn=()=>!S.cl&&!document.body.classList.contains('trainer');
+function ftwSave(){if(!ftwOn()||S.zero)return;const A=ftwAll();
+  if(S.ex&&S.ex.c===S.cid)A[S.cid]={F:[...S.F],ex:S.ex,pr:S.probes,t:Date.now()};else if(A[S.cid])delete A[S.cid];else return;
+  try{localStorage.setItem(FTWK,JSON.stringify(A));}catch(_){}}
+/* leaving a circuit: its unfinished exercise is saved with its timer paused */
+function ftwLeave(){if(!ftwOn()||S.zero||!S.ex||S.ex.done)return;S.ex.pz=Date.now();ftwSave();}
+function ftwBack(id){if(!ftwOn())return;const w=ftwAll()[id];if(!w||!w.ex)return;const c=CIRC[id];
+  S.F=new Set((w.F||[]).filter(x=>c.E.some(e=>e.id===x)));S.ex=w.ex;if(S.ex.pz){S.ex.t0+=Date.now()-S.ex.pz;delete S.ex.pz;}S.probes=Array.isArray(w.pr)?w.pr:[null,null];
+  setTimeout(()=>say(S.ex.done?'هذا تمرينك المنتهي في الدائرة '+id+'. اضغط 🎲 عطل عشوائي لتمرين جديد.':'رجعت إلى تمرينك في الدائرة '+id+' كما تركته: وجدت '+S.ex.found.length+' من '+S.ex.f.length+'.','info'),0);}
 /* small motor picture for the panel: the same two workshop motors as on the schematic */
 function miniMotor(t){const disc=`<g class="fan" id="fan"><circle cx="13" cy="38" r="11" fill="#d9dde0" stroke="#555" stroke-width="1.4"/><path d="M13 27v22M2 38h22" stroke="#555" stroke-width="2.2"/><circle cx="13" cy="38" r="3" fill="#333"/><circle cx="13" cy="29.5" r="2" fill="#d32f2f"/></g>`;
   if(t==='m3')return`<rect x="14" y="60" width="102" height="4" rx="2" fill="#2f3438" opacity=".4"/><g id="mbody"><rect x="38" y="54" width="14" height="7" fill="#6f787d"/><rect x="88" y="54" width="14" height="7" fill="#6f787d"/>
@@ -1142,9 +1164,24 @@ document.querySelector('.achips').addEventListener('click',e=>{const b=e.target.
 document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 window.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));insp.classList.remove('open');if(S.diag)setDiag(false);}});
 
+/* ===================================================================== the trainee's saved exercises */
+const wkM=$('wkModal');
+function wkRender(){const A=ftwAll(),ks=ORDER.filter(k=>A[k]&&A[k].ex&&CIRC[k]);
+  $('wkList').innerHTML=ks.length?ks.map(k=>{const x=A[k].ex,cur=!S.zero&&S.cid===k,I=INFO[k]||{},sc=x.done?score(x):null,el=Math.round(((x.t1||x.pz||Date.now())-x.t0)/1000);
+    return `<div class="wkrow${cur?' cur':''}"><div><b>${esc(k)} — ${esc(I.n||'')}</b>${cur?' <span class="wkm">· مفتوحة الآن</span>':''}
+      <div class="wkm">${x.k==='exam'?'تمرين المدرب':x.k==='rand'?'تدريب ذاتي':'أعطال'} · ${x.done?'✔ انتهى: '+sc+'%':'جارٍ: وجدت '+x.found.length+' من '+x.f.length}${x.wrong.length?' · خطأ '+x.wrong.length:''} · قياسات ${x.meas} · ⏱ ${mmss(Math.max(0,el))} · ${esc(fmtT(A[k].t))}</div></div>
+      <div class="wka"><button data-wkopen="${esc(k)}"${cur?' disabled':''}>📂 فتح الدائرة</button><button class="danger" data-wkdel="${esc(k)}">🗑 حذف</button></div></div>`;}).join(''):
+    '<p class="note2">لا توجد تمارين محفوظة بعد. اختر الدائرة واضغط 🎲 عطل عشوائي، ويُحفظ تمرين كل دائرة تلقائيًا.</p>';}
+$('dWork').onclick=()=>{$('wkMsg').textContent='';wkRender();wkM.classList.add('open');};
+$('wkClose').onclick=()=>wkM.classList.remove('open');
+$('wkList').addEventListener('click',e=>{const o=e.target.closest('[data-wkopen]'),d=e.target.closest('[data-wkdel]');
+  if(o){trySelect(o.dataset.wkopen);wkM.classList.remove('open');return;}
+  if(d)arm(d,()=>{const k=d.dataset.wkdel,A=ftwAll();delete A[k];try{localStorage.setItem(FTWK,JSON.stringify(A));}catch(_){}
+    if(!S.zero&&S.cid===k){S.F=new Set();S.ex=null;S.probes=[null,null];setDiag(false);update();}$('wkMsg').textContent='حُذف تمرين الدائرة '+k+'.';wkRender();});});
+
 /* ===================================================================== persistence */
 const SK='ftSim.v1';
-function save(){if(S.cl)return;try{localStorage.setItem(SK,JSON.stringify({cid:S.cid,F:[...S.F],ex:S.ex,show:S.show,allowView:S.allowView,mode:S.mode,mm:{on:S.mm.on,x:S.mm.x,y:S.mm.y}}));}catch(_){}}
+function save(){if(S.cl)return;try{ftwSave();}catch(_){}try{localStorage.setItem(SK,JSON.stringify({cid:S.cid,F:[...S.F],ex:S.ex,show:S.show,allowView:S.allowView,mode:S.mode,mm:{on:S.mm.on,x:S.mm.x,y:S.mm.y}}));}catch(_){}}
 try{const o=JSON.parse(localStorage.getItem(SK)||'null');if(o&&CIRC[o.cid]){S.cid=o.cid;S.F=new Set((o.F||[]).filter(id=>CIRC[o.cid].E.some(e=>e.id===id)));S.ex=o.ex&&o.ex.c===o.cid?o.ex:null;S.show=o.show!==false;S.allowView=o.allowView!==false;S.mode=o.mode==='R'?'R':o.mode==='OFF'?'OFF':'V';if(o.mm&&Math.round(+o.mm.x)===1385&&Math.round(+o.mm.y)===520){o.mm.x=1385;o.mm.y=135;}
   if(o.mm)S.mm={on:o.mm.on!==false,x:clampN(+o.mm.x||1385,0,W-150*MS),y:clampN(+o.mm.y||135,0,H-262*MS)};}}catch(_){}
 
@@ -1304,7 +1341,7 @@ function ftClip(){if(S.zero){say('المقبض على 0 — اختر رقم ال
   steps.push({k:'دورك الآن',ms:1500,tx:'انتهى الشرح. سنضع الآن عطلًا مخفيًا عشوائيًا في الدائرة '+S.cid+': شغّل الشنطة، ولاحظ العَرَض، ثم قِس حتى تجده.',go(){S.cl.dj=-9;ftReset([]);S.mm.on=false;ftFoc(['#svg']);update();}});
   const back=()=>{const o=JSON.parse(keep);ftReset(o.F);Object.assign(S,{ex:o.ex,q:o.q,mm:o.mm,mode:o.mode});S.view=o.view;$('dView').classList.toggle('on',S.view);ftFoc(null);};
   clStart({title:S.cid+' — '+I.n,intro:'مقطع شرح الدائرة: فكرتها، ثم تشغيلها، ثم طريقة البحث عن عطل فيها.',steps,
-    done(){back();if(S.ex&&!S.ex.done&&S.ex.k==='exam'){say('لديك تمرين من المدرب لم ينته بعد: أكمله، أو اضغط 🏁 إنهاء.','wn');update();return;}
+    done(){back();if(S.ex&&!S.ex.done){say(S.ex.k==='exam'?'لديك تمرين من المدرب لم ينته بعد: أكمله، أو اضغط 🏁 إنهاء.':'لديك تمرين لم ينته في هذه الدائرة: أكمله، أو اضغط 🏁 إنهاء ثم 🎲 لتمرين جديد.','wn');update();return;}
       newEx('rand',[randFault()]);S.view=false;$('dView').classList.remove('on');setDiag(false);say('🎲 دورك: وُضع عطل مخفي في الدائرة '+S.cid+'. شغّل الشنطة، ولاحظ العَرَض، ثم قِس حتى تجده.','info');update();},
     abort(){back();say('أُغلق المقطع ورجعت الشنطة كما كانت.','info');update();}});
   S.view=true;$('dView').classList.add('on');}
