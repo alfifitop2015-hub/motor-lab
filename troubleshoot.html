@@ -49,6 +49,7 @@ body:not(.cloud) .cloud-only{display:none!important}
 .stu input{height:38px;border:1px solid #8fb0e0;background:#fff;color:#15202b;border-radius:9px;padding:0 10px;min-width:0}
 .stu .sn{flex:1.6;width:0}.stu .sid{width:0;flex:1;max-width:150px;direction:ltr;text-align:right}
 .sendb{height:38px;border:0;border-radius:9px;background:var(--ok);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;flex:none;white-space:nowrap}
+.gradeb{background:#ffb300;color:#1c1400}
 @media (max-width:480px){.stu{gap:5px;padding:8px}.stu .sendb{padding:0 8px;font-size:.86rem}}
 
 /* ---- the kit's operating panel ---- */
@@ -244,7 +245,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
   <div class="status" id="status"></div>
 </div>
 
-<div class="stu student-only"><input class="sn" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb" id="bSend">📤 إرسال</button></div>
+<div class="stu student-only"><input class="sn" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb gradeb" id="bSend" title="إنهاء التمرين وتقييمه من 20 ثم إرسال النتيجة للمدرب">🎯 تقييم وإرسال</button></div>
 
 <div class="clbar" id="clBar" hidden role="region" aria-label="مقطع الشرح">
   <div class="clh"><b id="clT"></b><span id="clN"></span><button id="clX" title="إغلاق المقطع والرجوع إلى الشنطة" aria-label="إغلاق المقطع">✕</button></div>
@@ -1009,10 +1010,11 @@ $('dEnd').onclick=()=>{if(!S.ex)return;if(!S.ex.done){if(!confirm('إنهاء ا
 $('dView').onclick=()=>{if(!isTr()&&S.ex&&S.ex.vw===false&&!S.ex.done){say('المدرب أوقف «عرض الجهد» في هذا التمرين. اعتمد على الملتيميتر.','wn');return;}
   S.view=!S.view;if(S.view&&S.ex&&!S.ex.done&&!isTr())S.ex.viewUsed=true;$('dView').classList.toggle('on',S.view);update();};
 function trainerFaultsChanged(){S.ex=S.F.size?{k:'set',c:S.cid,f:[...S.F],t0:Date.now(),found:[],wrong:[],meas:0,vw:S.allowView,done:false,viewUsed:false}:null;renderFaults();update();}
+const s20=p=>Math.min(20,Math.ceil(+p/5-1e-9));
 function score(x){const n=x.f.length||1;return Math.max(0,Math.round(100*x.found.length/n-10*x.wrong.length));}
 function secs(x){return Math.round(((x.t1||Date.now())-x.t0)/1000);}
 const mmss=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-function renderStat(){const d=$('dstat'),x=S.ex;$('dEnd').style.display=x?'':'none';
+function renderStat(){const d=$('dstat'),x=S.ex;$('dEnd').style.display=x?'':'none';$('bSend').textContent=x&&x.done?'🎯 '+s20(score(x))+'/20 · إرسال':'🎯 تقييم وإرسال';
   if(S.zero){d.innerHTML='<span class="c">المقبض على 0 — لا توجد دائرة ولا أعطال</span>';return;}
   if(!x){d.innerHTML=S.F.size?'':'<span class="c">لا يوجد عطل — اختر 🎲 عطل عشوائي للتدريب</span>';return;}
   d.innerHTML=`<span class="c ${x.done?'ok':'wn'}">${x.k==='exam'?'تمرين المدرب':x.k==='rand'?'تدريب ذاتي':'أعطال المدرب'} · الدائرة ${esc(x.c)}</span><span class="c">الأعطال: ${x.found.length}/${x.f.length}</span><span class="c">القياسات: ${x.meas}</span><span class="c ${x.wrong.length?'bad':''}">محاولات خاطئة: ${x.wrong.length}</span><span class="c">⏱ ${mmss(secs(x))}</span>`;}
@@ -1024,7 +1026,7 @@ function report(x){return{c:x.c,f:x.f.map(id=>{const e=CIRC[x.c].E.find(q=>q.id=
 let REP=null;
 function showReport(r,st){r=r||report(S.ex);REP={r,st};const ok=r.found>=r.f.length;
   $('repBody').innerHTML=(st?`<p><b>${esc(st.n)}</b> · <span dir="ltr">${esc(st.id)}</span> · ${esc(fmtT(st.t))}</p>`:'')+
-   `<div class="score" style="color:${ok?'var(--ok)':'var(--warn)'}">${r.score}%</div>`+
+   `<div class="score" style="color:${ok?'var(--ok)':'var(--warn)'}">${s20(r.score)}<small style="font-size:1rem;color:var(--muted)"> / 20 · ${r.score}%</small></div>`+
    `<p class="note2 ${ok?'good':'warn'}">${ok?'✔ وُجدت كل الأعطال.':r.gaveUp?'أُنهي التمرين قبل إيجاد كل الأعطال.':''}</p>`+
    `<table class="rtab"><tr><td>الدائرة</td><td>${esc(r.c)} — ${esc((INFO[r.c]||{}).n||'')}</td></tr>`+
    `<tr><td>الأعطال</td><td>${r.f.map(esc).join('<br>')}</td></tr><tr><td>وُجد</td><td>${r.found} من ${r.f.length}</td></tr>`+
@@ -1089,19 +1091,20 @@ const STK='wsStudent',stGet=()=>{try{return JSON.parse(localStorage.getItem(STK)
 [['stName','stName2','n'],['stId','stId2','id']].forEach(([a,b,k])=>{$(a).value=$(b).value=stGet()[k]||'';[a,b].forEach(x=>$(x).addEventListener('input',e=>{$(a).value=$(b).value=e.target.value;const q=stGet();q[k]=e.target.value.trim();stSet(q);}));});
 const sM=$('sendModal'),okMsg=(t,w)=>{const m=$('sendMsg');m.style.color=w?'var(--warn)':'var(--ok)';m.textContent=t;};
 function openSend(){$('sendMsg').textContent='';sM.classList.add('open');}
-$('bSend').onclick=()=>{if(!S.ex){say('لا يوجد تمرين لإرساله. ابدأ بـ 🎲 عطل عشوائي أو افتح تمرين المدرب.','wn');return;}openSend();};
+$('bSend').onclick=()=>{if(!S.ex){say('لا يوجد تمرين لتقييمه. ابدأ بـ 🎲 عطل عشوائي أو افتح تمرين المدرب.','wn');return;}
+  if(!S.ex.done){if(!confirm('تقييم التمرين الآن؟ سيُنهى التمرين وتُكشف الأعطال، ثم ترسل النتيجة للمدرب.'))return;S.ex.done=true;S.ex.t1=Date.now();S.ex.gaveUp=S.ex.found.length<S.ex.f.length;setDiag(false);update();}showReport();};
 $('sClose').onclick=()=>sM.classList.remove('open');
 function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();if(!n||!id){okMsg('اكتب اسمك ورقمك التدريبي أولًا.',1);return null;}if(!S.ex){okMsg('لا يوجد تمرين.',1);return null;}return{n,id};}
 async function buildMsg(st){const r=report(S.ex),code=await encodeCode({app:'ft',v:1,c:S.ex.c,f:S.ex.f,r,st:{n:st.n,id:st.id,t:Date.now()}});
   const link=isHosted()&&code.startsWith('Z1')?FT_URL()+'#t='+code.slice(2):'';
-  return{code,r,text:`نتيجة شنطة اكتشاف الأعطال\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالدائرة: ${r.c} — ${(INFO[r.c]||{}).n||''}\nالأعطال الموجودة: ${r.found} من ${r.f.length} · الدرجة: ${r.score}%\nالقياسات: ${r.meas} · محاولات خاطئة: ${r.wrong.length} · الزمن: ${mmss(r.secs)}${S.ex.done?'':' (لم ينته)'}\n`+(link?`\nافتح النتيجة:\n${link}\n`:'')+`\nالكود (للمدرب: ⋯ ← فتح بالكود):\n${code}`};}
+  return{code,r,text:`نتيجة شنطة اكتشاف الأعطال\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالدائرة: ${r.c} — ${(INFO[r.c]||{}).n||''}\nالأعطال الموجودة: ${r.found} من ${r.f.length} · الدرجة: ${s20(r.score)} من 20 (${r.score}%)\nالقياسات: ${r.meas} · محاولات خاطئة: ${r.wrong.length} · الزمن: ${mmss(r.secs)}${S.ex.done?'':' (لم ينته)'}\n`+(link?`\nافتح النتيجة:\n${link}\n`:'')+`\nالكود (للمدرب: ⋯ ← فتح بالكود):\n${code}`};}
 function openLink(u){const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
 $('sWa').onclick=async()=>{const st=sendReady();if(!st)return;const{text}=await buildMsg(st);openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
 function repImg(st,r,w){const c=document.createElement('canvas'),h=Math.round(w*1.25),k=w/600;c.width=w;c.height=h;const g=c.getContext('2d');
   g.fillStyle='#f4eedb';g.fillRect(0,0,w,h);g.fillStyle='#0c2753';g.fillRect(0,0,w,90*k);g.fillStyle='#fff';g.direction='rtl';g.textAlign='right';
   const F=(s,b)=>(b?'bold ':'')+Math.round(s*k)+'px "IBM Plex Sans Arabic",Tahoma,sans-serif';
   g.font=F(24,1);g.fillText(st.n+' · '+st.id,w-20*k,40*k);g.font=F(16);g.fillText('شنطة اكتشاف الأعطال — الدائرة '+r.c,w-20*k,72*k);
-  g.fillStyle=r.found>=r.f.length?'#1a8a42':'#c42b22';g.textAlign='center';g.font=F(84,1);g.fillText(r.score+'%',w/2,210*k);
+  g.fillStyle=r.found>=r.f.length?'#1a8a42':'#c42b22';g.textAlign='center';g.font=F(84,1);g.fillText(s20(r.score)+'/20',w/2,210*k);
   g.fillStyle='#14202c';g.textAlign='right';g.font=F(18);let y=270*k;
   [['الأعطال',r.found+' / '+r.f.length],['القياسات',r.meas],['محاولات خاطئة',r.wrong.length],['الزمن',mmss(r.secs)]].forEach(([a,b])=>{g.fillText(a+': '+b,w-30*k,y);y+=34*k;});
   g.font=F(15);r.f.slice(0,4).forEach(t=>{g.fillText('• '+t,w-30*k,y);y+=28*k;});return c.toDataURL('image/jpeg',.8).split(',')[1];}
@@ -1110,16 +1113,18 @@ async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JS
 let _qP=null;
 $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
   try{const{code,r}=await buildMsg(st);let img,th;try{img=repImg(st,r,600);th=repImg(st,r,160);}catch(_){}
-    const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:'ft',s:r.score+'%',code,img,th});_qP=null;okMsg('✔ وصلت نتيجتك للمدرب. رقم المرجع: '+j.uid);}
+    const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:'ft',s:s20(r.score),code,img,th});_qP=null;okMsg('✔ وصلت نتيجتك للمدرب. رقم المرجع: '+j.uid);}
   catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت النتيجة على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}
     okMsg(e.srv?'خطأ في خادم Google: '+e.srv+' — أرسل عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set()};try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id).includes(q));$('rDelSel').disabled=!RS.sel.size;
   $('rList').innerHTML=L.length?L.map(r=>`<div class="rrow"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">
-    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span> ${r.s?`<span style="color:var(--accent)">· ${esc(r.s)}</span>`:''}</div><div class="rs">${fmtT(r.t)}</div><div class="ra"><button data-ropen="${esc(r.uid)}">👁 عرض النتيجة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${RS.rows.length?'لا نتائج مطابقة.':'لا توجد نتائج مرسلة.'}</p>`;}
+    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span> ${r.g!=null?`<span style="color:var(--accent)">· ${r.g}/20</span>`:''}</div><div class="rs">${fmtT(r.t)}</div><div class="ra"><button data-ropen="${esc(r.uid)}">👁 عرض النتيجة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${RS.rows.length?'لا نتائج مطابقة.':'لا توجد نتائج مرسلة.'}</p>`;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة السر.';return;}try{localStorage.setItem('wsKey',key);}catch(_){}$('rMsg').textContent='جارٍ التحميل…';
-  try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).filter(r=>r.ex==='ft').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' نتيجة محفوظة';rRender();}catch(e){$('rMsg').textContent=e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
+  try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).filter(r=>r.ex==='ft').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' نتيجة محفوظة';
+    RS.rows.forEach(r=>{if(r.s!==''&&isFinite(+r.s))r.g=+r.s;});rRender();
+    for(const r of RS.rows){if(r.g!=null)continue;try{const o=await decodeCode(r.code);if(o.r&&o.r.score!=null)r.g=s20(o.r.score);}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
 async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
 $('bResults').onclick=()=>{document.querySelector('.more').open=false;rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>rM.classList.remove('open');$('rLoad').onclick=rLoad;$('rFind').oninput=rRender;

@@ -136,6 +136,12 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 .wkrow .wka button{height:34px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.85rem}
 .wkrow .wka button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.wkrow .wka button:disabled{opacity:.45}.wkrow.cur{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:8px}
 #bWork{min-width:44px;padding:0 10px}
+.gradeb{background:#ffb300;color:#1c1400}
+.gbig{display:flex;align-items:center;gap:12px;margin:6px 0 8px}.gbig b{font-size:2.3rem;line-height:1}.gbig small{font-size:1rem;color:var(--muted)}
+.gbar{flex:1;height:10px;background:var(--chip);border-radius:5px;overflow:hidden}.gbar i{display:block;height:100%}
+.glist{list-style:none;margin:6px 0;padding:0}.glist li{display:flex;gap:8px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line);font-size:.9rem}.glist li span:nth-child(2){flex:1}.glist li.no{color:var(--warn)}
+.gnote{background:var(--chip);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.86rem;line-height:1.7}.gmeta{font-size:.8rem;color:var(--muted);margin:6px 0}
+.gbtns{display:grid;gap:8px;margin-top:10px}.gbtns .btn{height:42px;font-weight:700}.gbtns .prim{background:var(--ok);color:#fff;border-color:var(--ok)}
 </style>
 </head>
 <body>
@@ -186,7 +192,7 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 <div class="wrap" id="wrap">
   <div class="wtop">
     <div class="clrow"><select id="exPick" aria-label="اختر التمرين"></select><button class="btn" id="exClip" title="مقطع يشرح التمرين خطوة خطوة ثم تنفذه بنفسك">🎬 مقطع الشرح</button><button class="btn student-only" id="bWork" title="تماريني المحفوظة: آخر نسخة من كل تمرين، افتحها وعدّل عليها متى شئت" aria-label="تماريني المحفوظة">📂</button></div>
-    <div class="stu student-only"><input class="sn student-only" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid student-only" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb" id="bSend">📤 إرسال</button></div>
+    <div class="stu student-only"><input class="sn student-only" id="stName" placeholder="اسم المتدرب" aria-label="اسم المتدرب"><input class="sid student-only" id="stId" placeholder="الرقم" inputmode="numeric" aria-label="الرقم التدريبي"><button class="sendb gradeb" id="bGrade" title="تقييم الدائرة من 20 ثم إرسالها للمدرب">🎯 تقييم وإرسال</button></div>
     <div class="hint" id="hint"></div>
   </div>
   <svg id="svg" viewBox="0 0 1000 1300" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -206,6 +212,8 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
   <h2 id="pinT" style="margin:0 0 6px;font-size:1.1rem">وضع المدرب</h2><p style="margin:0 0 12px;color:var(--muted);font-size:.88rem">أدخل رمز المدرب</p>
   <input class="pinIn" id="pinIn" type="password" inputmode="numeric" autocomplete="off" aria-label="رمز المدرب"><p id="pinMsg" style="margin:8px 0 0;color:var(--warn);font-size:.88rem;min-height:1.2em"></p>
   <div style="display:flex;gap:8px;justify-content:center;margin-top:8px"><button class="btn" id="pinOk">دخول</button><button class="btn" id="pinCancel">إلغاء</button></div></div></div>
+<div class="modal" id="gradeModal" role="dialog" aria-modal="true" aria-labelledby="gT"><div class="box appbox" style="max-width:560px">
+  <div class="ah"><h2 id="gT">🎯 تقييم الدائرة</h2><button class="btn" id="gClose">إغلاق</button></div><div id="gBody"></div></div></div>
 <div class="modal" id="wkModal" role="dialog" aria-modal="true" aria-labelledby="wkT"><div class="box appbox" style="max-width:560px">
   <div class="ah"><h2 id="wkT">📂 تماريني المحفوظة</h2><button class="btn" id="wkClose">إغلاق</button></div>
   <p style="margin:0 0 6px;color:var(--muted);font-size:.86rem">تُحفظ آخر نسخة من كل تمرين نفّذته تلقائيًا على هذا الجهاز. افتح أي تمرين لتكمله أو تعدّل عليه، وعند اختيار تمرين من القائمة أعلى اللوحة تُفتح نسخته المحفوظة.</p>
@@ -591,9 +599,10 @@ if(/^#t=/.test(location.hash))decodeCode(location.hash).then(openObj).catch(()=>
 const STK='wsStudent',stGet=()=>{try{return JSON.parse(localStorage.getItem(STK)||'{}');}catch(_){return{};}},stSet=o=>{try{localStorage.setItem(STK,JSON.stringify(o));}catch(_){}};
 [['stName','stName2','n'],['stId','stId2','id']].forEach(([a,b,k])=>{$(a).value=$(b).value=stGet()[k]||'';[a,b].forEach(x=>$(x).addEventListener('input',e=>{$(a).value=$(b).value=e.target.value;$(a).classList.remove('bad');const q=stGet();q[k]=e.target.value.trim();stSet(q);}));});
 const sM=$('sendModal'),okMsg=(t,w)=>{const m=$('sendMsg');m.style.color=w?'var(--warn)':'var(--ok)';m.textContent=t;};
-function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();if(!n||!id){okMsg('اكتب اسمك ورقمك التدريبي أولًا.',1);return null;}if(!S.tubes.length){okMsg('لا توجد خراطيم بعد. نفّذ الدائرة ثم أرسلها.',1);return null;}return{n,id};}
-async function buildMsg(st){const code=await encodeCode({...serial(),st:{n:st.n,id:st.id,t:Date.now()}});const link=isHosted()&&code.startsWith('Z1')?PN_URL()+'#t='+code.slice(2):'';
-  return{code,text:`دائرة هوائية من محاكي ورشة التحكم الهوائي\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالعناصر: ${S.comps.length-1} · الخراطيم: ${S.tubes.length}\n`+(link?`\nافتح الدائرة مباشرة:\n${link}\n`:'')+`\nكود الدائرة (للمدرب: ⋯ ← فتح تجربة متدرب):\n${code}`};}
+function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();if(!n||!id){okMsg('اكتب اسمك ورقمك التدريبي أولًا.',1);return null;}if(!S.tubes.length){okMsg('لا توجد خراطيم بعد. نفّذ الدائرة ثم أرسلها.',1);return null;}
+  if(!pgCur()&&!S.stu&&!document.body.classList.contains('trainer')){okMsg('يرجى التقييم أولًا: اضغط 🎯 تقييم وإرسال.',1);return null;}return{n,id};}
+async function buildMsg(st){const G=pgCur(),B=G?G.w:serial(),code=await encodeCode({...B,st:{n:st.n,id:st.id,t:Date.now(),...(G?{g:{ex:+PNX,s:G.s,t:G.t}}:{})}});const link=isHosted()&&code.startsWith('Z1')?PN_URL()+'#t='+code.slice(2):'';
+  return{code,text:`دائرة هوائية من محاكي ورشة التحكم الهوائي\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\n${G?'التمرين: '+EX[+PNX].n+' · الدرجة: '+G.s+' من 20\n':''}العناصر: ${B.comps.length-1} · الخراطيم: ${B.tubes.length}\n`+(link?`\nافتح الدائرة مباشرة:\n${link}\n`:'')+`\nكود الدائرة (للمدرب: ⋯ ← فتح تجربة متدرب):\n${code}`};}
 function panelBlob(nm,id){return new Promise(res=>{let done=false;const fin=b=>{if(!done){done=true;res(b);}};setTimeout(()=>fin(null),6000);
   try{const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');let x=svg.outerHTML.replace(/(<svg[^>]*?)\sstyle="[^"]*"/,'$1').replace('<svg','<svg width="'+W+'" height="'+H+'"').replace(/<\/svg>\s*$/,'<style>'+css+'</style></svg>');
     if(!/xmlns=/.test(x.slice(0,300)))x=x.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
@@ -603,29 +612,30 @@ function panelBlob(nm,id){return new Promise(res=>{let done=false;const fin=b=>{
 let DL=null;const CLA=window.claude||(()=>{try{return window.parent.claude;}catch(_){return null;}})();if(CLA&&CLA.use)CLA.use('downloads').then(x=>{DL=x;}).catch(()=>{});
 async function saveBlob(b,name){if(DL){try{await DL.save({filename:name,data:b});return 'saved';}catch(e){return e&&e.code==='declined'?'declined':'failed';}}const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return 'saved';}
 function openLink(u){const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
-$('bSend').onclick=()=>{const o=stGet();$('stName2').value=o.n||$('stName').value;$('stId2').value=o.id||$('stId').value;$('sendMsg').textContent='';sM.classList.add('open');};
+function openSend(){const o=stGet();$('stName2').value=o.n||$('stName').value;$('stId2').value=o.id||$('stId').value;$('sendMsg').textContent='';sM.classList.add('open');}
 $('sClose').onclick=()=>sM.classList.remove('open');sM.addEventListener('click',e=>{if(e.target===sM)sM.classList.remove('open');});
-$('sShare').onclick=async()=>{const st=sendReady();if(!st)return;okMsg('جارٍ التجهيز…');const {text}=await buildMsg(st),b=await panelBlob(st.n,st.id),file=b?new File([b],'دائرة-'+st.id+'.png',{type:'image/png'}):null;
+$('sShare').onclick=async()=>{const st=sendReady();if(!st)return;okMsg('جارٍ التجهيز…');const {text}=await buildMsg(st),b=await pgWith(()=>panelBlob(st.n,st.id)),file=b?new File([b],'دائرة-'+st.id+'.png',{type:'image/png'}):null;
   try{if(file&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text});okMsg('أُرسلت.');return;}if(navigator.share){await navigator.share({text});okMsg('أُرسلت الرسالة.');return;}}catch(e){if(e&&e.name==='AbortError'){okMsg('');return;}}
   openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
 $('sWa').onclick=async()=>{const st=sendReady();if(!st)return;const {text}=await buildMsg(st);openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
-$('sImg').onclick=async()=>{const st=sendReady();if(!st)return;const b=await panelBlob(st.n,st.id);if(!b)return okMsg('تعذّر إنشاء الصورة.',1);const r=await saveBlob(b,'دائرة-'+st.id+'.png');okMsg(r==='saved'?'نُزّلت الصورة.':'',r==='failed');};
+$('sImg').onclick=async()=>{const st=sendReady();if(!st)return;const b=await pgWith(()=>panelBlob(st.n,st.id));if(!b)return okMsg('تعذّر إنشاء الصورة.',1);const r=await saveBlob(b,'دائرة-'+st.id+'.png');okMsg(r==='saved'?'نُزّلت الصورة.':'',r==='failed');};
 /* cloud (same Google sheet as the electrical workshop; pneumatic rows are marked pn) */
 const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
 async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JSON.stringify(d)});}catch(_){throw new Error('net');}const t=await r.text();let j;try{j=JSON.parse(t);}catch(_){throw new Error('setup');}if(!j.ok){const E=new Error(j.err||'fail');E.srv=j.msg||'';throw E;};return j;}
-async function imgs(st){try{const b=await panelBlob(st.n,st.id);if(!b)return{};const u=URL.createObjectURL(b),im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});URL.revokeObjectURL(u);
+async function imgs(st){try{const b=await pgWith(()=>panelBlob(st.n,st.id));if(!b)return{};const u=URL.createObjectURL(b),im=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u;});URL.revokeObjectURL(u);
   const jpg=(w,q)=>{const c=document.createElement('canvas');c.width=w;c.height=Math.round(im.height*w/im.width);const g=c.getContext('2d');g.fillStyle='#8e9aa4';g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q).split(',')[1];};
   let th=jpg(220,.6);if(th.length>44000)th=jpg(160,.5);return{img:jpg(900,.8),th};}catch(_){return{};}}
 $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
-  try{const {code}=await buildMsg(st),im=await imgs(st);const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:'pn',s:'',code,img:im.img,th:im.th});okMsg('✔ وصلت دائرتك للمدرب. رقم المرجع: '+j.uid);}
+  try{const {code}=await buildMsg(st),im=await imgs(st);const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:'pn',s:pgCur()?pgCur().s:'',code,img:im.img,th:im.th});okMsg('✔ وصلت دائرتك للمدرب. رقم المرجع: '+j.uid);}
   catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}okMsg(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set()};try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id).includes(q));$('rDelSel').disabled=!RS.sel.size;
   $('rList').innerHTML=L.length?L.map(r=>`<div class="rrow"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="">`:'<div class="rth none">بلا صورة</div>'}
-    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${fmtT(r.t)}</div><div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح الدائرة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${RS.rows.length?'لا نتائج مطابقة.':'لا توجد دوائر مرسلة.'}</p>`;}
+    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${r.g&&EX[r.g.ex]?esc(EX[r.g.ex].n)+' · ':''}${fmtT(r.t)}</div>${r.s!==''&&r.s!=null?`<div style="font-weight:700">${esc(r.s)}<small style="color:var(--muted);font-weight:400">/20</small></div>`:''}<div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح الدائرة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${RS.rows.length?'لا نتائج مطابقة.':'لا توجد دوائر مرسلة.'}</p>`;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة السر.';return;}try{localStorage.setItem('wsKey',key);}catch(_){}$('rMsg').textContent='جارٍ التحميل…';
-  try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).filter(r=>r.ex==='pn').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' دائرة محفوظة';rRender();}catch(e){$('rMsg').textContent=e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
+  try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).filter(r=>r.ex==='pn').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' دائرة محفوظة';rRender();
+    for(const r of RS.rows){try{const o=await decodeCode(r.code);if(o.st&&o.st.g)r.g=o.st.g;}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
 async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
 $('bResults').onclick=()=>{rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>rM.classList.remove('open');$('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
@@ -907,13 +917,69 @@ $('exPick').innerHTML='<option value="">اختر التمرين…</option>'+EX.
 let PNX=$('exPick').value;
 /* picking another exercise opens its saved version, or a clean board (only the air supply): a board made for one exercise is never
    carried into another one, and ↶ never goes back to another exercise's board (it is kept in 📂) */
-function pnPick(x){const prev=PNX;PNX=x;$('exPick').value=x;$('exClip').disabled=x==='';try{x===''?localStorage.removeItem(PNXK):localStorage.setItem(PNXK,x);}catch(_){}
+function pnPick(x){const prev=PNX;PNX=x;$('exPick').value=x;$('exClip').disabled=x==='';try{pgBtn();}catch(_){}try{x===''?localStorage.removeItem(PNXK):localStorage.setItem(PNXK,x);}catch(_){}
   if(x===''||document.body.classList.contains('trainer'))return;const W=pnwAll()[x];S.prac=null;
   if(W){if(JSON.stringify(serial().tubes)!==JSON.stringify(W.o.tubes)||JSON.stringify(serial().comps)!==JSON.stringify(W.o.comps)){try{applyObj(W.o);}catch(_){}S.hist=[];S.stu=null;S.sel=null;S.selC=null;S.pending=null;}
     say('فُتحت نسختك المحفوظة من '+EX[+x].n+' (آخر تعديل '+fmtT(W.t)+')');update();return;}
   if(prev!==''&&prev!==x&&(S.comps.length>1||S.tubes.length)){blank();S.hist=[];S.stu=null;S.sel=null;S.selC=null;S.pending=null;say('بدأت لوحة جديدة لـ '+EX[+x].n+'، ونسخة التمرين السابق محفوظة في 📂');update();}}
 $('exPick').onchange=()=>pnPick($('exPick').value);$('exClip').disabled=true;
 {const x=(()=>{try{return localStorage.getItem(PNXK);}catch(_){return null;}})();if(x!=null&&EX[+x]){PNX=x;$('exPick').value=x;$('exClip').disabled=false;}}
+setTimeout(()=>{try{pgBtn();}catch(_){}},0);
+/* ---------- grading out of 20, as in the electrical workshop: 20 × correct hoses ÷ (required + wrong or extra).
+   The circuit is compared with the exercise point by point: a hose may land on any port of the same point, the supply outlets P1-P8 are
+   one point, a T distributor joins its ports, a pressure gauge may be added anywhere, and the trainee's parts are matched with the
+   exercise's parts of the same type whatever their names (1S1 may be the exercise's 1S2). Every fraction is rounded up in the trainee's
+   favour. The device keeps the latest attempt of each exercise and the highest one with its board, which is the one sent. ---------- */
+const PGK='pnGrades';
+function pgAll(){try{return JSON.parse(localStorage.getItem(PGK)||'{}')||{};}catch(_){return{};}}
+function pgCur(){const L=PNX!==''&&pgAll()[PNX];return L?(L.top||L):null;}
+function pgScore(i,o,mp){const x=EX[i],tOf={};o.comps.forEach(c=>tOf[c.id]=c.t);const free=k=>['tee','gauge'].includes(tOf[k.split('.')[0]]);
+  const K=k=>{const [id,p]=k.split('.');return tOf[id]==='supply'?'0Z.P':tOf[id]==='tee'?id+'.T':(mp[id]||'?'+id)+'.'+p;},KR=k=>/^0Z\./.test(k)?'0Z.P':k;
+  const ur=makeUF(),refP=new Set();x.t.forEach(([a,b])=>{const A=KR(a),B=KR(b);refP.add(A);refP.add(B);ur.union(A,B);});
+  const us=makeUF(),T=o.tubes.map(t=>[t[0],t[1]]);T.forEach(([a,b])=>us.union(K(a),K(b)));
+  const miss=x.t.filter(([a,b])=>us.find(KR(a))!==us.find(KR(b)));
+  /* wrong: a hose on a port the exercise does not use, or a point that joins what the exercise keeps apart */
+  const wrong=T.filter(([a,b])=>(!refP.has(K(a))&&!free(a))||(!refP.has(K(b))&&!free(b)));let bad=wrong.length;
+  const g=new Map();refP.forEach(k=>{const r=us.find(k);if(!g.has(r))g.set(r,new Set());g.get(r).add(ur.find(k));});g.forEach(v=>{if(v.size>1)bad+=v.size-1;});
+  const tot=x.t.length,ok=tot-miss.length;return{ok,tot,bad,miss,wrong,wr:tot?ok/(tot+bad):0};}
+function pnGrade(i,o){o=o||serial();const x=EX[i],types=[...new Set(x.c.map(c=>c.t))],perm=(a,k)=>k===0?[[]]:a.flatMap((v,j)=>perm([...a.slice(0,j),...a.slice(j+1)],k-1).map(r=>[v,...r]));
+  /* every way of naming the trainee's parts as the exercise's parts of the same type (a few hundred at most) */
+  let maps=[{}];types.forEach(t=>{const r=x.c.filter(c=>c.t===t).map(c=>c.id),st=o.comps.filter(c=>c.t===t).map(c=>c.id),k=Math.min(r.length,st.length);
+    const opts=perm(st,k);maps=maps.flatMap(m=>opts.map(pp=>{const n={...m};pp.forEach((sid,j)=>{n[sid]=r[j];});return n;})).slice(0,3000);});
+  let best=null;maps.forEach(mp=>{const r=pgScore(i,o,mp);if(!best||r.wr>best.wr)best=r;});
+  return{...best,s:Math.min(20,Math.ceil(20*best.wr-1e-9)),sm:Math.ceil(200*best.wr-1e-9)/10};}
+/* the board sent is the highest attempt's: put on the board for the photo, then the trainee's board comes back */
+async function pgWith(fn){const G=pgCur();if(!G||JSON.stringify(G.w.tubes)===JSON.stringify(serial().tubes))return fn();const cur=serial();
+  try{applyObj(G.w);update();return await fn();}finally{applyObj(cur);update();}}
+const gM=$('gradeModal');
+function pgBtn(){const G=pgCur();$('bGrade').textContent=G?'🎯 '+G.s+'/20 · إرسال':'🎯 تقييم وإرسال';}
+function gResHTML(G){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)',pn=k=>{try{return pnPort(k);}catch(_){return k;}};
+  return `<div class="gbig"><b style="color:${col}">${G.s}</b><small>/ 20</small><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
+  <ul class="glist"><li><span>✔</span><span>خراطيم صحيحة مطابقة للتمرين</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>خراطيم خاطئة أو زائدة</span><b>${G.bad}</b></li></ul>
+  <p class="gmeta">طريقة الحساب: 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.sm}. الدرجة = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب).</p>
+  ${G.wrong&&G.wrong.length?`<details><summary>الخراطيم الخاطئة (${G.wrong.length})</summary><ul class="glist">${G.wrong.map(([a,b])=>`<li class="no"><span>✖</span><span>${esc(pn(a))} ⟷ ${esc(pn(b))}</span></li>`).join('')}</ul></details>`:''}
+  ${G.miss&&G.miss.length?`<details class="trainer-only"><summary>الخراطيم الناقصة (${G.miss.length}) · للمدرب فقط</summary><ul class="glist">${G.miss.map(([a,b])=>`<li><span>•</span><span dir="ltr">${esc(a)} ⟷ ${esc(b)}</span></li>`).join('')}</ul></details>`:''}
+  <p class="gmeta">يُقبل التوصيل المكافئ: خرطوم على أي منفذ من نفس النقطة، وأي مخرج من وحدة الإمداد P1-P8، وموزع T، ومانومتر إضافي، وأسماء عناصر مختلفة عن التمرين.</p>`;}
+function gRender(){const x=PNX,A=pgAll(),G=x!==''&&A[x];let h='';
+  if(x===''||!EX[+x])h=`<p class="gnote">اختر التمرين الذي نفّذته، ثم يُقيَّم مباشرة:</p><select class="btn" id="gEx" style="width:100%;height:42px"><option value="">اختر التمرين…</option>${EX.map((e,i)=>`<option value="${i}">${esc(e.n)}</option>`).join('')}</select>`;
+  else if(G){const T=G.top||G;h=`<p style="margin:0 0 4px"><b>${esc(EX[+x].n)}</b></p><p class="gnote">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b>، ودائرتها محفوظة، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت.</p>`+gResHTML(G)+
+    `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p><div class="gbtns"><button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20) للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالدائرة الحالية</button></div>`;}
+  else h=`<p style="margin:0 0 4px"><b>${esc(EX[+x].n)}</b></p><p class="gnote">${esc((EXPL[+x]||{}).idea||'')}<br>تُحسب الدرجة من خراطيمك: 20 × الصحيحة ÷ (المطلوبة + الخاطئة). يمكنك إعادة التقييم بعد تصحيح أخطائك، وتُحفظ أعلى محاولة لك وهي التي تُرسل للمدرب.</p>
+    <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p><div class="gbtns"><button class="btn prim" id="gGo">🎯 ابدأ التقييم الآن</button></div>`;
+  $('gBody').innerHTML=h;}
+function gDo(){const x=PNX,tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');if(x==='')return false;
+  if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return false;}
+  if(!S.tubes.length){$('gMsg').textContent='لا توجد خراطيم بعد.';return false;}
+  const A=pgAll(),P=A[x],pTop=P?(P.top||P):null,tries=(P?P.tries||1:0)+1,strip=({top,tries,...y})=>y,r=pnGrade(+x),keep=pTop&&pTop.s>r.s;
+  A[x]={...r,t:Date.now(),n,id:sid,w:serial(),tries,...(keep?{top:strip(pTop)}:{})};try{localStorage.setItem(PGK,JSON.stringify(A));}catch(_){}
+  say('قُيّمت الدائرة: '+r.s+' من 20'+(keep?'. أعلى محاولة لك ('+pTop.s+' من 20) محفوظة، وهي التي تُرسل':''));renderTop();gRender();pgBtn();return true;}
+/* one button: the circuit is graded at once when it changed since this exercise's last grade, then «📤 إرسال» is in the result */
+function gOpen(){gRender();gM.classList.add('open');const x=PNX,L=x!==''&&pgAll()[x];
+  if(x!==''&&$('stName').value.trim()&&$('stId').value.trim()&&S.tubes.length&&(!L||JSON.stringify(L.w.tubes)!==JSON.stringify(serial().tubes)||JSON.stringify(L.w.comps.map(c=>c.id+c.t))!==JSON.stringify(S.comps.map(c=>c.id+c.t))))gDo();}
+$('bGrade').onclick=gOpen;$('gClose').onclick=()=>gM.classList.remove('open');gM.addEventListener('click',e=>{if(e.target===gM)gM.classList.remove('open');});
+$('gBody').addEventListener('click',e=>{if(e.target.id==='gGo')gDo();else if(e.target.id==='gSend'){gM.classList.remove('open');openSend();}});
+$('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'&&e.target.value!==''){pnPick(e.target.value);gOpen();}});
+['stName','stId'].forEach(i=>$(i).addEventListener('input',()=>$(i).classList.remove('bad')));
 const wkM=$('wkModal');
 function wkRender(){const A=pnwAll(),ks=Object.keys(A).filter(k=>EX[+k]).sort((a,b)=>a-b);
   $('wkList').innerHTML=ks.length?ks.map(k=>{const W=A[k],cur=PNX===k,parts=W.o.comps.length-1;
