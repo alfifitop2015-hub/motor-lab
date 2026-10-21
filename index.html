@@ -815,7 +815,8 @@ const GROUPS=[
  {name:'SQ2',tags:['NC','NC','NO','NO'],to:'LS2'},
  {name:'H1 H2 H3 H4',tags:['H1','H2','H3','H4'],to:'H'},
  {name:'تعادل N',tags:['N','N','N','N'],to:'N'}];
-const SX=50,SW=25,SY=950,TN=36,MB=[1,2,3,4,5,6];
+/* an earth terminal PE (not numbered, not wired by the trainee) sits between the motor terminals and the rest; the strip keeps its width */
+const SX=50,SW=900/37,SY=950,TN=36,MB=[1,2,3,4,5,6],PEN=6,tOX=n=>(n-1+(n>PEN?1:0))*SW,peX=()=>SX+PEN*SW;
 let tn=1;GROUPS.forEach(g=>{g.from=tn;tn+=g.tags.length;g.to2=tn-1;});
 /* gap left of a rail device: the user can widen or narrow it by dragging the device sideways */
 const GAP=30,GAPMIN=6,devGap=(dv,first)=>dv.gap!=null?dv.gap:first?0:GAP;
@@ -845,8 +846,8 @@ function relayout(){
   mk('FB','fboard',FB.x,FB.y,FB.w,FB.h,[]);
   devices.forEach(dv=>{});
   DY=S.trunkY[S.rows-1]-878;H=1640+DY;
-  const st=[];for(let n=1;n<=TN;n++)st.push(tu(String(n),(n-1)*SW+SW/2,14,''));
-  MB.forEach(n=>st.push(td(n+'b',(n-1)*SW+SW/2,60,(S.dahl?['1U','1V','1W','2U','2V','2W']:['U1','V1','W1','U2','V2','W2'])[(n-1)%6])));
+  const st=[];for(let n=1;n<=TN;n++)st.push(tu(String(n),tOX(n)+SW/2,14,''));
+  MB.forEach(n=>st.push(td(n+'b',tOX(n)+SW/2,60,(S.dahl?['1U','1V','1W','2U','2V','2W']:['U1','V1','W1','U2','V2','W2'])[(n-1)%6])));
   mk('X1','strip',SX,SY+DY,TN*SW,72,st);
   MB.forEach(n=>Object.assign(T['X1.'+n+'b'],{zone:'f'}));
   [['U1',86,16,'d'],['V1',142,16,'d'],['W1',198,16,'d'],['W2',86,62,'u'],['U2',142,62,'u'],['V2',198,62,'u']].forEach(([n,x,y,sd])=>{T['M1.'+n]={x:MO1[0]+x,y:MO1[1]+y+DY,side:sd,label:'',zone:'f',stud:true};});
@@ -1218,11 +1219,17 @@ function drawDev(d){const {x,y,w,h}=d;
   case'm2t':{let s=`<rect x="${x-6}" y="${y+6}" width="6" height="${h-12}" rx="2" fill="#555"/>`;['U1','V1','W1','U2','V2','W2'].forEach((n,i)=>{const bx=x+30*i;s+=`<rect x="${bx+1}" y="${y}" width="28" height="${h}" rx="3" fill="#c4c8cb" stroke="#7d7d7d"/><rect x="${bx+3}" y="${y+30}" width="24" height="17" rx="3" fill="#fff" opacity=".95"/>${txt(bx+15,y+43,n,10,'#111',700)}`;});
     return s+txt(x+w/2,y+h+16,'X2 أطراف المحرك 2',11,'#fff',700);}
   case'strip':{let s='';
-    GROUPS.forEach(g=>{g.tags.forEach((tg,i)=>{const n=g.from+i,bx=SX+(n-1)*SW;
+    GROUPS.forEach(g=>{g.tags.forEach((tg,i)=>{const n=g.from+i,bx=SX+tOX(n);
       const fill=g.to==='N'?'#3d7be0':(g.to==='M'||g.to==='M2')?'#b7bcc0':'#d6d8d9';
       s+=`<rect x="${bx+1}" y="${y}" width="${SW-2}" height="${h}" rx="3" fill="${fill}" stroke="#7d7d7d"/><rect x="${bx+3}" y="${y+28}" width="${SW-6}" height="14" rx="2" fill="#fff"/>${txt(bx+SW/2,y+39,n,8.5,'#111',700)}${(g.to==='M'||g.to==='M2')?'':txt(bx+SW/2,y+60,tg.length>3?tg[0]:tg,8,g.to==='N'?'#fff':'#333',700)}`;});
-      const gx1=SX+(g.from-1)*SW+2,gx2=SX+g.to2*SW-2;
+      const gx1=SX+tOX(g.from)+2,gx2=SX+tOX(g.to2)+SW-2;
       s+=`<path d="M${gx1} ${y+h+4}v5H${gx2}v-5" fill="none" stroke="#fff" stroke-width="1.5"/>${txt((gx1+gx2)/2,y+h+21,g.name,g.tags.length<=2?8.5:10,'#fff',700)}`;});
+    {const bx=peX(),c=bx+SW/2,scr=cy=>`<circle cx="${c}" cy="${cy}" r="6.5" fill="#cfd4d8" stroke="#3a3f44" stroke-width="1.6"/><path d="M${c-3.5} ${cy}h7" stroke="#3a3f44" stroke-width="1.8"/>`;
+     s+=`<g pointer-events="none"><title>طرف الأرضي PE: يوصل جسم المحرك بالأرض للحماية</title><defs><pattern id="peStr" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4.5" height="9" fill="#1f9d48"/><rect x="4.5" width="4.5" height="9" fill="#f2d000"/></pattern></defs>
+      <rect x="${bx+1}" y="${y}" width="${SW-2}" height="${h}" rx="3" fill="url(#peStr)" stroke="#7d7d7d"/>${scr(y+14)}${scr(y+60)}
+      <rect x="${bx+3}" y="${y+28}" width="${SW-6}" height="14" rx="2" fill="#fff"/>${txt(c,y+39,'PE',8,'#111',700)}
+      <path d="M${c} ${y+44}v4M${c-6} ${y+48}h12M${c-4} ${y+51}h8M${c-2} ${y+54}h4" stroke="#111" stroke-width="1.6"/>
+      <path d="M${bx+3} ${y+h+4}v5H${bx+SW-3}v-5" fill="none" stroke="#fff" stroke-width="1.5"/>${txt(c,y+h+21,'PE',8,'#9dff9d',700)}</g>`;}
     return s;}
   }return'';}
 
@@ -1233,13 +1240,24 @@ const TRACK={x1:560,x2:840,y:1565};
 function carX(){return TRACK.x1+(TRACK.x2-TRACK.x1)*S.pos;}
 function drawField(){
   let s=`<rect x="0" y="1112" width="${W}" height="528" fill="#2a333c"/>`;
-  let bx1=1e9,bx2=0;GROUPS.forEach(g=>{if(['M','M2','N'].includes(g.to))return;for(let n=g.from;n<=g.to2;n++){const cx=SX+(n-1)*SW+SW/2;bx1=Math.min(bx1,cx);bx2=Math.max(bx2,cx);s+=`<line x1="${cx}" y1="1022" x2="${cx}" y2="1119" stroke="#111" stroke-width="2.5"/>`;}});
-  s+=`<path d="M${bx1} 1119H988V${S.fb.y+S.fb.h+14-DY}H${S.fb.x+6*S.fbp.sc}V${S.fb.y+S.fb.h-12*S.fbp.sc-DY}" fill="none" stroke="#111" stroke-width="7" stroke-linejoin="round"/>`;
+  let bx1=1e9,bx2=0,fw='';const fwire=(cx,core,edge)=>`<line x1="${cx}" y1="1020" x2="${cx}" y2="1119" stroke="${edge}" stroke-width="6.5" stroke-linecap="round"/><line x1="${cx}" y1="1020" x2="${cx}" y2="1119" stroke="${core}" stroke-width="4"/><line x1="${cx-.9}" y1="1021" x2="${cx-.9}" y2="1117" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>`;
+  GROUPS.forEach(g=>{if(['M','M2'].includes(g.to))return;for(let n=g.from;n<=g.to2;n++){const cx=SX+tOX(n)+SW/2;bx1=Math.min(bx1,cx);bx2=Math.max(bx2,cx);fw+=g.to==='N'?fwire(cx,'#4aa3df','#123a5a'):fwire(cx,'#e0342f','#4a0c09');}});
+  const cab=`M${bx1-4} 1119H988V${S.fb.y+S.fb.h+14-DY}H${S.fb.x+6*S.fbp.sc}V${S.fb.y+S.fb.h-12*S.fbp.sc-DY}`;
+  s+=`<path d="${cab}" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="round"/><path d="${cab}" fill="none" stroke="#23282d" stroke-width="8" stroke-linejoin="round"/>`+fw;
+  /* group names over the wires, so they stay readable */
+  GROUPS.forEach(g=>{const cx=SX+(g.x!=null?g.x+SW/2:(tOX(g.from)+tOX(g.to2)+SW)/2),w=Math.max(24,g.name.length*6.2+10);
+    s+=`<rect x="${cx-w/2}" y="${1033}" width="${w}" height="15" rx="4" fill="rgba(10,20,35,.9)"/>${txt(cx,1044,g.name,g.tags.length<=2?8.5:10,g.to==='N'?'#9fd4ff':g.to==='PE'?'#9dff9d':'#fff',700)}`;});
   s+=`<rect x="30" y="1152" width="450" height="478" rx="10" fill="#39434d" stroke="#111"/><rect x="520" y="1152" width="440" height="478" rx="10" fill="#39434d" stroke="#111"/>`;
   const m=S.motor,run=m.state==='run';
   s+=S.dahl?motorSVG('M1',MO1[0],MO1[1],1,[{x:86,y:16,l:'1U'},{x:142,y:16,l:'1V'},{x:198,y:16,l:'1W'},{x:86,y:62,l:'2W'},{x:142,y:62,l:'2U'},{x:198,y:62,l:'2V'}],m,['DAHLANDER  M1','1.1/1.5 kW  400V Δ/YY','2.6/3.0 A  1420/2860 rpm'])
     :motorSVG('M1',MO1[0],MO1[1],1,[{x:86,y:16,l:'U1'},{x:142,y:16,l:'V1'},{x:198,y:16,l:'W1'},{x:86,y:62,l:'W2'},{x:142,y:62,l:'U2'},{x:198,y:62,l:'V2'}],m,['3~ MOTOR  M1','4 kW  400V Δ / 690V Y','5.0 A  1450 rpm  50 Hz']);
   s+=motorSVG('M2',MO2[0],MO2[1],1,[{x:86,y:16,l:'U1'},{x:142,y:16,l:'V1'},{x:198,y:16,l:'W1'},{x:86,y:62,l:'W2'},{x:142,y:62,l:'U2'},{x:198,y:62,l:'V2'}],S.motor2,['3~ MOTOR  M2','1.5 kW  400V Y / 230V Δ','3.0 A  1400 rpm  50 Hz']);s+=xrMotor('M1',MO1[0],MO1[1],S.motor)+xrMotor('M2',MO2[0],MO2[1],S.motor2);
+  /* earth: PE terminal to both motor bodies, green-yellow */
+  {const c=peX()+SW/2,pw=(d,w)=>`<path d="${d}" fill="none" stroke="#0d3d1c" stroke-width="${w+2.5}" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#1f9d48" stroke-width="${w}" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#f2d000" stroke-width="${w}" stroke-dasharray="7 7" stroke-linejoin="round"/>`;
+   const ex=MO=>[MO[0]+238,MO[1]+39],e1=ex(MO1),e2=ex(MO2),yb=1166;
+   s+=pw(`M${c} 1020V${yb}H${e1[0]}V${e1[1]}M${c} ${yb}H${e2[0]}V${e2[1]}`,4);
+   s+=`<rect x="${c-12}" y="1033" width="24" height="15" rx="4" fill="rgba(10,20,35,.9)"/>${txt(c,1044,'PE',8.5,'#9dff9d',700)}`;
+   [e1,e2].forEach(([x,y])=>{s+=`<circle cx="${x}" cy="${y}" r="7" fill="#d2ad52" stroke="#6d5418"/><path d="M${x} ${y+9}v4M${x-6} ${y+13}h12M${x-4} ${y+16}h8M${x-2} ${y+19}h4" stroke="#9dff9d" stroke-width="1.6"/>`;});}
   const col=(st)=>st.state==='run'?'#7dff9e':st.state==='fault'?'#ff8a80':'#e8eef3';
   const stTxt=run?modeTxt(m)+' '+(m.dir==='cw'?'↻ للأمام':'↺ للخلف'):m.state==='fault'?'عطل':'متوقف';
   const m2=S.motor2,st2=m2.state==='run'?(m2.mode==='star'?'نجمة ':'دلتا ')+(m2.dir==='cw'?'↻':'↺'):m2.state==='fault'?'عطل':'متوقف';
