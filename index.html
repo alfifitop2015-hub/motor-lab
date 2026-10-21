@@ -3085,8 +3085,11 @@ const EXP={ex:''};
 function exPick(v,quiet){v=PNAME[v]?v:'';EXP.ex=v;$('exPick').value=v;$('exClip').hidden=!PRESETS[v];lsS('wsEx',v||null);
   if(!v)return;GV.ex=v;if(!quiet)exMotor(v);try{SD.ex=v;sdSave();if(SD.open)sdRender();}catch(_){}}
 $('exPick').insertAdjacentHTML('beforeend',Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${esc(PNAME[k])}</option>`).join(''));
-$('exPick').onchange=e=>{const prev=EXP.ex;exPick(e.target.value,true);if(EXP.ex){if(!wkOpen(EXP.ex,prev)){WK.fresh=prev&&S.wires.length?JSON.stringify(serial().w):null;
-      say('التمرين المختار: '+PNAME[EXP.ex]+'. شاهد ▶ مقطع التوصيل، وعند 🎯 التقييم يُقيَّم هذا التمرين مباشرة.'+(WK.fresh?' لوحتك الحالية من التمرين السابق، ونسخته محفوظة في 📂 تماريني.':''));}exMotor(EXP.ex);}renderTop();};
+/* picking another exercise opens its saved version, or a clean board: a board made for one exercise is never carried into another
+   (when the first exercise is picked, the board already on it stays, as it is being wired for that exercise) */
+$('exPick').onchange=e=>{const prev=EXP.ex;exPick(e.target.value,true);if(EXP.ex){if(!wkOpen(EXP.ex,prev)){const clean=prev&&prev!==EXP.ex&&(S.wires.length||S.devs.length)&&!document.body.classList.contains('trainer');
+      if(clean){snap();applyObj({v:6,fb:{...S.fbp},w:[],d:5});S.stu=null;S.sel=null;S.pending=null;S.selDev=null;update();}
+      say('التمرين المختار: '+PNAME[EXP.ex]+'.'+(clean?' بدأت لوحة جديدة لهذا التمرين، ولوحة التمرين السابق محفوظة في 📂 تماريني.':'')+' شاهد ▶ مقطع التوصيل، وعند 🎯 التقييم يُقيَّم هذا التمرين مباشرة.');}exMotor(EXP.ex);}renderTop();};
 /* open the saved version of an exercise (the current board stays one ↶ away) */
 function wkOpen(ex,prev){const A=wkAll(),W=A[ex];if(!W||document.body.classList.contains('trainer'))return false;
   if(JSON.stringify(serial().w)===JSON.stringify(W.o.w))return true;
