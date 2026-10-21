@@ -1334,54 +1334,72 @@ function hexPts(x,y,r){let p=[];for(let i=0;i<6;i++){const a=Math.PI/3*i;p.push(
 const RED_MOTION=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 function motorSVG(id,ox,oy,sc,studs,st,plate){
   const run=st.state==='run',flt=st.state==='fault',hum=flt&&st.hum;
-  // realistic TEFC induction motor (side view, shaft on the left): ribbed cast body, fan cowl, feet, terminal box on top
-  let fins='';for(let y=98;y<=204;y+=7.5){fins+=`<line x1="62" y1="${y.toFixed(1)}" x2="248" y2="${y.toFixed(1)}" stroke="rgba(40,46,52,.5)" stroke-width="2.4"/><line x1="62" y1="${(y-1.6).toFixed(1)}" x2="248" y2="${(y-1.6).toFixed(1)}" stroke="rgba(255,255,255,${(.75-(y-98)/200).toFixed(2)})" stroke-width="1.1"/>`;}
-  let grille='';for(let x=256;x<=282;x+=4.5)grille+=`<line x1="${x.toFixed(1)}" y1="112" x2="${x.toFixed(1)}" y2="190" stroke="#4a5158" stroke-width="1.6" stroke-linecap="round"/>`;
-  let rings='';[44,34,24,14].forEach(r=>{rings+=`<ellipse cx="290" cy="151" rx="${(r*.36).toFixed(1)}" ry="${r}" fill="none" stroke="#7d858c" stroke-width="1.6"/><ellipse cx="289" cy="${151-1.2}" rx="${(r*.36).toFixed(1)}" ry="${r}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".8"/>`;});
-  let bolts='';[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([i,j])=>{bolts+=`<polygon points="${hexPts(52+i*17,150+j*40,3.6)}" fill="#dfe3e6" stroke="#4a5158"/>`;});
-  const dur=st.mode==='star'?'0.7s':st.mode==='high'?'0.2s':'0.35s',anim=run&&!RED_MOTION?`<animateTransform attributeName="transform" type="rotate" from="${st.dir==='cw'?0:360}" to="${st.dir==='cw'?360:0}" dur="${dur}" repeatCount="indefinite"/>`:'';
+  /* a 3D TEFC aluminium motor in an oblique view (depth goes up and to the right): ribbed cylindrical body, fan cowl at the back (left),
+     end shield, shaft and belt pulley at the front (right), cast feet, and the terminal box on top with its open face toward the viewer.
+     A point at height y and depth z (z toward the viewer) on the cylinder is drawn at (x-KX*z, y+KY*z). */
+  const KX=.5,KY=.32,CY=140,R=62,P=(x,y,z)=>[(x-KX*z).toFixed(1),(y+KY*z).toFixed(1)];
+  const ring=(x,cy,r,n=48)=>{const o=[];for(let i=0;i<n;i++){const t=2*Math.PI*i/n;o.push([x-KX*r*Math.sin(t),cy-r*Math.cos(t)+KY*r*Math.sin(t)]);}return o;};
+  const hull=pts=>{pts=pts.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);const lo=[],up=[];
+    for(const p of pts){while(lo.length>1&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p);}
+    for(const p of pts.slice().reverse()){while(up.length>1&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p);}return lo.slice(0,-1).concat(up.slice(0,-1));};
+  const poly=pts=>pts.map(p=>(+p[0]).toFixed(1)+','+(+p[1]).toFixed(1)).join(' ');
+  const shade=(t,base)=>{const l=Math.max(0,.72*Math.cos(t)+.62*Math.sin(t)),v=Math.round(Math.min(250,base[0]+base[1]*l));return `rgb(${v},${v+3},${v+6})`;};
+  /* cylinder along x from x0 to x1: shaded bands over the visible side (ribbed: alternate bands are grooves) */
+  const cyl=(x0,x1,cy,r,{rib=0,base=[70,170],stroke='#3c434a'}={})=>{let s=`<polygon points="${poly(hull([...ring(x0,cy,r),...ring(x1,cy,r)]))}" fill="${shade(1.2,base)}" stroke="${stroke}" stroke-width="1.4"/>`;
+    const a0=-.31,a1=2.83,n=rib||14;for(let i=0;i<n;i++){const t0=a0+(a1-a0)*i/n,t1=a0+(a1-a0)*(i+1)/n,q=(x,t)=>[x-KX*r*Math.sin(t),cy-r*Math.cos(t)+KY*r*Math.sin(t)];
+      const g=rib&&i%2,b=g?[base[0]-28,base[1]-40]:base;s+=`<polygon points="${poly([q(x0,t0),q(x1,t0),q(x1,t1),q(x0,t1)])}" fill="${shade((t0+t1)/2,b)}"/>`;
+      if(rib&&!g)s+=`<line x1="${q(x0,t0)[0].toFixed(1)}" y1="${q(x0,t0)[1].toFixed(1)}" x2="${q(x1,t0)[0].toFixed(1)}" y2="${q(x1,t0)[1].toFixed(1)}" stroke="#fff" stroke-opacity=".55" stroke-width=".9"/>`;}
+    return s+`<polygon points="${poly(hull([...ring(x0,cy,r),...ring(x1,cy,r)]))}" fill="none" stroke="${stroke}" stroke-width="1.4"/>`;};
+  const face=(x,cy,r,fill,stroke='#4a5158',w=1.3)=>`<polygon points="${poly(ring(x,cy,r))}" fill="${fill}" stroke="${stroke}" stroke-width="${w}"/>`;
+  /* drawing in the plane of an end face: local (a,b) = (toward the viewer, down) */
+  const fm=(x,cy)=>`matrix(${-KX} ${KY} 0 1 ${x} ${cy})`;
+  const dur=st.mode==='star'?'0.7s':st.mode==='high'?'0.2s':'0.35s',anim=run&&!RED_MOTION?`<animateTransform attributeName="transform" type="rotate" from="${st.dir==='cw'?360:0}" to="${st.dir==='cw'?0:360}" dur="${dur}" repeatCount="indefinite"/>`:'';
   let nuts='';
   studs.forEach(t=>{const pc={U:'#7a4a22',V:'#1b1b1b',W:'#9aa0a6'}[t.l.replace(/\d/g,'')[0]];
     nuts+=`<polygon points="${hexPts(t.x,t.y,10)}" fill="#d2ad52" stroke="#6d5418"/>
       <rect x="${t.x-46}" y="${t.y-10}" width="32" height="20" rx="4" fill="#fff" stroke="#111"/><rect x="${t.x-46}" y="${t.y-10}" width="4" height="20" rx="1" fill="${pc}"/>
       <text x="${t.x-29}" y="${t.y+5}" class="dl" style="font-size:13px;fill:#111">${t.l}</text>`;});
-  const bh=studs.length>3?96:80;
-  return `<g transform="translate(${ox} ${oy}) scale(${sc})"><g class="${hum?'jit':''}">
-  <ellipse cx="160" cy="242" rx="155" ry="9" fill="#000" opacity=".4"/>
-  <path d="M42 196H114L120 230H36Z" fill="url(#mbody)" stroke="#3c434a"/><path d="M26 230H128V240H26Z" fill="#b9bfc5" stroke="#3c434a"/><ellipse cx="40" cy="235" rx="5" ry="2.4" fill="#2a2f34"/><ellipse cx="114" cy="235" rx="5" ry="2.4" fill="#2a2f34"/>
-  <path d="M182 196H248L254 230H176Z" fill="url(#mbody)" stroke="#3c434a"/><path d="M168 230H262V240H168Z" fill="#b9bfc5" stroke="#3c434a"/><ellipse cx="182" cy="235" rx="5" ry="2.4" fill="#2a2f34"/><ellipse cx="248" cy="235" rx="5" ry="2.4" fill="#2a2f34"/>
-  <path d="M246 100H292A18 51 0 0 1 292 202H246Z" fill="url(#mcowl)" stroke="#4a5158" stroke-width="1.5"/>${grille}
-  <path d="M246 100H292" stroke="#fff" stroke-opacity=".7" stroke-width="1.2"/>
-  <ellipse cx="292" cy="151" rx="18" ry="51" fill="#c3c9ce" stroke="#4a5158" stroke-width="1.5"/>${rings}<ellipse cx="292" cy="151" rx="3" ry="7" fill="#5c646b"/>
-  <path d="M52 90H250V212H52Z" fill="url(#mbody)" stroke="${flt?'#ff3b30':'#3c434a'}" stroke-width="${flt?4:1.5}"/>
-  ${fins}
-  <rect x="62" y="90" width="186" height="7" fill="rgba(255,255,255,.45)"/>
-  <path d="M244 96V206" stroke="#7a828a" stroke-width="2"/><path d="M58 96V206" stroke="#7a828a" stroke-width="2"/>
-  <rect x="110" y="148" width="96" height="44" rx="3" fill="#1e2327" stroke="#0e1114"/><rect x="113" y="151" width="90" height="38" rx="2" fill="none" stroke="#9aa1a8" stroke-width=".7"/>
-  ${plate.map((l,i)=>`<text x="158" y="${163+i*10}" class="dl" style="font-size:${i?6.3:7.8}px;fill:${i?'#d9dde1':'#fff'}">${l}</text>`).join('')}
-  <circle cx="117" cy="155" r="1.6" fill="#c9ced3"/><circle cx="199" cy="155" r="1.6" fill="#c9ced3"/><circle cx="117" cy="185" r="1.6" fill="#c9ced3"/><circle cx="199" cy="185" r="1.6" fill="#c9ced3"/>
-  <path d="M234 90V80A10 10 0 0 1 254 80V90" fill="none" stroke="#a9b0b6" stroke-width="5"/><path d="M234 90V80A10 10 0 0 1 254 80V90" fill="none" stroke="#4a5158" stroke-width="1" stroke-opacity=".6"/>
-  <ellipse cx="52" cy="151" rx="32" ry="64" fill="url(#mbody)" stroke="#3c434a" stroke-width="1.5"/>
-  <ellipse cx="50" cy="151" rx="25" ry="52" fill="#cfd4d8" stroke="#6b737a" stroke-width="1.2"/>
-  <ellipse cx="48" cy="151" rx="13" ry="24" fill="#b3bac0" stroke="#5c646b" stroke-width="1.2"/><ellipse cx="47" cy="151" rx="8" ry="14" fill="#8f979e"/>${bolts}
-  <path d="M48 144L22 146V156L48 158Z" fill="url(#mshaft)" stroke="#555"/>
-  <g transform="translate(14 151) scale(0.5 1)">
-    <circle r="29" fill="#9aa1a8" stroke="#3a4148" stroke-width="2"/><circle r="26" fill="#e1e5e8"/><circle r="22" fill="none" stroke="#8a9299" stroke-width="3"/><circle r="17" fill="#d2d7db" stroke="#9aa1a8" stroke-width="1.5"/>
-    <g>${anim}
-      ${[45,135,225,315].map(a=>`<circle cx="${(11*Math.cos(a*Math.PI/180)).toFixed(1)}" cy="${(11*Math.sin(a*Math.PI/180)).toFixed(1)}" r="3.6" fill="#7d858c" stroke="#4a5158"/>`).join('')}
-      <rect x="-2" y="-16.5" width="4" height="6" rx="1" fill="#e0342f"/>
-    </g>
-    <circle r="7" fill="#aab1b7" stroke="#4a5158"/><circle r="3.2" fill="#2a3036"/><rect x="-1.2" y="-4.6" width="2.4" height="2" fill="#2a3036"/>
-    <circle r="29" fill="url(#gDome)" opacity=".3" pointer-events="none"/></g>
-  ${run?`<g opacity=".75"><path d="M-10 118a28 36 0 0 ${st.dir==='cw'?1:0} 0 78" fill="none" stroke="#7dff9e" stroke-width="2.5" stroke-dasharray="6 6">${RED_MOTION?'':`<animate attributeName="stroke-dashoffset" from="0" to="${st.dir==='cw'?-24:24}" dur="${dur}" repeatCount="indefinite"/>`}</path></g>`:''}
-  ${run?`<text x="-6" y="130" class="dl" style="font-size:16px;fill:#7dff9e">${st.dir==='cw'?'↻':'↺'}</text>`:''}
-  <path d="M40 ${bh-10}H216V92H40Z" fill="#9ca3aa" stroke="#3c434a"/>
-  <path d="M30 -10L42 -20H238L226 -10Z" fill="#eef1f3" stroke="#4a5158"/><path d="M226 -10L238 -20V${bh-20}L226 ${bh-10}Z" fill="#9aa1a8" stroke="#4a5158"/>
-  <rect x="30" y="-10" width="196" height="${bh}" rx="6" fill="url(#mbox)" stroke="#4a5158"/>
+  const bh=studs.length>3?96:80,XB=58,XF=246;
+  /* cast feet: a block under the body on each side, with a base plate */
+  const foot=(xa,xb)=>{const zf=30,zb=-30,yt=CY+40,yb=CY+70,pl=CY+76;
+    return `<polygon points="${poly([P(xa,yt,zb),P(xb,yt,zb),P(xb,yb,zb),P(xb,yb,zf),P(xa,yb,zf),P(xa,yt,zf)])}" fill="#8f979e" stroke="#3c434a"/>
+    <polygon points="${poly([P(xa,yt,zf),P(xb,yt,zf),P(xb,yb,zf),P(xa,yb,zf)])}" fill="#b4bbc1" stroke="#3c434a"/>
+    <polygon points="${poly([P(xb,yt,zf),P(xb,yt,zb),P(xb,yb,zb),P(xb,yb,zf)])}" fill="#9aa1a8" stroke="#3c434a"/>
+    <polygon points="${poly([P(xa-10,yb,zb-4),P(xb+10,yb,zb-4),P(xb+10,yb,zf+6),P(xa-10,yb,zf+6)])}" fill="#d3d8dc" stroke="#3c434a"/>
+    <polygon points="${poly([P(xa-10,yb,zf+6),P(xb+10,yb,zf+6),P(xb+10,pl,zf+6),P(xa-10,pl,zf+6)])}" fill="#a3aab0" stroke="#3c434a"/>
+    <polygon points="${poly([P(xb+10,yb,zf+6),P(xb+10,yb,zb-4),P(xb+10,pl,zb-4),P(xb+10,pl,zf+6)])}" fill="#7d858c" stroke="#3c434a"/>
+    ${[[xa-4,zf],[xb+4,zf],[xa-4,zb+2],[xb+4,zb+2]].map(([x,z])=>{const [px,py]=P(x,yb,z);return `<ellipse cx="${px}" cy="${py}" rx="4.5" ry="2.2" fill="#2a2f34"/>`;}).join('')}`;};
+  /* front end: end shield, shaft and the turning pulley */
+  const pul=`<g transform="${fm(XF+44,CY)}"><circle r="30" fill="#c9ced3" stroke="#3a4148" stroke-width="1.6"/><circle r="26" fill="#eef1f3"/><circle r="21" fill="none" stroke="#7d858c" stroke-width="3.4"/><circle r="15" fill="#d6dbdf" stroke="#9aa1a8" stroke-width="1.4"/>
+    <g>${anim}${[45,135,225,315].map(a=>`<circle cx="${(10*Math.cos(a*Math.PI/180)).toFixed(1)}" cy="${(10*Math.sin(a*Math.PI/180)).toFixed(1)}" r="3.2" fill="#7d858c" stroke="#4a5158"/>`).join('')}<rect x="-2" y="-14.5" width="4" height="5.5" rx="1" fill="#e0342f"/></g>
+    <circle r="6" fill="#aab1b7" stroke="#4a5158"/><circle r="2.8" fill="#2a3036"/><rect x="-1.1" y="-4.4" width="2.2" height="2" fill="#2a3036"/></g>`;
+  const shield=`${cyl(XF,XF+12,CY,R-2,{base:[95,150]})}${face(XF+12,CY,R-2,'#d4d9dd')}
+    <g transform="${fm(XF+12,CY)}"><circle r="46" fill="none" stroke="#a9b0b6" stroke-width="2"/><circle r="22" fill="#c3c9ce" stroke="#6b737a" stroke-width="1.4"/>
+    ${[[-1,-1],[1,-1],[-1,1],[1,1]].map(([i,j])=>`<polygon points="${hexPts(i*38,j*38,4.2)}" fill="#e6e9ec" stroke="#4a5158"/>`).join('')}</g>
+    ${cyl(XF+12,XF+30,CY,7,{base:[110,140]})}${face(XF+30,CY,7,'#dfe3e6')}${cyl(XF+30,XF+44,CY,30,{base:[110,140]})}${pul}`;
+  /* fan cowl at the back: pressed steel with cooling slots */
+  let cowl=cyl(XB-46,XB,CY,R-4,{base:[88,130]});
+  /* pressed rings around the cowl, on its visible side */
+  const arc=(x,r)=>{const o=[];for(let i=0;i<=24;i++){const t=-.31+3.14*i/24;o.push([x-KX*r*Math.sin(t),CY-r*Math.cos(t)+KY*r*Math.sin(t)]);}return o.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('');};
+  [XB-40,XB-30,XB-20,XB-10].forEach(x=>{cowl+=`<path d="${arc(x,R-4)}" fill="none" stroke="#4a5158" stroke-width="1.4"/><path d="${arc(x+1.6,R-4)}" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".8"/>`;});
+  cowl+=`<path d="${arc(XB,R)}" fill="none" stroke="#2a2f34" stroke-width="2.5" stroke-opacity=".5"/>`;
+  const body=cyl(XB,XF,CY,R,{rib:22,base:[78,172],stroke:flt?'#ff3b30':'#3c434a'});
+  /* name plate on the body's front, slightly following the curve */
+  const plt=`<g transform="matrix(1 0 ${-KX*.25} 1 ${-6} 6)"><rect x="112" y="150" width="96" height="44" rx="3" fill="#1e2327" stroke="#0e1114"/><rect x="115" y="153" width="90" height="38" rx="2" fill="none" stroke="#9aa1a8" stroke-width=".7"/>
+    ${plate.map((l,i)=>`<text x="160" y="${165+i*10}" class="dl" style="font-size:${i?6.3:7.8}px;fill:${i?'#d9dde1':'#fff'}">${l}</text>`).join('')}</g>`;
+  const eye=`<path d="M${P(236,CY-R-6,-4).join(' ')}V${(+P(236,CY-R-16,-4)[1]).toFixed(1)}A10 10 0 0 1 ${(+P(256,0,-4)[0]).toFixed(1)} ${(+P(236,CY-R-16,-4)[1]).toFixed(1)}V${P(256,CY-R+2,-4)[1]}" fill="none" stroke="#b9bfc5" stroke-width="5"/>`;
+  /* terminal box: open front face (the terminals), top and right side going back */
+  const D=[24,-15],box=`<path d="M40 ${bh-10}L${40+D[0]} ${bh-10+D[1]}H${216+D[0]}V${CY-R+8}H40Z" fill="#9ca3aa" stroke="#3c434a"/>
+  <path d="M30 -10L${30+D[0]} ${-10+D[1]}H${226+D[0]}L226 -10Z" fill="#eef1f3" stroke="#4a5158"/><path d="M226 -10L${226+D[0]} ${-10+D[1]}V${bh-10+D[1]}L226 ${bh-10}Z" fill="#a3aab0" stroke="#4a5158"/>
+  <rect x="30" y="-10" width="196" height="${bh}" rx="5" fill="url(#mbox)" stroke="#4a5158"/>
   <rect x="36" y="-4" width="184" height="${bh-12}" rx="4" fill="#1b232a"/>
-  <rect x="12" y="22" width="18" height="18" rx="2" fill="#c3c9ce" stroke="#4a5158"/><rect x="4" y="25" width="10" height="12" rx="2" fill="#2b2f33" stroke="#111"/><path d="M14 26V36M20 24V38" stroke="#5c646b" stroke-width="1.2"/>
-  ${nuts}
-  <rect data-act="app:${id}" x="-70" y="92" width="390" height="150" fill="transparent" style="cursor:pointer"><title>اضغط لعرض تطبيقات المحرك ${id} العملية</title></rect>
+  <rect x="12" y="22" width="18" height="18" rx="2" fill="#c3c9ce" stroke="#4a5158"/><rect x="4" y="25" width="10" height="12" rx="2" fill="#2b2f33" stroke="#111"/><path d="M14 26V36M20 24V38" stroke="#5c646b" stroke-width="1.2"/>`;
+  const ax=XF+44-KX*0,arr=run?`<g opacity=".8"><path d="M${ax+30} 104a30 40 0 0 ${st.dir==='cw'?1:0} 0 80" fill="none" stroke="#7dff9e" stroke-width="2.5" stroke-dasharray="6 6">${RED_MOTION?'':`<animate attributeName="stroke-dashoffset" from="0" to="${st.dir==='cw'?-24:24}" dur="${dur}" repeatCount="indefinite"/>`}</path>
+    <text x="${ax+34}" y="100" class="dl" style="font-size:16px;fill:#7dff9e">${st.dir==='cw'?'↻':'↺'}</text></g>`:'';
+  return `<g transform="translate(${ox} ${oy}) scale(${sc})"><g class="${hum?'jit':''}">
+  <ellipse cx="150" cy="${CY+86}" rx="150" ry="9" fill="#000" opacity=".35"/>
+  ${foot(84,128)}${foot(178,222)}${cowl}${body}${eye}${plt}${shield}${box}${nuts}${arr}
+  <rect data-act="app:${id}" x="-20" y="${CY-50}" width="340" height="150" fill="transparent" style="cursor:pointer"><title>اضغط لعرض تطبيقات المحرك ${id} العملية</title></rect>
   </g></g>`;}
 
 function buildRouting(){
