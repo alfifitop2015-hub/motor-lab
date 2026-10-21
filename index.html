@@ -1241,7 +1241,7 @@ function carX(){return TRACK.x1+(TRACK.x2-TRACK.x1)*S.pos;}
 function drawField(){
   let s=`<rect x="0" y="1112" width="${W}" height="528" fill="#2a333c"/>`;
   let bx1=1e9,bx2=0,fw='';const fwire=(cx,core,edge)=>`<line x1="${cx}" y1="1020" x2="${cx}" y2="1119" stroke="${edge}" stroke-width="6.5" stroke-linecap="round"/><line x1="${cx}" y1="1020" x2="${cx}" y2="1119" stroke="${core}" stroke-width="4"/><line x1="${cx-.9}" y1="1021" x2="${cx-.9}" y2="1117" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>`;
-  GROUPS.forEach(g=>{if(['M','M2'].includes(g.to))return;for(let n=g.from;n<=g.to2;n++){const cx=SX+tOX(n)+SW/2;bx1=Math.min(bx1,cx);bx2=Math.max(bx2,cx);fw+=g.to==='N'?fwire(cx,'#4aa3df','#123a5a'):fwire(cx,'#e0342f','#4a0c09');}});
+  GROUPS.forEach(g=>{if(['M','M2'].includes(g.to))return;for(let n=g.from;n<=g.to2;n++){const cx=SX+tOX(n)+SW/2;bx1=Math.min(bx1,cx);bx2=Math.max(bx2,cx);fw+=g.to==='N'?fwire(cx,'#4aa3df','#123a5a'):g.to==='H'?fwire(cx,'#8a5426','#2e1808'):fwire(cx,'#e0342f','#4a0c09');}});
   const cab=`M${bx1-4} 1119H988V${S.fb.y+S.fb.h+14-DY}H${S.fb.x+6*S.fbp.sc}V${S.fb.y+S.fb.h-12*S.fbp.sc-DY}`;
   s+=`<path d="${cab}" fill="none" stroke="#000" stroke-width="11" stroke-linejoin="round"/><path d="${cab}" fill="none" stroke="#23282d" stroke-width="8" stroke-linejoin="round"/>`+fw;
   /* group names over the wires, so they stay readable */
