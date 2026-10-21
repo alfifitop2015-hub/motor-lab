@@ -213,7 +213,11 @@ body.cloud #sWa{background:var(--panel)}
 .clpg{height:4px;background:var(--chip);border-radius:2px;margin:6px 0}.clpg i{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .3s}
 #clTx{margin:0 0 8px;font-size:.92rem;line-height:1.65;min-height:3.3em}.clk{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;padding:0 7px;font-size:.78rem;margin-inline-end:4px}
 .clc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.clc button:disabled{opacity:.4}.clc #clGo{margin-inline-start:auto;background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
-body.clip .dock,body.clip .clbtn,body.clip .stu{display:none}body.clip .kit{pointer-events:none}
+body.clip .dock,body.clip .clbtn,body.clip .clb,body.clip .stu{display:none}
+@media (max-width:420px){.ib.clb .t2{display:none}}
+.ib.clb{background:#3d6fae;border-color:#3d6fae;color:#fff;font-weight:700;font-size:.86rem;white-space:nowrap;padding:0 10px}
+.fswact{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px;font-size:.84rem}.fswact .on{flex:1 1 100%;color:#1b2530}.fswact .on b{color:#c2410c}
+.fswact button{height:38px;border:0;border-radius:9px;background:var(--ok);color:#fff;font-weight:700;padding:0 12px;cursor:pointer}.fswact label{display:flex;gap:5px;align-items:center;cursor:pointer}body.clip .kit{pointer-events:none}
 .clfoc:not(g){outline:4px solid #ffb300;outline-offset:3px;border-radius:10px;animation:clp .9s ease-in-out infinite alternate}
 g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 @keyframes clp{from{outline-color:rgba(255,179,0,.35)}to{outline-color:#ffb300}}
@@ -230,6 +234,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
     <h1>محاكي شنطة اكتشاف الأعطال (ELWE)<span class="credit">فكرة وتنفيذ م. جابر الفيفي بواسطة Claude · © جميع الحقوق محفوظة</span></h1>
     <span class="tbadge trainer-only">مدرب</span>
     <a class="ib" id="bElec" title="رجوع إلى ورشة التحكم الكهربائي" aria-label="رجوع إلى ورشة التحكم الكهربائي" style="font-weight:700;font-size:.9rem;gap:4px;white-space:nowrap;padding:0 10px"><span>رجوع</span><span aria-hidden="true">↩</span></a>
+    <button class="ib clb" id="exClip" title="مقطع يشرح الدائرة وطريقة البحث عن العطل، ثم تنفذ بنفسك">🎬 مقطع<span class="t2">&nbsp;الشرح</span></button>
     <button class="ib" id="bHelp" title="الشرح وطريقة البحث عن العطل" aria-label="الشرح">📖</button>
     <details class="more"><summary class="ib" title="المزيد" aria-label="المزيد">⋯</summary>
       <div class="menu">
@@ -254,8 +259,9 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
   <div class="clc"><button id="clPrev" title="الخطوة السابقة">السابق</button><button id="clPlay" title="إيقاف مؤقت">⏸</button><button id="clNext" title="الخطوة التالية">التالي</button><button id="clSpd" title="سرعة الشرح">×1</button><button id="clSnd" title="الشرح الصوتي">🔊</button><button id="clGo" title="إنهاء الشرح والبدء بالتنفيذ">✋ نفّذ الآن</button></div>
 </div>
 <section class="kit" aria-label="لوحة تشغيل الشنطة">
-  <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span><button class="clbtn" id="exClip" title="مقطع يشرح الدائرة وطريقة البحث عن العطل، ثم تنفذ بنفسك">🎬 مقطع الشرح</button></div></div>
-  <div class="fsw trainer-only" id="fswBox"><div class="fswh"><b>🧰 مفاتيح الأعطال</b><span class="de">Programmierung</span><span class="kl" id="fswInfo"></span></div><div class="fswg" id="fswg"></div></div>
+  <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span></div></div>
+  <div class="fsw trainer-only" id="fswBox"><div class="fswh"><b>🧰 مفاتيح الأعطال</b><span class="de">Programmierung</span><span class="kl" id="fswInfo"></span></div><div class="fswg" id="fswg"></div>
+    <div class="fswact"><span class="on" id="fswOn"></span><button id="fswShare" title="رابط أو كود يفتح الدائرة عند المتدربين بهذه الأعطال مخفية، فيبحثون عنها ويرسلون النتيجة">📤 إرسال التمرين للمتدربين</button><label><input type="checkbox" id="fswShow"> إظهار الأعطال على المخطط</label></div></div>
   <div class="board"><div class="hint" id="hint"></div>
   <div class="wrap" id="wrap"><svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg></div></div>
   <div class="kctl" id="kctl" aria-label="لوحة الضواغط والمفاتيح">
@@ -343,7 +349,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 <div class="modal" id="codeModal" role="dialog" aria-modal="true" aria-labelledby="cT"><div class="box">
   <h2 id="cT" style="margin:0 0 8px;font-size:1.05rem">التمرين بالكود</h2>
   <div id="cOutW"><p style="margin:0 0 6px;font-size:.9rem;color:var(--muted)">أرسل هذا الرابط أو الكود للمتدربين. يفتح عندهم الدائرة بالأعطال مخفية:</p><textarea id="codeOut" readonly></textarea>
-  <div style="margin:8px 0 14px"><button class="btn" id="bCopy">نسخ</button> <span id="copied" style="color:var(--ok);font-size:.88rem"></span></div></div>
+  <div style="margin:8px 0 14px"><button class="btn" id="bCopy">نسخ</button> <button class="btn" id="bShareC">📤 مشاركة</button> <span id="copied" style="color:var(--ok);font-size:.88rem"></span></div></div>
   <p style="margin:0 0 6px;font-size:.9rem;color:var(--muted)">الصق كود تمرين أو رسالة نتيجة متدرب:</p><textarea id="codeIn"></textarea>
   <div style="display:flex;justify-content:space-between;margin-top:8px"><button class="btn" id="bLoad">فتح</button><button class="btn" id="bCClose">إغلاق</button></div>
   <p id="loadErr" style="color:var(--warn);font-size:.88rem;margin:6px 0 0"></p></div></div>
@@ -1043,7 +1049,8 @@ const fM=$('fModal');
 function openFaults(){if(S.zero){say('المقبض على 0: لا توجد دائرة ولا أعطال. أدر المقبض لاختيار رقم الدائرة.','wn');return;}renderFaults();fM.classList.add('open');}
 $('dFaults').onclick=openFaults;$('bFaults2').onclick=()=>{document.querySelector('.more').open=false;openFaults();};$('fClose').onclick=()=>fM.classList.remove('open');
 let fswKey='',fswSel=-1;
-function renderFsw(){$('fswBox').style.display=S.zero?'none':'';if(!isTr()||S.zero){fswKey='';return;}const c=C(),L=commonFaults(c),key=S.cid+'|'+[...S.F].join(',')+'|'+fswSel;if(key===fswKey)return;fswKey=key;
+function renderFsw(){$('fswBox').style.display=S.zero?'none':'';if(!isTr()||S.zero){fswKey='';return;}
+  {const L=[...S.F].map(id=>{const e=byId(id);return e?fDesc(e):id;});$('fswOn').innerHTML=L.length?`الأعطال المفعّلة الآن (${L.length}): <b>${L.map(esc).join(' · ')}</b>`:'لا يوجد عطل مفعّل: ارفع مفتاحًا أعلاه، أو «📍 وضع عطل» ثم المس السلك أو العنصر.';$('fswShow').checked=S.show;}const c=C(),L=commonFaults(c),key=S.cid+'|'+[...S.F].join(',')+'|'+fswSel;if(key===fswKey)return;fswKey=key;
   $('fswInfo').textContent=`الدائرة ${S.cid}: ${L.length} أعطال شائعة · اضغط المفتاح لعرض تفاصيله`;
   $('fswg').innerHTML=L.map((x,i)=>`<button class="tg${S.F.has(x.id)?' on':''}${i===fswSel?' sel':''}" data-cf="${i}" aria-pressed="${S.F.has(x.id)}" title="${esc(fDesc(byId(x.id)))}"><span>${i+8}</span><span class="lv"></span></button>`).join('');}
 function showSw(i){const x=commonFaults(C())[i];if(!x)return;const e=byId(x.id),on=S.F.has(x.id);fswSel=i;renderFsw();
@@ -1064,7 +1071,11 @@ $('tgrid').addEventListener('click',e=>{const b=e.target.closest('[data-sw]');if
 $('fRand').onclick=()=>{S.F=new Set([randFault()]);trainerFaultsChanged();};
 $('fNone').onclick=()=>{S.F.clear();trainerFaultsChanged();};
 $('oShow').onchange=e=>{S.show=e.target.checked;drawDyn();save();};
+$('fswShow').onchange=e=>{S.show=e.target.checked;$('oShow').checked=S.show;drawDyn();save();};
+$('fswShare').onclick=()=>$('fCode').click();
 $('oView').onchange=e=>{S.allowView=e.target.checked;if(S.ex)S.ex.vw=S.allowView;save();};
+$('bShareC').onclick=async()=>{const t='تمرين شنطة الأعطال: افتح الرابط، ابحث عن العطل بالقياس، ثم اضغط 🎯 تقييم وإرسال.\n'+$('codeOut').value;
+  try{if(navigator.share){await navigator.share({text:t});return;}}catch(e){if(e&&e.name==='AbortError')return;}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');};
 $('fCode').onclick=async()=>{if(!S.F.size){alert('ضع عطلًا واحدًا على الأقل أولًا.');return;}
   const code=await encodeCode({app:'ft',v:1,c:S.cid,f:[...S.F],vw:S.allowView});
   const link=isHosted()&&code.startsWith('Z1')?FT_URL()+'#t='+code.slice(2):'';
