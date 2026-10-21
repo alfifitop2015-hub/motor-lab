@@ -125,7 +125,11 @@ body.trainer .student-only{display:none!important}
 body.trainer .exb{border-bottom:1px solid rgba(255,255,255,.18)}
 .exb select{flex:1;min-width:0;width:0;height:38px;border:1px solid #8fb0e0;border-radius:9px;background:#fff;color:#15202b;padding:0 8px;font-size:.92rem}
 .exb select:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
-.wcb{background:#1f6fe5}
+.wcb{background:#1f6fe5}.wkb{background:#2b5c9e;min-width:42px;padding:0 10px}
+.wkrow{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--line)}
+.wkrow b{font-size:.95rem}.wkrow .wkm{font-size:.8rem;color:var(--muted)}.wkrow .wka{grid-column:1/3;display:flex;gap:6px;flex-wrap:wrap}
+.wkrow .wka button{height:34px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.85rem}
+.wkrow .wka button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.wkrow.cur{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:8px}
 .wcbar{position:fixed;z-index:46;left:8px;top:8px;width:min(360px,calc(100vw - 16px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35);padding:4px 8px 6px;direction:rtl}
 .wcbar[hidden]{display:none}
 .wch{display:flex;align-items:center;gap:6px;cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}.wch b{flex:1;font-size:.82rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wcgrip{flex:none;color:var(--muted);display:flex}
@@ -553,6 +557,7 @@ body.fs{padding-bottom:0}
     <div class="exb" aria-label="اختيار التمرين">
     <select id="exPick" aria-label="التمرين المطلوب تنفيذه" title="اختر التمرين: يظهر مقطع توصيله، ويُختار تلقائيًا عند التقييم"><option value="">📘 اختر التمرين…</option></select>
     <button class="sendb wcb" id="exClip" hidden title="مشاهدة توصيل هذا التمرين سلكًا سلكًا">▶ مقطع التوصيل</button>
+    <button class="sendb wkb student-only" id="bWork" title="تماريني المحفوظة: آخر نسخة من كل تمرين وصّلته، افتحها وعدّل عليها متى شئت" aria-label="تماريني المحفوظة">📂</button>
     </div>
     <div class="stu student-only" aria-label="بيانات المتدرب">
     <input class="sn student-only" id="stName" placeholder="اسم المتدرب" autocomplete="name" aria-label="اسم المتدرب">
@@ -607,6 +612,14 @@ body.fs{padding-bottom:0}
     <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rSave" hidden disabled title="يكتب الدرجات المحسوبة بالقواعد الحالية في عمود الدرجة في جدول Google">💾 حفظ الدرجات الجديدة في الجدول</button><button id="rBestAll" class="danger" disabled title="يحذف المحاولات الأقل لكل متدرب في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى للجميع</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
+  </div>
+</div>
+<div class="modal" id="wkModal" role="dialog" aria-modal="true" aria-labelledby="wkT">
+  <div class="box appbox" style="max-width:560px">
+    <div class="ah"><h2 id="wkT">📂 تماريني المحفوظة</h2><button class="btn" id="wkClose">إغلاق</button></div>
+    <p style="margin:0 0 6px;color:var(--muted);font-size:.86rem">تُحفظ آخر نسخة من كل تمرين وصّلته تلقائيًا على هذا الجهاز. افتح أي تمرين لتكمله أو تعدّل عليه، وعند اختيار تمرين من القائمة أعلى اللوحة تُفتح نسخته المحفوظة.</p>
+    <p id="wkMsg" class="astat" aria-live="polite"></p>
+    <div id="wkList"></div>
   </div>
 </div>
 <div class="modal" id="shrModal" role="dialog" aria-modal="true" aria-labelledby="shrT">
@@ -2643,7 +2656,15 @@ document.getElementById('bCopy').onclick=async()=>{const ta=document.getElementB
 document.getElementById('bLoad').onclick=async()=>{const raw=document.getElementById('codeIn').value;
   try{const o=await decodeCode(raw);snap();applyObj(o);S.stu=o.st||null;stuCheck();S.sel=null;S.pending=null;say(o.st?'فُتحت تجربة المتدرب '+o.st.n:'حُمّلت توصيلات من كود مشاركة');modal.classList.remove('open');update();}
   catch(_){document.getElementById('loadErr').textContent='الكود غير صالح. الصق رسالة المتدرب كاملة أو الكود فقط.';}};
-function save(){if(S.clip&&!S.clip.mini)return;try{localStorage.setItem('panelSim.v4',JSON.stringify(serial()));}catch(_){}}
+function save(){if(S.clip&&!S.clip.mini)return;try{const o=serial();localStorage.setItem('panelSim.v4',JSON.stringify(o));wkSave(o);}catch(_){}}
+/* the trainee's exercises: the latest version of the board of every exercise they wired, kept on this device
+   (not while a trainee's work is opened, in trainer mode, or for an empty board) */
+const WKK='wsWork',WK={fresh:null};
+function wkAll(){try{return JSON.parse(localStorage.getItem(WKK)||'{}')||{};}catch(_){return{};}}
+function wkSave(o){const ex=typeof EXP!=='undefined'&&EXP.ex;if(!ex||S.stu||document.body.classList.contains('trainer')||!o.w.length)return;
+  const w=JSON.stringify(o.w);if(WK.fresh!=null){if(w===WK.fresh)return;WK.fresh=null;}
+  const A=wkAll(),cur=A[ex];if(cur&&JSON.stringify(cur.o.w)===w&&JSON.stringify(cur.o.plc||null)===JSON.stringify(o.plc||null))return;
+  A[ex]={o,t:Date.now()};try{localStorage.setItem(WKK,JSON.stringify(A));}catch(_){}}
 try{const o=JSON.parse(localStorage.getItem('panelSim.v4')||'null');if(o)applyObj(o);}catch(_){}
 
 /* ---------- trainee submit & trainer mode ---------- */
@@ -3064,7 +3085,24 @@ const EXP={ex:''};
 function exPick(v,quiet){v=PNAME[v]?v:'';EXP.ex=v;$('exPick').value=v;$('exClip').hidden=!PRESETS[v];lsS('wsEx',v||null);
   if(!v)return;GV.ex=v;if(!quiet)exMotor(v);try{SD.ex=v;sdSave();if(SD.open)sdRender();}catch(_){}}
 $('exPick').insertAdjacentHTML('beforeend',Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${esc(PNAME[k])}</option>`).join(''));
-$('exPick').onchange=e=>{exPick(e.target.value,true);if(EXP.ex){say('التمرين المختار: '+PNAME[EXP.ex]+'. شاهد ▶ مقطع التوصيل، وعند 🎯 التقييم يُقيَّم هذا التمرين مباشرة.');exMotor(EXP.ex);}renderTop();};
+$('exPick').onchange=e=>{const prev=EXP.ex;exPick(e.target.value,true);if(EXP.ex){if(!wkOpen(EXP.ex,prev)){WK.fresh=prev&&S.wires.length?JSON.stringify(serial().w):null;
+      say('التمرين المختار: '+PNAME[EXP.ex]+'. شاهد ▶ مقطع التوصيل، وعند 🎯 التقييم يُقيَّم هذا التمرين مباشرة.'+(WK.fresh?' لوحتك الحالية من التمرين السابق، ونسخته محفوظة في 📂 تماريني.':''));}exMotor(EXP.ex);}renderTop();};
+/* open the saved version of an exercise (the current board stays one ↶ away) */
+function wkOpen(ex,prev){const A=wkAll(),W=A[ex];if(!W||document.body.classList.contains('trainer'))return false;
+  if(JSON.stringify(serial().w)===JSON.stringify(W.o.w))return true;
+  snap();try{applyObj(W.o);}catch(_){return false;}S.stu=null;S.sel=null;S.pending=null;WK.fresh=null;
+  say('فُتحت نسختك المحفوظة من التمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]+' (آخر تعديل '+fmtT(W.t)+'). عدّل عليها وتُحفظ تلقائيًا'+(prev&&prev!==ex?'، ونسخة التمرين السابق محفوظة كما هي':'')+'.');update();return true;}
+const wkM=$('wkModal');
+function wkRender(){const A=wkAll(),G=gAll(),ks=Object.keys(PNAME).filter(k=>A[k]);
+  $('wkList').innerHTML=ks.length?ks.map(k=>{const W=A[k],g=G[k]?(G[k].top||G[k]).s:null,i=Object.keys(PNAME).indexOf(k)+1,cur=EXP.ex===k;
+    return `<div class="wkrow${cur?' cur':''}"><div><b>${i}. ${esc(PNAME[k])}</b>${cur?' <span class="wkm">· مفتوح الآن</span>':''}<div class="wkm">آخر تعديل ${esc(fmtT(W.t))} · ${W.o.w.length} سلكًا${g!=null?' · الدرجة '+g+'/20':''}</div></div><span></span>
+      <div class="wka"><button data-wkopen="${k}"${cur?' disabled':''}>📂 فتح للتعديل</button><button class="danger" data-wkdel="${k}">🗑 حذف النسخة</button></div></div>`;}).join(''):
+    '<p class="greq">لا توجد تمارين محفوظة بعد. اختر التمرين من القائمة أعلى اللوحة ثم وصّل، وتُحفظ آخر نسخة منه تلقائيًا.</p>';}
+$('bWork').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();$('wkMsg').textContent='';wkRender();wkM.classList.add('open');};
+$('wkClose').onclick=()=>wkM.classList.remove('open');wkM.addEventListener('click',e=>{if(e.target===wkM)wkM.classList.remove('open');});
+$('wkList').addEventListener('click',e=>{const o=e.target.closest('[data-wkopen]'),d=e.target.closest('[data-wkdel]');
+  if(o){const ex=o.dataset.wkopen,prev=EXP.ex;exPick(ex,true);wkOpen(ex,prev);exMotor(ex);renderTop();wkM.classList.remove('open');return;}
+  if(d)arm(d,()=>{const A=wkAll();delete A[d.dataset.wkdel];try{localStorage.setItem(WKK,JSON.stringify(A));}catch(_){}$('wkMsg').textContent='حُذفت النسخة المحفوظة.';wkRender();});});
 {const v=lsG('wsEx');if(v&&PNAME[v])exPick(v,true);}
 let WCSND=lsG('wcSnd')!=='0';const WCSPD=[1,1.25,1.5,2,0.5,0.75];
 const wcCol=c=>{if(c===BRS)return 'قنطرة';const f=COLORS.find(x=>x[0]===c);return f?f[1].split(':')[0]:'';};
