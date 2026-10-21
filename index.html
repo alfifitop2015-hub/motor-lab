@@ -609,7 +609,7 @@ body.fs{padding-bottom:0}
   <div class="box appbox" style="max-width:640px">
     <div class="ah"><h2 id="rT">📋 نتائج المتدربين</h2><button class="btn" id="rClose">إغلاق</button></div>
     <div class="fld" id="rKeyRow"><label>كلمة سر المدرب (التي وضعتها في كود Google)<input id="rKey" type="password" autocomplete="off"></label></div>
-    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rSave" hidden disabled title="يكتب الدرجات المحسوبة بالقواعد الحالية في عمود الدرجة في جدول Google">💾 حفظ الدرجات الجديدة في الجدول</button><button id="rBestAll" class="danger" disabled title="يحذف المحاولات الأقل لكل متدرب في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى للجميع</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
+    <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rBestAll" class="danger" disabled title="يحذف المحاولات الأقل لكل متدرب في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى للجميع</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
   </div>
@@ -3398,7 +3398,7 @@ try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const exName=ex=>PNAME[ex]?'تمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]:'بدون تقييم';
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
 /* every result is graded again with the current rules from the wiring (and easy program) it was sent with;
-   that grade is the one shown, used to keep the highest and exported, and can be saved into the sheet */
+   that grade is the one shown, used to keep the highest and exported; the sheet keeps the grade as it was sent */
 async function recheck(r){if(RS.chk[r.uid]!==undefined||!r.code||!PRESETS[r.ex])return;RS.chk[r.uid]=null;
   try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o).s;}catch(_){RS.chk[r.uid]=null;}}
 /* trainees are grouped by their training number, because names are written in different ways:
@@ -3425,7 +3425,7 @@ function rRender(){const q=$('rFind').value.trim(),L=rVis();
   const vis=L.length&&L.every(r=>RS.sel.has(r.uid));$('rAll').textContent=vis?'☐ إلغاء التحديد':'☑ تحديد الكل';$('rAll').disabled=!L.length;
   $('rShareSel').disabled=!RS.sel.size;$('rShareSel').textContent=RS.sel.size?'📤 مشاركة المحدد ('+RS.sel.size+')':'📤 مشاركة المحدد';
   $('rDelSel').disabled=!RS.sel.size;$('rDelSel').textContent=RS.sel.size?'🗑 حذف المحدد ('+RS.sel.size+')':'🗑 حذف المحدد';
-  const G=rGroups(),xa=G.reduce((n,g)=>n+rExtra(g.rows).length,0);$('rBestAll').disabled=!xa||!RS.ready;const ch=rChanged().length;$('rSave').hidden=!ch;$('rSave').disabled=!RS.ready;$('rSave').textContent='💾 حفظ الدرجات الجديدة في الجدول ('+ch+')';$('rBestAll').textContent='🧹 إبقاء الأعلى للجميع'+(xa?' ('+xa+')':'');
+  const G=rGroups(),xa=G.reduce((n,g)=>n+rExtra(g.rows).length,0);$('rBestAll').disabled=!xa||!RS.ready;$('rBestAll').textContent='🧹 إبقاء الأعلى للجميع'+(xa?' ('+xa+')':'');
   const H=G.map(g=>{const rows=g.rows.filter(r=>rMatch(r,q));if(!rows.length)return '';
     const best=rBest(g.rows),bs=new Set(Object.values(best)),xs=rExtra(g.rows),last=g.rows.reduce((a,r)=>(r.t||0)>(a.t||0)?r:a,g.rows[0]);
     const names=[...new Set(g.rows.map(r=>String(r.n).trim()).filter(Boolean))];
@@ -3455,10 +3455,6 @@ $('rList').addEventListener('click',e=>{const gs=e.target.closest('[data-gsel]')
   const g=rGroups().find(x=>x.k===(gs||gb).dataset[gs?'gsel':'gbest']);if(!g)return;
   if(gs){const all=g.rows.every(r=>RS.sel.has(r.uid));g.rows.forEach(r=>all?RS.sel.delete(r.uid):RS.sel.add(r.uid));rRender();return;}
   const xs=rExtra(g.rows).map(r=>r.uid);if(xs.length)arm(gb,()=>rDelete(xs));});
-$('rSave').onclick=async()=>{const L=rChanged();if(!L.length||!RS.ready)return;const b=$('rSave');b.disabled=true;$('rMsg').textContent='جارٍ حفظ '+L.length+' درجة في الجدول…';
-  try{const scores={};L.forEach(r=>scores[r.uid]=RS.chk[r.uid]);const j=await cloud({action:'setScores',key:$('rKey').value.trim(),scores});
-    L.forEach(r=>{r.s=RS.chk[r.uid];});$('rMsg').textContent='✔ حُفظت '+(j.n!=null?j.n:L.length)+' درجة جديدة في الجدول.';rRender();}
-  catch(e){$('rMsg').textContent=e.message==='action'?'خادم Google لم يُحدَّث بعد لحفظ الدرجات: أضف جزء setScores إلى كود Apps Script (الملف apps-script.gs في المستودع) ثم انشر إصدارًا جديدًا.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الحفظ. تأكد من الإنترنت وحاول مرة أخرى.';b.disabled=false;}};
 $('rBestAll').onclick=()=>{const xs=rGroups().flatMap(g=>rExtra(g.rows)).map(r=>r.uid);if(xs.length)arm($('rBestAll'),()=>rDelete(xs));};
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 const imM=$('imgModal');let IMG={b:null,name:''};
