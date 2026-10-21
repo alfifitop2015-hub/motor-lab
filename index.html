@@ -878,7 +878,7 @@ const S={plc:{run:true,prog:[],tm:{},q:[false,false,false,false,false],m:{},ts:{
   fault:null,wires:[],sel:null,pending:null,showV:true,dahl:false,last:'',hist:[],zoom:1,R:null,motor:{state:'off'},lamps:{},warn:[],osc:false,nextId:1};
 const ofType=t=>S.devs.filter(d=>d.type===t).map(d=>d.id);
 relayout();
-let curColor='#e0342f';
+let curColor='auto'; // 'auto': the wire's colour follows its part of the circuit (see autoColor)
 const DN={LS1:'SQ1',LS2:'SQ2'};
 /* the carriage and limit switches under M1 appear only when the exercise uses them or a wire reaches X1.21-28 */
 const lsShown=()=>S.pex==='p15'||!!(S.stu&&S.stu.g&&S.stu.g.ex==='p15')||S.wires.some(w=>/^X1\.2[1-8]b?$/.test(w.a)||/^X1\.2[1-8]b?$/.test(w.b));
@@ -1419,7 +1419,7 @@ function fin(r,pts){const q=[pts[0]];pts.slice(1).forEach(pt=>{const l=q[q.lengt
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=f<0?0:255,k=Math.abs(f);r=Math.round(r+(t-r)*k);g=Math.round(g+(t-g)*k);b=Math.round(b+(t-b)*k);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function routeAll(){
   const RT=buildRouting(),ys=RT.ducts,di=t=>{if(t.side==='u'){let i=0;ys.forEach((y,k)=>{if(y<t.y)i=k;});return i;}let i=ys.length-1;for(let k=ys.length-1;k>=0;k--)if(ys[k]>t.y)i=k;return i;};
-  const tcount={},chan={},rs=[],chW={};
+  const tcount={},chan={},rs=[],chW={},chR={};
   const used=(x,y1,y2)=>(chan[x]||[]).filter(([a,b])=>a<y2&&b>y1).length;
   const fw=[],mw=[],cw=[];S.wpts={};
   // --- escape paths: terminals whose way to the duct is blocked by another device leave sideways
@@ -1485,8 +1485,10 @@ function routeAll(){
         /* the empty rail beside the last device offers several channels, so wires spread out instead of piling into one */
         if(bx.length){const e=bx[bx.length-1][1];for(let x=e+16;x<930;x+=34){chW[x]=chW[x]??24;cands.push({x,cap:3});}}});
       const free=x=>crossed.every(bx=>bx.every(([x1,x2])=>x<x1-2||x>x2+2));
-      let best=null,bc=1e9;cands.forEach(c=>{if(!free(c.x))return;const u=used(c.x,y1,y2);const cost=Math.abs(A.x-c.x)+Math.abs(B.x-c.x)+(u>=c.cap?3000:u*30);if(cost<bc){bc=cost;best=c;}});
-      r.vx=best?best.x:22;(chan[r.vx]=chan[r.vx]||[]).push([y1,y2]);r.y1=y1;r.y2=y2;}
+      /* inputs of the control circuit go up and down the left of the panel and outputs the right; a channel already carrying the other kind is avoided */
+      const role=w.role,side=x=>!role?0:(role==='in'?x>500:x<500)?320:(x===22||x===978)?-120:0,mix=x=>role&&(chR[x]||{})[role==='in'?'out':'in']?220:0;
+      let best=null,bc=1e9;cands.forEach(c=>{if(!free(c.x))return;const u=used(c.x,y1,y2);const cost=Math.abs(A.x-c.x)+Math.abs(B.x-c.x)+(u>=c.cap?3000:u*30)+side(c.x)+mix(c.x);if(cost<bc){bc=cost;best=c;}});
+      r.vx=best?best.x:22;(chan[r.vx]=chan[r.vx]||[]).push([y1,y2]);if(role)(chR[r.vx]=chR[r.vx]||{})[role]=1;r.y1=y1;r.y2=y2;}
     rs.push(r);});
   // horizontal lanes per duct
   const byDuct={};const addH=(d,x1,x2,set)=>{if(Math.abs(x1-x2)<.5){set(0);return;}(byDuct[d]=byDuct[d]||[]).push({lo:Math.min(x1,x2),hi:Math.max(x1,x2),set});};
@@ -2326,11 +2328,11 @@ function partial(){const C=2*Math.PI*26;try{xsTick(true);}catch(_){}if(S.selDev&
   ofType('ol').forEach(f=>{const o=S.ol[f],hb=document.getElementById('heat-'+f);if(hb)hb.setAttribute('width',(+hb.dataset.w||68)*o.heat);
     const it=document.getElementById('iTxt-'+f);if(it)it.textContent='I = '+o.I.toFixed(1)+' A';});
   const cr=document.getElementById('carr');if(cr)cr.setAttribute('transform',`translate(${carX()} 0)`);}
-function update(){solve();render();}
+function update(){try{autoColor();}catch(e){console.warn(e);}solve();render();}
 
 /* ---------- actions ---------- */
 function snap(){S.ran=false;S.power=true;S.fault=null;S.hist.push(JSON.stringify(serial()));if(S.hist.length>60)S.hist.shift();}
-function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.gap!=null)o.gap=d.gap;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c]),plc:{prog:S.plc.prog,tm:S.plc.tm,run:S.plc.run},...(S.pex?{px:S.pex}:{}),...(S.dahl?{mt:'d'}:{}),...(S.fx&&S.fx.length?{fx:S.fx.map(f=>({...f}))}:{})};}
+function serial(){return{v:6,fb:{...S.fbp},devs:S.devs.map(d=>{const o={id:d.id,type:d.type,rail:d.rail};if(d.host)o.host=d.host;if(d.gap!=null)o.gap=d.gap;if(d.type==='timer')o.delay=S.tm[d.id].delay;if(d.type==='ol')o.iset=S.ol[d.id].iset;return o;}),w:S.wires.map(w=>w.man?[w.a,w.b,w.c,w.man]:[w.a,w.b,w.c]),...(S.wires.some(w=>w.ac)?{ac:S.wires.map((w,i)=>w.ac?i:-1).filter(i=>i>=0)}:{}),plc:{prog:S.plc.prog,tm:S.plc.tm,run:S.plc.run},...(S.pex?{px:S.pex}:{}),...(S.dahl?{mt:'d'}:{}),...(S.fx&&S.fx.length?{fx:S.fx.map(f=>({...f}))}:{})};}
 const railEnd=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][1]:955,railStart=r=>(S.rowFree&&S.rowFree[r])?S.rowFree[r][0]:45;
 function railUsed(r,skip){let x=railStart(r),first=true;S.devs.filter(d=>d.rail===r&&!d.host&&d.id!==skip).forEach(d=>{x+=devGap(d,first)+DEFS[d.type].w;first=false;});return x;}
 const fits=(r,type,skip)=>railUsed(r,skip)+(S.devs.some(d=>d.rail===r&&!d.host&&d.id!==skip)?GAP:0)+DEFS[type].w<=railEnd(r);
@@ -2355,13 +2357,44 @@ function applyObj(o){if(!o||!Array.isArray(o.w))throw 0;
   if(!(o.v>=5)&&!o.w.some(x=>/^M[12]\./.test(x[0])||/^M[12]\./.test(x[1]))){o={...o,w:[...o.w,...motorCable,...(o.w.some(x=>/^X2\./.test(x[0])||/^X2\./.test(x[1]))?m2Cable:[])]};}if(!(o.v>=6)&&o.w.some(x=>/^M2\./.test(x[0])||/^M2\./.test(x[1])))o={...o,w:[...o.w,...m2Star]};
   S.fbp=o.fb?{...FBDEF,...o.fb}:{...FBDEF};S.pex=typeof o.px==='string'&&/^p\d{1,2}$/.test(o.px)?o.px:null;S.dahl=o.mt==='d'||DAHLX.has(S.pex);
   S.fx=Array.isArray(o.fx)?o.fx.filter(f=>f&&FXT[f.t]&&/^[SH]\d{1,3}$/.test(f.id)&&FXC[f.c]&&!(f.t==='lamp'&&!FXL[f.c])).map(f=>({id:f.id,t:f.t,c:f.c,x:+f.x||0,y:+f.y||0,on:!!f.on})):[];
-  setDevs(o.devs||devsFromWires(o.w,o));setWires(o.w);}
-function addWire(a,b,c){if(a===b)return;if(S.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))return;S.wires.push({id:S.nextId++,a,b,c:c||curColor});}
+  setDevs(o.devs||devsFromWires(o.w,o));setWires(o.w,Array.isArray(o.ac)?o.ac:null);}
+function addWire(a,b,c){if(a===b)return;if(S.wires.some(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)))return;const ac=!c&&curColor==='auto';S.wires.push({id:S.nextId++,a,b,c:c||(ac?RD0:curColor),...(ac?{ac:true}:{})});}
+/* ---------- automatic wire colours and the side each wire takes on the panel ----------
+   Wires the trainee draws while the colour is «تلقائي» take the colour of their part of the circuit, and change with it as wiring goes on:
+   power: L1 brown, L2 black, L3 grey (the phase is the nearest pole of Q1 through wires and contacts); control: the feed from F1 to the
+   inputs red, outputs between contacts orange, the feed of a coil A1 white, indicator lamps yellow, PLC inputs green, the neutral light blue.
+   Every control wire also gets a side: inputs (the F1 feed and PLC inputs) go up and down the left of the panel, outputs the right. */
+const RD0='#e0342f',ACOL={L:['#7a4a22','#1b1b1b','#8e949a'],feed:'#e0342f',out:'#ff8a1f',coil:'#f3f3ef',lamp:'#f2c200',plc:'#2aa84a',N:'#4aa3df'};
+const isPw=k=>/^Q1\.[1-6]$/.test(k)||/^K\d+\.[1-6]$/.test(k)||/^F(?!1\.)\d+\.[1-6]$/.test(k)||/^X1\.[1-6]b?$/.test(k)||/^(M[12]|X2)\./.test(k);
+function autoColor(){const W=S.wires;if(!W.length)return;
+  /* power: breadth-first from the three poles of Q1 over wires and the closed paths of contacts and overloads */
+  const adj=new Map(),ed=(a,b)=>{[[a,b],[b,a]].forEach(([x,y])=>{if(!adj.has(x))adj.set(x,[]);adj.get(x).push(y);});};
+  W.forEach(w=>{if(isPw(w.a)||isPw(w.b))ed(w.a,w.b);});
+  [1,3,5].forEach(n=>{ed('Q1.'+n,'Q1.'+(n+1));S.devs.forEach(d=>{if(d.type==='k'||d.type==='ol')ed(d.id+'.'+n,d.id+'.'+(n+1));
+    if(d.type==='ol'&&d.host)ed(d.host+'.'+(n+1),d.id+'.'+(n+1));});});
+  for(let n=1;n<=6;n++)ed('X1.'+n,'X1.'+n+'b');
+  const ph=new Map(),dist=new Map(),q=[];[0,1,2].forEach(i=>{const k='Q1.'+(2*i+1);ph.set(k,i);dist.set(k,0);q.push(k);});
+  while(q.length){const u=q.shift();for(const v of adj.get(u)||[])if(!dist.has(v)){dist.set(v,dist.get(u)+1);ph.set(v,ph.get(u));q.push(v);}}
+  const phOf=k=>{if(ph.has(k))return ph.get(k);const m=/\.(\d)b?$/.exec(k);if(m)return /^X1/.test(k)?(+m[1]-1)%3:Math.floor((+m[1]-1)/2)%3;const l=/\.([UVW])/.exec(k);return l?'UVW'.indexOf(l[1]):0;};
+  /* control: nets joined by wires, each named by the most telling point on it */
+  const par={},fd=x=>par[x]==null||par[x]===x?(par[x]=x):(par[x]=fd(par[x])),un=(a,b)=>{par[fd(a)]=fd(b);};
+  const ctl=W.filter(w=>!isPw(w.a)&&!isPw(w.b));ctl.forEach(w=>un(w.a,w.b));
+  const kind={},rank={N:6,feed:5,plc:4,coil:3,lamp:2},tag=(k,t)=>{const r=fd(k);if(!kind[r]||rank[t]>rank[kind[r]])kind[r]=t;};
+  ctl.forEach(w=>[w.a,w.b].forEach(k=>{
+    if(/^X1\.3[3-6]$/.test(k)||/^PLC\.N/.test(k)||/\.A2$/.test(k)||/^H\d+\.X2$/.test(k))tag(k,'N');
+    else if(k==='F1.2'||k==='PLC.L')tag(k,'feed');
+    else if(/^XP\.I\d$/.test(k))tag(k,'plc');
+    else if(/\.A1$/.test(k))tag(k,'coil');
+    else if(/^X1\.(29|3[0-2])$/.test(k)||/^H\d+\.X1$/.test(k))tag(k,'lamp');}));
+  W.forEach(w=>{let c,role='';
+    if(isPw(w.a)||isPw(w.b)){const da=dist.has(w.a)?dist.get(w.a):1e9,db=dist.has(w.b)?dist.get(w.b):1e9;c=ACOL.L[phOf(da<=db?w.a:w.b)];}
+    else{const k=kind[fd(w.a)]||'out';c=ACOL[k];role=k==='feed'||k==='plc'?'in':'out';}
+    w.role=role;if(w.ac)w.c=c;});}
 const LEG={'X2.U':'X2.U1','X2.V':'X2.V1','X2.W':'X2.W1','X2.Ub':'X2.U1b','X2.Vb':'X2.V1b','X2.Wb':'X2.W1b','M2.U':'M2.U1','M2.V':'M2.V1','M2.W':'M2.W1'};
 const X2M={U1:37,V1:38,W1:39,U2:40,V2:41,W2:42},X0M={'X0.L1':'Q1.1','X0.L2':'Q1.3','X0.L3':'Q1.5','X0.N':'X1.33'};
 const M2MAP={37:'U1',38:'V1',39:'W1',40:'U2',41:'V2',42:'W2'};
 function mapKey(k){if(LEG[k])k=LEG[k];if(X0M[k])k=X0M[k];const mx=/^X2\.(U1|V1|W1|U2|V2|W2)(b?)$/.exec(k);if(mx)k='X1.'+X2M[mx[1]]+mx[2];const m37=/^X1\.(3[7-9]|4[0-2])b?$/.exec(k);if(m37)k='M2.'+M2MAP[m37[1]];if(T[k])return k;const [id,t]=k.split('.');const dv=S.devs.find(d=>d.id===id);if(dv&&dv.host&&['1','3','5'].includes(t))return dv.host+'.'+(+t+1);return null;}
-function setWires(list){S.wires=[];list.forEach(([a,b,c,m])=>{a=mapKey(a);b=mapKey(b);if(a&&b){const n=S.wires.length;addWire(a,b,c?normC(c):c);if(m&&S.wires.length>n)S.wires[n].man=m;}});}
+function setWires(list,ac){const A=new Set(ac||[]);S.wires=[];list.forEach(([a,b,c,m],i)=>{a=mapKey(a);b=mapKey(b);if(a&&b){const n=S.wires.length;addWire(a,b,c?normC(c):RD0);if(S.wires.length>n){if(m)S.wires[n].man=m;if(A.has(i))S.wires[n].ac=true;}}});}
 function termClick(k){
   if(S.mmPick){S.mm[S.mmPick]=k;say('وُضع المجس '+(S.mmPick==='red'?'الأحمر':'الأسود')+' على '+k);S.mmPick=null;return render();}
   if(!S.pending){S.pending=k;S.sel=null;scrAdd(k,0,-1,true);if(vwOn())speak('من '+termDesc(k));}
@@ -2501,17 +2534,18 @@ function undo(){if(!S.hist.length)return;applyObj(JSON.parse(S.hist.pop()));S.se
 document.getElementById('bClear').onclick=()=>{if(!S.wires.length)return;snap();S.wires=[];S.sel=null;S.pending=null;say('مُسحت كل الأسلاك (يمكن التراجع)');update();};
 const dsw=document.getElementById('dSw');
 const cPop=document.getElementById('cPop'),dCol=document.getElementById('dCol');
-const colBg=c=>c===PEW?'repeating-linear-gradient(135deg,#2aa84a 0 6px,#f2c200 6px 12px)':c;
+const colBg=c=>c==='auto'?'conic-gradient(#7a4a22 0 60deg,#1b1b1b 0 120deg,#8e949a 0 180deg,#e0342f 0 240deg,#ff8a1f 0 300deg,#4aa3df 0)':c===PEW?'repeating-linear-gradient(135deg,#2aa84a 0 6px,#f2c200 6px 12px)':c;
 function colPop(o){cPop.classList.toggle('open',o);dCol.setAttribute('aria-expanded',o?'true':'false');dCol.classList.toggle('hl',o);
   if(o){const b=dsw.querySelector('.cur');if(b){b.scrollIntoView({block:'nearest',inline:'center'});b.focus({preventScroll:true});}}}
-function showCol(){const k=COLORS.find(x=>x[0]===curColor);document.getElementById('dColDot').style.background=colBg(curColor);
+const AUTON='تلقائي: القوى بني/أسود/رمادي، تغذية التحكم أحمر، المخارج برتقالي، الملفات أبيض، اللمبات أصفر، مداخل PLC أخضر، التعادل أزرق فاتح';
+function showCol(){const k=curColor==='auto'?['auto',AUTON]:COLORS.find(x=>x[0]===curColor);document.getElementById('dColDot').style.background=colBg(curColor);
   document.getElementById('cpN').textContent=k?k[1]:'';dCol.title='لون السلك: '+(k?k[1]:'');}
 dCol.onclick=e=>{e.stopPropagation();colPop(!cPop.classList.contains('open'));};
 document.addEventListener('pointerdown',e=>{if(cPop.classList.contains('open')&&!cPop.contains(e.target)&&!dCol.contains(e.target))colPop(false);});
 cPop.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();colPop(false);dCol.focus();}});
 function pickColor(c){curColor=c;document.querySelectorAll('[data-col]').forEach(x=>x.classList.toggle('cur',x.dataset.col===c));showCol();colPop(false);
-  if(S.sel!=null){const w=S.wires.find(w=>w.id===S.sel);if(w){snap();w.c=c;render();}}}
-COLORS.forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.style.background=colBg(c);b.title=n;b.setAttribute('aria-label','سلك '+n);
+  if(S.sel!=null){const w=S.wires.find(w=>w.id===S.sel);if(w){snap();if(c==='auto')w.ac=true;else{w.ac=false;w.c=c;}update();}}}
+[['auto',AUTON],...COLORS].forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.style.background=colBg(c);b.title=n;b.setAttribute('aria-label','سلك '+n);
   b.onclick=()=>pickColor(c);b.onmouseenter=b.onfocus=()=>{document.getElementById('cpN').textContent=n;};b.onmouseleave=b.onblur=showCol;box.appendChild(b);});});
 showCol();
 const wrap=document.getElementById('wrap');
