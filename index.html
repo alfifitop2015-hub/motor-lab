@@ -3086,14 +3086,15 @@ function exPick(v,quiet){v=PNAME[v]?v:'';EXP.ex=v;$('exPick').value=v;$('exClip'
   if(!v)return;GV.ex=v;if(!quiet)exMotor(v);try{SD.ex=v;sdSave();if(SD.open)sdRender();}catch(_){}}
 $('exPick').insertAdjacentHTML('beforeend',Object.keys(PNAME).map((k,i)=>`<option value="${k}">${i+1}. ${esc(PNAME[k])}</option>`).join(''));
 /* picking another exercise opens its saved version, or a clean board: a board made for one exercise is never carried into another
-   (when the first exercise is picked, the board already on it stays, as it is being wired for that exercise) */
+   (when the first exercise is picked, the board already on it stays, as it is being wired for that exercise);
+   the undo history starts again with every exercise, so ↶ cannot bring back another exercise's board */
 $('exPick').onchange=e=>{const prev=EXP.ex;exPick(e.target.value,true);if(EXP.ex){if(!wkOpen(EXP.ex,prev)){const clean=prev&&prev!==EXP.ex&&(S.wires.length||S.devs.length)&&!document.body.classList.contains('trainer');
-      if(clean){snap();applyObj({v:6,fb:{...S.fbp},w:[],d:5});S.stu=null;S.sel=null;S.pending=null;S.selDev=null;update();}
+      if(clean){applyObj({v:6,fb:{...S.fbp},w:[],d:5});S.hist=[];S.stu=null;S.sel=null;S.pending=null;S.selDev=null;update();}
       say('التمرين المختار: '+PNAME[EXP.ex]+'.'+(clean?' بدأت لوحة جديدة لهذا التمرين، ولوحة التمرين السابق محفوظة في 📂 تماريني.':'')+' شاهد ▶ مقطع التوصيل، وعند 🎯 التقييم يُقيَّم هذا التمرين مباشرة.');}exMotor(EXP.ex);}renderTop();};
-/* open the saved version of an exercise (the current board stays one ↶ away) */
+/* open the saved version of an exercise; ↶ never goes back to another exercise's board (it is kept in 📂 تماريني) */
 function wkOpen(ex,prev){const A=wkAll(),W=A[ex];if(!W||document.body.classList.contains('trainer'))return false;
   if(JSON.stringify(serial().w)===JSON.stringify(W.o.w))return true;
-  snap();try{applyObj(W.o);}catch(_){return false;}S.stu=null;S.sel=null;S.pending=null;WK.fresh=null;
+  try{applyObj(W.o);}catch(_){return false;}S.hist=[];S.stu=null;S.sel=null;S.pending=null;WK.fresh=null;
   say('فُتحت نسختك المحفوظة من التمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]+' (آخر تعديل '+fmtT(W.t)+'). عدّل عليها وتُحفظ تلقائيًا'+(prev&&prev!==ex?'، ونسخة التمرين السابق محفوظة كما هي':'')+'.');update();return true;}
 const wkM=$('wkModal');
 function wkRender(){const A=wkAll(),G=gAll(),ks=Object.keys(PNAME).filter(k=>A[k]);
