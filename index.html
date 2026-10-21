@@ -845,7 +845,7 @@ function relayout(){
   if(FB.y>S.trunkY[S.rows-1]-40){S.fbp.y=S.rowTop[S.rows-1];return relayout();}
   mk('FB','fboard',FB.x,FB.y,FB.w,FB.h,[]);
   devices.forEach(dv=>{});
-  DY=S.trunkY[S.rows-1]-878;H=1640+DY;
+  DY=S.trunkY[S.rows-1]-878;H=fieldH()+DY;
   const st=[];for(let n=1;n<=TN;n++)st.push(tu(String(n),tOX(n)+SW/2,14,''));
   MB.forEach(n=>st.push(td(n+'b',tOX(n)+SW/2,60,(S.dahl?['1U','1V','1W','2U','2V','2W']:['U1','V1','W1','U2','V2','W2'])[(n-1)%6])));
   mk('X1','strip',SX,SY+DY,TN*SW,72,st);
@@ -1241,7 +1241,7 @@ function carX(){return TRACK.x1+(TRACK.x2-TRACK.x1)*S.pos;}
 /* the conduit from the terminal strip to the device board, laid on the panel's bottom and right ducts; it follows the board while it is dragged */
 let CABX=0;const cabD=()=>{const sc=S.fbp.sc,fx=S.fbp.x,fy=S.fbp.y+FBH*sc;return `M${CABX} 1079H978V${fy+14-DY}H${fx+6*sc}V${fy-12*sc-DY}`;};
 function drawField(){
-  let s=`<rect x="0" y="1112" width="${W}" height="528" fill="#2a333c"/>`;
+  const fb=fieldH();let s=`<rect x="0" y="1112" width="${W}" height="${fb-1112}" fill="#2a333c"/>`;
   let bx1=1e9,bx2=0,fw='';const fwire=(cx,core,edge)=>`<line x1="${cx}" y1="1020" x2="${cx}" y2="1079" stroke="${edge}" stroke-width="6.5" stroke-linecap="round"/><line x1="${cx}" y1="1020" x2="${cx}" y2="1079" stroke="${core}" stroke-width="4"/><line x1="${cx-.9}" y1="1021" x2="${cx-.9}" y2="1077" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>`;
   GROUPS.forEach(g=>{if(['M','M2'].includes(g.to))return;for(let n=g.from;n<=g.to2;n++){const cx=SX+tOX(n)+SW/2;bx1=Math.min(bx1,cx);bx2=Math.max(bx2,cx);fw+=g.to==='N'?fwire(cx,'#4aa3df','#123a5a'):g.to==='H'?fwire(cx,'#8a5426','#2e1808'):fwire(cx,'#e0342f','#4a0c09');}});
   CABX=bx1-4;const cab=cabD();
@@ -1249,7 +1249,7 @@ function drawField(){
   /* group names over the wires, so they stay readable */
   GROUPS.forEach(g=>{const cx=SX+(g.x!=null?g.x+SW/2:(tOX(g.from)+tOX(g.to2)+SW)/2),w=Math.max(24,g.name.length*6.2+10);
     s+=`<rect x="${cx-w/2}" y="${1033}" width="${w}" height="15" rx="4" fill="rgba(10,20,35,.9)"/>${txt(cx,1044,g.name,g.tags.length<=2?8.5:10,g.to==='N'?'#9fd4ff':g.to==='PE'?'#9dff9d':'#fff',700)}`;});
-  s+=`<rect x="30" y="1152" width="450" height="478" rx="10" fill="#39434d" stroke="#111"/><rect x="520" y="1152" width="440" height="478" rx="10" fill="#39434d" stroke="#111"/>`;
+  s+=`<rect x="30" y="1152" width="450" height="${fb-1162}" rx="10" fill="#39434d" stroke="#111"/><rect x="520" y="1152" width="440" height="${fb-1162}" rx="10" fill="#39434d" stroke="#111"/>`;
   const m=S.motor,run=m.state==='run';
   s+=S.dahl?motorSVG('M1',MO1[0],MO1[1],1,[{x:86,y:16,l:'1U'},{x:142,y:16,l:'1V'},{x:198,y:16,l:'1W'},{x:86,y:62,l:'2W'},{x:142,y:62,l:'2U'},{x:198,y:62,l:'2V'}],m,['DAHLANDER  M1','1.1/1.5 kW  400V Δ/YY','2.6/3.0 A  1420/2860 rpm'])
     :motorSVG('M1',MO1[0],MO1[1],1,[{x:86,y:16,l:'U1'},{x:142,y:16,l:'V1'},{x:198,y:16,l:'W1'},{x:86,y:62,l:'W2'},{x:142,y:62,l:'U2'},{x:198,y:62,l:'V2'}],m,['3~ MOTOR  M1','4 kW  400V Δ / 690V Y','5.0 A  1450 rpm  50 Hz']);
@@ -2195,8 +2195,10 @@ function scrSVG(){const now=performance.now();for(let i=SCR.length-1;i>=0;i--)if
 <g class="scdAr" style="animation-delay:${d}"><path d="M${a.dir>0?-11:11} -6A12 12 0 0 ${a.dir>0?1:0} ${a.dir>0?9:-9} -8" fill="none" stroke="#ffb300" stroke-width="2.2" stroke-linecap="round"/><path d="M${a.dir>0?9:-9} -8l${a.dir>0?-5:5} -1l${a.dir>0?2:-2} 5" fill="none" stroke="#ffb300" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></g>
 <g class="scd" style="${st}"><g transform="rotate(26)"><path d="M-1.6 -1L-2.4 -6H2.4L1.6 -1Z" fill="#9aa3ab"/><rect x="-1.7" y="-36" width="3.4" height="31" fill="#c8cfd5" stroke="#6b737a" stroke-width=".6"/><rect x="-0.4" y="-35" width="1" height="29" fill="#fff" opacity=".6"/>
 <rect x="-5" y="-40" width="10" height="5" rx="1.5" fill="#222"/><g class="scdTw" style="${tws}"><rect x="-7" y="-74" width="14" height="35" rx="6" fill="#d8322b" stroke="#7a1712" stroke-width="1"/><rect x="-7" y="-58" width="14" height="6" fill="#ffd21a"/><path d="M-3 -71V-60M0 -71V-60M3 -71V-60M-3 -50V-42M0 -50V-42M3 -50V-42" stroke="#7a1712" stroke-width="1.1"/><rect x="-5" y="-72" width="3" height="30" rx="1.5" fill="#fff" opacity=".35"/></g></g></g></g>`;}).join('');}
+/* the field area ends under the motors, and grows for the cart track only when limit switches are in use */
+function fieldH(){try{return lsShown()?1640:1500;}catch(_){return 1640;}}
 function render(){
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);try{xsPrep();}catch(e){console.warn(e);}
+  H=fieldH()+DY;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);try{xsPrep();}catch(e){console.warn(e);}
   NODEL=true;let s=bg();devices.forEach(d=>{const sel=['k','timer','ol','olh','aux'].includes(d.type);const body=D3T.includes(d.type)?`<g filter="url(#ds)">${ext3(d)}${drawDev(d)}${GLT.includes(d.type)?gloss3(d):''}</g>`:drawDev(d);s+=sel?`<g data-dev="${d.id}" style="cursor:ew-resize${S.selDev&&(S.selDev===d.id||(S.devs.find(q=>q.id===d.id)||{}).host===S.selDev)?';touch-action:none':''}"><title>${d.id}: اضغط لتحديده، واسحبه يمينًا أو يسارًا لتغيير المسافة</title>${body}</g>`:body;if(sel&&S.selDev===d.id)s+=`<rect x="${d.x-5}" y="${d.y-5}" width="${d.w+10}" height="${d.h+10}" rx="10" fill="none" stroke="#ffb300" stroke-width="4" stroke-dasharray="10 6" pointer-events="none"/>`;});s+=xrDevs();s+=`<g transform="translate(0 ${DY})">${drawField()}</g>`;
   const PATHS=routeAll();
   const isFxW=w=>(T[w.a]&&T[w.a].zone==='z')||(T[w.b]&&T[w.b].zone==='z');
