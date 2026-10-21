@@ -2697,7 +2697,9 @@ const PNAME={p1:'تشغيل محرك من مكان واحد مع لمبات بي
 const PLCX=new Set(['p8','p9','p10','p11','p12','p13','p14','p17']);
 function presetExtra(v){const sd=['p6','p7','p13','p14','p16','p17'].includes(v),m2=['p3','p10'].includes(v);return[...(sd?motorCable:motorCable.slice(0,3)),...(m2?m2Cable:[])];}
 document.getElementById('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';loadPreset(v);};
-function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,...(DAHLX.has(v)?{mt:'d'}:{}),plc:PPROG[v]?{prog:PPROG[v].prog,tm:PPROG[v].tm,run:true}:undefined});
+/* a ready exercise's wiring, with every wire in automatic colours */
+function presetW(v){const w=[...PRESETS[v],...presetExtra(v)];return{w,ac:w.map((_,i)=>i)};}
+function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},...presetW(v),d:5,...(DAHLX.has(v)?{mt:'d'}:{}),plc:PPROG[v]?{prog:PPROG[v].prog,tm:PPROG[v].tm,run:true}:undefined});
   S.pex=v;try{if(SD.open){SD.ex=v;sdRender();}else SD.ex=v;}catch(_){}Object.assign(S,{power:true,Q1:true,F1:true,fault:null,coils:{},sel:null,pending:null,pos:0.5});
   S.selDev=null;say('حُمّل مثال: '+PNAME[v]+' (أُضيفت القطع اللازمة تلقائيًا'+(S.dahl?'، والمحرك M1 أصبح محرك دالندر بسرعتين':'')+')');update();}
 /* picking an exercise for grading makes M1 the motor that exercise needs */
@@ -3038,7 +3040,7 @@ function gHints(ex,ref,st,steps,fl,sk,ctl,pwr,sys){const H=new Map(),plc=PLCX.ha
   if(sys.ok<sys.rel){const c=ctl.rel&&ctl.ok===ctl.rel,p=pwr.rel&&pwr.ok===pwr.rel;
     if(c&&!p)add('zp','دائرة التحكم سليمة، والخطأ في دائرة القوى (توصيل الكونتاكتورات بالمحرك).');else if(p&&!c)add('zc','دائرة القوى سليمة، والخطأ في دائرة التحكم.');}
   return [...H.values()];}
-function refObj(ex){return{v:6,w:[...PRESETS[ex],...presetExtra(ex)],d:5};}
+function refObj(ex){return{v:6,...presetW(ex),d:5};}
 /* every fraction is rounded up in the trainee's favour; the final score is a whole number */
 const gUp=(v,k)=>Math.ceil(v*k-1e-9)/k;
 function gradeNow(ex,obj){obj=obj||serial();const W=(obj.w||[]).map(w=>[m21k(w[0]),m21k(w[1])]),{ok,tot,bad,miss,wrongW,wr}=gradeWiring(ex,W,obj.devs||S.devs).r;
@@ -3283,7 +3285,7 @@ function wcNear(){const RT=buildRouting(),ys=RT.ducts,W=S.wires;
   S.wires=out.map(w=>({...w,id:S.nextId++}));}
 /* put the reference wiring on the board (trainee's board kept in c.saved) */
 function wcRef(c){c.saved=serial();c.keep={power:S.power,Q1:S.Q1,F1:S.F1};const v=c.ex;
-  applyObj({v:6,fb:{...S.fbp},w:[...PRESETS[v],...presetExtra(v)],d:5,px:v,...(DAHLX.has(v)?{mt:'d'}:{})});wcNear();
+  applyObj({v:6,fb:{...S.fbp},...presetW(v),d:5,px:v,...(DAHLX.has(v)?{mt:'d'}:{})});autoColor();wcNear();
   /* power circuit first (motor jumpers after the motor cable), then the control circuit one part at a time: shared feed, PLC, each coil's branch, lamps, neutral */
   const W=S.wires.slice(),{order,cat}=wcClass(W);c.order=order;c.cat=cat;
   const rk=w=>{const o=order.indexOf(w.k);return o*2+(w.k==='pw'&&w.c0===BRS?1:0);};c.steps=W.map((w,i)=>[w,i]).sort((a,b)=>rk(a[0])-rk(b[0])||a[1]-b[1]).map(x=>x[0]);wcPaint(c);
