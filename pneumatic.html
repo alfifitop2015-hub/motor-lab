@@ -954,7 +954,9 @@ function pgScore(i,o,mp){const x=EX[i],tOf={};o.comps.forEach(c=>tOf[c.id]=c.t);
   const tot=x.t.length,ok=tot-miss.length;return{ok,tot,bad,miss,wrong,wr:tot?ok/(tot+bad):0};}
 function pnGrade(i,o){o=o||serial();const x=EX[i],types=[...new Set(x.c.map(c=>c.t))],perm=(a,k)=>k===0?[[]]:a.flatMap((v,j)=>perm([...a.slice(0,j),...a.slice(j+1)],k-1).map(r=>[v,...r]));
   /* every way of naming the trainee's parts as the exercise's parts of the same type (a few hundred at most) */
-  let maps=[{}];types.forEach(t=>{const r=x.c.filter(c=>c.t===t).map(c=>c.id),st=o.comps.filter(c=>c.t===t).map(c=>c.id),k=Math.min(r.length,st.length);
+  let maps=[{}];/* only parts that carry a hose take part: an extra part left on the board without hoses is ignored */
+  const hosed=new Set();o.tubes.forEach(t=>[t[0],t[1]].forEach(k=>hosed.add(k.split('.')[0])));
+  types.forEach(t=>{const r=x.c.filter(c=>c.t===t).map(c=>c.id),st=o.comps.filter(c=>c.t===t&&hosed.has(c.id)).map(c=>c.id),k=Math.min(r.length,st.length);
     const opts=perm(st,k);maps=maps.flatMap(m=>opts.map(pp=>{const n={...m};pp.forEach((sid,j)=>{n[sid]=r[j];});return n;})).slice(0,3000);});
   let best=null;maps.forEach(mp=>{const r=pgScore(i,o,mp);if(!best||r.wr>best.wr)best={...r,mp};});
   return{...best,s:Math.min(20,Math.ceil(20*best.wr-1e-9)),sm:Math.ceil(200*best.wr-1e-9)/10};}
