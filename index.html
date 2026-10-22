@@ -3538,7 +3538,9 @@ window.addEventListener('keydown',e=>{if(!S.clip||S.clip.mini||e.key==='Tab')ret
   const f={Escape:wcStop,' ':()=>$('wcPlay').click(),ArrowLeft:()=>wcGo(1),ArrowRight:()=>wcGo(-1)}[e.key];if(f){e.preventDefault();f();}},true);
 function stuCheck(){const st=S.stu;if(!st||!st.g||!PRESETS[st.g.ex]){if(st)st.gc=null;return;}try{const r=gradeNow(st.g.ex);st.gc=r.s;st.gi=r;}catch(_){st.gc=null;}}
 function showStuGrade(){const st=S.stu;if(!st||!st.g)return;
-  $('gBody').innerHTML=`<p class="greq">نتيجة المتدرب كما أُرسلت: <b>${+st.g.s} / 20</b>. أعاد المحاكي الفحص الآن على التوصيل المرسل نفسه${st.gc==null?'.':st.gc===+st.g.s?' وحصل على الدرجة نفسها ✔':` وحصل على <b style="color:var(--warn)">${st.gc} / 20</b> ⚠ (قد تكون الدرجة عُدّلت يدويًا).`}</p>`+
+  const mv=st.g.ex0&&st.g.ex0!==st.g.ex;
+  $('gBody').innerHTML=mv?`<p class="greq">أُرسلت هذه التجربة على <b>${esc(exName(st.g.ex0))}</b> بدرجة ${esc(st.g.s)} / 20، وصحّحت تمرينها إلى <b>${esc(exName(st.g.ex))}</b>: أُعيد فحص التوصيل المرسل عليه فحصل على <b>${st.gc==null?'—':st.gc} / 20</b>، والأخطاء أدناه أخطاء هذا التمرين.</p>`:
+   `<p class="greq">نتيجة المتدرب كما أُرسلت: <b>${+st.g.s} / 20</b>. أعاد المحاكي الفحص الآن على التوصيل المرسل نفسه${st.gc==null?'.':st.gc===+st.g.s?' وحصل على الدرجة نفسها ✔':` وحصل على <b style="color:var(--warn)">${st.gc} / 20</b> ⚠ (قد تكون الدرجة عُدّلت يدويًا).`}</p>`+
    (st.gi?gResHTML({...st.gi,ex:st.g.ex,t:st.g.t||st.t,n:st.g.n||st.n,id:st.g.id||st.id},true):'');setErr(st.gi);render();
   gM.classList.add('open');}
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&gM.classList.contains('open'))gM.classList.remove('open');});
@@ -3660,7 +3662,10 @@ $('rList').addEventListener('click',async e=>{{const g=e.target.closest('[data-r
   const sh=e.target.closest('[data-rshare]');if(sh){const r=RS.rows.find(x=>x.uid===sh.dataset.rshare);if(r)rShare([r]);return;}
   if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);if(!r)return;if(!r.code)return showImg(r);try{openObj(await decodeCode(r.code),r);rM.classList.remove('open');}catch(_){$('rMsg').textContent='تعذّر فتح هذه التجربة.';}}});
 /* a trainee's work opened on the board with everything the board offers (grade, cross-section, operating...) */
-function openObj(ob,r){snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);update();}
+function openObj(ob,r){snap();applyObj(ob);S.stu=ob.st||{n:r.n,id:r.id,t:r.t};
+  /* a result the trainer moved to another exercise is opened and checked on that exercise, so its wrong and missing wires are that exercise's */
+  if(r&&PRESETS[r.ex]){const g=S.stu.g||{s:r.s,t:r.t};if(g.ex!==r.ex)S.stu.g={...g,ex0:g.ex||r.ex0,ex:r.ex};}
+  stuCheck();S.sel=null;S.pending=null;say('فُتحت تجربة المتدرب '+r.n);update();}
 $('rAll').onclick=()=>{const L=rVis(),all=L.every(r=>RS.sel.has(r.uid));
   L.forEach(r=>all?RS.sel.delete(r.uid):RS.sel.add(r.uid));rRender();};
 /* share results as one link (#b=...): name, number, exercise, grade, time and the wiring code of each, without the photos */
