@@ -348,18 +348,24 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 
 <div class="modal" id="codeModal" role="dialog" aria-modal="true" aria-labelledby="cT"><div class="box">
   <h2 id="cT" style="margin:0 0 8px;font-size:1.05rem">التمرين بالكود</h2>
-  <div id="cOutW"><p style="margin:0 0 6px;font-size:.9rem;color:var(--muted)">أرسل هذا الرابط أو الكود للمتدربين. يفتح عندهم الدائرة بالأعطال مخفية:</p><textarea id="codeOut" readonly></textarea>
+  <div id="cOutW"><div id="qrW" style="display:none;text-align:center;margin:0 0 10px"><p style="margin:0 0 6px;font-size:.9rem;color:var(--muted)">📷 يصوّر المتدرب هذا الباركود بكاميرا جواله فيفتح التمرين بالأعطال مخفية:</p>
+    <div id="qrBox" style="width:min(240px,70vw);margin:0 auto"></div><button class="btn" id="bQrBig" style="margin-top:8px">⛶ عرض الباركود كبيرًا على الشاشة</button></div>
+  <p style="margin:0 0 6px;font-size:.9rem;color:var(--muted)">أو أرسل هذا الرابط أو الكود للمتدربين. يفتح عندهم الدائرة بالأعطال مخفية:</p><textarea id="codeOut" readonly></textarea>
   <div style="margin:8px 0 14px"><button class="btn" id="bCopy">نسخ</button> <button class="btn" id="bShareC">📤 مشاركة</button> <span id="copied" style="color:var(--ok);font-size:.88rem"></span></div></div>
   <p style="margin:0 0 6px;font-size:.9rem;color:var(--muted)">الصق كود تمرين أو رسالة نتيجة متدرب:</p><textarea id="codeIn"></textarea>
   <div style="display:flex;justify-content:space-between;margin-top:8px"><button class="btn" id="bLoad">فتح</button><button class="btn" id="bCClose">إغلاق</button></div>
   <p id="loadErr" style="color:var(--warn);font-size:.88rem;margin:6px 0 0"></p></div></div>
 
+<div class="modal" id="qrBig" role="dialog" aria-modal="true" aria-label="باركود التمرين" style="background:#fff;z-index:300"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;height:100%;padding:12px;box-sizing:border-box">
+  <b id="qrBigT" style="font-size:clamp(1.1rem,3vw,2rem);color:#0b3d91;text-align:center"></b><div id="qrBigBox" style="width:min(86vw,74vh)"></div>
+  <span style="color:#4b5866;font-size:clamp(.9rem,2vw,1.2rem)">صوّر الباركود بكاميرا الجوال لفتح التمرين</span><button class="btn" id="qrBigClose">إغلاق</button></div></div>
 <div class="modal" id="resModal" role="dialog" aria-modal="true" aria-labelledby="rT"><div class="box appbox" style="max-width:640px">
   <div class="ah"><h2 id="rT">📋 نتائج المتدربين (اكتشاف الأعطال)</h2><button class="btn" id="rClose">إغلاق</button></div>
   <div class="fld"><label>كلمة سر المدرب (التي وضعتها في كود Google)<input id="rKey" type="password" autocomplete="off"></label></div>
   <div class="rtools"><button id="rLoad">↻ تحديث</button><input id="rFind" placeholder="بحث بالاسم أو الرقم"><button class="danger" id="rDelSel" disabled>🗑 حذف المحدد</button></div>
   <p id="rMsg" style="font-size:.9rem;min-height:1.3em"></p><div id="rList"></div></div></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
 (function(){
 const $=id=>document.getElementById(id);
@@ -1074,12 +1080,20 @@ $('oShow').onchange=e=>{S.show=e.target.checked;drawDyn();save();};
 $('fswShow').onchange=e=>{S.show=e.target.checked;$('oShow').checked=S.show;drawDyn();save();};
 $('fswShare').onclick=()=>$('fCode').click();
 $('oView').onchange=e=>{S.allowView=e.target.checked;if(S.ex)S.ex.vw=S.allowView;save();};
+/* barcode of the exercise link: the trainees take it with their phone camera from the trainer's screen */
+function qrSvg(url){if(!window.qrcode)return null;try{const q=qrcode(0,'L');q.addData(url);q.make();const n=q.getModuleCount(),m=2,N=n+2*m;let d='';
+  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+=`M${c+m} ${r+m}h1v1h-1z`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${N} ${N}" shape-rendering="crispEdges" role="img" aria-label="باركود التمرين" style="width:100%;height:auto;display:block;background:#fff;border-radius:8px"><rect width="${N}" height="${N}" fill="#fff"/><path d="${d}" fill="#111"/></svg>`;}catch(_){return null;}}
+let QRL='';
+function showQr(link){QRL=link;const q=link&&qrSvg(link);$('qrW').style.display=q?'':'none';$('qrBox').innerHTML=q||'';}
+$('bQrBig').onclick=()=>{$('qrBigBox').innerHTML=qrSvg(QRL)||'';$('qrBigT').textContent='تمرين شنطة الأعطال · الدائرة '+S.cid;$('qrBig').classList.add('open');};
+$('qrBigClose').onclick=()=>$('qrBig').classList.remove('open');$('qrBig').addEventListener('click',e=>{if(e.target.closest('#qrBigBox'))return;$('qrBig').classList.remove('open');});
 $('bShareC').onclick=async()=>{const t='تمرين شنطة الأعطال: افتح الرابط، ابحث عن العطل بالقياس، ثم اضغط 🎯 تقييم وإرسال.\n'+$('codeOut').value;
   try{if(navigator.share){await navigator.share({text:t});return;}}catch(e){if(e&&e.name==='AbortError')return;}window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');};
 $('fCode').onclick=async()=>{if(!S.F.size){alert('ضع عطلًا واحدًا على الأقل أولًا.');return;}
   const code=await encodeCode({app:'ft',v:1,c:S.cid,f:[...S.F],vw:S.allowView});
   const link=isHosted()&&code.startsWith('Z1')?FT_URL()+'#t='+code.slice(2):'';
-  $('codeOut').value=(link?link+'\n\n':'')+code;$('cOutW').style.display='';$('copied').textContent='';$('loadErr').textContent='';$('codeModal').classList.add('open');};
+  $('codeOut').value=(link?link+'\n\n':'')+code;showQr(link);$('cOutW').style.display='';$('copied').textContent='';$('loadErr').textContent='';$('codeModal').classList.add('open');};
 
 /* ===================================================================== codes, links, sending */
 const b64u=u8=>{let s='';for(let i=0;i<u8.length;i+=8192)s+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
