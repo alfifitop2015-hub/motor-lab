@@ -139,6 +139,7 @@ body.diag .hit{pointer-events:stroke;cursor:pointer}body.diag .hitr{pointer-even
 body.diag .hit:hover{stroke:rgba(255,160,0,.35)}body.diag .hitr:hover{fill:rgba(255,160,0,.25)}
 .flt{stroke:#ff6d00!important;stroke-width:5!important;stroke-dasharray:6 4;opacity:.9}
 .fnd{stroke:#1a8a42!important;stroke-width:6!important;opacity:.55}
+.wrg{stroke:#e0262b!important;stroke-width:7!important;opacity:.6}
 .lbl{font:600 13px "IBM Plex Sans Arabic",Tahoma,sans-serif;fill:#14202c}
 .pin{font:500 10px Tahoma,sans-serif;fill:#3c4650}
 .sock{fill:#fffdf6;stroke:#3a3a3a;stroke-width:1.6;cursor:crosshair}
@@ -821,8 +822,13 @@ function drawDyn(){const c=C(),uf=S.uf,v=viewOn();if(!uf)return;
     const on=v&&((e.k==='coil'&&S.k[e.dev])||(e.k==='tcoil'&&S.tStart[e.dev])),lit=v&&e.k==='lamp'&&S.lamp[e.dev];
     const key=(st?1:0)+'';if(g.dataset.s!==key){g.dataset.s=key;g.innerHTML=e.co?coSym(st):sym(e,st);}
     g.setAttribute('class','el'+(on?' on':'')+(lit?' lit':''));});
-  const tr=document.body.classList.contains('trainer')&&S.show,found=new Set(S.ex?S.ex.found:[]);
-  REF.h.forEach((el,id)=>{const f=S.F.has(id);el.classList.toggle('flt',tr&&f&&!found.has(id));el.classList.toggle('fnd',found.has(id));});
+  /* found faults green, wrong guesses red; a fault not found is shown to the trainer, and to the trainee once the exercise is over */
+  const tr=(document.body.classList.contains('trainer')&&S.show)||!!(S.ex&&S.ex.done),found=new Set(S.ex?S.ex.found:[]),wrg=new Set(S.ex?S.ex.wrong:[]);
+  REF.h.forEach((el,id)=>{const f=S.F.has(id);el.classList.toggle('flt',tr&&f&&!found.has(id));el.classList.toggle('fnd',found.has(id));el.classList.toggle('wrg',wrg.has(id)&&!found.has(id));});
+  {const sv=$('svg');let g=sv.querySelector('#wrgB');if(g)g.remove();if(wrg.size){g=document.createElementNS('http://www.w3.org/2000/svg','g');g.id='wrgB';g.setAttribute('pointer-events','none');
+    wrg.forEach(id=>{const el=REF.h.get(id);if(!el||found.has(id))return;try{const b=el.getBBox(),x=b.x+b.width/2,y=b.y+b.height/2;
+      g.insertAdjacentHTML('beforeend',`<circle cx="${x}" cy="${y-12}" r="9" fill="#e0262b" stroke="#fff" stroke-width="1.8"/><text x="${x}" y="${y-8}" text-anchor="middle" style="font:900 11px sans-serif;fill:#fff">✖</text>`);}catch(_){}});
+    sv.appendChild(g);}}
   REF.t.forEach((el,n)=>{el.classList.toggle('pr',S.probes[0]===n);el.classList.toggle('pk',S.probes[1]===n);});}
 const viewOn=()=>S.view&&(document.body.classList.contains('trainer')||!S.ex||S.ex.vw!==false);
 function fitZ(){return Math.max(.3,(wrap.clientWidth-4)/W);}

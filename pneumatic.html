@@ -433,7 +433,7 @@ function render(){let o=bg();
   S.comps.forEach(c=>{Object.entries(DEF[c.t].ports).forEach(([p,d])=>{const k=c.id+'.'+p,x=c.x+d[0],y=c.y+d[1],pr=isP(k),pend=S.pending===k,exh=['3','5'].includes(p)&&c.t!=='supply';
     const lx=d[2]==='l'?x-12:d[2]==='r'?x+12:x+10,ly=d[2]==='u'?y-9:d[2]==='d'?y+14:y-10,lab=PLBL[p]!=null?PLBL[p]:p;
     o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="13" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="7.5" fill="${pend?'#fff1c2':pr?'#1f6fe5':'#e8edf1'}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><circle cx="${x}" cy="${y}" r="3" fill="${exh?'#777':'#2a3440'}"/>${lab?T(lx,ly,lab,9.5,'#0b1d33',700):''}</g>`;});});
-  o+=pnHL();o+=`<g id="thandles">${handlesSVG()}</g>`;
+  o+=pnHL();o+=errSVG();o+=`<g id="thandles">${handlesSVG()}</g>`;
   svg.innerHTML=o;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.style.width=(W*S.zoom)+'px';renderTop();save();}
 function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.sel);if(!t)return '';const P=tubePts(t);if(!P)return '';let o='';
   const inner=P.slice(1,-1);for(let k=0;k<inner.length-1;k++){const mx=(inner[k][0]+inner[k+1][0])/2,my=(inner[k][1]+inner[k+1][1])/2;
@@ -523,7 +523,7 @@ svg.addEventListener('click',e=>{if(S.justT)return;if(e.target.closest('[data-wp
   if(S.pending||S.sel!=null||S.selC){S.pending=null;S.sel=null;S.selC=null;render();}});
 function portClick(k){if(!S.pending){S.pending=k;S.sel=null;}else if(S.pending===k)S.pending=null;
   else{const a=S.pending;S.pending=null;if(!S.tubes.some(t=>(t.a===a&&t.b===k)||(t.a===k&&t.b===a))){snap();S.tubes.push({id:S.nid++,a,b:k});say('خرطوم '+a+' ⟷ '+k);}}update();}
-function act(a){const [k,id,sg]=a.split(':');
+function act(a){const [k,id,sg]=a.split(':');if(k==='err')return errSay(id);
   if(k==='air'){S.air=!S.air;say(S.air?'فُتح الهواء':'أُغلق الهواء');clickSnd();}
   else if(k==='bar'){S.bar=Math.max(0,Math.min(8,S.bar+(id==='+'?.5:-.5)));say('الضغط '+S.bar+' bar');}
   else if(k==='tog'){const c=comp(id);if(c){if(c.t==='v32sel')c.s.on=!c.s.on;else c.s.pos=c.s.pos==='a'?'b':'a';clickSnd();}}
@@ -593,7 +593,7 @@ $('bCClose').onclick=()=>cM.classList.remove('open');
 $('bCopy').onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText($('codeOut').value);ok=true;}catch(_){}$('copied').textContent=ok?'تم النسخ':'انسخه يدويًا';};
 function openObj(o){snap();applyObj(o);S.stu=o.st||null;say(o.st?'فُتحت دائرة المتدرب '+o.st.n:'حُمّلت دائرة');update();
   /* a trainee's graded circuit: its result again, with every wrong and missing hose named */
-  const g=o.st&&o.st.g;if(g&&EX[g.ex])setTimeout(()=>{try{const G=pnGrade(+g.ex);$('gBody').innerHTML=`<p style="margin:0 0 4px"><b>${esc(EX[+g.ex].n)}</b></p><p class="gnote">نتيجة المتدرب ${esc(o.st.n||'')} كما أُرسلت: <b>${esc(g.s)} / 20</b>. أعاد المحاكي الفحص الآن على الدائرة المرسلة${G.s===+g.s?' وحصل على الدرجة نفسها ✔':' وحصل على <b>'+G.s+' / 20</b>'}.</p>`+gResHTML(G);gM.classList.add('open');}catch(_){}},50);}
+  const g=o.st&&o.st.g;if(g&&EX[g.ex])setTimeout(()=>{try{const G=pnGrade(+g.ex);setErr(G);render();$('gBody').innerHTML=`<p style="margin:0 0 4px"><b>${esc(EX[+g.ex].n)}</b></p><p class="gnote">نتيجة المتدرب ${esc(o.st.n||'')} كما أُرسلت: <b>${esc(g.s)} / 20</b>. أعاد المحاكي الفحص الآن على الدائرة المرسلة${G.s===+g.s?' وحصل على الدرجة نفسها ✔':' وحصل على <b>'+G.s+' / 20</b>'}.</p>`+gResHTML(G);gM.classList.add('open');}catch(_){}},50);}
 $('bLoad').onclick=async()=>{try{const o=await decodeCode($('codeIn').value);openObj(o);cM.classList.remove('open');}catch(_){$('loadErr').textContent='الكود غير صالح لدائرة هوائية.';}};
 if(/^#t=/.test(location.hash))decodeCode(location.hash).then(openObj).catch(()=>{});
 
@@ -941,7 +941,9 @@ function pgScore(i,o,mp){const x=EX[i],tOf={};o.comps.forEach(c=>tOf[c.id]=c.t);
   const us=makeUF(),T=o.tubes.map(t=>[t[0],t[1]]);T.forEach(([a,b])=>us.union(K(a),K(b)));
   const miss=x.t.filter(([a,b])=>us.find(KR(a))!==us.find(KR(b)));
   /* wrong: a hose on a port the exercise does not use, or a point that joins what the exercise keeps apart */
-  const wrong=T.filter(([a,b])=>(!refP.has(K(a))&&!free(a))||(!refP.has(K(b))&&!free(b)));let bad=wrong.length;
+  const off=([a,b])=>(!refP.has(K(a))&&!free(a))||(!refP.has(K(b))&&!free(b));let bad=T.filter(off).length;
+  /* listed as wrong: a hose on an unused port, or one joining two points the exercise keeps apart (the count stays as before) */
+  const wrong=T.filter(t=>off(t)||(refP.has(K(t[0]))&&refP.has(K(t[1]))&&ur.find(K(t[0]))!==ur.find(K(t[1]))));
   const g=new Map();refP.forEach(k=>{const r=us.find(k);if(!g.has(r))g.set(r,new Set());g.get(r).add(ur.find(k));});g.forEach(v=>{if(v.size>1)bad+=v.size-1;});
   const tot=x.t.length,ok=tot-miss.length;return{ok,tot,bad,miss,wrong,wr:tot?ok/(tot+bad):0};}
 function pnGrade(i,o){o=o||serial();const x=EX[i],types=[...new Set(x.c.map(c=>c.t))],perm=(a,k)=>k===0?[[]]:a.flatMap((v,j)=>perm([...a.slice(0,j),...a.slice(j+1)],k-1).map(r=>[v,...r]));
@@ -966,6 +968,20 @@ function gResHTML(G){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)
 function gwItem(a,b,pn,miss){return `<li class="${miss?'':'no'}"><span>${miss?'•':'✖'}</span><span style="flex:1;min-width:0"><b dir="ltr">${esc(a)} ⟷ ${esc(b)}</b><br><small style="color:var(--muted)">من ${esc(pn(a))}<br>إلى ${esc(pn(b))}</small></span><button class="btn" data-gw="${esc(a)}|${esc(b)}|${miss}" title="تحديد موضعه على اللوحة" style="flex:none;height:32px;padding:0 8px">📍</button></li>`;}
 /* an exercise port named as the trainee's part (the grade matched parts of the same type whatever their names) */
 function tkOf(G,k){const [id,p]=k.split('.');if(id==='0Z')return k;const inv={};Object.entries(G.mp||{}).forEach(([s,r])=>{inv[r]=s;});return (inv[id]||id)+'.'+p;}
+/* red ✖ marks on the board where the last grade found a wrong hose (and, for the trainer, a yellow ? on the ports of a missing one);
+   they stay until the hoses change, and touching one names the mistake */
+const tSig=()=>S.tubes.map(t=>[t.a,t.b].sort().join('|')).sort().join(',');
+function setErr(G){S.errM=G&&((G.wrong||[]).length||(G.miss||[]).length)?{sig:tSig(),wrong:(G.wrong||[]).map(x=>[x[0],x[1]]),miss:(G.miss||[]).map(([a,b])=>[tkOf(G,a),tkOf(G,b)])}:null;}
+function errSVG(){const E=S.errM;if(!E)return '';if(E.sig!==tSig()){S.errM=null;return '';}const tr=document.body.classList.contains('trainer');let o='<g class="errm">';
+  const badge=(P,i,miss)=>`<g class="act" data-act="err:${i}"><title>${miss?'خرطوم ناقص':'خرطوم خاطئ'}: اضغط لمعرفة الخطأ</title><circle cx="${P.x+13}" cy="${P.y-13}" r="13" fill="${miss?'#ffb300':'#e0262b'}" stroke="#fff" stroke-width="2.2"/>
+    <text x="${P.x+13}" y="${P.y-7.5}" text-anchor="middle" style="font:900 15px sans-serif;fill:${miss?'#1c1400':'#fff'}">${miss?'?':'✖'}</text></g>`;
+  E.wrong.forEach(([a,b],i)=>{const t=S.tubes.find(t=>(t.a===a&&t.b===b)||(t.a===b&&t.b===a)),d=t&&tubePath(t);
+    if(d)o+=`<path d="${d}" fill="none" stroke="#ff1f1f" stroke-width="10" stroke-opacity=".45" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`;
+    [a,b].forEach(k=>{const P=portXY(k);if(P)o+=`<circle cx="${P.x}" cy="${P.y}" r="11" fill="none" stroke="#e0262b" stroke-width="3" pointer-events="none"/>`+badge(P,i,0);});});
+  if(tr)E.miss.forEach(([a,b],i)=>{[a,b].forEach(k=>{const P=portXY(k);if(P)o+=`<circle cx="${P.x}" cy="${P.y}" r="11" fill="none" stroke="#ffb300" stroke-width="3" stroke-dasharray="4 3" pointer-events="none"/>`+badge(P,'m'+i,1);});});
+  return o+'</g>';}
+function errSay(i){const E=S.errM;if(!E)return;const miss=String(i).startsWith('m'),x=miss?E.miss[+String(i).slice(1)]:E.wrong[+i];if(!x)return;const pn=k=>{try{return pnPort(k);}catch(_){return k;}};
+  say((miss?'خرطوم ناقص: يجب وصل ':'خرطوم خاطئ: ')+pn(x[0])+(miss?' مع ':' ⟷ ')+pn(x[1]));}
 function gLocate(a,b,miss){gM.classList.remove('open');if(!miss){const t=S.tubes.find(t=>(t.a===a&&t.b===b)||(t.a===b&&t.b===a));if(t){S.sel=t.id;S.selC=null;render();}}
   const P=[a,b].map(portXY).filter(Boolean);P.forEach(t=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',t.x);c.setAttribute('cy',t.y);c.setAttribute('r',16);
     c.setAttribute('fill','none');c.setAttribute('stroke',miss?'#ffb300':'#ff3b30');c.setAttribute('stroke-width',4);c.setAttribute('pointer-events','none');
@@ -985,7 +1001,7 @@ function gDo(){const x=PNX,tr=document.body.classList.contains('trainer'),n=$('s
   if(!S.tubes.length){$('gMsg').textContent='لا توجد خراطيم بعد.';return false;}
   const A=pgAll(),P=A[x],pTop=P?(P.top||P):null,tries=(P?P.tries||1:0)+1,strip=({top,tries,...y})=>y,r=pnGrade(+x),keep=pTop&&pTop.s>r.s;
   A[x]={...r,t:Date.now(),n,id:sid,w:serial(),tries,...(keep?{top:strip(pTop)}:{})};try{localStorage.setItem(PGK,JSON.stringify(A));}catch(_){}
-  say('قُيّمت الدائرة: '+r.s+' من 20'+(keep?'. أعلى محاولة لك ('+pTop.s+' من 20) محفوظة، وهي التي تُرسل':''));renderTop();gRender();pgBtn();return true;}
+  setErr(r);render();say('قُيّمت الدائرة: '+r.s+' من 20'+(keep?'. أعلى محاولة لك ('+pTop.s+' من 20) محفوظة، وهي التي تُرسل':''));renderTop();gRender();pgBtn();return true;}
 /* one button: the circuit is graded at once when it changed since this exercise's last grade, then «📤 إرسال» is in the result */
 function gOpen(){gRender();gM.classList.add('open');const x=PNX,L=x!==''&&pgAll()[x];
   if(x!==''&&$('stName').value.trim()&&$('stId').value.trim()&&S.tubes.length&&(!L||JSON.stringify(L.w.tubes)!==JSON.stringify(serial().tubes)||JSON.stringify(L.w.comps.map(c=>c.id+c.t))!==JSON.stringify(S.comps.map(c=>c.id+c.t))))gDo();}
