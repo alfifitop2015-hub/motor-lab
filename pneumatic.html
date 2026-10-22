@@ -591,7 +591,9 @@ $('bShare').onclick=async()=>{$('codeOut').value=await encodeCode(serial());$('c
 $('bOpenStu').onclick=()=>{$('codeOut').value='';$('codeIn').value='';$('loadErr').textContent='';cM.classList.add('open');};
 $('bCClose').onclick=()=>cM.classList.remove('open');
 $('bCopy').onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText($('codeOut').value);ok=true;}catch(_){}$('copied').textContent=ok?'تم النسخ':'انسخه يدويًا';};
-function openObj(o){snap();applyObj(o);S.stu=o.st||null;say(o.st?'فُتحت دائرة المتدرب '+o.st.n:'حُمّلت دائرة');update();}
+function openObj(o){snap();applyObj(o);S.stu=o.st||null;say(o.st?'فُتحت دائرة المتدرب '+o.st.n:'حُمّلت دائرة');update();
+  /* a trainee's graded circuit: its result again, with every wrong and missing hose named */
+  const g=o.st&&o.st.g;if(g&&EX[g.ex])setTimeout(()=>{try{const G=pnGrade(+g.ex);$('gBody').innerHTML=`<p style="margin:0 0 4px"><b>${esc(EX[+g.ex].n)}</b></p><p class="gnote">نتيجة المتدرب ${esc(o.st.n||'')} كما أُرسلت: <b>${esc(g.s)} / 20</b>. أعاد المحاكي الفحص الآن على الدائرة المرسلة${G.s===+g.s?' وحصل على الدرجة نفسها ✔':' وحصل على <b>'+G.s+' / 20</b>'}.</p>`+gResHTML(G);gM.classList.add('open');}catch(_){}},50);}
 $('bLoad').onclick=async()=>{try{const o=await decodeCode($('codeIn').value);openObj(o);cM.classList.remove('open');}catch(_){$('loadErr').textContent='الكود غير صالح لدائرة هوائية.';}};
 if(/^#t=/.test(location.hash))decodeCode(location.hash).then(openObj).catch(()=>{});
 
@@ -946,7 +948,7 @@ function pnGrade(i,o){o=o||serial();const x=EX[i],types=[...new Set(x.c.map(c=>c
   /* every way of naming the trainee's parts as the exercise's parts of the same type (a few hundred at most) */
   let maps=[{}];types.forEach(t=>{const r=x.c.filter(c=>c.t===t).map(c=>c.id),st=o.comps.filter(c=>c.t===t).map(c=>c.id),k=Math.min(r.length,st.length);
     const opts=perm(st,k);maps=maps.flatMap(m=>opts.map(pp=>{const n={...m};pp.forEach((sid,j)=>{n[sid]=r[j];});return n;})).slice(0,3000);});
-  let best=null;maps.forEach(mp=>{const r=pgScore(i,o,mp);if(!best||r.wr>best.wr)best=r;});
+  let best=null;maps.forEach(mp=>{const r=pgScore(i,o,mp);if(!best||r.wr>best.wr)best={...r,mp};});
   return{...best,s:Math.min(20,Math.ceil(20*best.wr-1e-9)),sm:Math.ceil(200*best.wr-1e-9)/10};}
 /* the board sent is the highest attempt's: put on the board for the photo, then the trainee's board comes back */
 async function pgWith(fn){const G=pgCur();if(!G||JSON.stringify(G.w.tubes)===JSON.stringify(serial().tubes))return fn();const cur=serial();
@@ -957,9 +959,20 @@ function gResHTML(G){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)
   return `<div class="gbig"><b style="color:${col}">${G.s}</b><small>/ 20</small><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <ul class="glist"><li><span>✔</span><span>خراطيم صحيحة مطابقة للتمرين</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>خراطيم خاطئة أو زائدة</span><b>${G.bad}</b></li></ul>
   <p class="gmeta">طريقة الحساب: 20 × الصحيحة ÷ (المطلوبة + الخاطئة) = 20 × ${G.ok} ÷ ${G.tot+G.bad} = ${G.sm}. الدرجة = ${G.s} من 20 (يُجبر الكسر لصالح المتدرب).</p>
-  ${G.wrong&&G.wrong.length?`<details><summary>الخراطيم الخاطئة (${G.wrong.length})</summary><ul class="glist">${G.wrong.map(([a,b])=>`<li class="no"><span>✖</span><span>${esc(pn(a))} ⟷ ${esc(pn(b))}</span></li>`).join('')}</ul></details>`:''}
-  ${G.miss&&G.miss.length?`<details class="trainer-only"><summary>الخراطيم الناقصة (${G.miss.length}) · للمدرب فقط</summary><ul class="glist">${G.miss.map(([a,b])=>`<li><span>•</span><span dir="ltr">${esc(a)} ⟷ ${esc(b)}</span></li>`).join('')}</ul></details>`:''}
+  ${G.wrong&&G.wrong.length?`<details open><summary>الخراطيم الخاطئة أو الزائدة (${G.wrong.length}): أين الخطأ بالضبط</summary><ul class="glist">${G.wrong.map(([a,b])=>gwItem(a,b,pn,0)).join('')}</ul></details>`:''}
+  ${G.miss&&G.miss.length?`<details class="trainer-only" open><summary>الخراطيم الناقصة (${G.miss.length}) · للمدرب فقط</summary><ul class="glist">${G.miss.map(([a,b])=>gwItem(tkOf(G,a),tkOf(G,b),pn,1)).join('')}</ul></details>`:''}
   <p class="gmeta">يُقبل التوصيل المكافئ: خرطوم على أي منفذ من نفس النقطة، وأي مخرج من وحدة الإمداد P1-P8، وموزع T، ومانومتر إضافي، وأسماء عناصر مختلفة عن التمرين.</p>`;}
+/* a wrong or missing hose by its two ports and their names; 📍 shows it on the board */
+function gwItem(a,b,pn,miss){return `<li class="${miss?'':'no'}"><span>${miss?'•':'✖'}</span><span style="flex:1;min-width:0"><b dir="ltr">${esc(a)} ⟷ ${esc(b)}</b><br><small style="color:var(--muted)">من ${esc(pn(a))}<br>إلى ${esc(pn(b))}</small></span><button class="btn" data-gw="${esc(a)}|${esc(b)}|${miss}" title="تحديد موضعه على اللوحة" style="flex:none;height:32px;padding:0 8px">📍</button></li>`;}
+/* an exercise port named as the trainee's part (the grade matched parts of the same type whatever their names) */
+function tkOf(G,k){const [id,p]=k.split('.');if(id==='0Z')return k;const inv={};Object.entries(G.mp||{}).forEach(([s,r])=>{inv[r]=s;});return (inv[id]||id)+'.'+p;}
+function gLocate(a,b,miss){gM.classList.remove('open');if(!miss){const t=S.tubes.find(t=>(t.a===a&&t.b===b)||(t.a===b&&t.b===a));if(t){S.sel=t.id;S.selC=null;render();}}
+  const P=[a,b].map(portXY).filter(Boolean);P.forEach(t=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',t.x);c.setAttribute('cy',t.y);c.setAttribute('r',16);
+    c.setAttribute('fill','none');c.setAttribute('stroke',miss?'#ffb300':'#ff3b30');c.setAttribute('stroke-width',4);c.setAttribute('pointer-events','none');
+    c.innerHTML='<animate attributeName="r" values="10;22;10" dur="1s" repeatCount="indefinite"/>';svg.appendChild(c);setTimeout(()=>c.remove(),6000);});
+  if(P[0]){const r=svg.getBoundingClientRect(),k=r.width/W,x=(P[0].x+(P[1]||P[0]).x)/2,y=(P[0].y+(P[1]||P[0]).y)/2,wr=wrap.getBoundingClientRect();
+    wrap.scrollBy({left:r.left+x*k-wr.left-wrap.clientWidth/2,top:r.top+y*k-wr.top-wrap.clientHeight/2,behavior:'smooth'});}
+  const pn=k=>{try{return pnPort(k);}catch(_){return k;}};say((miss?'خرطوم ناقص بين ':'خرطوم خاطئ بين ')+pn(a)+' و'+pn(b));}
 function gRender(){const x=PNX,A=pgAll(),G=x!==''&&A[x];let h='';
   if(x===''||!EX[+x])h=`<p class="gnote">اختر التمرين الذي نفّذته، ثم يُقيَّم مباشرة:</p><select class="btn" id="gEx" style="width:100%;height:42px"><option value="">اختر التمرين…</option>${EX.map((e,i)=>`<option value="${i}">${esc(e.n)}</option>`).join('')}</select>`;
   else if(G){const T=G.top||G;h=`<p style="margin:0 0 4px"><b>${esc(EX[+x].n)}</b></p><p class="gnote">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b>، ودائرتها محفوظة، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت.</p>`+gResHTML(G)+
@@ -977,7 +990,7 @@ function gDo(){const x=PNX,tr=document.body.classList.contains('trainer'),n=$('s
 function gOpen(){gRender();gM.classList.add('open');const x=PNX,L=x!==''&&pgAll()[x];
   if(x!==''&&$('stName').value.trim()&&$('stId').value.trim()&&S.tubes.length&&(!L||JSON.stringify(L.w.tubes)!==JSON.stringify(serial().tubes)||JSON.stringify(L.w.comps.map(c=>c.id+c.t))!==JSON.stringify(S.comps.map(c=>c.id+c.t))))gDo();}
 $('bGrade').onclick=gOpen;$('gClose').onclick=()=>gM.classList.remove('open');gM.addEventListener('click',e=>{if(e.target===gM)gM.classList.remove('open');});
-$('gBody').addEventListener('click',e=>{if(e.target.id==='gGo')gDo();else if(e.target.id==='gSend'){gM.classList.remove('open');openSend();}});
+$('gBody').addEventListener('click',e=>{const gw=e.target.closest('[data-gw]');if(gw){const [a,b,m]=gw.dataset.gw.split('|');gLocate(a,b,m==='1');return;}if(e.target.id==='gGo')gDo();else if(e.target.id==='gSend'){gM.classList.remove('open');openSend();}});
 $('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'&&e.target.value!==''){pnPick(e.target.value);gOpen();}});
 ['stName','stId'].forEach(i=>$(i).addEventListener('input',()=>$(i).classList.remove('bad')));
 const wkM=$('wkModal');

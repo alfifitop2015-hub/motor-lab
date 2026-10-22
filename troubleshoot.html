@@ -1033,7 +1033,7 @@ function renderStat(){const d=$('dstat'),x=S.ex;$('dEnd').style.display=x?'':'no
 function hint(){$('hint').textContent=S.diag?(isTr()?'وضع العطل: المس سلكًا أو عنصرًا لإضافة عطل أو إزالته.':'تحديد العطل: المس السلك أو العنصر الذي تعتقد أنه معطوب.')
   :'اسحب الملتميتر الأصفر لأي مكان، واضغط مقبس المجس فيه ثم الطرف (●) في المخطط، أو المس طرفين متتاليين. شغّل Q1 وQ2 واضغط الضواغط من لوحة الشنطة.';
   $('dDiagT').textContent=isTr()?'وضع عطل':'تحديد العطل';}
-function report(x){return{c:x.c,f:x.f.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?fDesc(e):id;}),found:x.found.length,wrong:x.wrong.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?elName(e):id;}),
+function report(x){return{c:x.c,f:x.f.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?fDesc(e):id;}),fd:x.f.map(id=>x.found.includes(id)),found:x.found.length,wrong:x.wrong.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?elName(e):id;}),
   meas:x.meas,secs:secs(x),score:score(x),view:!!x.viewUsed,gaveUp:!!x.gaveUp,k:x.k};}
 let REP=null;
 function showReport(r,st){r=r||report(S.ex);REP={r,st};const ok=r.found>=r.f.length;
@@ -1041,8 +1041,8 @@ function showReport(r,st){r=r||report(S.ex);REP={r,st};const ok=r.found>=r.f.len
    `<div class="score" style="color:${ok?'var(--ok)':'var(--warn)'}">${s20(r.score)}<small style="font-size:1rem;color:var(--muted)"> / 20 · ${r.score}%</small></div>`+
    `<p class="note2 ${ok?'good':'warn'}">${ok?'✔ وُجدت كل الأعطال.':r.gaveUp?'أُنهي التمرين قبل إيجاد كل الأعطال.':''}</p>`+
    `<table class="rtab"><tr><td>الدائرة</td><td>${esc(r.c)} — ${esc((INFO[r.c]||{}).n||'')}</td></tr>`+
-   `<tr><td>الأعطال</td><td>${r.f.map(esc).join('<br>')}</td></tr><tr><td>وُجد</td><td>${r.found} من ${r.f.length}</td></tr>`+
-   `<tr><td>محاولات خاطئة</td><td>${r.wrong.length?r.wrong.map(esc).join('<br>'):'لا يوجد'}</td></tr><tr><td>عدد القياسات</td><td>${r.meas}</td></tr>`+
+   `<tr><td>الأعطال</td><td>${r.f.map((d,i)=>r.fd?`<span style="color:${r.fd[i]?'var(--ok)':'var(--warn)'}">${r.fd[i]?'✔ وجده':'✖ لم يجده'}: ${esc(d)}</span>`:esc(d)).join('<br>')}</td></tr><tr><td>وُجد</td><td>${r.found} من ${r.f.length}</td></tr>`+
+   `<tr><td>محاولات خاطئة</td><td>${r.wrong.length?r.wrong.map(w=>'<span style="color:var(--warn)">✖ '+esc(w)+'</span>').join('<br>'):'لا يوجد'}</td></tr><tr><td>عدد القياسات</td><td>${r.meas}</td></tr>`+
    `<tr><td>الزمن</td><td>${mmss(r.secs)}</td></tr><tr><td>عرض الجهد</td><td>${r.view?'استُخدم':'لم يُستخدم'}</td></tr></table>`;
   $('repSend').style.display=st?'none':'';$('repLoad').style.display=st?'':'none';$('repModal').classList.add('open');}
 $('repClose').onclick=()=>$('repModal').classList.remove('open');
@@ -1122,7 +1122,7 @@ $('sClose').onclick=()=>sM.classList.remove('open');
 function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();if(!n||!id){okMsg('اكتب اسمك ورقمك التدريبي أولًا.',1);return null;}if(!S.ex){okMsg('لا يوجد تمرين.',1);return null;}return{n,id};}
 async function buildMsg(st){const r=report(S.ex),code=await encodeCode({app:'ft',v:1,c:S.ex.c,f:S.ex.f,r,st:{n:st.n,id:st.id,t:Date.now()}});
   const link=isHosted()&&code.startsWith('Z1')?FT_URL()+'#t='+code.slice(2):'';
-  return{code,r,text:`نتيجة شنطة اكتشاف الأعطال\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالدائرة: ${r.c} — ${(INFO[r.c]||{}).n||''}\nالأعطال الموجودة: ${r.found} من ${r.f.length} · الدرجة: ${s20(r.score)} من 20 (${r.score}%)\nالقياسات: ${r.meas} · محاولات خاطئة: ${r.wrong.length} · الزمن: ${mmss(r.secs)}${S.ex.done?'':' (لم ينته)'}\n`+(link?`\nافتح النتيجة:\n${link}\n`:'')+`\nالكود (للمدرب: ⋯ ← فتح بالكود):\n${code}`};}
+  return{code,r,text:`نتيجة شنطة اكتشاف الأعطال\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالدائرة: ${r.c} — ${(INFO[r.c]||{}).n||''}\nالأعطال الموجودة: ${r.found} من ${r.f.length} · الدرجة: ${s20(r.score)} من 20 (${r.score}%)\nالقياسات: ${r.meas} · محاولات خاطئة: ${r.wrong.length} · الزمن: ${mmss(r.secs)}${S.ex.done?'':' (لم ينته)'}\n${r.f.map((d,i)=>(r.fd[i]?'✔ وجد: ':'✖ لم يجد: ')+d).join('\n')}${r.wrong.length?'\n'+r.wrong.map(w=>'✖ حدّد خطأً: '+w).join('\n'):''}\n`+(link?`\nافتح النتيجة:\n${link}\n`:'')+`\nالكود (للمدرب: ⋯ ← فتح بالكود):\n${code}`};}
 function openLink(u){const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
 $('sWa').onclick=async()=>{const st=sendReady();if(!st)return;const{text}=await buildMsg(st);openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
 function repImg(st,r,w){const c=document.createElement('canvas'),h=Math.round(w*1.25),k=w/600;c.width=w;c.height=h;const g=c.getContext('2d');
