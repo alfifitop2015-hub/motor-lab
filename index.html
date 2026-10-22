@@ -198,6 +198,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .rrow .rn{font-weight:700}.rrow .rs{font-size:.8rem;color:var(--muted)}
 .rrow .rg{font-weight:700;font-size:1.05rem;direction:ltr;unicode-bidi:isolate;text-align:center;min-width:64px}
 .rrow .ra{grid-column:3/5;display:flex;gap:6px;flex-wrap:wrap}
+.rrow .ra .rexs{height:34px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 6px;font-size:.82rem;max-width:100%;color:inherit}
 .rrow .ra button,.rtools button{height:34px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.85rem}
 .rtools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
 .rtools input{flex:1;min-width:140px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:0 10px}
@@ -3197,6 +3198,22 @@ function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--a
   ${G.lampsIn!=null?`<p class="gmeta">${G.lampsIn?'أسلاك لمبات البيان محسوبة في درجة هذا التمرين.':G.lr!=null?'لمبات البيان درجة إضافية حتى '+LAMP_BONUS+' في هذا التمرين، ولا يتعدى المجموع 20.':'لا توجد لمبات بيان في هذا التمرين.'} يُقبل التوصيل المكافئ: سلك على أي طرف من نفس النقطة، وتلامس مساعد آخر من نفس النوع على نفس الكونتاكتور، والمحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد.</p>`:''}${gOpHTML(G)}`:
   `<ul class="glist">${G.items.map(([t,p,ok])=>`<li class="${ok?'':'no'}"><span>${ok?'✔':'✖'}</span><span>${esc(t)}</span><b>${ok?p:0} / ${p}</b></li>`).join('')}</ul>`}
   <p class="gmeta">${G.n?'المتدرب: '+esc(G.n)+' · الرقم: '+esc(G.id)+' · ':''}${new Date(G.t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'medium',timeStyle:'short'})}</p>`;}
+/* wired another exercise than the one picked? the board moves to the right exercise as it is (no wire is lost) and is graded on it;
+   «🔍» grades the board on every exercise and names the closest one */
+function gMoveHTML(ex){if(document.body.classList.contains('trainer')||S.stu)return '';const ks=Object.keys(PNAME);
+  return `<details class="gmove" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">🔀 وصّلت تمرينًا غير «${esc(PNAME[ex])}»؟</summary>
+    <p class="gmeta">انقل توصيلك كما هو إلى التمرين الصحيح ليُقيَّم عليه، دون أن يضيع أي سلك.</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><select class="gsel" id="gMvEx" style="flex:1;min-width:0">${ks.filter(k=>k!==ex).map(k=>`<option value="${k}">${ks.indexOf(k)+1}. ${esc(PNAME[k])}</option>`).join('')}</select><button class="btn" id="gMv">نقل التوصيل وإعادة التقييم</button></div>
+    <button class="btn" id="gGuess" style="margin-top:6px">🔍 أي تمرين يطابق توصيلي؟</button><p id="gGuessR" class="gmeta"></p></details>`;}
+function gMove(to){const from=EXP.ex;if(!PNAME[to]||to===from)return;const o=serial();
+  /* the board saved under the wrong exercise was this one: it goes with it */
+  try{const A=wkAll();if(A[from]&&JSON.stringify(A[from].o.w)===JSON.stringify(o.w)){delete A[from];localStorage.setItem(WKK,JSON.stringify(A));}}catch(_){}
+  exPick(to,true);exMotor(to);GV.ex=to;WK.fresh=null;wkSave(o);renderTop();gDo();gRender();
+  say('نُقل توصيلك كما هو إلى التمرين: '+PNAME[to]+'، وقُيّم عليه.');}
+async function gGuess(){const R=$('gGuessR');if(!R)return;R.textContent='جارٍ مقارنة توصيلك بكل التمارين…';const o=serial(),cur=EXP.ex;let best=null,sc={};
+  for(const k of Object.keys(PNAME)){if(!PRESETS[k])continue;await new Promise(z=>setTimeout(z,0));try{const g=gradeNow(k,o);sc[k]=g.s;if(!best||g.s>best.s)best={k,s:g.s};}catch(_){}}
+  if(!best){R.textContent='تعذّرت المقارنة.';return;}const ks=Object.keys(PNAME);
+  R.innerHTML=best.k===cur?`توصيلك أقرب ما يكون إلى التمرين المختار نفسه (${sc[cur]}/20).`:`أقرب تمرين لتوصيلك: <b>${ks.indexOf(best.k)+1}. ${esc(PNAME[best.k])}</b> (${best.s}/20)، والمختار الآن ${sc[cur]!=null?sc[cur]:'—'}/20. <button class="btn" data-mv="${best.k}">نقله إليه</button>`;}
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
   /* the exercise picked above the board is the one graded; the list appears only when none was picked there */
   let h=EXP.ex&&ex===EXP.ex?`<p class="gexn">التمرين: <b>${Object.keys(PNAME).indexOf(ex)+1}. ${esc(PNAME[ex])}</b>${A[ex]?' — '+(A[ex].top||A[ex]).s+'/20':''}<span>لتقييم تمرين آخر اختره من قائمة التمارين أعلى اللوحة.</span></p>`:`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+(A[k].top||A[k]).s+'/20':''}</option>`).join('')}</select></label>`;
@@ -3204,7 +3221,7 @@ function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classLis
   else if(G){const T=G.top||G;
     h+=`<div class="glock">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b> (المحاولة ${T.try||1})، وتوصيلها محفوظ، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت: لا تضيع عليك الدرجة الأعلى.</div>`+gResHTML(G)+
     `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
-    <div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20) للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالتوصيل الحالي</button></div>`;}
+    <div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20) للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالتوصيل الحالي</button></div>${gMoveHTML(ex)}`;}
   else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}${PLCX.has(ex)?'<br><b>التقييم:</b> التوصيل 10 درجات، والبرنامج 10 درجات (يُختبر تشغيله آليًا).':''}</div>
     <div class="glock">يمكنك إعادة التقييم بعد تصحيح أخطائك، وتُحفظ أعلى محاولة لك وتوصيلها، وهي التي تُرسل للمدرب. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
@@ -3219,6 +3236,9 @@ $('gClose').onclick=()=>gM.classList.remove('open');gM.addEventListener('click',
 $('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'){GV.ex=e.target.value;exMotor(GV.ex);exPick(GV.ex,true);gRender();}});
 $('gBody').addEventListener('click',e=>{const id=e.target.id;
   if(id==='gGo')gDo();
+  else if(id==='gMv')gMove($('gMvEx').value);
+  else if(id==='gGuess')gGuess();
+  else if(e.target.dataset.mv)gMove(e.target.dataset.mv);
   else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
 });
 function gDo(){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
@@ -3574,9 +3594,10 @@ const rVis=()=>{const q=$('rFind').value.trim();return RS.rows.filter(r=>rMatch(
 function rRowHTML(r,best){const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s,cur=c!=null?c:sv,
     ok=c==null?'':c===+r.s?' <span title="أُعيد التقييم بالقواعد الحالية على التوصيل المرسل، والدرجة نفسها">✔</span>':`<small class="rold" title="الدرجة التي أُرسلت بالقواعد القديمة">أُرسلت ${esc(sv)}</small>`;
   const th=r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="صورة لوحة ${esc(r.n)}" loading="lazy">`:'<div class="rth none">بلا صورة</div>',low=PNAME[r.ex]&&!best;
-  return `<div class="rrow${low?' low':''}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))} · ${fmtT(r.t)}${best?' · <span class="rbest">⭐ الأعلى</span>':''}</div></div>
+  return `<div class="rrow${low?' low':''}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))}${r.ex0&&r.ex0!==r.ex?` <small style="color:var(--amber)">(صحّحه المدرب، أُرسل على: ${esc(exName(r.ex0))})</small>`:''} · ${fmtT(r.t)}${best?' · <span class="rbest">⭐ الأعلى</span>':''}</div>
+      ${r.sug?`<div class="rs">${r.sug.k===r.ex?'✔ هذا أقرب تمرين لتوصيله':`أقرب تمرين لتوصيله: <b>${esc(exName(r.sug.k))}</b> (${r.sug.s}/20) <button data-rapply="${esc(r.uid)}">تطبيق</button>`}</div>`:''}</div>
     <div class="rg">${esc(cur)}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
-    <div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button data-rshare="${esc(r.uid)}">📤 مشاركة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}
+    <div class="ra"><select class="rexs" data-rex="${esc(r.uid)}" title="رُفع التوصيل على تمرين خطأ؟ اختر التمرين الصحيح ليُعاد تقييمه عليه" aria-label="تمرين هذه المحاولة">${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===r.ex?' selected':''}>🔀 ${i+1}. ${esc(PNAME[k])}</option>`).join('')}</select><button data-rguess="${esc(r.uid)}" title="يقارن التوصيل بكل التمارين">🔍 أي تمرين؟</button><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button data-rshare="${esc(r.uid)}">📤 مشاركة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}
 function rRender(){const q=$('rFind').value.trim(),L=rVis();
   const vis=L.length&&L.every(r=>RS.sel.has(r.uid));$('rAll').textContent=vis?'☐ إلغاء التحديد':'☑ تحديد الكل';$('rAll').disabled=!L.length;
   $('rShareSel').disabled=!RS.sel.size;$('rShareSel').textContent=RS.sel.size?'📤 مشاركة المحدد ('+RS.sel.size+')':'📤 مشاركة المحدد';
@@ -3600,7 +3621,7 @@ async function cloudList(key){const LK='wsRowsN';let last=0;try{last=+localStora
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة سر المدرب.';$('rKey').focus();return;}
   try{localStorage.setItem('wsKey',key);}catch(_){}
   $('rMsg').textContent='جارٍ التحميل…';
-  try{const j=await cloudList(key);RS.rows=(j.rows||[]).filter(r=>r.ex!=='pn'&&r.ex!=='ft').sort((a,b)=>b.t-a.t);RS.sel=new Set([...RS.sel].filter(u=>RS.rows.some(r=>r.uid===u)));
+  try{const j=await cloudList(key);RS.rows=(j.rows||[]).filter(r=>r.ex!=='pn'&&r.ex!=='ft').sort((a,b)=>b.t-a.t);{const F=exFix();RS.rows.forEach(r=>{r.ex0=r.ex;if(F[r.uid]&&PNAME[F[r.uid]])r.ex=F[r.uid];});}RS.sel=new Set([...RS.sel].filter(u=>RS.rows.some(r=>r.uid===u)));
     RS.ready=false;RS.chk={};$('rMsg').textContent=RS.rows.length+' تجربة محفوظة لـ '+rGroups().length+' متدرب · جارٍ إعادة التقييم بالقواعد الحالية…';rRender();
     for(const r of RS.rows){await recheck(r);await new Promise(z=>setTimeout(z,0));}RS.ready=true;const ch=rChanged().length;
     $('rMsg').textContent=RS.rows.length+' تجربة محفوظة لـ '+rGroups().length+' متدرب · أُعيد تقييمها بالقواعد الحالية'+(ch?'، وتغيّرت درجة '+ch+' منها':'');rRender();}
@@ -3618,6 +3639,13 @@ $('rList').addEventListener('click',e=>{const gs=e.target.closest('[data-gsel]')
   if(gs){const all=g.rows.every(r=>RS.sel.has(r.uid));g.rows.forEach(r=>all?RS.sel.delete(r.uid):RS.sel.add(r.uid));rRender();return;}
   const xs=rExtra(g.rows).map(r=>r.uid);if(xs.length)arm(gb,()=>rDelete(xs));});
 $('rBestAll').onclick=()=>{const xs=rGroups().flatMap(g=>rExtra(g.rows)).map(r=>r.uid);if(xs.length)arm($('rBestAll'),()=>rDelete(xs));};
+/* the trainer moves a result sent on the wrong exercise to the right one: kept on this device by the result's reference, and graded again */
+const EXF='wsExFix',exFix=()=>{try{return JSON.parse(localStorage.getItem(EXF)||'{}')||{};}catch(_){return{};}};
+async function rSetEx(r,k){if(!PNAME[k])return;const F=exFix();if(k===r.ex0)delete F[r.uid];else F[r.uid]=k;try{localStorage.setItem(EXF,JSON.stringify(F));}catch(_){}
+  r.ex=k;r.sug=r.sug&&r.sug.k===k?r.sug:null;delete RS.chk[r.uid];rRender();await recheck(r);rRender();}
+async function rGuess(r){if(!r.code)return;let o;try{o=await decodeCode(r.code);}catch(_){return;}let best=null;
+  for(const k of Object.keys(PNAME)){if(!PRESETS[k])continue;await new Promise(z=>setTimeout(z,0));try{const s=gradeNow(k,o).s;if(!best||s>best.s)best={k,s};}catch(_){}}r.sug=best;rRender();}
+$('rList').addEventListener('change',e=>{const x=e.target.closest('[data-rex]');if(x){const r=RS.rows.find(q=>q.uid===x.dataset.rex);if(r)rSetEx(r,x.value);return;}});
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 const imM=$('imgModal');let IMG={b:null,name:''};
 async function showImg(r){IMG={b:null,name:'تجربة-'+r.id+'.jpg'};$('imgT').textContent=r.n+' · '+r.id;$('imgBig').src=r.th?'data:image/jpeg;base64,'+r.th:'';$('imgMsg').textContent=r.fid?'جارٍ تحميل الصورة بالحجم الكامل…':'';imM.classList.add('open');
@@ -3625,7 +3653,7 @@ async function showImg(r){IMG={b:null,name:'تجربة-'+r.id+'.jpg'};$('imgT').
     IMG.b=new Blob([u],{type:'image/jpeg'});$('imgBig').src=URL.createObjectURL(IMG.b);$('imgMsg').textContent='';}catch(_){$('imgMsg').textContent='تعذّر تحميل الصورة الكاملة، وتظهر المصغّرة.';}}
 $('imgClose').onclick=()=>imM.classList.remove('open');imM.addEventListener('click',e=>{if(e.target===imM)imM.classList.remove('open');});
 $('imgDl').onclick=async()=>{if(!IMG.b){$('imgMsg').textContent='انتظر اكتمال تحميل الصورة.';return;}const r=await saveBlob(IMG.b,IMG.name);$('imgMsg').textContent=r==='saved'?'نُزّلت الصورة.':r==='declined'?'':'التنزيل غير متاح هنا.';};
-$('rList').addEventListener('click',async e=>{const im=e.target.closest('[data-rimg]');if(im){const r=RS.rows.find(x=>x.uid===im.dataset.rimg);if(r)showImg(r);return;}
+$('rList').addEventListener('click',async e=>{{const g=e.target.closest('[data-rguess]'),ap=e.target.closest('[data-rapply]');if(g||ap){const r=RS.rows.find(q=>q.uid===(g||ap).dataset[g?'rguess':'rapply']);if(!r)return;if(g){g.disabled=true;g.textContent='…';await rGuess(r);}else await rSetEx(r,r.sug.k);return;}}const im=e.target.closest('[data-rimg]');if(im){const r=RS.rows.find(x=>x.uid===im.dataset.rimg);if(r)showImg(r);return;}
   const u=e.target.closest('[data-rulk]');if(u){const r=RS.rows.find(x=>x.uid===u.dataset.rulk);if(r)ulkOpen(r);return;}
   const o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
   if(d)return arm(d,()=>rDelete([d.dataset.rdel]));
