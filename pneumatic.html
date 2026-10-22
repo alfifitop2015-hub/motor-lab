@@ -635,11 +635,17 @@ const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn
 function rRender(){const q=$('rFind').value.trim(),L=RS.rows.filter(r=>!q||(r.n+' '+r.id).includes(q));$('rDelSel').disabled=!RS.sel.size;
   $('rList').innerHTML=L.length?L.map(r=>`<div class="rrow"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="">`:'<div class="rth none">بلا صورة</div>'}
     <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${r.g&&EX[r.g.ex]?esc(EX[r.g.ex].n)+' · ':''}${fmtT(r.t)}</div>${r.s!==''&&r.s!=null?`<div style="font-weight:700">${esc(r.s)}<small style="color:var(--muted);font-weight:400">/20</small></div>`:''}<div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح الدائرة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${RS.rows.length?'لا نتائج مطابقة.':'لا توجد دوائر مرسلة.'}</p>`;}
+/* the results list: Google sometimes answers with an empty sheet for a moment (a slow or busy spreadsheet); when the last load had
+   results, an empty answer is asked again twice before it is believed, and the count of the last good load is kept on this device */
+async function cloudList(key){const LK='wsRowsN';let last=0;try{last=+localStorage.getItem(LK)||0;}catch(_){}
+  let j=await cloud({action:'list',key});
+  for(let k=1;k<=2&&!(j.rows||[]).length&&last>0;k++){await new Promise(z=>setTimeout(z,1500*k));j=await cloud({action:'list',key});}
+  const n=(j.rows||[]).length;if(!n&&last>0){const E=new Error('empty');E.last=last;throw E;}try{localStorage.setItem(LK,String(n));}catch(_){}return j;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة السر.';return;}try{localStorage.setItem('wsKey',key);}catch(_){}$('rMsg').textContent='جارٍ التحميل…';
-  try{const j=await cloud({action:'list',key});RS.rows=(j.rows||[]).filter(r=>r.ex==='pn').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' دائرة محفوظة';rRender();
-    for(const r of RS.rows){try{const o=await decodeCode(r.code);if(o.st&&o.st.g)r.g=o.st.g;}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
+  try{const j=await cloudList(key);RS.rows=(j.rows||[]).filter(r=>r.ex==='pn').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' دائرة محفوظة';rRender();
+    for(const r of RS.rows){try{const o=await decodeCode(r.code);if(o.st&&o.st.g)r.g=o.st.g;}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='empty'?'أعاد خادم Google صفر نتائج مع أن آخر تحميل كان فيه '+e.last+' نتيجة. غالبًا انشغال مؤقت في Google: اضغط «تحديث» بعد دقيقة. إن تكرر فراجع ملف «نتائج المحاكي» في Google Drive.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
-async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
+async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});try{localStorage.setItem('wsRowsN',String(Math.max(0,(+localStorage.getItem('wsRowsN')||0)-u.length)));}catch(_){}u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
 $('bResults').onclick=()=>{rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>rM.classList.remove('open');$('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
 $('rDelSel').onclick=()=>arm($('rDelSel'),()=>rDelete([...RS.sel]));
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});

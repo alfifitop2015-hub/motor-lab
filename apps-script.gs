@@ -9,10 +9,17 @@ const SHEET = 'التجارب';
 const FOLDER = 'صور تجارب المحاكي';
 
 // يعمل الكود سواء كان مربوطًا بجدول أو مشروعًا مستقلًا: يحفظ رقم الجدول ويعيد استخدامه
+// إذا تعثّر فتح الجدول المحفوظ (انشغال مؤقت في Google) يُعاد المحاولة، ولا يُنشأ جدول جديد فارغ أبدًا مكانه،
+// لأن الجدول الجديد كان يجعل النتائج تظهر صفرًا وتتوزع التجارب على أكثر من ملف
 function ss_() {
   const pr = PropertiesService.getScriptProperties();
   const id = pr.getProperty('SSID');
-  if (id) { try { return SpreadsheetApp.openById(id); } catch (err) {} }
+  if (id) {
+    for (let k = 0; k < 4; k++) {
+      try { return SpreadsheetApp.openById(id); } catch (err) { Utilities.sleep(700 * (k + 1)); }
+    }
+    throw new Error('تعذّر فتح جدول النتائج الآن (انشغال مؤقت في Google). أعد المحاولة بعد قليل.');
+  }
   let ss = null;
   try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (err) {}
   if (!ss) ss = SpreadsheetApp.create('نتائج المحاكي');
@@ -58,8 +65,10 @@ function doPost(e) {
 
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
+  // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
+  const write = ['submit', 'del', 'setScores'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
-  try { lock.waitLock(20000); } catch (err) { return out_({ ok: false, err: 'busy' }); }
+  if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
     const s = sheet_();
 
@@ -84,8 +93,9 @@ function doPost(e) {
     if (String(d.key || '') !== KEY) return out_({ ok: false, err: 'key' });
 
     if (d.action === 'list') {
-      const v = s.getDataRange().getValues().slice(1);
-      return out_({ ok: true, rows: v.map(r => ({
+      SpreadsheetApp.flush();
+      const v = s.getDataRange().getValues().slice(1).filter(r => String(r[0]));
+      return out_({ ok: true, n: v.length, rows: v.map(r => ({
         uid: String(r[0]), t: r[1] instanceof Date ? r[1].getTime() : r[1],
         n: String(r[2]), id: String(r[3]), ex: String(r[4]), s: r[5], code: String(r[6]),
         th: String(r[7] || ''), fid: String(r[8] || '')
@@ -132,7 +142,7 @@ function doPost(e) {
   } catch (err) {
     return out_({ ok: false, err: 'server', msg: String(err && err.message || err).slice(0, 300) });
   } finally {
-    lock.releaseLock();
+    if (write) lock.releaseLock();
   }
 }
 
