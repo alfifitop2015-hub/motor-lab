@@ -2281,7 +2281,9 @@ function renderInsp(){const el=document.getElementById('insp'),id=S.selDev;
     <div class="irow"><button class="ib blue" data-i="rst:${id}">R إعادة ضبط</button><button class="ib red" data-i="trp:${id}">T اختبار فصل</button></div>`;
   h+=`<div class="irow">${hosted?'':`<button class="ib" data-i="mv:${id}:-1">▲ السكة الأعلى</button><button class="ib" data-i="mv:${id}:1">▼ السكة الأسفل</button>`}
     ${dv.type==='k'&&!hasOl?`<button class="ib" data-i="addol">＋ أوفرلود تحته</button>`:''}${dv.type==='k'&&!hasAux?`<button class="ib" data-i="addaux">＋ نقاط مساعدة</button>`:''}
-    <button class="ib" data-i="help">📖 شرح القطعة</button>
+    <button class="ib" data-i="help">📖 شرح القطعة</button></div>
+    ${['k','timer','ol'].includes(dv.type)?`<div class="note">✏️ تغيير الاسم (تبقى التوصيلات كما هي، وإن كان الاسم مستخدمًا تتبادل القطعتان الاسمين)</div><div class="irow">${renNames(dv).map(n=>`<button class="ib${n===id?' blue':''}" data-i="ren:${n}"${n===id?' disabled':''}>${n}</button>`).join('')}</div>`:''}
+    <div class="irow">
     <button class="ib red" data-i="del:${id}">🗑 حذف${hasOl?' مع الأوفرلود':''}</button></div>
     <div class="note">على السكة ${dv.rail+1}. الإعدادات هنا مثل أزرار القطعة نفسها.</div>`;
   el.innerHTML=h;el.dataset.id=key;el.classList.add('open');}
@@ -2294,6 +2296,7 @@ document.getElementById('insp').addEventListener('click',e=>{const b=e.target.cl
   if(a==='fbreset'){snap();S.fbp={...FBDEF};relayout();say('أُعيدت لوحة الأجهزة لمكانها وحجمها الأصليين');return update();}
   if(a==='addol'){const dv=S.devs.find(d=>d.id===id);snap();const nid=nextId('ol');addDevRaw('ol',nid,{rail:dv.rail,host:id});relayout();say('رُكّب أوفرلود '+nid+' تحت '+id);return update();}
   if(a==='addaux'){const dv=S.devs.find(d=>d.id===id);snap();addDevRaw('aux',id+'A',{rail:dv.rail,host:id});relayout();say('رُكّبت نقاط مساعدة على '+id);return update();}
+  if(a.startsWith('ren:'))return renameDev(id,a.slice(4));
   if(a.startsWith('del:')){S.selDev=null;}
   act(a);});
 document.getElementById('insp').addEventListener('input',e=>{const r=e.target.closest('[data-r]');if(!r)return;const id=S.selDev;
@@ -2338,6 +2341,16 @@ function railUsed(r,skip){let x=railStart(r),first=true;S.devs.filter(d=>d.rail=
 const fits=(r,type,skip)=>railUsed(r,skip)+(S.devs.some(d=>d.rail===r&&!d.host&&d.id!==skip)?GAP:0)+DEFS[type].w<=railEnd(r);
 function packRails(list){let r=0,x=railStart(0),first=true;list.filter(d=>!d.host).forEach(d=>{const w=DEFS[d.type].w;if(!first&&x+devGap(d,false)+w>railEnd(r)){r++;x=railStart(r);first=true;}x+=devGap(d,first)+w;d.rail=r;first=false;});list.filter(d=>d.host).forEach(d=>{const h=list.find(q=>q.id===d.host);d.rail=h?h.rail:0;});return list;}
 function addDevRaw(type,id,opt){opt=opt||{};S.devs.push({id,type,rail:opt.rail!=null?opt.rail:S.target,host:opt.host||null,...(opt.gap!=null&&isFinite(opt.gap)?{gap:Math.max(0,+opt.gap)}:{})});if(type==='timer')S.tm[id]={delay:opt.delay||5,start:null};if(type==='ol')S.ol[id]={iset:opt.iset||5.4,heat:0,trip:false,I:0,m1:false,m2:false};}
+/* names a part can take: its kind's numbers up to one past the highest in use (an overload starts at F2, F1 is the control breaker) */
+function renNames(dv){const p=PREFIX[dv.type],st=dv.type==='ol'?2:1,re=new RegExp('^'+p+'(\\d+)$'),used=S.devs.filter(d=>d.type===dv.type).map(d=>+(re.exec(d.id)||[])[1]||0);
+  const hi=Math.max(st+2,...used.map(n=>n+1));const L=[];for(let n=st;n<=hi;n++)L.push(p+n);return L;}
+/* rename a part, keeping every wire: its terminals, its auxiliary block (K1A) and anything hosted under it follow; a name already used is swapped */
+function renameDev(from,to){if(from===to||!/^(K|KT|F)\d+$/.test(to)||to==='F1')return;const other=S.devs.some(d=>d.id===to);snap();
+  const M={[from]:to,[from+'A']:to+'A'};if(other){M[to]=from;M[to+'A']=from+'A';}const f=id=>id!=null&&id in M?M[id]:id,fk=k=>{if(!k)return k;const i=k.indexOf('.');return i<0?f(k):f(k.slice(0,i))+k.slice(i);};
+  S.devs.forEach(d=>{d.id=f(d.id);if(d.host)d.host=f(d.host);});S.wires.forEach(w=>{w.a=fk(w.a);w.b=fk(w.b);});
+  ['tm','ol','coils','done'].forEach(n=>{const o=S[n];if(!o)return;const c={};Object.keys(o).forEach(k=>{c[f(k)]=o[k];});S[n]=c;});
+  ['red','black'].forEach(k=>{S.mm[k]=fk(S.mm[k]);});S.pending=fk(S.pending);S.selDev=f(S.selDev);S.errM=null;
+  relayout();say(other?'تبادلت '+from+' و'+to+' الاسمين، والتوصيلات كما هي':'صار اسم '+from+': '+to+'، والتوصيلات كما هي');update();}
 function nextId(type){const p=PREFIX[type],ids=new Set(S.devs.map(d=>d.id));let n=type==='ol'?2:1;while(ids.has(p+n))n++;return p+n;}
 function setDevs(list){if(list.some(d=>d.rail==null))packRails(list);S.devs=[];S.tm={};S.ol={};S.railCount=Math.max(1,list.reduce((m,d)=>Math.max(m,d.rail+1),1));S.target=0;list.forEach(d=>addDevRaw(d.type,d.id,d));relayout();}
 function devsFromWires(w,o){const ids=new Set();w.forEach(([a,b])=>[a,b].forEach(k=>{const id=k.split('.')[0];if(/^(KT\d+|K\d+|K\d+A|F([2-9]|\d{2,}))$/.test(id))ids.add(id);const ma=/^(K\d+)A$/.exec(id);if(ma)ids.add(ma[1]);}));
