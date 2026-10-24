@@ -234,6 +234,8 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 @media (max-width:760px){.drow .dsep{display:none}.drow{gap:5px;padding:5px 6px 6px}.db{min-width:46px;height:50px;padding:0 4px}}
 @media (max-width:460px){.drow{gap:4px;padding:5px 4px 6px}.db{min-width:42px;max-width:62px;height:50px;padding:0 3px;font-size:.6rem;white-space:normal;text-align:center;line-height:1.05}.dsel{max-width:110px;font-size:.74rem}}
 @media (max-height:500px) and (orientation:landscape){.db{height:44px}}
+/* the ⋮ menu sits at the far left of the bar, the usual place in Arabic apps */
+.bar1>.more{order:98;margin-inline-start:auto}.ib.kebab{font-size:1.35rem;font-weight:900;min-width:36px}
 </style>
 </head>
 <body>
@@ -245,7 +247,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
     <button class="ib clb" id="exClip" title="مقطع يشرح الدائرة وطريقة البحث عن العطل، ثم تنفذ بنفسك">🎬 مقطع<span class="t2">&nbsp;الشرح</span></button>
     <button class="ib" id="bHelp" title="الشرح وطريقة البحث عن العطل" aria-label="الشرح">📖</button>
     <button class="ib backres" id="bBackRes" hidden title="العودة لقائمة نتائج المتدربين كما تركتها">↩ النتائج</button>
-    <details class="more"><summary class="ib" title="المزيد" aria-label="المزيد">⋯</summary>
+    <details class="more"><summary class="ib kebab" title="المزيد" aria-label="المزيد">⋮</summary>
       <div class="menu">
         <button class="mi trainer-only" id="bFaults2">🧰 مفاتيح الأعطال (8–30)</button>
         <button class="mi trainer-only cloud-only" id="bResults">📋 نتائج المتدربين</button>
