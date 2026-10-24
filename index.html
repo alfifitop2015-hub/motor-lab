@@ -330,10 +330,11 @@ body.fs{padding-bottom:0}
 .sdtabs button{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:5px;font:inherit;font-size:.8rem;cursor:pointer}
 .sdtabs button.on{background:#0b3d91;color:#fff;border-color:#0b3d91}
 .sdv{flex:1;overflow:auto;background:#fff;touch-action:pan-x pan-y;direction:ltr}
-.xstab{position:fixed;right:0;top:40%;z-index:30;writing-mode:vertical-rl;background:#0b3d91;color:#fff;border:0;border-radius:10px 0 0 10px;padding:12px 7px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;gap:6px;align-items:center}
+.xstab{position:fixed;right:0;top:auto;bottom:calc(var(--dockh,120px) + 14px);z-index:30;writing-mode:vertical-rl;background:#0b3d91;color:#fff;border:0;border-radius:10px 0 0 10px;padding:12px 7px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;gap:6px;align-items:center}
 .xstab[hidden]{display:none}
 .xstab .xric{flex:none;transform:rotate(0deg)}
-.xstabs{position:fixed;right:0;top:30%;z-index:30;display:flex;flex-direction:column;gap:8px}.xstabs[hidden]{display:none}.xstabs .xstab{position:static}
+@media (max-width:760px){.xstabs{gap:5px}.xstab{padding:8px 5px;font-size:.72rem;gap:4px}.xstab .xric{width:20px;height:23px}}
+.xstabs{position:fixed;right:0;top:auto;bottom:calc(var(--dockh,120px) + 14px);z-index:30;display:flex;flex-direction:column;gap:8px}.xstabs[hidden]{display:none}.xstabs .xstab{position:static}
 .xstab.on{background:#ffb300;color:#1b1b1b}
 .xsp{position:fixed;z-index:45;top:var(--xst,120px);bottom:var(--xsb,140px);width:min(410px,94vw);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden}
 .xsp[hidden]{display:none}.xsp.l{left:8px}.xsp.r{right:8px}
@@ -2049,7 +2050,7 @@ function xsGuess(){if(S.pex||!S.wires.length)return;const key=S.wires.length+':'
   try{const cur=new Set(S.wires.map(w=>xk(w.a,w.b)));for(const p of Object.keys(PRESETS)){const ref=new Set([...PRESETS[p],...presetExtra(p)].map(([a,b])=>{const m=k=>k.replace(/^(K\d+)\.21$/,'$1A.61').replace(/^(K\d+)\.22$/,'$1A.62'),A=mapKey(m(a)),B=mapKey(m(b));return A&&B&&A!==B?xk(A,B):null;}).filter(Boolean));
     if(ref.size&&ref.size===cur.size&&[...ref].every(k=>cur.has(k))){S.pex=p;return;}}}catch(_){}}
 function xsTick(fromPartial){xsGuess();const tabs=document.getElementById('xsTabs'),tab=document.getElementById('xsTab'),ok=!!S.pex&&/^p\d{1,2}$/.test(S.pex);if(!tab||!tabs)return;
-  tabs.hidden=!ok;tab.hidden=XS.open;document.getElementById('xrTab').classList.toggle('on',!!XS.xray);
+  tabs.hidden=!ok;tab.hidden=XS.open;try{xtPlace();}catch(_){}document.getElementById('xrTab').classList.toggle('on',!!XS.xray);
   if(!ok){XS.xray=false;if(XS.open)return xsClose();return;}
   if(XS.xray)ofType('timer').forEach(t=>{const tm=S.tm[t],a=document.getElementById('xrKTa-'+t),g=document.getElementById('xrKTt-'+t);if(!a||!g||!tm||tm.start==null||S.done[t])return;
     const C=+a.dataset.c,f=Math.min(1,(performance.now()-tm.start)/(tm.delay*1000));a.setAttribute('stroke-dasharray',(f*C)+' '+C);g.textContent=Math.max(0,tm.delay-(performance.now()-tm.start)/1000).toFixed(1);});
@@ -2585,6 +2586,14 @@ function pickColor(c){curColor=c;document.querySelectorAll('[data-col]').forEach
   b.onclick=()=>pickColor(c);b.onmouseenter=b.onfocus=()=>{document.getElementById('cpN').textContent=n;};b.onmouseleave=b.onblur=showCol;box.appendChild(b);});});
 showCol();
 const wrap=document.getElementById('wrap');
+/* the X-Ray and cross-section tabs sit just above the terminal strip, wherever scrolling and zoom put it, so they never cover the lightning mark
+   or the N terminals; they stay between the header and the bottom bar */
+let xtRaf=0;function placeXsTabs(){xtRaf=0;const t=document.getElementById('xsTabs');if(!t||t.hidden)return;const r=svg.getBoundingClientRect();if(!r.height)return;
+  const k=r.height/H,stripTop=r.top+(SY+DY)*k,th=t.offsetHeight,top0=(document.querySelector('.top')||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom+8,
+    dockTop=(document.getElementById('dock')||{getBoundingClientRect:()=>({top:innerHeight})}).getBoundingClientRect().top-8;
+  const y=Math.max(top0,Math.min(dockTop-th,stripTop-8-th));t.style.top=y+'px';t.style.bottom='auto';}
+const xtPlace=()=>{if(!xtRaf)xtRaf=requestAnimationFrame(placeXsTabs);};
+wrap.addEventListener('scroll',xtPlace,{passive:true});window.addEventListener('scroll',xtPlace,{passive:true});window.addEventListener('resize',xtPlace);
 const topEl=document.querySelector('.top');
 function measureTop(){document.documentElement.style.setProperty('--toph',topEl.offsetHeight+'px');}
 const hintH=()=>document.querySelector('.wtop').offsetHeight||30;
