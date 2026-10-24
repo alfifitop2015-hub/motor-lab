@@ -227,6 +227,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 .wkrow b{font-size:.95rem}.wkrow .wkm{font-size:.8rem;color:var(--muted)}.wkrow .wka{display:flex;gap:6px;flex-wrap:wrap}
 .wkrow .wka button{height:34px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.85rem}
 .wkrow .wka button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.wkrow .wka button:disabled{opacity:.45}.wkrow.cur{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:8px}
+.ib.backres{background:#ffb300;border-color:#c98a00;color:#1c1400;font-weight:700;font-size:.86rem;white-space:nowrap;padding:0 10px}.ib.backres[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -237,6 +238,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
     <a class="ib" id="bElec" title="رجوع إلى ورشة التحكم الكهربائي" aria-label="رجوع إلى ورشة التحكم الكهربائي" style="font-weight:700;font-size:.9rem;gap:4px;white-space:nowrap;padding:0 10px"><span>رجوع</span><span aria-hidden="true">↩</span></a>
     <button class="ib clb" id="exClip" title="مقطع يشرح الدائرة وطريقة البحث عن العطل، ثم تنفذ بنفسك">🎬 مقطع<span class="t2">&nbsp;الشرح</span></button>
     <button class="ib" id="bHelp" title="الشرح وطريقة البحث عن العطل" aria-label="الشرح">📖</button>
+    <button class="ib backres" id="bBackRes" hidden title="العودة لقائمة نتائج المتدربين كما تركتها">↩ النتائج</button>
     <details class="more"><summary class="ib" title="المزيد" aria-label="المزيد">⋯</summary>
       <div class="menu">
         <button class="mi trainer-only" id="bFaults2">🧰 مفاتيح الأعطال (8–30)</button>
@@ -1043,7 +1045,7 @@ function report(x){return{c:x.c,f:x.f.map(id=>{const e=CIRC[x.c].E.find(q=>q.id=
   meas:x.meas,secs:secs(x),score:score(x),view:!!x.viewUsed,gaveUp:!!x.gaveUp,k:x.k};}
 let REP=null;
 function showReport(r,st){r=r||report(S.ex);REP={r,st};const ok=r.found>=r.f.length;
-  $('repBody').innerHTML=(st?`<p><b>${esc(st.n)}</b> · <span dir="ltr">${esc(st.id)}</span> · ${esc(fmtT(st.t))}</p>`:'')+
+  $('repBody').innerHTML=(st?backHTML():'')+(st?`<p><b>${esc(st.n)}</b> · <span dir="ltr">${esc(st.id)}</span> · ${esc(fmtT(st.t))}</p>`:'')+
    `<div class="score" style="color:${ok?'var(--ok)':'var(--warn)'}">${s20(r.score)}<small style="font-size:1rem;color:var(--muted)"> / 20 · ${r.score}%</small></div>`+
    `<p class="note2 ${ok?'good':'warn'}">${ok?'✔ وُجدت كل الأعطال.':r.gaveUp?'أُنهي التمرين قبل إيجاد كل الأعطال.':''}</p>`+
    `<table class="rtab"><tr><td>الدائرة</td><td>${esc(r.c)} — ${esc((INFO[r.c]||{}).n||'')}</td></tr>`+
@@ -1053,7 +1055,7 @@ function showReport(r,st){r=r||report(S.ex);REP={r,st};const ok=r.found>=r.f.len
   $('repSend').style.display=st?'none':'';$('repLoad').style.display=st?'':'none';$('repModal').classList.add('open');}
 $('repClose').onclick=()=>$('repModal').classList.remove('open');
 $('repNew').onclick=()=>{$('repModal').classList.remove('open');if(isTr()){openFaults();return;}$('dRand').click();};
-$('repLoad').onclick=()=>{if(!REP||!REP.full)return;$('repModal').classList.remove('open');setCircuit(REP.full.c,true);S.F=new Set(REP.full.f||[]);trainerFaultsChanged();};
+$('repLoad').onclick=()=>{if(!REP||!REP.full)return;$('repModal').classList.remove('open');rM.classList.remove('open');setCircuit(REP.full.c,true);S.F=new Set(REP.full.f||[]);trainerFaultsChanged();};
 $('repSend').onclick=()=>{$('repModal').classList.remove('open');openSend();};
 
 /* ---------- trainer: the 23 programming switches (8..30) ---------- */
@@ -1164,12 +1166,22 @@ async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textC
     for(const r of RS.rows){if(r.g!=null)continue;try{const o=await decodeCode(r.code);if(o.r&&o.r.score!=null)r.g=s20(o.r.score);}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='empty'?'أعاد خادم Google صفر نتائج مع أن آخر تحميل كان فيه '+e.last+' نتيجة. غالبًا انشغال مؤقت في Google: اضغط «تحديث» بعد دقيقة. إن تكرر فراجع ملف «نتائج المحاكي» في Google Drive.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
 async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});try{localStorage.setItem('wsRowsN',String(Math.max(0,(+localStorage.getItem('wsRowsN')||0)-u.length)));}catch(_){}u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
-$('bResults').onclick=()=>{document.querySelector('.more').open=false;rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>rM.classList.remove('open');$('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
+$('bResults').onclick=()=>{document.querySelector('.more').open=false;rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>{RS.back=false;rM.classList.remove('open');};
+/* back to the results list: once a trainee's result is opened, «↩ النتائج» at the top (and in the result window) brings the list back
+   as it was left, scroll and open groups included; closing the list yourself ends it */
+const rBox=()=>rM.querySelector('.box')||rM,bBack=$('bBackRes');RS.back=false;
+function rLeave(){RS.back=true;RS.scroll=rBox().scrollTop;}
+function rBack(){document.querySelectorAll('.modal.open').forEach(m=>{if(m!==rM)m.classList.remove('open');});rM.classList.add('open');try{rRender();}catch(_){}requestAnimationFrame(()=>{rBox().scrollTop=RS.scroll||0;});}
+bBack.onclick=rBack;rM.addEventListener('click',e=>{if(e.target===rM)RS.back=false;});
+new MutationObserver(()=>{bBack.hidden=!(RS.back&&!rM.classList.contains('open'));}).observe(rM,{attributes:true,attributeFilter:['class']});
+const backHTML=()=>RS.back?'<button class="btn" data-back="1" style="margin:0 0 8px">↩ رجوع لقائمة النتائج</button>':'';
+$('repBody').addEventListener('click',e=>{if(e.target.dataset.back)rBack();});
+$('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
 $('rDelSel').onclick=()=>arm($('rDelSel'),()=>rDelete([...RS.sel]));
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 $('rList').addEventListener('click',async e=>{const o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
   if(d)return arm(d,()=>rDelete([d.dataset.rdel]));
-  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);try{openObj(await decodeCode(r.code));}catch(_){$('rMsg').textContent='تعذّر فتح هذه النتيجة.';}}});
+  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);rLeave();try{openObj(await decodeCode(r.code));}catch(_){$('rMsg').textContent='تعذّر فتح هذه النتيجة.';}}});
 
 /* ===================================================================== trainer mode (same PIN as the electrical workshop) */
 const PINH='ba1ab459',hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};

@@ -142,6 +142,7 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 .glist{list-style:none;margin:6px 0;padding:0}.glist li{display:flex;gap:8px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line);font-size:.9rem}.glist li span:nth-child(2){flex:1}.glist li.no{color:var(--warn)}
 .gnote{background:var(--chip);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.86rem;line-height:1.7}.gmeta{font-size:.8rem;color:var(--muted);margin:6px 0}
 .gbtns{display:grid;gap:8px;margin-top:10px}.gbtns .btn{height:42px;font-weight:700}.gbtns .prim{background:var(--ok);color:#fff;border-color:var(--ok)}
+.ib.backres{background:#ffb300;border-color:#c98a00;color:#1c1400;font-weight:700;font-size:.86rem;white-space:nowrap;padding:0 10px}.ib.backres[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -151,6 +152,7 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
     <span class="tbadge trainer-only">مدرب</span>
     <a class="ib" id="bElec" title="رجوع إلى ورشة التحكم الكهربائي" aria-label="رجوع إلى ورشة التحكم الكهربائي" style="text-decoration:none;color:inherit;font-weight:700;font-size:.9rem;gap:4px;white-space:nowrap;min-width:auto;padding:0 10px;display:inline-flex;align-items:center"><span>رجوع</span><span aria-hidden="true" style="font-size:1.15rem">↪</span></a>
     <button class="ib" id="bHelp" title="شرح الدوائر والتركيبات" aria-label="شرح الدوائر والتركيبات">📖</button>
+    <button class="ib backres" id="bBackRes" hidden title="العودة لقائمة نتائج المتدربين كما تركتها">↩ النتائج</button>
     <details class="more"><summary class="ib" title="المزيد" aria-label="المزيد">⋯</summary>
       <div class="menu">
         <button class="mi trainer-only cloud-only" id="bResults">📋 نتائج المتدربين</button>
@@ -593,7 +595,7 @@ $('bCClose').onclick=()=>cM.classList.remove('open');
 $('bCopy').onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText($('codeOut').value);ok=true;}catch(_){}$('copied').textContent=ok?'تم النسخ':'انسخه يدويًا';};
 function openObj(o){snap();applyObj(o);S.stu=o.st||null;say(o.st?'فُتحت دائرة المتدرب '+o.st.n:'حُمّلت دائرة');update();
   /* a trainee's graded circuit: its result again, with every wrong and missing hose named */
-  const g=o.st&&o.st.g;if(g&&EX[g.ex])setTimeout(()=>{try{const G=pnGrade(+g.ex);setErr(G);render();$('gBody').innerHTML=`<p style="margin:0 0 4px"><b>${esc(EX[+g.ex].n)}</b></p><p class="gnote">نتيجة المتدرب ${esc(o.st.n||'')} كما أُرسلت: <b>${esc(g.s)} / 20</b>. أعاد المحاكي الفحص الآن على الدائرة المرسلة${G.s===+g.s?' وحصل على الدرجة نفسها ✔':' وحصل على <b>'+G.s+' / 20</b>'}.</p>`+gResHTML(G);gM.classList.add('open');}catch(_){}},50);}
+  const g=o.st&&o.st.g;if(g&&EX[g.ex])setTimeout(()=>{try{const G=pnGrade(+g.ex);setErr(G);render();$('gBody').innerHTML=backHTML()+`<p style="margin:0 0 4px"><b>${esc(EX[+g.ex].n)}</b></p><p class="gnote">نتيجة المتدرب ${esc(o.st.n||'')} كما أُرسلت: <b>${esc(g.s)} / 20</b>. أعاد المحاكي الفحص الآن على الدائرة المرسلة${G.s===+g.s?' وحصل على الدرجة نفسها ✔':' وحصل على <b>'+G.s+' / 20</b>'}.</p>`+gResHTML(G);gM.classList.add('open');}catch(_){}},50);}
 $('bLoad').onclick=async()=>{try{const o=await decodeCode($('codeIn').value);openObj(o);cM.classList.remove('open');}catch(_){$('loadErr').textContent='الكود غير صالح لدائرة هوائية.';}};
 if(/^#t=/.test(location.hash))decodeCode(location.hash).then(openObj).catch(()=>{});
 
@@ -646,14 +648,23 @@ async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textC
     for(const r of RS.rows){try{const o=await decodeCode(r.code);if(o.st&&o.st.g)r.g=o.st.g;}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='empty'?'أعاد خادم Google صفر نتائج مع أن آخر تحميل كان فيه '+e.last+' نتيجة. غالبًا انشغال مؤقت في Google: اضغط «تحديث» بعد دقيقة. إن تكرر فراجع ملف «نتائج المحاكي» في Google Drive.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
 async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});try{localStorage.setItem('wsRowsN',String(Math.max(0,(+localStorage.getItem('wsRowsN')||0)-u.length)));}catch(_){}u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
-$('bResults').onclick=()=>{rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>rM.classList.remove('open');$('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
+$('bResults').onclick=()=>{rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>{RS.back=false;rM.classList.remove('open');};
+/* back to the results list: once a trainee's result is opened, «↩ النتائج» at the top (and in the result window) brings the list back
+   as it was left, scroll and open groups included; closing the list yourself ends it */
+const rBox=()=>rM.querySelector('.box')||rM,bBack=$('bBackRes');RS.back=false;
+function rLeave(){RS.back=true;RS.scroll=rBox().scrollTop;}
+function rBack(){document.querySelectorAll('.modal.open').forEach(m=>{if(m!==rM)m.classList.remove('open');});rM.classList.add('open');try{rRender();}catch(_){}requestAnimationFrame(()=>{rBox().scrollTop=RS.scroll||0;});}
+bBack.onclick=rBack;rM.addEventListener('click',e=>{if(e.target===rM)RS.back=false;});
+new MutationObserver(()=>{bBack.hidden=!(RS.back&&!rM.classList.contains('open'));}).observe(rM,{attributes:true,attributeFilter:['class']});
+const backHTML=()=>RS.back?'<button class="btn" data-back="1" style="margin:0 0 8px">↩ رجوع لقائمة النتائج</button>':'';
+$('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
 $('rDelSel').onclick=()=>arm($('rDelSel'),()=>rDelete([...RS.sel]));
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 $('rList').addEventListener('click',async e=>{const im=e.target.closest('[data-rimg]'),o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
   if(d)return arm(d,()=>rDelete([d.dataset.rdel]));
   if(im){const r=RS.rows.find(x=>x.uid===im.dataset.rimg);$('imgBig').src='data:image/jpeg;base64,'+r.th;$('imgT').textContent=r.n;$('imgModal').classList.add('open');
     if(r.fid)try{const j=await cloud({action:'img',key:$('rKey').value.trim(),fid:r.fid});$('imgBig').src='data:image/jpeg;base64,'+j.b64;}catch(_){}return;}
-  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);try{const ob=await decodeCode(r.code);openObj(ob);rM.classList.remove('open');}catch(_){$('rMsg').textContent='تعذّر فتح هذه الدائرة.';}}});
+  if(o){const r=RS.rows.find(x=>x.uid===o.dataset.ropen);rLeave();try{const ob=await decodeCode(r.code);openObj(ob);rM.classList.remove('open');}catch(_){$('rMsg').textContent='تعذّر فتح هذه الدائرة.';}}});
 $('imgClose').onclick=()=>$('imgModal').classList.remove('open');
 
 /* ---------- trainer mode (same PIN as the electrical workshop) ---------- */
@@ -1017,7 +1028,7 @@ function gDo(){const x=PNX,tr=document.body.classList.contains('trainer'),n=$('s
 function gOpen(){gRender();gM.classList.add('open');const x=PNX,L=x!==''&&pgAll()[x];
   if(x!==''&&$('stName').value.trim()&&$('stId').value.trim()&&S.tubes.length&&(!L||JSON.stringify(L.w.tubes)!==JSON.stringify(serial().tubes)||JSON.stringify(L.w.comps.map(c=>c.id+c.t))!==JSON.stringify(S.comps.map(c=>c.id+c.t))))gDo();}
 $('bGrade').onclick=gOpen;$('gClose').onclick=()=>gM.classList.remove('open');gM.addEventListener('click',e=>{if(e.target===gM)gM.classList.remove('open');});
-$('gBody').addEventListener('click',e=>{const gw=e.target.closest('[data-gw]');if(gw){const [a,b,m]=gw.dataset.gw.split('|');gLocate(a,b,m==='1');return;}if(e.target.id==='gGo')gDo();else if(e.target.id==='gSend'){gM.classList.remove('open');openSend();}});
+$('gBody').addEventListener('click',e=>{if(e.target.dataset.back)return rBack();const gw=e.target.closest('[data-gw]');if(gw){const [a,b,m]=gw.dataset.gw.split('|');gLocate(a,b,m==='1');return;}if(e.target.id==='gGo')gDo();else if(e.target.id==='gSend'){gM.classList.remove('open');openSend();}});
 $('gBody').addEventListener('change',e=>{if(e.target.id==='gEx'&&e.target.value!==''){pnPick(e.target.value);gOpen();}});
 ['stName','stId'].forEach(i=>$(i).addEventListener('input',()=>$(i).classList.remove('bad')));
 const wkM=$('wkModal');
