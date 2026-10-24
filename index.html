@@ -536,7 +536,6 @@ body.fs{padding-bottom:0}
     <button class="db full" id="dParts" aria-haspopup="true" aria-expanded="false" aria-controls="pPop" title="العناصر: كونتاكتور، مؤقت، أوفرلود، نقاط مساعدة، ضواغط ولمبات"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="1" width="32" height="42" rx="4" fill="#dcdcd6"/><rect x="4" y="12" width="20" height="20" rx="2" fill="#8d9398"/><rect x="8" y="20" width="12" height="5" rx="1" fill="#2fbf5b"/></svg>العناصر ▾<span class="cnt" id="dPartsN"></span></button>
     <button class="db full trainer-only" id="dVoice" title="نطق التوصيلات بالصوت أثناء التوصيل (للمدرب)"><span class="ic">🗣</span>نطق التوصيل</button>
     <button class="db full" id="dMM" title="ملتميتر للقياس"><span class="ic">📟</span>ملتميتر</button>
-    <select class="dsel full" id="dRail" aria-label="سكة التثبيت"></select>
     <span class="dsep full"></span>
     <select class="dsel full trainer-only" id="dPreset" aria-label="أمثلة جاهزة">
         <option value="">أمثلة جاهزة…</option>
@@ -2252,7 +2251,7 @@ function render(){
   s+=drawFx();S.wires.forEach(w=>{if(isFxW(w))s+=wSVG(w);});for(const k in T)if(T[k].zone==='z')s+=tSVG(k);s+=xsBrk();
   s+='<path id="preview" class="preview" d=""/>';
   s+=scrSVG();
-  s+=mmSVG();s+=errSVG(PATHS);
+  s+=mmSVG();s+=errSVG(PATHS);s+=railSelSVG();
   if(S.sel!=null&&S.selPt){const sc=Math.max(1,Math.min(2.6,0.9/S.zoom)),[bx,by]=S.selPt,sw=S.wires.find(w=>w.id===S.sel);
     if(sw)s+=`<g transform="translate(${bx} ${by-14*sc}) scale(${sc})"><g class="act" data-act="wdel"><rect x="-58" y="-34" width="80" height="28" rx="14" fill="#d8322b" stroke="#fff" stroke-width="2"/><text x="-18" y="-15" class="dl" style="font-size:13px;fill:#fff">🗑 حذف</text></g>
       <g class="act" data-act="wsel0"><circle cx="38" cy="-20" r="14" fill="#39424b" stroke="#fff" stroke-width="2"/><path d="M33 -25l10 10m0-10l-10 10" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g>
@@ -2339,7 +2338,7 @@ function renderTop(){
   for(let r=0;r<S.rows;r++){const n=S.devs.filter(d=>d.rail===r).length,free=railEnd(r)-railUsed(r);o+=`<option value="${r}"${r===S.target?' selected':''}>سكة ${r+1} (${n?n+' قطع':'فارغة'}${free<150?'، ممتلئة':''})</option>`;}
   o+='<option value="new">＋ سكة جديدة</option>';
   if(S.rows>1&&!S.devs.some(d=>d.rail===S.rows-1))o+='<option value="del">− حذف آخر سكة (فارغة)</option>';
-  document.getElementById('dRail').innerHTML=o;
+  {const dr=document.getElementById('dRail');if(dr)dr.innerHTML=o;}
   syncDock();renderInsp();
   document.querySelectorAll('[data-add]').forEach(b=>{const n=ofType(b.dataset.add).length;b.querySelector('.cnt').textContent=n?'('+n+')':'';});
   {const n=S.devs.filter(d=>d.type!=='aux').length+(S.fx||[]).length;const c=document.getElementById('dPartsN');if(c)c.textContent=n?'('+n+')':'';}
@@ -2449,7 +2448,9 @@ function act(a){const [k,id,sg]=a.split(':');
   else if(a==='wauto'){const w=S.wires.find(x=>x.id===S.sel);if(w&&w.man){snap();delete w.man;say('رجع السلك للمسار التلقائي');}return render();}
   else if(k==='del')return removeDevice(id);
   else if(k==='fxt'){const f=fxOf(id);if(f){f.on=!f.on;say(f.t==='es'?(f.on?id+' زر الطوارئ مضغوط ومقفل: فُتح تلامسه 11-12':id+' حُرّر زر الطوارئ: عاد 11-12 مغلقًا'):id+' على الوضع '+(f.on?'I: 13-14 مغلقة':'0: 21-22 مغلقة'));clickSnd(true);}}
-  else if(k==='rail'){S.target=+id;say('السكة المختارة: '+(S.target+1));}
+  else if(k==='rail'){S.target=+id;S.railSel=S.railSel===+id?null:+id;S.sel=null;say('السكة المختارة: '+(S.target+1)+'، والعناصر الجديدة تُركّب عليها');}
+  else if(k==='raildel'){return deleteRail(+id);}
+  else if(a==='railsel0'){S.railSel=null;return render();}
   else if(k==='mv'){const d=S.devs.find(x=>x.id===id),to=d.rail+(+sg);
     if(to<0)say(id+' على السكة الأولى بالفعل');
     else if(to>=S.rows&&S.devs.filter(x=>x.rail===d.rail).length===1&&d.rail===S.rows-1)say(id+' وحده على آخر سكة');
@@ -2466,7 +2467,7 @@ function addDevice(type){
     snap();addDevRaw('aux',host.id+'A',{rail:host.rail,host:host.id});relayout();say('رُكّبت نقاط مساعدة '+host.id+'A على '+host.id+' (53-54 NO، 61-62 NC، 71-72 NC، 83-84 NO)');update();return;}
   if(type==='ol'){const host=S.devs.find(d=>d.rail===S.target&&d.type==='k'&&!S.devs.some(q=>q.host===d.id&&q.type==='ol'));
     if(host){snap();const id=nextId('ol');addDevRaw('ol',id,{rail:S.target,host:host.id});relayout();say('رُكّب أوفرلود '+id+' تحت '+host.id+' مباشرة (أطراف 2/4/6 للكونتاكتور متصلة به داخليًا)');update();return;}}
-  if(!fits(S.target,type)){say('السكة '+(S.target+1)+' ممتلئة. اختر سكة أخرى أو أضف سكة جديدة.');renderTop();flashRail();return;}
+  if(!fits(S.target,type)){say('السكة '+(S.target+1)+' ممتلئة. اضغط على سكة أخرى لاختيارها، أو أضف «سكة جديدة» من العناصر.');renderTop();flashRail();return;}
   snap();const id=nextId(type);addDevRaw(type,id);relayout();say('أُضيف '+TNAME[type]+' '+id+' على السكة '+(S.target+1));update();
   const d=devices.find(x=>x.id===id);if(d){wrap.scrollLeft=0;const r=svg.getBoundingClientRect();window.scrollTo({top:window.scrollY+r.top+d.y*S.zoom-160,behavior:'smooth'});}}
 function removeDevice(id0){snap();const ids=[id0,...S.devs.filter(d=>d.host===id0).map(d=>d.id)];ids.forEach(id=>{S.devs=S.devs.filter(d=>d.id!==id);delete S.tm[id];delete S.ol[id];delete S.coils[id];
@@ -2763,12 +2764,26 @@ function loadPreset(v){if(!v)return;snap();applyObj({v:6,fb:{...S.fbp},...preset
 /* picking an exercise for grading makes M1 the motor that exercise needs */
 function exMotor(ex){if(!ex||!PNAME[ex]||!setDahl(DAHLX.has(ex)))return;say(S.dahl?'المحرك M1 أصبح محرك دالندر بسرعتين (1U 1V 1W للسرعة البطيئة، 2U 2V 2W للسرعة العالية) ليناسب التمرين':'المحرك M1 عاد محركًا عاديًا (U1 V1 W1 / U2 V2 W2) ليناسب التمرين');update();}
 document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addDevice(b.dataset.add));
-document.getElementById('dRail').onchange=e=>railChange(e.target.value);
+
 function railChange(v){
   if(v==='new'){S.railCount=S.rows+1;S.target=S.rows;relayout();say('أُضيفت السكة '+(S.target+1));}
   else if(v==='del'){S.railCount=S.rows-1;relayout();say('حُذفت آخر سكة');}
   else{S.target=+v;say('السكة المختارة: '+(S.target+1));}
   update();}
+/* delete a rail like a wire: touch the rail, then «🗑 حذف السكة»; the parts on it go with their wires (after asking), the rails below move up */
+function deleteRail(r){if(S.rows<=1){say('لا يمكن حذف السكة الوحيدة.');S.railSel=null;return render();}
+  const on=S.devs.filter(d=>d.rail===r),main=on.filter(d=>!d.host);
+  if(main.length&&!confirm('حذف السكة '+(r+1)+' مع '+main.length+' '+(main.length>1?'عناصر':'عنصر')+' عليها وأسلاكها؟'))return;
+  snap();const ids=new Set(on.map(d=>d.id));
+  ids.forEach(id=>{delete S.tm[id];delete S.ol[id];delete S.coils[id];});S.devs=S.devs.filter(d=>!ids.has(d.id));
+  S.wires=S.wires.filter(w=>!ids.has(w.a.split('.')[0])&&!ids.has(w.b.split('.')[0]));
+  S.devs.forEach(d=>{if(d.rail>r)d.rail--;});S.railCount=Math.max(1,S.rows-1);S.target=Math.min(S.target>r?S.target-1:S.target,S.railCount-1);
+  S.railSel=null;S.sel=null;S.selDev=null;S.pending=null;relayout();say('حُذفت السكة '+(r+1)+(main.length?' مع عناصرها':'')+' (يمكن التراجع)');update();}
+function railSelSVG(){const r=S.railSel;if(r==null||r>=S.rows||S.rowTop[r]==null)return '';const n=S.devs.filter(d=>d.rail===r&&!d.host).length,sc=Math.max(1,Math.min(2.4,0.9/S.zoom));
+  /* in the duct just above the rail's parts, as large as the wire's delete button */
+  return `<g transform="translate(40 ${S.rowTop[r]-8-30*sc}) scale(${sc})"><g class="act" data-act="raildel:${r}"><title>حذف السكة ${r+1}</title><rect x="0" y="0" width="${n?190:132}" height="30" rx="15" fill="#d8322b" stroke="#fff" stroke-width="2"/>
+    <text x="${n?95:66}" y="20" text-anchor="middle" class="dl" style="font-size:13px;fill:#fff">🗑 حذف السكة ${r+1}${n?' مع عناصرها':''}</text></g>
+    <g class="act" data-act="railsel0"><title>إلغاء</title><circle cx="${n?212:154}" cy="15" r="14" fill="#39424b" stroke="#fff" stroke-width="2"/><path d="M${n?207:149} 10l10 10m0-10l-10 10" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g></g>`;}
 function flashRail(){const t=document.getElementById('railTag'+S.target);if(!t)return;t.setAttribute('fill','#ff3b30');setTimeout(()=>render(),600);}
 
 /* ---------- share ---------- */
