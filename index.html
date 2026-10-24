@@ -1303,6 +1303,15 @@ function drawField(){
   ${lsDraw('LS1',TRACK.x1-18,LSact('LS1'))}${lsDraw('LS2',TRACK.x2+88,LSact('LS2'))}
   ${txt(740,TRACK.y+48,'M1 يحرك العربة: للأمام نحو SQ2 وللخلف نحو SQ1',10,'#c7d2dc')}`;
   return s;}
+/* small IEC contact symbols on the board (NC, NO, or both joined), pushed by a button (┌) or a roller (limit switch); x,y = top-left, h = height */
+function csym(kinds,x,y,h,act,col){col=col||'#1f2328';const sp=h*1.05,ax=x+h*.42,n=kinds.length,ym=y+h*.5,lw=Math.max(.9,h/12);let s='',mid=[];
+  kinds.forEach((k,i)=>{const cx=ax+h*.34+i*sp;s+=`M${cx} ${y}V${y+h*.3}M${cx} ${y+h}V${y+h*.7}`;
+    if(k==='no'){s+=`M${cx} ${y+h*.7}L${cx-h*.3} ${y+h*.3}`;mid.push(cx-h*.15);}else{s+=`M${cx} ${y+h*.7}L${cx+h*.26} ${y+h*.24}M${cx} ${y+h*.3}H${cx+h*.3}`;mid.push(cx+h*.13);}});
+  const xe=Math.max(...mid),dash=`<path d="M${ax} ${ym}H${xe}" stroke="${col}" stroke-width="${lw*.9}" stroke-dasharray="${h*.13} ${h*.1}" fill="none"/>`;
+  const a=act==='roll'?`<path d="M${ax} ${ym}L${ax-h*.18} ${ym-h*.22}" stroke="${col}" stroke-width="${lw}" fill="none"/><circle cx="${ax-h*.24}" cy="${ym-h*.3}" r="${h*.1}" fill="none" stroke="${col}" stroke-width="${lw}"/>`
+    :`<path d="M${ax-h*.06} ${ym-h*.24}H${ax-h*.3}V${ym+h*.24}H${ax-h*.06}" stroke="${col}" stroke-width="${lw}" fill="none"/>`;
+  return `<g pointer-events="none"><path d="${s}" stroke="${col}" stroke-width="${lw}" fill="none" stroke-linecap="round"/>${dash}${a}</g>`;}
+const BSYM={S0:['nc'],S1:['nc','no'],S2:['nc','no'],S3:['nc'],S4:['no']};
 function boardV(d){const {x,y,w,h}=d,cB=x+40,cL1=x+97,cL2=x+155,cC=x+212;
   let s=`<rect data-drag="fb" x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="url(#holes)" stroke="#e4dec6" stroke-width="6"/>`;
   const cond=p=>`<path d="${p}" fill="none" stroke="#6f6a58" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="${p}" fill="none" stroke="#ece6d2" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -1316,11 +1325,11 @@ function boardV(d){const {x,y,w,h}=d,cB=x+40,cL1=x+97,cL2=x+155,cC=x+212;
       <circle cx="${lx}" cy="${ly}" r="15" fill="${on?'#fff':c}" opacity="${on?.35:.25}"/><circle cx="${lx}" cy="${ly}" r="21" fill="url(#gDome)" pointer-events="none"/>
       <ellipse cx="${lx-6}" cy="${ly-9}" rx="5" ry="3" fill="#fff" opacity=".7" transform="rotate(-25 ${lx-6} ${ly-9})"/>
       ${txt(lx,ly+36,id,9.5,'#222',700)}${txt(lx,ly+47,cap,7.5,'#555',700)}`;});
-  const btn=(id,c,cap,bx,by)=>{const pz=S.pressed.has(id);return `<g class="act" data-press="${id}"><title>${id} ${cap}</title><circle cx="${bx}" cy="${by}" r="17" fill="#444"/><circle cx="${bx}" cy="${by}" r="${pz?10:14}" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="${pz?4:2}"/><circle cx="${bx}" cy="${by}" r="${pz?10:14}" fill="url(#gDome)" opacity="${pz?.5:1}"/></g>${txt(bx,by+27,id,8.5,'#222',700)}${txt(bx,by+37,cap,7.5,'#444',700)}`;};
+  const btn=(id,c,cap,bx,by)=>{const pz=S.pressed.has(id);return `<g class="act" data-press="${id}"><title>${id} ${cap}</title><circle cx="${bx}" cy="${by}" r="17" fill="#444"/><circle cx="${bx}" cy="${by}" r="${pz?10:14}" fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="${pz?4:2}"/><circle cx="${bx}" cy="${by}" r="${pz?10:14}" fill="url(#gDome)" opacity="${pz?.5:1}"/></g>${txt(bx-(BSYM[id]&&BSYM[id].length>1?13:8),by+27,id,8.5,'#222',700)}${BSYM[id]?csym(BSYM[id],bx+(BSYM[id].length>1?-3:0),by+18.5,11):''}${txt(bx,by+37,cap,7.5,'#444',700)}`;};
   s+=`<rect x="${cB-28}" y="${y+142}" width="56" height="126" rx="8" fill="#ece8dc" stroke="#6f6a58" stroke-width="1.5" filter="url(#ds2)"/><rect x="${cB-28}" y="${y+142}" width="56" height="126" rx="8" fill="url(#gGloss)" pointer-events="none"/>`+btn('S4','#2aa84a','تشغيل 3',cB,y+166)+btn('S3','#d8322b','إيقاف 2',cB,y+224);
   s+=`<rect x="${cC-28}" y="${y+142}" width="56" height="174" rx="8" fill="#ece8dc" stroke="#6f6a58" stroke-width="1.5" filter="url(#ds2)"/><rect x="${cC-28}" y="${y+142}" width="56" height="174" rx="8" fill="url(#gGloss)" pointer-events="none"/>`+btn('S2','#2aa84a','تشغيل 2',cC,y+166)+btn('S1','#2aa84a','تشغيل 1',cC,y+220)+btn('S0','#d8322b','إيقاف 1',cC,y+274);
   const ls=(id,cx,cap)=>{const act=LSact(id),t=y+160;return `<g class="act" data-press="${id}"><title>${DN[id]} ${cap}</title>
-    <rect x="${cx-22}" y="${t+24}" width="44" height="68" rx="8" fill="#d9cfa9" stroke="#6b6242" stroke-width="1.5" filter="url(#ds2)"/><rect x="${cx-22}" y="${t+24}" width="44" height="68" rx="8" fill="url(#gGloss)"/><rect x="${cx-15}" y="${t+33}" width="30" height="16" rx="3" fill="#c4b98f"/>
+    <rect x="${cx-22}" y="${t+24}" width="44" height="68" rx="8" fill="#d9cfa9" stroke="#6b6242" stroke-width="1.5" filter="url(#ds2)"/><rect x="${cx-22}" y="${t+24}" width="44" height="68" rx="8" fill="url(#gGloss)"/><rect x="${cx-15}" y="${t+33}" width="30" height="16" rx="3" fill="#ece6d2" stroke="#9a8f68" stroke-width=".8"/>${csym(['nc','no'],cx-13,t+35,12,'roll')}
     <circle cx="${cx}" cy="${t+18}" r="10" fill="#bdb28a" stroke="#6b6242" stroke-width="1.5"/><circle cx="${cx}" cy="${t+18}" r="10" fill="url(#gDome)"/>
     <g transform="rotate(${act?-38:0} ${cx} ${t+18})"><line x1="${cx}" y1="${t+18}" x2="${cx}" y2="${t-8}" stroke="#4a4a4a" stroke-width="4.5" stroke-linecap="round"/><circle cx="${cx}" cy="${t-12}" r="7" fill="#2d2d2d" stroke="${act?'#ffb000':'#111'}" stroke-width="${act?3:1}"/><circle cx="${cx}" cy="${t-12}" r="7" fill="url(#gDome)"/></g></g>
     ${txt(cx,t+68,DN[id]||id,12,'#3b3520',700)}${txt(cx,t+83,cap,7.5,'#3b3520',700)}`;};
@@ -1600,7 +1609,10 @@ function fxBody(f,live){const x=f.x,y=f.y,cx=x+FXW/2,cy=y+72,id=f.id,col=(FXC[f.
     g+=`<circle cx="${cx}" cy="${cy}" r="20" fill="${lc}" stroke="${shade(col,-.55)}"/><circle cx="${cx}" cy="${cy}" r="14" fill="none" stroke="rgba(255,255,255,.22)"/><circle cx="${cx}" cy="${cy}" r="8" fill="none" stroke="rgba(255,255,255,.18)"/><circle cx="${cx}" cy="${cy}" r="20" fill="url(#fxCap)"/>${lit?`<circle cx="${cx}" cy="${cy}" r="7" fill="#fff" opacity=".75"/>`:''}`;}
   const tag={no:'NO',nc:'NC',nonc:'NO+NC',es:'NC',sel:'0-I',lamp:'230V'}[f.t],tc=f.t==='no'?'#1d7a36':(f.t==='nc'||f.t==='es')?'#b3261e':'#20262c';
   if(live)FXT[f.t].t.forEach(([n,dx,dy,sd])=>{g+=`<text x="${x+dx}" y="${y+dy+(sd==='u'?23:-10)}" class="dl" style="font-size:10px;font-weight:700;fill:#eef2f5">${n}</text>`;});
-  g+=`<rect x="${x+9}" y="${y+103}" width="${FXW-18}" height="15" rx="4" fill="#f3f4f1"/><text x="${cx}" y="${y+114}" class="dl" style="font-size:10px;font-weight:700;fill:${tc}">${live?id+' · ':''}${tag}</text>`;
+  g+=`<rect x="${x+9}" y="${y+103}" width="${FXW-18}" height="15" rx="4" fill="#f3f4f1"/>${(()=>{const K={no:['no'],nc:['nc'],es:['nc'],nonc:['nc','no']}[f.t];if(!K)return `<text x="${cx}" y="${y+114}" class="dl" style="font-size:10px;font-weight:700;fill:${tc}">${live?id+' · ':''}${tag}</text>`;
+    /* the contact's symbol in the label: NO, NC, or both */
+    const w=K.length>1?23:12;if(!live)return csym(K,cx-w/2-3,y+104.5,11,null,tc);
+    return `<text x="${cx-w/2-(K.length>1?6:2)}" y="${y+114}" class="dl" style="font-size:10px;font-weight:700;fill:${tc}">${id}</text>`+csym(K,cx+10-w/2+(K.length>1?-2:0),y+104.5,11,null,tc);})()}`;
   return g;}
 function drawFx(){const L=S.fx||[];if(!L.length)return '';let s=fxDefs();
   L.forEach(f=>{s+=`<g data-fx="${f.id}" style="cursor:move;touch-action:none"><title>${f.id} ${FXT[f.t].n}: اسحبه من جسمه لتحريكه</title>${fxBody(f,true)}${xrFx(f)}</g>`;
