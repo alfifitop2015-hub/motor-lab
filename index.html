@@ -2115,9 +2115,9 @@ function xsSpeakTab(){const A=XS.A;if(!A)return;const devs=xsDevs(),d=devs.find(
 /* «نطق التوصيل» (trainer): a switch on the panel just above the current-path (lightning) button */
 function voiceToggle(){VW.on=!VW.on;try{localStorage.setItem('vWire',VW.on?'1':'0');}catch(_){}
   if(VW.on){const vn=voiceNote();say('نطق التوصيل يعمل: عند توصيل كل سلك يُنطق طرفاه ووظيفتهما، وعند اكتمال دائرة يُشرح مسارها.'+(vn?' '+vn:''));speak('نطق التوصيل يعمل');}else{hush();say('أُوقف نطق التوصيل');}render();}
-function voiceSVG(){if(!document.body.classList.contains('trainer'))return '';const d=devices.find(q=>q.id==='FLOW');if(!d)return '';const on=VW.on,x=d.x,y=d.y-44,w=d.w;
-  return `<g class="act" data-act="voice" role="button" aria-label="نطق التوصيل"><title>نطق التوصيلات بالصوت أثناء التوصيل (للمدرب)</title><rect x="${x}" y="${y}" width="${w}" height="34" rx="9" fill="${on?'#1d6b3a':'#1d2a38'}" stroke="${on?'#4cd07d':'#8fb0e0'}" stroke-width="2"/>
-    <text x="${x+w/2}" y="${y+15}" text-anchor="middle" style="font:700 11px sans-serif;fill:#fff">🗣 نطق التوصيل</text><text x="${x+w/2}" y="${y+28}" text-anchor="middle" style="font:700 9px sans-serif;fill:${on?'#9ff0bb':'#c7d2dc'}">${on?'يعمل':'متوقف'}</text></g>`;}
+function voiceSVG(){if(!document.body.classList.contains('trainer'))return '';const d=devices.find(q=>q.id==='FLOW');if(!d)return '';const on=VW.on,x=d.x-22,y=d.y-64,w=d.w+22;
+  return `<g class="act" data-act="voice" role="button" aria-label="نطق التوصيل"><title>نطق التوصيلات بالصوت أثناء التوصيل (للمدرب)</title><rect x="${x}" y="${y}" width="${w}" height="58" rx="11" fill="${on?'#1d6b3a':'#1d2a38'}" stroke="${on?'#4cd07d':'#8fb0e0'}" stroke-width="2.5"/>
+    <text x="${x+w/2}" y="${y+22}" text-anchor="middle" style="font:800 14.5px sans-serif;fill:#fff">🗣 نطق التوصيل</text><text x="${x+w/2}" y="${y+45}" text-anchor="middle" style="font:800 13px sans-serif;fill:${on?'#9ff0bb':'#ffd666'}">${on?'● يعمل':'○ متوقف'}</text></g>`;}
 function xsHL(P){try{if(!XS.open||!XS.hlW)return '';let s='';S.wires.forEach(w=>{if(XS.hlW.has(w.id)&&P[w.id])s+=`<path d="${P[w.id]}" class="xhlp"/>`;});return s;}catch(_){return '';}}
 function xsBrk(){try{if(!XS.open||!XS.brk)return '';return [...new Set(XS.brk)].map(k=>T[k]?`<circle cx="${T[k].x}" cy="${T[k].y}" r="15" class="xbrk"/>`:'').join('');}catch(_){return '';}}
 
