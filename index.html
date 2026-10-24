@@ -332,6 +332,7 @@ body.fs{padding-bottom:0}
 .sdv{flex:1;overflow:auto;background:#fff;touch-action:pan-x pan-y;direction:ltr}
 .xstab{position:fixed;right:0;top:40%;z-index:30;writing-mode:vertical-rl;background:#0b3d91;color:#fff;border:0;border-radius:10px 0 0 10px;padding:12px 7px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;gap:6px;align-items:center}
 .xstab[hidden]{display:none}
+.xstab .xric{flex:none;transform:rotate(0deg)}
 .xstabs{position:fixed;right:0;top:30%;z-index:30;display:flex;flex-direction:column;gap:8px}.xstabs[hidden]{display:none}.xstabs .xstab{position:static}
 .xstab.on{background:#ffb300;color:#1b1b1b}
 .xsp{position:fixed;z-index:45;top:var(--xst,120px);bottom:var(--xsb,140px);width:min(410px,94vw);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden}
@@ -687,7 +688,7 @@ body.fs{padding-bottom:0}
     <div class="grp" style="justify-content:center"><button class="btn" id="ulkWa" style="font-weight:700">📤 إرسال عبر واتساب</button><button class="btn" id="ulkCopy">نسخ</button><button class="btn" id="ulkClose">إغلاق</button></div>
   </div>
 </div>
-<div id="xsTabs" class="xstabs" hidden><button id="xrTab" class="xstab" title="X-Ray: إظهار الأجزاء الداخلية للقطع على اللوحة نفسها">🩻<span dir="ltr">X-Ray</span></button><button id="xsTab" class="xstab" title="مقطع عرضي يوضح ما يحدث داخل القطع ومسار التيار">🔬<span>مقطع عرضي</span></button></div>
+<div id="xsTabs" class="xstabs" hidden><button id="xrTab" class="xstab" title="X-Ray: إظهار الأجزاء الداخلية للقطع على اللوحة نفسها"><svg class="xric" viewBox="0 0 26 30" width="24" height="28" aria-hidden="true"><rect x="1.5" y="1.5" width="23" height="27" rx="3.5" fill="rgba(160,215,255,.18)" stroke="#bfe3ff" stroke-width="1.6" stroke-dasharray="3 2"/><rect x="5" y="4" width="16" height="3" rx="1" fill="#e6e9ec"/><path d="M8 7v4M18 7v4" stroke="#e6e9ec" stroke-width="1.6"/><rect x="6" y="11" width="14" height="2.6" rx="1" fill="#ffd34d"/><rect x="7" y="15.5" width="12" height="10" rx="1.5" fill="#c8772f" stroke="#7a4217" stroke-width=".8"/><path d="M7.5 18h11M7.5 20.5h11M7.5 23h11" stroke="#f0b27a" stroke-width="1"/></svg><span dir="ltr">X-Ray</span></button><button id="xsTab" class="xstab" title="مقطع عرضي يوضح ما يحدث داخل القطع ومسار التيار">🔬<span>مقطع عرضي</span></button></div>
 <aside id="xsPanel" class="xsp l" hidden aria-label="المقطع العرضي ومسار التيار">
   <div class="xsh"><b>🔬 داخل القطع أثناء التشغيل</b>
     <button class="ib" id="xsSpk" title="شرح صوتي لما يظهر الآن" aria-label="شرح صوتي">🔊</button>
