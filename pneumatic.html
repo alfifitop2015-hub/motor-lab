@@ -152,6 +152,7 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 .cpop{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,120px) + 8px);width:min(640px,calc(100vw - 16px));box-sizing:border-box;background:rgba(11,19,30,.97);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:8px 10px;direction:rtl;display:none}
 .cpop.open{display:block}#pPop{padding-top:26px}.cpx{position:absolute;top:4px;left:6px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;font-size:.9rem;cursor:pointer;line-height:1}.cprow{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-height:min(52vh,420px);overflow-y:auto;padding:2px}
 .cpn{font-size:.8rem;text-align:center;margin-top:6px;color:#ffd666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dpre{position:relative}.dpre select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
 </style>
 </head>
 <body>
@@ -187,7 +188,7 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
     <span class="dsep full"></span>
     <button class="db full" id="dParts" aria-haspopup="true" aria-expanded="false" aria-controls="pPop" title="العناصر: أسطوانات وصمامات وعناصر منطقية"><span class="ic">🧩</span>العناصر ▾</button>
     <span class="dsep full"></span>
-    <select class="dsel full trainer-only" id="dPreset" aria-label="تمارين جاهزة"></select>
+    <label class="db full trainer-only dpre" title="التمارين الجاهزة: تحميل توصيل تمرين كامل على اللوحة"><span class="ic">📋</span>التمارين<select id="dPreset" aria-label="التمارين"></select></label>
     <button class="db full" id="dZo"><span class="ic">−</span>تصغير</button>
     <button class="db full" id="dFit"><span class="ic">▣</span>ملاءمة</button>
     <button class="db full" id="dZi"><span class="ic">+</span>تكبير</button>
@@ -719,7 +720,7 @@ const EX=[
    C('1S3','v32nc',20,760),C('1S1','v32rol',190,760,{cyl:'1A',end:'-'}),C('1S2','v32rol',360,760,{cyl:'1A',end:'+'}),C('2S1','v32rol',530,760,{cyl:'2A',end:'-'}),C('2S2','v32rol',700,760,{cyl:'2A',end:'+'})],
   t:[['0Z.P1','1V1.1'],['0Z.P2','2V1.1'],['0Z.P3','1S3.1'],['0Z.P4','1S1.1'],['0Z.P5','1S2.1'],['0Z.P6','2S1.1'],['0Z.P7','2S2.1'],
    ['1S3.2','1V2.X'],['2S1.2','1V2.Y'],['1V2.2','1V1.14'],['1S2.2','2V1.14'],['2S2.2','1V1.12'],['1S1.2','2V1.12'],['1V1.4','1A.A'],['1V1.2','1A.B'],['2V1.4','2A.A'],['2V1.2','2A.B']]}];
-$('dPreset').innerHTML='<option value="">تمارين جاهزة…</option>'+EX.map((x,i)=>`<option value="${i}">${x.n}</option>`).join('');
+$('dPreset').innerHTML='<option value="">اختر التمرين…</option>'+EX.map((x,i)=>`<option value="${i}">${x.n}</option>`).join('');
 $('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';if(v==='')return;loadEx(+v);};
 function loadEx(i){const x=EX[i];snap();applyObj({app:'pn',air:true,bar:6,comps:[{id:'0Z',t:'supply',x:20,y:1094},...x.c],tubes:x.t});S.stu=null;say('حُمّل التمرين: '+x.n);update();}
 
