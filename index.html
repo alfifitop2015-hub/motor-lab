@@ -2432,7 +2432,7 @@ function termClick(k){
   if(!S.pending){S.pending=k;S.sel=null;scrAdd(k,0,-1,true);if(vwOn())speak('من '+termDesc(k));}
   else if(S.pending===k)S.pending=null;
   else if(T[S.pending].zone!=='z'&&T[k].zone!=='z'&&(T[S.pending].zone||'p')!==(T[k].zone||'p')&&!((T[S.pending].m2&&!T[k].zone)||(T[k].m2&&!T[S.pending].zone))){say('لا يمكن توصيل طرف داخل اللوحة بالمحرك M1 مباشرة. وصّله من أسفل الشعب 1 إلى 6. أما M2 فيوصَّل مباشرة من الأوفرلود أو الكونتاكتور.');S.pending=null;}
-  else{const _v=vwBefore(),_a=S.pending;snap();addWire(S.pending,k);say('سلك '+dk(S.pending)+' ⟷ '+dk(k));S.pending=null;vwAfter(_v,_a,k);scrAdd(k,0,1);scrAdd(_a,380,1);}
+  else{const _v=vwBefore(),_a=S.pending;snap();addWire(S.pending,k);say('سلك '+dk(S.pending)+' ⟷ '+dk(k));S.pending=null;vwAfter(_v,_a,k);scrAdd(k,0,1);} /* the screwdriver shows once on each terminal: not again on the first one when the second is fastened */
   update();}
 function delWire(id){{const w0=S.wires.find(w=>w.id===id);if(w0){scrAdd(w0.a,0,-1);scrAdd(w0.b,300,-1);}if(w0&&vwOn())speak('حُذف السلك بين '+termDesc(w0.a)+' و'+termDesc(w0.b));}snap();S.wires=S.wires.filter(w=>w.id!==id);if(S.sel===id)S.sel=null;update();}
 function act(a){const [k,id,sg]=a.split(':');
