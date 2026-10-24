@@ -228,6 +228,12 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 .wkrow .wka button{height:34px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:0 10px;cursor:pointer;font-size:.85rem}
 .wkrow .wka button.danger{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}.wkrow .wka button:disabled{opacity:.45}.wkrow.cur{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:8px}
 .ib.backres{background:#ffb300;border-color:#c98a00;color:#1c1400;font-weight:700;font-size:.86rem;white-space:nowrap;padding:0 10px}.ib.backres[hidden]{display:none}
+
+/* every tool stays on screen: the bar wraps onto a second row and gets more compact on narrow screens instead of scrolling sideways */
+.drow{flex-wrap:wrap;justify-content:center;overflow-x:visible;row-gap:6px}
+@media (max-width:760px){.drow .dsep{display:none}.drow{gap:5px;padding:5px 6px 6px}.db{min-width:46px;height:50px;padding:0 4px}}
+@media (max-width:460px){.drow{gap:4px;padding:5px 4px 6px}.db{min-width:42px;max-width:62px;height:50px;padding:0 3px;font-size:.6rem;white-space:normal;text-align:center;line-height:1.05}.dsel{max-width:110px;font-size:.74rem}}
+@media (max-height:500px) and (orientation:landscape){.db{height:44px}}
 </style>
 </head>
 <body>
