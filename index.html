@@ -258,6 +258,7 @@ body.fs{overflow:hidden}
 body.fs .top{display:none}
 body.fs .wrap{position:fixed;left:0;right:0;top:0;bottom:var(--dockh,120px);overflow:auto;overscroll-behavior:contain;padding-top:env(safe-area-inset-top,0px)}
 .dock{display:block;position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(11,19,30,.95);color:#fff;padding-bottom:env(safe-area-inset-bottom,0px);border-top:1px solid rgba(255,255,255,.18);direction:rtl}
+.dstat:empty{display:none}
 .dstat{display:flex;gap:6px;overflow-x:auto;padding:6px 10px 0;font-size:.78rem;white-space:nowrap;scrollbar-width:none}
 .dstat .c{background:rgba(255,255,255,.1);border-radius:14px;padding:2px 9px}
 .dstat .c.bad{background:#b3261e}.dstat .c.wn{background:#8a5a00}.dstat .c.ok{background:#1d6b3a}
@@ -944,7 +945,8 @@ let SIMT=null,SIMEX='';const pnow=()=>SIMT!=null?SIMT:performance.now();
 const timerDone=id=>{const t=S.tm[id];return !!t&&t.start!=null&&pnow()-t.start>=t.delay*1000;};
 const coilIds=()=>[...ofType('k'),...ofType('timer')];
 const nm=k=>k.startsWith('KT')?'المؤقت '+k:k;
-function say(m){S.last=m;}
+/* a message shows in the bar for a few seconds, then the bar hides again unless something needs attention */
+let sayT=0;function say(m){S.last=m;S.lastT=Date.now();clearTimeout(sayT);sayT=setTimeout(()=>{try{syncDock();measureDock();}catch(_){}},5200);}
 
 function solve(){
   const prev={...S.coils},tids=ofType('timer');let coils={...S.coils},R,it=0;S.osc=false;
@@ -2263,12 +2265,13 @@ function render(){
 function syncDock(){document.getElementById('dMM').classList.toggle('on',S.mm.on);
   const m=S.motor,m2=S.motor2;let h='';
   if(S.fault)h+=`<span class="c bad">${S.fault}</span>`;
-  h+=`<span class="c ${m.state==='run'?'ok':m.state==='fault'?'bad':''}">M1: ${m.state==='run'?modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}</span>`;
+  /* «M1: متوقف» is already written under the motor: only a running or faulty motor is shown here */
+  if(m.state!=='off')h+=`<span class="c ${m.state==='run'?'ok':m.state==='fault'?'bad':''}">M1: ${m.state==='run'?modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}</span>`;
   if(m2.state!=='off')h+=`<span class="c ${m2.state==='run'?'ok':'bad'}">M2: ${m2.state==='run'?'يدور':'عطل'}</span>`;
   const on=coilIds().filter(k=>S.coils[k]);if(on.length)h+=`<span class="c ok">يعمل: ${on.join(' ')}</span>`;
   ofType('ol').forEach(f=>{if(S.ol[f].trip)h+=`<span class="c bad">${f} فصل</span>`;});
   S.warn.forEach(w=>h+=`<span class="c wn">${w}</span>`);
-  if(S.pending)h+=`<span class="c wn">اختر الطرف الثاني لـ ${S.pending}</span>`;else if(S.last)h+=`<span class="c">${S.last}</span>`;
+  if(S.pending)h+=`<span class="c wn">اختر الطرف الثاني لـ ${S.pending}</span>`;else if(S.last&&Date.now()-(S.lastT||0)<5000)h+=`<span class="c">${S.last}</span>`;
   document.getElementById('dstat').innerHTML=h;}
 function renderInsp(){const el=document.getElementById('insp'),id=S.selDev;
   if(id==='FB'){const pc=Math.round(S.fbp.sc*100);if(el.dataset.id==='FB'){const r=el.querySelector('input');if(r&&document.activeElement!==r)r.value=pc;el.querySelector('output').textContent=pc+'%';el.classList.add('open');return;}
@@ -2643,7 +2646,7 @@ document.getElementById('bFS').onclick=()=>document.body.classList.contains('fs'
 let rzT;window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{measureTop();measureDock();if(fitMode==='w')fitW();else if(fitMode==='all')fitAll();},150);});
 const dockEl=document.getElementById('dock');
 function measureDock(){document.documentElement.style.setProperty('--dockh',(dockEl.offsetHeight||0)+'px');}
-if(window.ResizeObserver){new ResizeObserver(measureTop).observe(topEl);new ResizeObserver(()=>{measureDock();}).observe(dockEl);}
+if(window.ResizeObserver){new ResizeObserver(measureTop).observe(topEl);new ResizeObserver(()=>{measureDock();try{xtPlace();}catch(_){}}).observe(dockEl);}
 document.getElementById('dExit').onclick=exitFS;
 document.getElementById('dMin').onclick=()=>{document.body.classList.toggle('dmin');document.querySelector('#dMin .ic').textContent=document.body.classList.contains('dmin')?'▴':'▾';setTimeout(()=>{measureDock();if(fitMode==='all')fitAll();},60);};
 document.getElementById('dUndo').onclick=()=>undo();
