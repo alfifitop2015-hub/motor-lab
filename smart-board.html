@@ -145,7 +145,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   <header class="top">
     <div class="brand">
       <h1>السبورة الذكية</h1>
-      <p>اكتب السؤال وحلّه بخطّك على السبورة، ثم اضغط «تصحيح».</p>
+      <p>اكتب السؤال وحلّه بخطّك بالعربي أو الإنجليزي، بالأرقام العربية (١٢٣) أو الإنجليزية (123)، ثم اضغط «تصحيح».</p>
     </div>
     <div class="opts">
       <div class="field">
@@ -156,6 +156,14 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
           <option value="المرحلة المتوسطة">متوسط</option>
           <option value="المرحلة الثانوية">ثانوي</option>
           <option value="المرحلة الجامعية">جامعي</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="lang">لغة الشرح</label>
+        <select id="lang">
+          <option value="auto">مثل لغة السؤال</option>
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
         </select>
       </div>
       <div class="field">
@@ -514,12 +522,25 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     return { any: true, img, crop, blobP: new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9)) };
   }
 
-  function prompt(stage) {
+  function prompt(stage, lang) {
+    const langRule = lang === 'en'
+      ? 'Write every text field in clear, simple English.'
+      : lang === 'ar'
+        ? 'Write every text field in clear, simple Arabic.'
+        : 'Write every text field in the language the question is written in: Arabic if the question is in Arabic, English if it is in English (for a mixed board, use the language of the question\'s words; for a bare equation with no words, use Arabic if the student used Arabic digits or Arabic letters, otherwise English).';
     return `You are a patient, precise teacher checking a student's handwritten work on a whiteboard. The attached image shows the written part of the board.
 
 Image layout: the writing area is the white rectangle inside the gray frame. Faint grid lines divide it into tenths. The gray numbers 0-10 along the TOP edge mark tenths of the writing area's width (0 = left edge, 10 = right edge); the numbers along the LEFT edge mark tenths of its height (0 = top, 10 = bottom). The frame, grid and gray numbers are NOT the student's writing.
 
-The student wrote a question or problem (any subject, any grade) and then their own solution. The writing may be Arabic (right to left), English, math notation, or a mix. Student's school stage (hint, may be empty): ${stage || 'not given'}.
+The student wrote a question or problem (any subject, any grade) and then their own solution. Student's school stage (hint, may be empty): ${stage || 'not given'}.
+
+READING ARABIC AND ENGLISH. The board may be in Arabic, in English, or mixed, and you must read both equally well:
+- Digits may be Western (0 1 2 3 4 5 6 7 8 9) or Arabic-Indic (٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩, also Persian forms ۴ ۵ ۶), even mixed on one board. Watch the look-alikes: Arabic ٠ (zero) is a small dot while Arabic ٥ (five) looks like a Latin 0; Arabic ١ looks like 1; Arabic ٧ is a V shape and ٨ an inverted V; ٢ and ٣ differ only by the number of top teeth; ٦ resembles a reversed 7. Arabic decimal separator is ٫ or a comma, thousands ٬.
+- Arabic math uses Arabic letters for unknowns (س، ص، ع، ل، م، ن، أ، ب، ج) and Arabic words for functions and units (جا، جتا، ظا، لو، سم، كجم، م، ث، ريال). English uses x, y, z, sin, cos, log, cm, kg, s.
+- Arabic text is written right to left. Arabic-style math may also be written right to left (for example ٧ = ٣ + س means س + ٣ = ٧, and in Arabic RTL notation "٨ ÷ ٢" is read from the right); judge from the student's layout which direction each line goes, and keep the order of subtraction and division correct for that direction. English and Western-style math go left to right.
+- Arabic handwriting relies on dots: check the number and position of dots (ب ت ث ن ي، ج ح خ، س ش، ص ض، ط ظ، ع غ، ف ق) before deciding a word or variable.
+- A spot is unclear only when two readings are both plausible (for example ٥ vs 0, ٢ vs ٣, ٦ vs 7, 1 vs ١ vs l, x vs × , س vs ش). Say both readings in "read_as".
+- When you quote the student ("wrote", "question") keep their digits, letters and symbols exactly as written. In "fix", "steps" and "final_answer" use the same digit system and variable letters the student used.
 
 Read everything, solve the question yourself, then check each step of the student's work.
 - An error is a wrong step, number, sign, unit, formula, concept or final answer. Box the exact wrong part (the term or number if small, otherwise that line). Mark the root mistake; lines that only carry it forward are not marked again, except a wrong final answer, which you mark and explain as following from the earlier mistake.
@@ -528,10 +549,10 @@ Read everything, solve the question yourself, then check each step of the studen
 
 Box format: "box": [x, y, w, h] as fractions 0-1 of the writing area; x, y = top-left corner measured from the LEFT and TOP edges (read them off the grid: 3.5 on the top scale = 0.35). Arabic runs right to left, but x is always measured from the left.
 
-All text in clear, short, kind Arabic suited to the stage. Math as plain Unicode (× ÷ − √ ² ³ π ≤ ≥ ≠ →), never LaTeX.
+${langRule} Keep it short and kind, suited to the stage. Math as plain Unicode (× ÷ − √ ² ³ π ≤ ≥ ≠ →), never LaTeX.
 
 OUTPUT FORMAT (it is shown to the student live, line by line): write ONE compact JSON object per line, nothing else (no code fences, no prose), in exactly this order:
-{"t":"read","subject":"المادة","question":"the question as you read it"}
+{"t":"read","lang":"ar or en (the language you write the feedback in)","subject":"subject name","question":"the question as you read it"}
 then one line per unclear spot: {"t":"unclear","box":[0.5,0.4,0.05,0.07],"read_as":"best guess or empty","note":"what to rewrite"}
 then one line per error: {"t":"error","box":[0.1,0.2,0.3,0.06],"wrote":"what the student wrote","why":"why it is wrong","fix":"the correct version"}
 then: {"t":"verdict","v":"correct|partially_correct|incorrect|incomplete|unreadable","summary":"one or two sentences to the student"}
@@ -541,7 +562,7 @@ then last: {"t":"final","answer":"..."}`;
 
   function newLiveResult(img, crop) {
     return { live: true, example: false, img, crop, boxes: { e: [], u: [] },
-      data: { subject: '', question: '', verdict: '', summary: '', errors: [], unclear: [], steps: [], final_answer: '' } };
+      data: { lang: '', subject: '', question: '', verdict: '', summary: '', errors: [], unclear: [], steps: [], final_answer: '' } };
   }
   // Apply one streamed line to the result being built. Returns true when something changed.
   function applyLine(r, line) {
@@ -551,7 +572,7 @@ then last: {"t":"final","answer":"..."}`;
     if (!o || typeof o !== 'object') return false;
     const d = r.data;
     switch (o.t) {
-      case 'read': d.subject = String(o.subject || ''); d.question = String(o.question || ''); return true;
+      case 'read': d.lang = o.lang === 'en' ? 'en' : 'ar'; d.subject = String(o.subject || ''); d.question = String(o.question || ''); return true;
       case 'unclear': d.unclear.push(o); r.boxes.u.push(snap(o.box, r.img, r.crop)); return true;
       case 'error': d.errors.push(o); r.boxes.e.push(snap(o.box, r.img, r.crop)); return true;
       case 'verdict': d.verdict = String(o.v || ''); d.summary = String(o.summary || ''); return true;
@@ -595,7 +616,7 @@ then last: {"t":"final","answer":"..."}`;
         for (const ln of lines) changedAny = applyLine(live, ln) || changedAny;
         if (changedAny) { result = live; stale = false; shown = true; drawMarks(); renderPanel(); }
       };
-      const { truncated } = await sample(prompt($('#stage').value), {
+      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value), {
         images: [blob], modelTier: $('#depth').value, signal: myCtl.signal, cache: false,
         onText: ({ delta }) => eat(delta),
       });
@@ -637,11 +658,26 @@ then last: {"t":"final","answer":"..."}`;
     correct: ['ok', 'إجابة صحيحة'], partially_correct: ['warn', 'صحيحة جزئيًا'], incorrect: ['bad', 'فيها أخطاء'],
     incomplete: ['warn', 'الحل غير مكتمل'], unreadable: ['plain', 'الكتابة غير مقروءة'],
   };
+  const AR = {
+    verdict: { correct: 'إجابة صحيحة', partially_correct: 'صحيحة جزئيًا', incorrect: 'فيها أخطاء', incomplete: 'الحل غير مكتمل', unreadable: 'الكتابة غير مقروءة' },
+    result: 'نتيجة التصحيح', example: 'مثال', writing: 'يكتب التصحيح…', stale: 'عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى لتحديث الدوائر.',
+    question: 'السؤال كما قرأته', rewrite: 'أعد كتابة هذه المواضع', unclearDefault: 'الكتابة هنا غير واضحة', readAs: 'قرأتها:', noPlace: 'لم يُحدَّد موضعها بدقة',
+    errors: 'الأخطاء', wrote: 'كتبت:', fix: 'الصحيح:', solution: 'الحل الصحيح', final: 'الإجابة النهائية',
+    incomplete: 'التصحيح لم يكتمل. اضغط «تصحيح» مرة أخرى لإكماله.', stop: 'إيقاف',
+  };
+  const EN = {
+    verdict: { correct: 'Correct', partially_correct: 'Partly correct', incorrect: 'Has mistakes', incomplete: 'Incomplete solution', unreadable: 'Unreadable' },
+    result: 'Result', example: 'Example', writing: 'Writing the correction…', stale: 'You changed the board after checking. Press «تصحيح» again to update the circles.',
+    question: 'Question as I read it', rewrite: 'Rewrite these spots', unclearDefault: 'This writing is unclear', readAs: 'I read it as:', noPlace: 'Exact spot not found',
+    errors: 'Mistakes', wrote: 'You wrote:', fix: 'Correct:', solution: 'Correct solution', final: 'Final answer',
+    incomplete: 'The correction stopped early. Press «تصحيح» again to finish it.', stop: 'Stop',
+  };
   function renderIdle() {
+    panel.dir = 'rtl'; panel.lang = 'ar';
     panel.innerHTML = `
       <h2>كيف تستخدم السبورة</h2>
       <ol class="howto">
-        <li>اكتب السؤال أو المسألة بخطّك، من أي مادة وأي صف.</li>
+        <li>اكتب السؤال أو المسألة بخطّك، من أي مادة وأي صف، بالعربي أو الإنجليزي وبأي نوع من الأرقام.</li>
         <li>اكتب حلّك تحته خطوة بخطوة.</li>
         <li>اضغط <b>✓ تصحيح</b>: تظهر دائرة حمراء حول كل خطأ، ودائرة خضراء حول أي كتابة غير واضحة، والحل الصحيح هنا.</li>
       </ol>
@@ -652,6 +688,7 @@ then last: {"t":"final","answer":"..."}`;
     const hint = phase === 'connect'
       ? 'إذا ظهرت نافذة تطلب الإذن باستخدام Claude فاضغط «سماح».'
       : 'تظهر النتيجة هنا تدريجيًا فور بدء الكتابة، وعادة خلال 10 إلى 40 ثانية.';
+    panel.dir = 'rtl'; panel.lang = 'ar';
     panel.innerHTML = `
       <div class="working"><span class="spin"></span><div><h2>${msg}</h2><p class="muted tnum">مضى <span id="elapsed">0</span> ث</p></div></div>
       <p class="muted">${hint}</p>
@@ -664,6 +701,7 @@ then last: {"t":"final","answer":"..."}`;
     box.className = 'errbox';
     box.innerHTML = esc(msg) + (code && code !== 'no_runtime' ? `<br><small class="tnum">(${esc(code)})</small>` : '');
     if (result && !result.example) { renderPanel(); panel.prepend(box); return; }
+    panel.dir = 'rtl'; panel.lang = 'ar';
     panel.innerHTML = '<h2>التصحيح</h2>'; panel.appendChild(box);
   }
   function showInfo(msg) {
@@ -677,24 +715,28 @@ then last: {"t":"final","answer":"..."}`;
   function renderPanel() {
     if (!result) { renderIdle(); return; }
     const d = result.data;
-    const [cls, label] = VERDICT[d.verdict] || ['plain', 'نتيجة التصحيح'];
+    const en = d.lang === 'en';
+    const T = en ? EN : AR;
+    panel.dir = en ? 'ltr' : 'rtl'; panel.lang = en ? 'en' : 'ar';
+    const [cls] = VERDICT[d.verdict] || ['plain'];
+    const label = T.verdict[d.verdict] || T.result;
     const live = result.live;
-    let h = `<div class="chiprow">${result.example ? '<span class="chip warn">مثال</span>' : ''}${live ? '<span class="chip plain"><span class="spin mini"></span> يكتب التصحيح…</span>' : ''}${d.verdict || !live ? `<span class="chip ${cls}">${label}</span>` : ''}${d.subject ? `<span class="chip plain">${esc(d.subject)}</span>` : ''}</div>`;
-    if (stale) h += `<div class="notice">عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى لتحديث الدوائر.</div>`;
-    if (d.question) h += `<div class="qbox"><small>السؤال كما قرأته</small>${fmt(d.question)}</div>`;
+    let h = `<div class="chiprow">${result.example ? `<span class="chip warn">${T.example}</span>` : ''}${live ? '<span class="chip plain"><span class="spin mini"></span> ' + T.writing + '</span>' : ''}${d.verdict || !live ? `<span class="chip ${cls}">${label}</span>` : ''}${d.subject ? `<span class="chip plain">${esc(d.subject)}</span>` : ''}</div>`;
+    if (stale) h += `<div class="notice">${T.stale}</div>`;
+    if (d.question) h += `<div class="qbox"><small>${T.question}</small>${fmt(d.question)}</div>`;
     if (d.summary) h += `<p>${fmt(d.summary)}</p>`;
     if (d.unclear.length) {
-      h += `<div><h3>أعد كتابة هذه المواضع</h3><ul class="items">` + d.unclear.map((u, i) => `
-        <li class="item u" data-key="u${i}"><span class="num">${LETTERS[i] || i + 1}</span><div>${fmt(u.note || 'الكتابة هنا غير واضحة')}${u.read_as ? `<br><span class="muted">قرأتها: ${fmt(u.read_as)}</span>` : ''}${result.boxes.u[i] ? '' : '<br><span class="muted">لم يُحدَّد موضعها بدقة</span>'}</div></li>`).join('') + `</ul></div>`;
+      h += `<div><h3>${T.rewrite}</h3><ul class="items">` + d.unclear.map((u, i) => `
+        <li class="item u" data-key="u${i}"><span class="num">${LETTERS[i] || i + 1}</span><div>${fmt(u.note || T.unclearDefault)}${u.read_as ? `<br><span class="muted">${T.readAs} ${fmt(u.read_as)}</span>` : ''}${result.boxes.u[i] ? '' : `<br><span class="muted">${T.noPlace}</span>`}</div></li>`).join('') + `</ul></div>`;
     }
     if (d.errors.length) {
-      h += `<div><h3>الأخطاء</h3><ul class="items">` + d.errors.map((e, i) => `
-        <li class="item e" data-key="e${i}"><span class="num">${i + 1}</span><div>${e.wrote ? `كتبت: <b>${fmt(e.wrote)}</b><br>` : ''}${fmt(e.why || '')}${e.fix ? `<br><span class="fix">الصحيح: ${fmt(e.fix)}</span>` : ''}</div></li>`).join('') + `</ul></div>`;
+      h += `<div><h3>${T.errors}</h3><ul class="items">` + d.errors.map((e, i) => `
+        <li class="item e" data-key="e${i}"><span class="num">${i + 1}</span><div>${e.wrote ? `${T.wrote} <b>${fmt(e.wrote)}</b><br>` : ''}${fmt(e.why || '')}${e.fix ? `<br><span class="fix">${T.fix} ${fmt(e.fix)}</span>` : ''}</div></li>`).join('') + `</ul></div>`;
     }
-    if (d.steps.length) h += `<div><h3>الحل الصحيح</h3><ol class="steps">${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol></div>`;
-    if (d.final_answer) h += `<div class="final"><small>الإجابة النهائية</small><div>${fmt(d.final_answer)}</div></div>`;
-    if (result.truncated || result.interrupted) h += `<div class="notice">التصحيح لم يكتمل. اضغط «تصحيح» مرة أخرى لإكماله.</div>`;
-    if (live) h += `<button class="ghost" id="stopBtn">إيقاف</button>`;
+    if (d.steps.length) h += `<div><h3>${T.solution}</h3><ol class="steps">${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol></div>`;
+    if (d.final_answer) h += `<div class="final"><small>${T.final}</small><div>${fmt(d.final_answer)}</div></div>`;
+    if (result.truncated || result.interrupted) h += `<div class="notice">${T.incomplete}</div>`;
+    if (live) h += `<button class="ghost" id="stopBtn">${T.stop}</button>`;
     if (result.example) h += `<p class="muted">هذا مثال يوضح شكل التصحيح. ابدأ الكتابة على السبورة أو اضغط «مسح» لتجرّب بنفسك.</p>`;
     panel.innerHTML = h;
     const sb = $('#stopBtn'); if (sb) sb.onclick = () => ctl && ctl.abort();
