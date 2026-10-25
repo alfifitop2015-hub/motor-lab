@@ -88,6 +88,19 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
 .badge { pointer-events: auto; cursor: pointer; }
 .badge circle { stroke: #fff; stroke-width: 3; }
 .badge text { fill: #fff; font: 700 26px var(--font-display); }
+.notes { position: absolute; inset: 0; pointer-events: none; font-family: "Caveat", "IBM Plex Sans Arabic", cursive; font-weight: 500; line-height: 1.35; }
+.notes.stale { opacity: .3; }
+.note { position: absolute; overflow-wrap: anywhere; }
+.note.err { color: #c62828; }
+.note.unc { color: #178a4a; }
+.note .why { font-size: .78em; opacity: .92; }
+.note.side-l { text-align: end; }
+.note.side-r { text-align: start; }
+.sol { position: absolute; color: #0b6b3a; border-top: 3px dashed currentColor; padding-top: .3em; overflow-wrap: anywhere; }
+.sol h4 { margin: 0 0 .15em; font-size: 1.1em; font-weight: 700; }
+.sol .sum { margin: 0 0 .2em; font-size: .85em; }
+.sol ol { margin: 0; padding-inline-start: 1.5em; }
+.sol .fa { display: inline-block; border: 3px solid currentColor; border-radius: .4em; padding: 0 .5em; margin-top: .3em; font-weight: 700; }
 .tag { position: absolute; bottom: 10px; left: 10px; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 3px 12px; font-size: .8rem; font-weight: 600; pointer-events: none; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: .85rem; }
 .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-inline-end: 6px; }
@@ -223,6 +236,9 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="lbl">مسح</span>
           </button>
         </div>
+        <button class="tb" id="notesBtn" aria-pressed="true" title="كتابة الحل والشرح على السبورة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c3-1 4-6 7-6s2 5 5 5 3-3 4-4"/><path d="M4 7h10M4 11h6"/></svg><span class="lbl">الحل</span>
+        </button>
         <button class="tb check" id="checkBtn">✓ تصحيح</button>
       </div>
 
@@ -230,6 +246,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
         <div class="board lines" id="board">
           <canvas id="ink" aria-label="مساحة الكتابة"></canvas>
           <svg id="marks" aria-hidden="true"></svg>
+          <div class="notes" id="notes"></div>
           <div class="tag" id="exampleTag" hidden>مثال مصحَّح · ابدأ الكتابة لمسحه</div>
         </div>
       </div>
@@ -325,6 +342,92 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     scale = w / L.w;
     board.style.setProperty('--cell', (70 * scale) + 'px');
     redraw();
+    renderNotes();
+  }
+
+  // ---------- teacher's writing on the board ----------
+  const notesEl = $('#notes');
+  const NOTE_FONT = 34;                 // logical units
+  let showNotes = true, growing = false;
+  try { showNotes = localStorage.getItem(STORE + '.notes') !== 'off'; } catch (_) {}
+  $('#notesBtn').setAttribute('aria-pressed', showNotes);
+  $('#notesBtn').onclick = () => {
+    showNotes = !showNotes; $('#notesBtn').setAttribute('aria-pressed', showNotes);
+    try { localStorage.setItem(STORE + '.notes', showNotes ? 'on' : 'off'); } catch (_) {}
+    renderNotes();
+  };
+  function inkBounds() {
+    const k = 0.25, c = document.createElement('canvas');
+    c.width = Math.ceil(L.w * k); c.height = Math.ceil(L.h * k);
+    const x = c.getContext('2d'); renderTo(x, k);
+    const a = x.getImageData(0, 0, c.width, c.height).data;
+    let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
+    for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) {
+      if (a[(yy * c.width + xx) * 4 + 3] > 30) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+    }
+    return x1 < 0 ? null : { x0: x0 / k, y0: y0 / k, x1: (x1 + 1) / k, y1: (y1 + 1) / k };
+  }
+  function putNote(html, cls, x, y, w) {
+    const el = document.createElement('div');
+    el.className = 'note ' + cls; el.innerHTML = html;
+    el.style.left = (x / L.w * 100) + '%'; el.style.top = (y / L.h * 100) + '%'; el.style.width = (w / L.w * 100) + '%';
+    notesEl.appendChild(el);
+    return el;
+  }
+  const hits = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  function renderNotes() {
+    notesEl.textContent = '';
+    notesEl.classList.toggle('stale', stale);
+    if (!result || !showNotes || !result.data) return;
+    const d = result.data, en = d.lang === 'en', T = en ? EN : AR;
+    notesEl.dir = en ? 'ltr' : 'rtl'; notesEl.lang = en ? 'en' : 'ar';
+    notesEl.style.fontSize = (NOTE_FONT * scale) + 'px';
+    const placed = [];
+    let lowest = 0;
+    // a short correction beside each circle, on whichever side has room
+    const side = (b, html, cls) => {
+      if (!b) return;
+      const [bx, by, bw, bh] = b;
+      const cx = bx + bw / 2, cy = by + bh / 2, rx = bw / 2 * 1.1 + 18, ry = bh / 2 * 1.2 + 16;
+      const ringL = cx - rx, ringR = cx + rx, ringB = cy + ry;
+      const spaceL = ringL - 40, spaceR = L.w - ringR - 40;
+      let x, w, where;
+      if (spaceL >= 240 && spaceL >= Math.min(spaceR, 600)) { w = Math.min(620, spaceL); x = ringL - 16 - w; where = 'side-l'; }
+      else if (spaceR >= 240) { w = Math.min(620, spaceR); x = ringR + 16; where = 'side-r'; }
+      else { w = Math.min(L.w - 60, 700); x = Math.min(Math.max(30, cx - w / 2), L.w - 30 - w); where = 'below'; }
+      const el = putNote(html, cls + ' ' + where, x, 0, w);
+      const h = el.offsetHeight / scale;
+      let y = where === 'below' ? ringB + 6 : Math.max(10, cy - h / 2);
+      let r = { x, y, w, h };
+      for (let guard = 0; guard < 20; guard++) {
+        const o = placed.find((p) => hits(p, r));
+        if (!o) break;
+        r.y = y = o.y + o.h + 8;
+      }
+      el.style.top = (y / L.h * 100) + '%';
+      placed.push(r); lowest = Math.max(lowest, y + h);
+    };
+    d.errors.forEach((e, i) => side(result.boxes.e[i],
+      `<b>${i + 1}.</b> ${e.fix ? fmt(T.fix + ' ' + e.fix) : ''}${e.why ? `<div class="why">${fmt(e.why)}</div>` : ''}`, 'err'));
+    d.unclear.forEach((u, i) => side(result.boxes.u[i],
+      `<b>${LETTERS[i] || i + 1}.</b> ${fmt(T.rewriteHere)}${u.read_as ? `<div class="why">${fmt(T.readAs + ' ' + u.read_as)}</div>` : ''}`, 'unc'));
+    // the correct solution, written under the student's work
+    if (!d.steps.length && !d.final_answer && !d.summary) return;
+    const ink = inkBounds();
+    const top = Math.max(ink ? ink.y1 : 0, lowest) + 36;
+    const x = 40, w = L.w - 80;
+    const el = document.createElement('div');
+    el.className = 'sol';
+    el.innerHTML = `<h4>${T.solution}</h4>${d.summary ? `<p class="sum">${fmt(d.summary)}</p>` : ''}`
+      + (d.steps.length ? `<ol>${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol>` : '')
+      + (d.final_answer ? `<div class="fa">${fmt(T.final + ': ' + d.final_answer)}</div>` : '');
+    el.style.left = (x / L.w * 100) + '%'; el.style.top = (top / L.h * 100) + '%'; el.style.width = (w / L.w * 100) + '%';
+    notesEl.appendChild(el);
+    const need = Math.ceil(top + el.offsetHeight / scale + 40);
+    if (need > L.h && !growing && need < 6000) {
+      // the board grows downward so the solution has room
+      growing = true; L = { w: L.w, h: need }; layout(); growing = false; save();
+    }
   }
 
   // ---------- input ----------
@@ -362,7 +465,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   cv.addEventListener('pointercancel', endStroke);
 
   function changed() {
-    if (result && !stale) { stale = true; svg.classList.add('stale'); renderPanel(); }
+    if (result && !stale) { stale = true; svg.classList.add('stale'); notesEl.classList.add('stale'); renderPanel(); }
     updateButtons(); save();
   }
   function updateButtons() {
@@ -427,6 +530,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     return d;
   }
   function drawMarks() {
+    renderNotes();
     svg.textContent = '';
     svg.classList.toggle('stale', stale);
     if (!result) return;
@@ -665,14 +769,14 @@ then last: {"t":"final","answer":"..."}`;
   const AR = {
     verdict: { correct: 'إجابة صحيحة', partially_correct: 'صحيحة جزئيًا', incorrect: 'فيها أخطاء', incomplete: 'الحل غير مكتمل', unreadable: 'الكتابة غير مقروءة' },
     result: 'نتيجة التصحيح', example: 'مثال', writing: 'يكتب التصحيح…', stale: 'عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى لتحديث الدوائر.',
-    question: 'السؤال كما قرأته', rewrite: 'أعد كتابة هذه المواضع', unclearDefault: 'الكتابة هنا غير واضحة', readAs: 'قرأتها:', noPlace: 'لم يُحدَّد موضعها بدقة',
+    question: 'السؤال كما قرأته', rewriteHere: 'أعد كتابة هذا بوضوح', rewrite: 'أعد كتابة هذه المواضع', unclearDefault: 'الكتابة هنا غير واضحة', readAs: 'قرأتها:', noPlace: 'لم يُحدَّد موضعها بدقة',
     errors: 'الأخطاء', wrote: 'كتبت:', fix: 'الصحيح:', solution: 'الحل الصحيح', final: 'الإجابة النهائية',
     incomplete: 'التصحيح لم يكتمل. اضغط «تصحيح» مرة أخرى لإكماله.', stop: 'إيقاف',
   };
   const EN = {
     verdict: { correct: 'Correct', partially_correct: 'Partly correct', incorrect: 'Has mistakes', incomplete: 'Incomplete solution', unreadable: 'Unreadable' },
     result: 'Result', example: 'Example', writing: 'Writing the correction…', stale: 'You changed the board after checking. Press «تصحيح» again to update the circles.',
-    question: 'Question as I read it', rewrite: 'Rewrite these spots', unclearDefault: 'This writing is unclear', readAs: 'I read it as:', noPlace: 'Exact spot not found',
+    question: 'Question as I read it', rewriteHere: 'Rewrite this clearly', rewrite: 'Rewrite these spots', unclearDefault: 'This writing is unclear', readAs: 'I read it as:', noPlace: 'Exact spot not found',
     errors: 'Mistakes', wrote: 'You wrote:', fix: 'Correct:', solution: 'Correct solution', final: 'Final answer',
     incomplete: 'The correction stopped early. Press «تصحيح» again to finish it.', stop: 'Stop',
   };
