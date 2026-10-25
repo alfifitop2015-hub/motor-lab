@@ -101,11 +101,24 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
 .sol .sum { margin: 0 0 .2em; font-size: .85em; }
 .sol ol { margin: 0; padding-inline-start: 1.5em; }
 .sol .fa { display: inline-block; border: 3px solid currentColor; border-radius: .4em; padding: 0 .5em; margin-top: .3em; font-weight: 700; }
+.tr { position: absolute; pointer-events: auto; font-family: var(--font-body); font-weight: 500; color: #2b3240; background: rgba(255,255,255,.9); border: 2px solid #c9d2e0; border-radius: .45em; padding: .35em .7em .5em; }
+.tr h4 { margin: 0 0 .2em; font-size: .85em; color: #4a5468; font-weight: 600; }
+.tr h4 span { font-weight: 400; }
+.tr ol { margin: 0; padding-inline-start: 1.5em; display: flex; flex-direction: column; gap: .15em; }
+.trl { outline: none; border-radius: .25em; padding: 0 .25em; cursor: text; min-height: 1.3em; overflow-wrap: anywhere; }
+.notes[dir="rtl"] .trl { text-align: right; }
+.notes[dir="ltr"] .trl { text-align: left; }
+.trl:hover { background: #eef2f8; }
+.trl:focus { background: #fff; box-shadow: 0 0 0 3px #1f4fd1; }
+.trl.edited { background: #e8eefc; }
+.trl mark { background: #c9f0d8; color: inherit; border-bottom: 3px dashed #1f9d55; border-radius: .15em; padding: 0 .1em; }
+.trbtn { font: 600 .9em var(--font-display); background: #1f4fd1; color: #fff; border: 0; border-radius: .4em; padding: .25em .9em; margin-top: .4em; cursor: pointer; }
+.ghost.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
 .tag { position: absolute; bottom: 10px; left: 10px; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 3px 12px; font-size: .8rem; font-weight: 600; pointer-events: none; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: .85rem; }
 .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-inline-end: 6px; }
 .legend .r { border: 3px solid #d6322b; }
-.legend .g { border: 3px dashed #1f9d55; }
+.legend .g { width: 22px; height: 12px; border-radius: 3px; background: #c9f0d8; border-bottom: 3px dashed #1f9d55; }
 
 .panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 .panel h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
@@ -252,7 +265,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       </div>
       <div class="legend">
         <span><i class="r"></i>دائرة حمراء: موضع خطأ</span>
-        <span><i class="g"></i>دائرة خضراء متقطعة: خط غير واضح، أعد كتابته</span>
+        <span><i class="g"></i>تظليل أخضر: جزء لم يتأكد Claude من قراءته، اضغط عليه وعدّله</span>
       </div>
     </section>
 
@@ -375,10 +388,39 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     return el;
   }
   const hits = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  function markUnsure(text) {
+    return String(text).split(/⟦([^⟧]*)⟧/).map((part, i) => i % 2 ? `<mark>${fmt(part)}</mark>` : fmt(part)).join('');
+  }
+  function wireTranscript(tr) {
+    tr.querySelectorAll('.trl').forEach((el) => {
+      const i = +el.dataset.i;
+      el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
+      el.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const t = (e.clipboardData && e.clipboardData.getData('text/plain') || '').replace(/\s*\n\s*/g, ' ');
+        document.execCommand('insertText', false, t);
+      });
+      el.addEventListener('input', () => {
+        result.data.lines[i] = el.innerText.replace(/\s*\n\s*/g, ' ').trim();
+        result.editedLines = result.editedLines || {}; result.editedLines[i] = true;
+        el.classList.add('edited');
+        if (!result.edited) { result.edited = true; renderPanel(); }
+        const b = tr.querySelector('#recheckBoard'); if (b) b.hidden = false;
+      });
+    });
+    const b = tr.querySelector('#recheckBoard');
+    if (b) b.onclick = recheck;
+  }
+  function recheck() {
+    if (!result || ctl) return;
+    if (result.example) { showInfo('هذا مثال. اكتب سؤالك أنت واضغط «تصحيح»، ثم عدّل ما كتبه Claude إن لزم.'); return; }
+    check(result.data.lines.map((l) => l.replace(/[⟦⟧]/g, '')).filter((l) => l.trim()));
+  }
   function renderNotes() {
+    if (notesEl.contains(document.activeElement) && result && !result.live) return;   // never wipe what the student is typing
     notesEl.textContent = '';
     notesEl.classList.toggle('stale', stale);
-    if (!result || !showNotes || !result.data) return;
+    if (!result || !result.data) return;
     const d = result.data, en = d.lang === 'en', T = en ? EN : AR;
     notesEl.dir = en ? 'ltr' : 'rtl'; notesEl.lang = en ? 'en' : 'ar';
     notesEl.style.fontSize = (NOTE_FONT * scale) + 'px';
@@ -407,15 +449,28 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       el.style.top = (y / L.h * 100) + '%';
       placed.push(r); lowest = Math.max(lowest, y + h);
     };
-    d.errors.forEach((e, i) => side(result.boxes.e[i],
+    if (showNotes) d.errors.forEach((e, i) => side(result.boxes.e[i],
       `<b>${i + 1}.</b> ${e.fix ? fmt(T.fix + ' ' + e.fix) : ''}${e.why ? `<div class="why">${fmt(e.why)}</div>` : ''}`, 'err'));
-    d.unclear.forEach((u, i) => side(result.boxes.u[i],
-      `<b>${LETTERS[i] || i + 1}.</b> ${fmt(T.rewriteHere)}${u.read_as ? `<div class="why">${fmt(T.readAs + ' ' + u.read_as)}</div>` : ''}`, 'unc'));
-    // the correct solution, written under the student's work
-    if (!d.steps.length && !d.final_answer && !d.summary) return;
     const ink = inkBounds();
-    const top = Math.max(ink ? ink.y1 : 0, lowest) + 36;
+    let top = Math.max(ink ? ink.y1 : 0, lowest) + 36;
     const x = 40, w = L.w - 80;
+    let bottom = top;
+    // Claude's own rewrite of the board, which the student corrects in place
+    if (d.lines.length) {
+      const tr = document.createElement('div');
+      tr.className = 'tr';
+      tr.style.fontSize = Math.max(15, NOTE_FONT * 0.85 * scale) + 'px';   // stays comfortable to edit on phones
+      tr.innerHTML = `<h4>${T.transcript} <span>· ${T.trHint}</span></h4><ol>${d.lines.map((ln, i) =>
+        `<li><div class="trl${result.editedLines && result.editedLines[i] ? ' edited' : ''}" contenteditable="${result.live ? 'false' : 'true'}" spellcheck="false" dir="auto" data-i="${i}">${markUnsure(ln)}</div></li>`).join('')}</ol>`
+        + `<button class="trbtn" id="recheckBoard"${result.edited && !result.live ? '' : ' hidden'}>${T.recheck}</button>`;
+      tr.style.left = (x / L.w * 100) + '%'; tr.style.top = (top / L.h * 100) + '%'; tr.style.width = (w / L.w * 100) + '%';
+      notesEl.appendChild(tr);
+      wireTranscript(tr);
+      bottom = top + tr.offsetHeight / scale;
+      top = bottom + 30;
+    }
+    // the correct solution, written under the student's work
+    if (showNotes && (d.steps.length || d.final_answer || d.summary)) {
     const el = document.createElement('div');
     el.className = 'sol';
     el.innerHTML = `<h4>${T.solution}</h4>${d.summary ? `<p class="sum">${fmt(d.summary)}</p>` : ''}`
@@ -423,7 +478,9 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       + (d.final_answer ? `<div class="fa">${fmt(T.final + ': ' + d.final_answer)}</div>` : '');
     el.style.left = (x / L.w * 100) + '%'; el.style.top = (top / L.h * 100) + '%'; el.style.width = (w / L.w * 100) + '%';
     notesEl.appendChild(el);
-    const need = Math.ceil(top + el.offsetHeight / scale + 40);
+    bottom = top + el.offsetHeight / scale;
+    }
+    const need = Math.ceil(bottom + 40);
     if (need > L.h && !growing && need < 6000) {
       // the board grows downward so the solution has room
       growing = true; L = { w: L.w, h: need }; layout(); growing = false; save();
@@ -630,7 +687,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     return { any: true, img, crop, blobP: new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9)) };
   }
 
-  function prompt(stage, lang) {
+  function prompt(stage, lang, confirmed) {
     const langRule = lang === 'en'
       ? 'Write every text field in clear, simple English.'
       : lang === 'ar'
@@ -647,22 +704,24 @@ READING ARABIC AND ENGLISH. The board may be in Arabic, in English, or mixed, an
 - Arabic math uses Arabic letters for unknowns (س، ص، ع، ل، م، ن، أ، ب، ج) and Arabic words for functions and units (جا، جتا، ظا، لو، سم، كجم، م، ث، ريال). English uses x, y, z, sin, cos, log, cm, kg, s.
 - Arabic text is written right to left. Arabic-style math may also be written right to left (for example ٧ = ٣ + س means س + ٣ = ٧, and in Arabic RTL notation "٨ ÷ ٢" is read from the right); judge from the student's layout which direction each line goes, and keep the order of subtraction and division correct for that direction. English and Western-style math go left to right.
 - Arabic handwriting relies on dots: check the number and position of dots (ب ت ث ن ي، ج ح خ، س ش، ص ض، ط ظ، ع غ، ف ق) before deciding a word or variable.
-- A spot is unclear only when two readings are both plausible (for example ٥ vs 0, ٢ vs ٣, ٦ vs 7, 1 vs ١ vs l, x vs × , س vs ش). Say both readings in "read_as".
+- When two readings are both plausible (for example ٥ vs 0, ٢ vs ٣, ٦ vs 7, 1 vs ١ vs l, x vs ×, س vs ش), pick the more likely one and wrap it in ⟦ ⟧ in your transcription.
 - When you quote the student ("wrote", "question") keep their digits, letters and symbols exactly as written. In "fix", "steps" and "final_answer" use the same digit system and variable letters the student used.
 
 Read everything, solve the question yourself, then check each step of the student's work.
 - An error is a wrong step, number, sign, unit, formula, concept or final answer. Box the exact wrong part (the term or number if small, otherwise that line). Mark the root mistake; lines that only carry it forward are not marked again, except a wrong final answer, which you mark and explain as following from the earlier mistake.
-- An unclear spot is handwriting you cannot read with confidence (an ambiguous digit, letter, symbol or word). Mark only genuinely ambiguous spots, never count them as errors.
 - If the question is unreadable or missing, say so and give no solution steps. If the student wrote only the question, verdict is "incomplete" and still give the solution.
 
+${confirmed ? `CONFIRMED READING. The student reviewed your earlier reading of the board and corrected it. This transcription is AUTHORITATIVE: it is exactly what the student means on each line, top to bottom. Check the work as written here; use the image only to locate the boxes. Do not output any "line" objects.
+${confirmed.map((l, i) => (i + 1) + '. ' + l).join('\n')}
+` : `TRANSCRIPTION. The student will see your reading of the board and correct anything you misread, so first write out every handwritten line, top to bottom, exactly as the student wrote it: their digits, letters, symbols and mistakes, uncorrected. Wrap every part you are not sure you read correctly in ⟦ ⟧, for example 2x = ⟦18⟧ or ⟦س⟧ + ٣ = ٧. Be honest about doubts.
+`}
 Box format: "box": [x, y, w, h] as fractions 0-1 of the writing area; x, y = top-left corner measured from the LEFT and TOP edges (read them off the grid: 3.5 on the top scale = 0.35). Arabic runs right to left, but x is always measured from the left.
 
 ${langRule} Keep it short and kind, suited to the stage. Math as plain Unicode (× ÷ − √ ² ³ π ≤ ≥ ≠ →), never LaTeX.
 
 OUTPUT FORMAT (it is shown to the student live, line by line): write ONE compact JSON object per line, nothing else (no code fences, no prose), in exactly this order:
 {"t":"read","lang":"ar or en (the language you write the feedback in)","subject":"subject name","question":"the question as you read it"}
-then one line per unclear spot: {"t":"unclear","box":[0.5,0.4,0.05,0.07],"read_as":"best guess or empty","note":"what to rewrite"}
-then one line per error: {"t":"error","box":[0.1,0.2,0.3,0.06],"wrote":"what the student wrote","why":"why it is wrong","fix":"the correct version"}
+${confirmed ? '' : 'then one line per handwritten line of the board, top to bottom: {"t":"line","text":"the line exactly as written, unsure parts in ⟦ ⟧"}\n'}then one line per error: {"t":"error","box":[0.1,0.2,0.3,0.06],"wrote":"what the student wrote","why":"why it is wrong","fix":"the correct version"}
 then: {"t":"verdict","v":"correct|partially_correct|incorrect|incomplete|unreadable","summary":"one or two sentences to the student"}
 then one line per solution step (at most 10): {"t":"step","s":"..."}
 then last: {"t":"final","answer":"..."}`;
@@ -670,7 +729,7 @@ then last: {"t":"final","answer":"..."}`;
 
   function newLiveResult(img, crop) {
     return { live: true, example: false, img, crop, boxes: { e: [], u: [] },
-      data: { lang: '', subject: '', question: '', verdict: '', summary: '', errors: [], unclear: [], steps: [], final_answer: '' } };
+      data: { lang: '', subject: '', question: '', verdict: '', summary: '', errors: [], lines: [], steps: [], final_answer: '' } };
   }
   // Apply one streamed line to the result being built. Returns true when something changed.
   function applyLine(r, line) {
@@ -681,7 +740,7 @@ then last: {"t":"final","answer":"..."}`;
     const d = r.data;
     switch (o.t) {
       case 'read': d.lang = o.lang === 'en' ? 'en' : 'ar'; d.subject = String(o.subject || ''); d.question = String(o.question || ''); return true;
-      case 'unclear': d.unclear.push(o); r.boxes.u.push(snap(o.box, r.img, r.crop)); return true;
+      case 'line': if (r.confirmed || o.text == null) return false; d.lines.push(String(o.text)); return true;
       case 'error': d.errors.push(o); r.boxes.e.push(snap(o.box, r.img, r.crop)); return true;
       case 'verdict': d.verdict = String(o.v || ''); d.summary = String(o.summary || ''); return true;
       case 'step': if (o.s) { d.steps.push(String(o.s)); return true; } return false;
@@ -695,8 +754,9 @@ then last: {"t":"final","answer":"..."}`;
     return sampleP;
   }
 
-  async function check() {
+  async function check(confirmed) {
     if (ctl) return;
+    if (!Array.isArray(confirmed)) confirmed = null;
     if (isExample) { showInfo('هذا مثال جاهز يوضح شكل التصحيح. اضغط «مسح» أو ابدأ الكتابة على السبورة، ثم اكتب سؤالك وحلّك واضغط «تصحيح».'); return; }
     const ex = exportBoard();
     if (!ex.any) { showInfo('السبورة فارغة. اكتب السؤال وحلّك أولًا، ثم اضغط «تصحيح».'); return; }
@@ -717,6 +777,7 @@ then last: {"t":"final","answer":"..."}`;
       if (myCtl.signal.aborted) throw { code: 'cancelled' };
       renderWorking('think');
       const live = newLiveResult(ex.img, ex.crop);
+      if (confirmed) { live.confirmed = true; live.data.lines = confirmed.slice(); }
       let pending = '', shown = false;
       const eat = (chunk) => {
         const lines = (pending + chunk).split('\n'); pending = lines.pop();
@@ -724,7 +785,7 @@ then last: {"t":"final","answer":"..."}`;
         for (const ln of lines) changedAny = applyLine(live, ln) || changedAny;
         if (changedAny) { result = live; stale = false; shown = true; drawMarks(); renderPanel(); }
       };
-      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value), {
+      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value, confirmed), {
         images: [blob], modelTier: $('#depth').value, signal: myCtl.signal, cache: false,
         onText: ({ delta }) => eat(delta),
       });
@@ -743,7 +804,7 @@ then last: {"t":"final","answer":"..."}`;
       clearInterval(tick); ctl = null; $('#checkBtn').disabled = false;
     }
   }
-  $('#checkBtn').onclick = check;
+  $('#checkBtn').onclick = () => check();
 
   function copyFor(code) {
     switch (code) {
@@ -769,14 +830,14 @@ then last: {"t":"final","answer":"..."}`;
   const AR = {
     verdict: { correct: 'إجابة صحيحة', partially_correct: 'صحيحة جزئيًا', incorrect: 'فيها أخطاء', incomplete: 'الحل غير مكتمل', unreadable: 'الكتابة غير مقروءة' },
     result: 'نتيجة التصحيح', example: 'مثال', writing: 'يكتب التصحيح…', stale: 'عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى لتحديث الدوائر.',
-    question: 'السؤال كما قرأته', rewriteHere: 'أعد كتابة هذا بوضوح', rewrite: 'أعد كتابة هذه المواضع', unclearDefault: 'الكتابة هنا غير واضحة', readAs: 'قرأتها:', noPlace: 'لم يُحدَّد موضعها بدقة',
+    question: 'السؤال كما قرأته', transcript: 'كما قرأتُ كتابتك', trHint: 'اضغط على أي سطر لتعديله', recheck: '✓ صحّح حسب تعديلي', trHelp: 'كتبتُ تحت حلّك على السبورة ما قرأته من كتابتك. إذا قرأتُ شيئًا خطأ فاضغط عليه هناك وعدّله، ثم اضغط «صحّح حسب تعديلي». المظلَّل بالأخضر جزء لم أتأكد منه.', trConfirmed: 'التصحيح مبني على قراءتك المعدّلة.', rewriteHere: 'أعد كتابة هذا بوضوح', rewrite: 'أعد كتابة هذه المواضع', unclearDefault: 'الكتابة هنا غير واضحة', readAs: 'قرأتها:', noPlace: 'لم يُحدَّد موضعها بدقة',
     errors: 'الأخطاء', wrote: 'كتبت:', fix: 'الصحيح:', solution: 'الحل الصحيح', final: 'الإجابة النهائية',
     incomplete: 'التصحيح لم يكتمل. اضغط «تصحيح» مرة أخرى لإكماله.', stop: 'إيقاف',
   };
   const EN = {
     verdict: { correct: 'Correct', partially_correct: 'Partly correct', incorrect: 'Has mistakes', incomplete: 'Incomplete solution', unreadable: 'Unreadable' },
     result: 'Result', example: 'Example', writing: 'Writing the correction…', stale: 'You changed the board after checking. Press «تصحيح» again to update the circles.',
-    question: 'Question as I read it', rewriteHere: 'Rewrite this clearly', rewrite: 'Rewrite these spots', unclearDefault: 'This writing is unclear', readAs: 'I read it as:', noPlace: 'Exact spot not found',
+    question: 'Question as I read it', transcript: 'How I read your writing', trHint: 'tap any line to edit it', recheck: '✓ Re-check with my edits', trHelp: 'Under your work on the board I wrote what I read. If I misread something, tap it there and fix it, then press «Re-check with my edits». Green highlights are parts I was not sure about.', trConfirmed: 'This check uses your corrected reading.', rewriteHere: 'Rewrite this clearly', rewrite: 'Rewrite these spots', unclearDefault: 'This writing is unclear', readAs: 'I read it as:', noPlace: 'Exact spot not found',
     errors: 'Mistakes', wrote: 'You wrote:', fix: 'Correct:', solution: 'Correct solution', final: 'Final answer',
     incomplete: 'The correction stopped early. Press «تصحيح» again to finish it.', stop: 'Stop',
   };
@@ -787,9 +848,10 @@ then last: {"t":"final","answer":"..."}`;
       <ol class="howto">
         <li>اكتب السؤال أو المسألة بخطّك، من أي مادة وأي صف، بالعربي أو الإنجليزي وبأي نوع من الأرقام.</li>
         <li>اكتب حلّك تحته خطوة بخطوة.</li>
-        <li>اضغط <b>✓ تصحيح</b>: تظهر دائرة حمراء حول كل خطأ، ودائرة خضراء حول أي كتابة غير واضحة، والحل الصحيح هنا.</li>
+        <li>اضغط <b>✓ تصحيح</b>: يكتب Claude تحت حلّك ما قرأه من كتابتك، ويضع دائرة حمراء حول كل خطأ، ويكتب الحل الصحيح.</li>
+        <li>إذا قرأ Claude شيئًا خطأ فاضغط على السطر الذي كتبه وعدّله، ثم اضغط <b>صحّح حسب تعديلي</b>.</li>
       </ol>
-      <p class="muted">إذا ظهرت دائرة خضراء فامسح ذلك الموضع بالممحاة وأعد كتابته بوضوح، ثم صحّح مرة أخرى.</p>`;
+      <p class="muted">الأجزاء المظللة بالأخضر في قراءة Claude هي التي لم يتأكد منها، فراجعها أولًا.</p>`;
   }
   function renderWorking(phase) {
     const msg = phase === 'connect' ? 'جارٍ الاتصال بـ Claude…' : 'يقرأ Claude كتابتك ويحل السؤال…';
@@ -833,9 +895,9 @@ then last: {"t":"final","answer":"..."}`;
     if (stale) h += `<div class="notice">${T.stale}</div>`;
     if (d.question) h += `<div class="qbox"><small>${T.question}</small>${fmt(d.question)}</div>`;
     if (d.summary) h += `<p>${fmt(d.summary)}</p>`;
-    if (d.unclear.length) {
-      h += `<div><h3>${T.rewrite}</h3><ul class="items">` + d.unclear.map((u, i) => `
-        <li class="item u" data-key="u${i}"><span class="num">${LETTERS[i] || i + 1}</span><div>${fmt(u.note || T.unclearDefault)}${u.read_as ? `<br><span class="muted">${T.readAs} ${fmt(u.read_as)}</span>` : ''}${result.boxes.u[i] ? '' : `<br><span class="muted">${T.noPlace}</span>`}</div></li>`).join('') + `</ul></div>`;
+    if (d.lines.length) {
+      h += `<div><h3>${T.transcript}</h3><p class="muted">${result.confirmed && !result.edited ? T.trConfirmed : T.trHelp}</p>`
+        + (result.edited && !live ? `<button class="ghost primary" id="recheckPanel">${T.recheck}</button>` : '') + `</div>`;
     }
     if (d.errors.length) {
       h += `<div><h3>${T.errors}</h3><ul class="items">` + d.errors.map((e, i) => `
@@ -848,6 +910,7 @@ then last: {"t":"final","answer":"..."}`;
     if (result.example) h += `<p class="muted">هذا مثال يوضح شكل التصحيح. ابدأ الكتابة على السبورة أو اضغط «مسح» لتجرّب بنفسك.</p>`;
     panel.innerHTML = h;
     const sb = $('#stopBtn'); if (sb) sb.onclick = () => ctl && ctl.abort();
+    const rb = $('#recheckPanel'); if (rb) rb.onclick = recheck;
     panel.querySelectorAll('.item').forEach((it) => {
       it.addEventListener('mouseenter', () => focusItem(it.dataset.key));
       it.addEventListener('mouseleave', () => focusItem(''));
@@ -879,15 +942,13 @@ then last: {"t":"final","answer":"..."}`;
     const scrib = [[0, -40], [8, -48], [22, -50], [33, -42], [34, -30], [24, -16], [10, -4], [2, 2], [14, 0], [28, 1], [42, -1]]
       .map(([a, b], i) => [sx + a + (i % 2 ? 1.5 : -1), sy + b]);
     T.push({ type: 'stroke', color: INK_BLUE, size: 4.5, pts: scrib });
-    const xs = scrib.map((p) => p[0]), ys = scrib.map((p) => p[1]);
-    const uncBox = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
     T.push({ type: 'text', text: 'x = 9', font: eq, color: INK_BLUE, x: right, y: y(4), align: 'right' });
     const errBox2 = box('x = 9', eq, right, y(4));
     ops = T; redoStack = []; isExample = true;
     $('#exampleTag').hidden = false;
     result = {
       example: true,
-      boxes: { e: [errBox1, errBox2], u: [uncBox] },
+      boxes: { e: [errBox1, errBox2], u: [] },
       data: {
         verdict: 'incorrect', subject: 'رياضيات',
         question: 'حل المعادلة: 2x + 5 = 13',
@@ -896,7 +957,7 @@ then last: {"t":"final","answer":"..."}`;
           { wrote: '2x = 13 + 5', why: 'عند نقل حدٍّ إلى الطرف الآخر من المعادلة تنعكس إشارته، فالعدد +5 يصبح −5.', fix: '2x = 13 − 5' },
           { wrote: 'x = 9', why: 'الإجابة النهائية خاطئة لأنها مبنية على الخطأ الأول.', fix: 'x = 4' },
         ],
-        unclear: [{ read_as: '2 أو z', note: 'الرقم في بداية السطر الرابع يشبه الحرف z. أعد كتابة 2x بوضوح.' }],
+        lines: ['حل المعادلة الآتية:', '2x + 5 = 13', '2x = 13 + 5', '⟦2⟧x = 18', 'x = 9'],
         steps: ['2x + 5 = 13', 'ننقل 5 إلى الطرف الأيسر مع تغيير إشارتها: 2x = 13 − 5', '2x = 8', 'نقسم الطرفين على 2: x = 8 ÷ 2', 'x = 4', 'التحقق: 2 × 4 + 5 = 13 ✓'],
         final_answer: 'x = 4',
       },
