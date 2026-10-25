@@ -466,7 +466,7 @@ function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.
 function partial(){S.comps.forEach(c=>{if(/^cyl/.test(c.t)){const g=$('rod-'+c.id);if(g)g.setAttribute('transform',`translate(${(c.s.x*150).toFixed(1)} 0)`);}
   if(c.t==='tim'){const a=$('tarc-'+c.id);if(a){const C=2*Math.PI*14,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
   const tg=$('tubes');if(tg){const want=mov;if(want!==tg.dataset.mov){tg.dataset.mov=want;tg.innerHTML=tubesSVG();}}}
-function renderTop(){let h='';if(S.stu)h+=`<div class="msg info"><span>📥 دائرة المتدرب: <b>${esc(S.stu.n)}</b> · الرقم: <b dir="ltr">${esc(S.stu.id)}</b></span><button class="btn" data-stux style="margin-inline-start:auto">إغلاق</button></div>`;
+function renderTop(){let h='';if(S.stu)h+=`<div class="msg info"><span>📥 دائرة المتدرب: <b>${esc(S.stu.n)}</b> · الرقم: <b dir="ltr">${esc(S.stu.id)}</b></span><button class="btn" data-stux style="margin-inline-start:auto" title="إغلاق تجربة المتدرب وإرجاع لوحتك كما كانت">✕ إنهاء تجربة المتدرب</button></div>`;
   S.warn.forEach(w=>h+=`<div class="msg ${/قصر|يتسرب/.test(w)?'err':'wn'}">${esc(w)}</div>`);$('status').innerHTML=h;
   let d=`<span class="c ${S.air?'ok':'bad'}">${S.air?'الهواء مفتوح':'الهواء مغلق'} · ${S.bar.toFixed(1)} bar</span>`;
   S.comps.filter(c=>/^cyl/.test(c.t)).forEach(c=>d+=`<span class="c ${c.s.x>=.985?'ok':''}">${esc(c.id)}: ${c.s.x>=.985?'خارجة +':c.s.x<=.015?'داخلة −':'تتحرك'}</span>`);
@@ -577,7 +577,10 @@ $('dMin').onclick=()=>{document.body.classList.toggle('dmin');setTimeout(measure
 const fitZ=()=>Math.max(.25,Math.min(1.6,(wrap.clientWidth-2)/W));
 $('dFit').onclick=()=>{S.zoom=fitZ();render();};$('dZi').onclick=()=>{S.zoom=Math.min(3,S.zoom*1.2);render();};$('dZo').onclick=()=>{S.zoom=Math.max(.25,S.zoom/1.2);render();};
 $('bClearAll').onclick=()=>{snap();blank();S.selC=null;S.sel=null;say('مُسحت اللوحة (يمكن التراجع)');update();};
-$('status').addEventListener('click',e=>{if(e.target.closest('[data-stux]')){S.stu=null;renderTop();}});
+$('status').addEventListener('click',e=>{if(e.target.closest('[data-stux]')){stuEnd();}});
+/* «إنهاء تجربة المتدرب»: the result opened from the list leaves the board, and the board that was there before comes back */
+function stuEnd(){const o=S.stuBak;S.stu=null;S.stuBak=null;S.errM=null;try{if(o)applyObj(o);S.selC=null;}catch(_){}S.hist=[];S.sel=null;S.pending=null;say('أُنهيت تجربة المتدرب، وعادت لوحتك كما كانت');update();}
+
 function measureDock(){document.documentElement.style.setProperty('--dockh',($('dock').offsetHeight||0)+'px');}
 if(window.ResizeObserver)new ResizeObserver(measureDock).observe($('dock'));
 document.querySelectorAll('.menu .mi').forEach(b=>b.addEventListener('click',()=>{const d=b.closest('details');if(d)d.open=false;}));
@@ -620,7 +623,7 @@ $('bShare').onclick=async()=>{$('codeOut').value=await encodeCode(serial());$('c
 $('bOpenStu').onclick=()=>{$('codeOut').value='';$('codeIn').value='';$('loadErr').textContent='';cM.classList.add('open');};
 $('bCClose').onclick=()=>cM.classList.remove('open');
 $('bCopy').onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText($('codeOut').value);ok=true;}catch(_){}$('copied').textContent=ok?'تم النسخ':'انسخه يدويًا';};
-function openObj(o){snap();applyObj(o);S.stu=o.st||null;say(o.st?'فُتحت دائرة المتدرب '+o.st.n:'حُمّلت دائرة');update();
+function openObj(o){if(!S.stu)S.stuBak=serial();snap();applyObj(o);S.stu=o.st||null;say(o.st?'فُتحت دائرة المتدرب '+o.st.n:'حُمّلت دائرة');update();
   /* a trainee's graded circuit: its result again, with every wrong and missing hose named */
   const g=o.st&&o.st.g;if(g&&EX[g.ex])setTimeout(()=>{try{const G=pnGrade(+g.ex);setErr(G);render();$('gBody').innerHTML=backHTML()+`<p style="margin:0 0 4px"><b>${esc(EX[+g.ex].n)}</b></p><p class="gnote">نتيجة المتدرب ${esc(o.st.n||'')} كما أُرسلت: <b>${esc(g.s)} / 20</b>. أعاد المحاكي الفحص الآن على الدائرة المرسلة${G.s===+g.s?' وحصل على الدرجة نفسها ✔':' وحصل على <b>'+G.s+' / 20</b>'}.</p>`+gResHTML(G);gM.classList.add('open');}catch(_){}},50);}
 $('bLoad').onclick=async()=>{try{const o=await decodeCode($('codeIn').value);openObj(o);cM.classList.remove('open');}catch(_){$('loadErr').textContent='الكود غير صالح لدائرة هوائية.';}};
