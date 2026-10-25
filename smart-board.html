@@ -1,0 +1,697 @@
+<title>السبورة الذكية</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Caveat:wght@500&family=Aref+Ruqaa&display=swap">
+<style>
+/* Layout: a framed whiteboard with its marker tray on top, and the teacher's correction sheet beside it (stacked on phones). */
+:root {
+  --bg: #e9edf2;
+  --surface: #ffffff;
+  --surface-2: #f4f6f9;
+  --fg: #172130;
+  --muted: #5a6577;
+  --line: #d3d9e2;
+  --frame: #b9c1cc;
+  --accent: #1f4fd1;
+  --accent-fg: #ffffff;
+  --bad: #c8321f;
+  --bad-soft: #fbe9e6;
+  --good: #16824a;
+  --good-soft: #e3f4ea;
+  --warn: #9a6200;
+  --warn-soft: #fbf0d9;
+  --board: #fdfdfb;
+  --board-rule: #dfe6ef;
+  --font-display: "Readex Pro", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans Arabic", system-ui, "Segoe UI", Tahoma, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151c; --surface: #18202a; --surface-2: #1f2834; --fg: #e5eaf1; --muted: #9aa5b5;
+    --line: #2b3542; --frame: #3d4858; --accent: #7196ff; --accent-fg: #0c1424;
+    --bad: #ff7a66; --bad-soft: #3a1f1b; --good: #4fcf8a; --good-soft: #17322a; --warn: #f0b552; --warn-soft: #3a2e17;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151c; --surface: #18202a; --surface-2: #1f2834; --fg: #e5eaf1; --muted: #9aa5b5;
+  --line: #2b3542; --frame: #3d4858; --accent: #7196ff; --accent-fg: #0c1424;
+  --bad: #ff7a66; --bad-soft: #3a1f1b; --good: #4fcf8a; --good-soft: #17322a; --warn: #f0b552; --warn-soft: #3a2e17;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
+.app { max-width: 1440px; margin: 0 auto; padding-block: 18px 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 16px; }
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.75rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+.brand p { margin: 4px 0 0; color: var(--muted); }
+.opts { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.opts label { color: var(--muted); font-size: .85rem; }
+.field { display: flex; align-items: center; gap: 8px; }
+select { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
+@media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.boardcol { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+
+.tray { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.grp { display: flex; align-items: center; gap: 4px; }
+.sep { width: 1px; align-self: stretch; background: var(--line); }
+.tb { font: inherit; font-size: .9rem; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 6px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
+.tb:hover:not(:disabled) { background: var(--surface-2); }
+.tb[aria-pressed="true"] { background: var(--surface-2); border-color: var(--frame); }
+.tb:disabled { opacity: .4; cursor: default; }
+.tb svg { width: 18px; height: 18px; flex: none; }
+.swatch { width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 50%; min-height: 0; }
+.swatch span { width: 18px; height: 18px; border-radius: 50%; display: block; }
+.swatch[aria-pressed="true"] { border-color: var(--fg); background: transparent; }
+.dot { justify-content: center; width: 34px; padding: 0; }
+.dot span { display: block; border-radius: 50%; background: var(--fg); }
+.check { margin-inline-start: auto; font-family: var(--font-display); font-weight: 700; font-size: 1rem; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 10px; padding: 8px 18px; min-height: 40px; }
+.check:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.frame { background: var(--frame); border-radius: 14px; padding: 9px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 26px -18px rgba(10,20,40,.55); }
+.board { position: relative; width: 100%; background-color: var(--board); border-radius: 6px; overflow: hidden; touch-action: none; }
+.board.lines { background-image: linear-gradient(var(--board-rule) 1.5px, transparent 1.5px); background-size: 100% var(--cell, 40px); }
+.board.grid { background-image: linear-gradient(var(--board-rule) 1px, transparent 1px), linear-gradient(90deg, var(--board-rule) 1px, transparent 1px); background-size: var(--cell, 40px) var(--cell, 40px); }
+.board canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.board.erasing canvas { cursor: cell; }
+.board svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.board svg.stale { opacity: .35; }
+.ring { fill: none; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width .15s; }
+.ring.err { stroke: #d6322b; stroke-width: 5; }
+.ring.unc { stroke: #1f9d55; stroke-width: 5; stroke-dasharray: 16 11; }
+.mk.hl .ring { stroke-width: 9; }
+.badge { pointer-events: auto; cursor: pointer; }
+.badge circle { stroke: #fff; stroke-width: 3; }
+.badge text { fill: #fff; font: 700 26px var(--font-display); }
+.tag { position: absolute; bottom: 10px; left: 10px; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 3px 12px; font-size: .8rem; font-weight: 600; pointer-events: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: .85rem; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-inline-end: 6px; }
+.legend .r { border: 3px solid #d6322b; }
+.legend .g { border: 3px dashed #1f9d55; }
+
+.panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.panel h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+.panel h3 { font-family: var(--font-display); font-size: .95rem; margin: 0 0 6px; }
+.panel p { margin: 0; }
+.muted { color: var(--muted); }
+.howto { margin: 0; padding-inline-start: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+.chiprow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { display: inline-block; border-radius: 999px; padding: 2px 12px; font-size: .82rem; font-weight: 600; }
+.chip.ok { background: var(--good-soft); color: var(--good); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.plain { background: var(--surface-2); color: var(--muted); }
+.qbox { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; }
+.qbox small { display: block; color: var(--muted); font-size: .78rem; letter-spacing: .02em; }
+.items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; border-radius: 10px; padding: 10px; border: 1px solid var(--line); cursor: pointer; overflow-wrap: anywhere; }
+.item.hl { border-color: currentColor; }
+.item.e { color: var(--bad); }
+.item.u { color: var(--good); }
+.item > div { color: var(--fg); }
+.num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-weight: 700; font-size: .9rem; }
+.item.e .num { background: #d6322b; }
+.item.u .num { background: #1f9d55; }
+.item b { font-weight: 600; }
+.item .fix { color: var(--good); font-weight: 600; }
+.steps { margin: 0; padding-inline-start: 1.4em; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.final { background: var(--good-soft); color: var(--fg); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; }
+.final small { display: block; color: var(--good); font-weight: 600; font-size: .8rem; }
+.final div { font-size: 1.1rem; font-weight: 600; }
+.notice { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 8px 12px; font-size: .9rem; }
+.errbox { background: var(--bad-soft); color: var(--bad); border-radius: 10px; padding: 10px 12px; }
+.working { display: flex; align-items: center; gap: 12px; }
+.spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .9s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } .ring { transition: none; } }
+.ghost { font: inherit; font-size: .9rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; align-self: flex-start; }
+bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
+.tnum { font-variant-numeric: tabular-nums; }
+.toast { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 16px; border-radius: 10px; font-size: .9rem; max-width: calc(100% - 32px); z-index: 20; }
+@media (max-width: 560px) {
+  .brand h1 { font-size: 1.4rem; }
+  .tray { gap: 6px 8px; }
+  .tb .lbl { display: none; }
+  .check { margin-inline-start: 0; width: 100%; justify-content: center; }
+}
+</style>
+
+<div class="app" dir="rtl" lang="ar">
+  <header class="top">
+    <div class="brand">
+      <h1>السبورة الذكية</h1>
+      <p>اكتب السؤال وحلّه بخطّك على السبورة، ثم اضغط «تصحيح».</p>
+    </div>
+    <div class="opts">
+      <div class="field">
+        <label for="stage">المرحلة</label>
+        <select id="stage">
+          <option value="">أي مرحلة</option>
+          <option value="المرحلة الابتدائية">ابتدائي</option>
+          <option value="المرحلة المتوسطة">متوسط</option>
+          <option value="المرحلة الثانوية">ثانوي</option>
+          <option value="المرحلة الجامعية">جامعي</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="depth">التصحيح</label>
+        <select id="depth">
+          <option value="complex">دقيق (أبطأ)</option>
+          <option value="default">سريع</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="paper">الخلفية</label>
+        <select id="paper">
+          <option value="lines">سطور</option>
+          <option value="grid">مربعات</option>
+          <option value="plain">بيضاء</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="boardcol">
+      <div class="tray" role="toolbar" aria-label="أدوات الكتابة">
+        <div class="grp">
+          <button class="tb" id="penBtn" aria-pressed="true" title="قلم (P)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span class="lbl">قلم</span>
+          </button>
+          <button class="tb" id="eraserBtn" aria-pressed="false" title="ممحاة (E)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20h12"/><path d="M5 15l9-9 5 5-8 8H8z"/></svg><span class="lbl">ممحاة</span>
+          </button>
+        </div>
+        <span class="sep"></span>
+        <div class="grp" id="colors">
+          <button class="tb swatch" data-color="#1d3a8a" aria-pressed="true" aria-label="أزرق"><span style="background:#1d3a8a"></span></button>
+          <button class="tb swatch" data-color="#1b1f27" aria-pressed="false" aria-label="أسود"><span style="background:#1b1f27"></span></button>
+          <button class="tb swatch" data-color="#6b2fa0" aria-pressed="false" aria-label="بنفسجي"><span style="background:#6b2fa0"></span></button>
+        </div>
+        <span class="sep"></span>
+        <div class="grp" id="sizes">
+          <button class="tb dot" data-size="3" aria-pressed="false" aria-label="خط رفيع"><span style="width:5px;height:5px"></span></button>
+          <button class="tb dot" data-size="5" aria-pressed="true" aria-label="خط متوسط"><span style="width:8px;height:8px"></span></button>
+          <button class="tb dot" data-size="9" aria-pressed="false" aria-label="خط عريض"><span style="width:12px;height:12px"></span></button>
+        </div>
+        <span class="sep"></span>
+        <div class="grp">
+          <button class="tb" id="undoBtn" title="تراجع (Ctrl+Z)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7l5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h2"/></svg><span class="lbl">تراجع</span>
+          </button>
+          <button class="tb" id="redoBtn" title="إعادة (Ctrl+Y)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-5 5 5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-2"/></svg><span class="lbl">إعادة</span>
+          </button>
+          <button class="tb" id="clearBtn" title="مسح السبورة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="lbl">مسح</span>
+          </button>
+        </div>
+        <button class="tb check" id="checkBtn">✓ تصحيح</button>
+      </div>
+
+      <div class="frame">
+        <div class="board lines" id="board">
+          <canvas id="ink" aria-label="مساحة الكتابة"></canvas>
+          <svg id="marks" aria-hidden="true"></svg>
+          <div class="tag" id="exampleTag" hidden>مثال مصحَّح · ابدأ الكتابة لمسحه</div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="r"></i>دائرة حمراء: موضع خطأ</span>
+        <span><i class="g"></i>دائرة خضراء متقطعة: خط غير واضح، أعد كتابته</span>
+      </div>
+    </section>
+
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const board = $('#board'), cv = $('#ink'), svg = $('#marks'), panel = $('#panel');
+  const ctx = cv.getContext('2d');
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const STORE = 'smartboard.v1';
+  const LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'];
+  const INK_BLUE = '#1d3a8a';
+
+  let L = { w: 1400, h: 900 };          // logical board size (points are stored in these units)
+  let ops = [], redoStack = [];
+  let tool = 'pen', color = INK_BLUE, size = 5;
+  let isExample = false;
+  let result = null;                   // {data, boxes:{e:[], u:[]}, example}
+  let stale = false;
+  let scale = 1;
+  let sampleP = null;
+  let ctl = null;
+
+  // ---------- helpers ----------
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Keep runs of math (equations, numbers, Latin symbols) in left-to-right order inside Arabic text.
+  const MATH = /[A-Za-z0-9(\[√π∞|−\-+][A-Za-z0-9\s=+\-−×÷*/^().,،²³√π∞≤≥≠<>|°%\[\]→]*[A-Za-z0-9)\]²³π∞°%|]/g;
+  const fmt = (s) => {
+    s = String(s ?? ''); let out = '', last = 0;
+    for (const m of s.matchAll(MATH)) {
+      out += esc(s.slice(last, m.index)) + (/[A-Za-z=+×÷^<>≤≥≠−√]/.test(m[0]) ? `<bdi class="m">${esc(m[0])}</bdi>` : esc(m[0]));
+      last = m.index + m[0].length;
+    }
+    return out + esc(s.slice(last));
+  };
+  let toastT;
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+  function save() {
+    if (isExample) return;
+    try { localStorage.setItem(STORE, JSON.stringify({ L, ops: ops.slice(lastClear() + 1) })); } catch (_) {}
+  }
+  function lastClear() {
+    for (let i = ops.length - 1; i >= 0; i--) if (ops[i].type === 'clear') return i;
+    return -1;
+  }
+  function visibleOps() { return ops.slice(lastClear() + 1); }
+
+  // ---------- drawing ----------
+  function paint(c, op) {
+    c.save();
+    if (op.type === 'text') {
+      c.fillStyle = op.color; c.font = op.font; c.textAlign = op.align || 'left'; c.direction = op.dir || 'ltr';
+      c.fillText(op.text, op.x, op.y);
+      c.restore(); return;
+    }
+    c.globalCompositeOperation = op.type === 'erase' ? 'destination-out' : 'source-over';
+    c.strokeStyle = c.fillStyle = op.color || '#000';
+    c.lineWidth = op.size; c.lineCap = 'round'; c.lineJoin = 'round';
+    const p = op.pts;
+    c.beginPath();
+    if (p.length === 1) { c.arc(p[0][0], p[0][1], op.size / 2, 0, Math.PI * 2); c.fill(); }
+    else { c.moveTo(p[0][0], p[0][1]); for (let i = 1; i < p.length; i++) c.lineTo(p[i][0], p[i][1]); c.stroke(); }
+    c.restore();
+  }
+  function renderTo(c, s) {
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, c.canvas.width, c.canvas.height);
+    c.setTransform(s, 0, 0, s, 0, 0);
+    for (const op of visibleOps()) paint(c, op);
+  }
+  function redraw() { renderTo(ctx, scale * (window.devicePixelRatio || 1)); }
+
+  function layout() {
+    board.style.aspectRatio = L.w + ' / ' + L.h;
+    svg.setAttribute('viewBox', `0 0 ${L.w} ${L.h}`);
+    const w = board.clientWidth, h = w * L.h / L.w;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    scale = w / L.w;
+    board.style.setProperty('--cell', (70 * scale) + 'px');
+    redraw();
+  }
+
+  // ---------- input ----------
+  let cur = null, penSeen = false, activeId = null;
+  function pt(e) {
+    const r = cv.getBoundingClientRect();
+    return [Math.round((e.clientX - r.left) / r.width * L.w * 10) / 10, Math.round((e.clientY - r.top) / r.height * L.h * 10) / 10];
+  }
+  cv.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'pen') penSeen = true;
+    if (e.pointerType === 'touch' && penSeen) return;      // palm rejection once a stylus is used
+    if (e.button > 0 || cur) return;
+    if (isExample) wipeExample();
+    cv.setPointerCapture(e.pointerId); activeId = e.pointerId;
+    cur = tool === 'eraser' ? { type: 'erase', size: 34, pts: [pt(e)] } : { type: 'stroke', color, size, pts: [pt(e)] };
+    const s = scale * (window.devicePixelRatio || 1);
+    ctx.setTransform(s, 0, 0, s, 0, 0); paint(ctx, cur);
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!cur || e.pointerId !== activeId) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    const from = cur.pts.length - 1;
+    for (const ev of (evs.length ? evs : [e])) cur.pts.push(pt(ev));
+    const seg = { ...cur, pts: cur.pts.slice(from) };
+    const s = scale * (window.devicePixelRatio || 1);
+    ctx.setTransform(s, 0, 0, s, 0, 0); paint(ctx, seg);
+  });
+  function endStroke(e) {
+    if (!cur || e.pointerId !== activeId) return;
+    ops.push(cur); cur = null; activeId = null; redoStack = [];
+    redraw(); changed();
+  }
+  cv.addEventListener('pointerup', endStroke);
+  cv.addEventListener('pointercancel', endStroke);
+
+  function changed() {
+    if (result && !stale) { stale = true; svg.classList.add('stale'); renderPanel(); }
+    updateButtons(); save();
+  }
+  function updateButtons() {
+    $('#undoBtn').disabled = ops.length === 0 || isExample;
+    $('#redoBtn').disabled = redoStack.length === 0;
+    $('#clearBtn').disabled = visibleOps().length === 0;
+  }
+
+  // ---------- toolbar ----------
+  function setTool(t) {
+    tool = t;
+    $('#penBtn').setAttribute('aria-pressed', t === 'pen');
+    $('#eraserBtn').setAttribute('aria-pressed', t === 'eraser');
+    board.classList.toggle('erasing', t === 'eraser');
+  }
+  $('#penBtn').onclick = () => setTool('pen');
+  $('#eraserBtn').onclick = () => setTool('eraser');
+  document.querySelectorAll('#colors .swatch').forEach((b) => b.onclick = () => {
+    color = b.dataset.color; setTool('pen');
+    document.querySelectorAll('#colors .swatch').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  });
+  document.querySelectorAll('#sizes .dot').forEach((b) => b.onclick = () => {
+    size = +b.dataset.size; setTool('pen');
+    document.querySelectorAll('#sizes .dot').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  });
+  function undo() { if (!ops.length || isExample) return; redoStack.push(ops.pop()); redraw(); changed(); }
+  function redo() { if (!redoStack.length) return; ops.push(redoStack.pop()); redraw(); changed(); }
+  $('#undoBtn').onclick = undo;
+  $('#redoBtn').onclick = redo;
+  $('#clearBtn').onclick = () => {
+    if (isExample) { wipeExample(); toast('مُسح المثال، السبورة جاهزة'); return; }
+    if (!visibleOps().length) return;
+    ops.push({ type: 'clear' }); redoStack = [];
+    clearResult(); redraw(); updateButtons(); save();
+    toast('مُسحت السبورة. اضغط «تراجع» لاستعادتها');
+  };
+  $('#paper').onchange = (e) => {
+    board.classList.remove('lines', 'grid', 'plain'); board.classList.add(e.target.value);
+    try { localStorage.setItem(STORE + '.paper', e.target.value); } catch (_) {}
+  };
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('select')) return;
+    const k = e.key.toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+    else if (!e.ctrlKey && !e.metaKey && k === 'p') setTool('pen');
+    else if (!e.ctrlKey && !e.metaKey && k === 'e') setTool('eraser');
+  });
+
+  // ---------- marks ----------
+  function ringPath(cx, cy, rx, ry, seed) {
+    // a hand-drawn marker loop: slightly more than one turn, with a gentle wobble
+    let r = seed * 9301 + 49297;
+    const rnd = () => { r = (r * 9301 + 49297) % 233280; return r / 233280; };
+    const start = -Math.PI * 0.75 + rnd() * 0.5, turn = Math.PI * 2.12, n = 40;
+    let d = '';
+    for (let i = 0; i <= n; i++) {
+      const a = start + turn * i / n;
+      const k = 1 + (rnd() - 0.5) * 0.05 + (i / n) * 0.06;
+      d += (i ? ' L' : 'M') + (cx + Math.cos(a) * rx * k).toFixed(1) + ' ' + (cy + Math.sin(a) * ry * k).toFixed(1);
+    }
+    return d;
+  }
+  function drawMarks() {
+    svg.textContent = '';
+    svg.classList.toggle('stale', stale);
+    if (!result) return;
+    const groups = [['e', result.boxes.e], ['u', result.boxes.u]];
+    for (const [kind, list] of groups) {
+      list.forEach((b, i) => {
+        if (!b) return;
+        const [x, y, w, h] = b;
+        const cx = x + w / 2, cy = y + h / 2;
+        const rx = w / 2 * 1.1 + 18, ry = h / 2 * 1.2 + 16;
+        const g = document.createElementNS(SVGNS, 'g');
+        g.setAttribute('class', 'mk'); g.dataset.key = kind + i;
+        const p = document.createElementNS(SVGNS, 'path');
+        p.setAttribute('d', ringPath(cx, cy, rx, ry, i + (kind === 'u' ? 17 : 3)));
+        p.setAttribute('class', 'ring ' + (kind === 'e' ? 'err' : 'unc'));
+        g.appendChild(p);
+        // number badge on the ring's upper-right
+        const bx = Math.min(L.w - 22, Math.max(22, cx + rx * 0.8)), by = Math.min(L.h - 22, Math.max(22, cy - ry * 0.85));
+        const bg = document.createElementNS(SVGNS, 'g');
+        bg.setAttribute('class', 'badge');
+        const c = document.createElementNS(SVGNS, 'circle');
+        c.setAttribute('cx', bx); c.setAttribute('cy', by); c.setAttribute('r', 20);
+        c.setAttribute('fill', kind === 'e' ? '#d6322b' : '#1f9d55');
+        const t = document.createElementNS(SVGNS, 'text');
+        t.setAttribute('x', bx); t.setAttribute('y', by + 9); t.setAttribute('text-anchor', 'middle');
+        t.textContent = kind === 'e' ? String(i + 1) : LETTERS[i] || String(i + 1);
+        bg.append(c, t);
+        bg.addEventListener('click', () => focusItem(kind + i, true));
+        g.appendChild(bg);
+        svg.appendChild(g);
+      });
+    }
+  }
+  function focusItem(key, scroll) {
+    document.querySelectorAll('.mk, .item').forEach((el) => el.classList.toggle('hl', el.dataset.key === key));
+    if (scroll) { const it = panel.querySelector(`.item[data-key="${key}"]`); it && it.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  }
+
+  // Tighten a model box (fractions of the writing area) around the actual ink near it.
+  function snap(box, img) {
+    if (!Array.isArray(box) || box.length < 4) return null;
+    let [x, y, w, h] = box.map(Number);
+    if (![x, y, w, h].every(Number.isFinite)) return null;
+    if (x > 1.5 || y > 1.5 || w > 1.5 || h > 1.5) { x /= 10; y /= 10; w /= 10; h /= 10; }   // answered on the 0–10 scale
+    x = Math.min(Math.max(x, 0), 1); y = Math.min(Math.max(y, 0), 1);
+    w = Math.max(0.01, Math.min(w, 1 - x)); h = Math.max(0.01, Math.min(h, 1 - y));
+    const W = img.width, H = img.height, a = img.data;
+    const X = x * W, Y = y * H, BW = w * W, BH = h * H;
+    const ex = Math.max(16, BW * 0.18), ey = Math.max(14, BH * 0.3);
+    const x0 = Math.max(0, Math.floor(X - ex)), x1 = Math.min(W - 1, Math.ceil(X + BW + ex));
+    const y0 = Math.max(0, Math.floor(Y - ey)), y1 = Math.min(H - 1, Math.ceil(Y + BH + ey));
+    let mnx = Infinity, mny = Infinity, mxx = -1, mxy = -1;
+    for (let yy = y0; yy <= y1; yy += 2) {
+      const row = yy * W;
+      for (let xx = x0; xx <= x1; xx += 2) {
+        if (a[(row + xx) * 4 + 3] > 40) { if (xx < mnx) mnx = xx; if (xx > mxx) mxx = xx; if (yy < mny) mny = yy; if (yy > mxy) mxy = yy; }
+      }
+    }
+    if (mxx < 0) return [X, Y, BW, BH];
+    return [mnx, mny, Math.max(12, mxx - mnx), Math.max(12, mxy - mny)];
+  }
+
+  // ---------- export ----------
+  function exportBoard() {
+    const W = L.w, H = L.h, M = 56;
+    const inkC = document.createElement('canvas'); inkC.width = W; inkC.height = H;
+    const ic = inkC.getContext('2d'); renderTo(ic, 1);
+    const img = ic.getImageData(0, 0, W, H);
+    let any = false;
+    for (let i = 3; i < img.data.length; i += 16) if (img.data[i] > 40) { any = true; break; }
+    const c = document.createElement('canvas'); c.width = W + M; c.height = H + M;
+    const x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
+    x.strokeStyle = '#e8ecf2'; x.lineWidth = 1;
+    for (let i = 1; i < 10; i++) {
+      x.beginPath(); x.moveTo(M + W * i / 10, M); x.lineTo(M + W * i / 10, M + H); x.stroke();
+      x.beginPath(); x.moveTo(M, M + H * i / 10); x.lineTo(M + W, M + H * i / 10); x.stroke();
+    }
+    x.strokeStyle = '#a3abb8'; x.lineWidth = 2; x.strokeRect(M, M, W, H);
+    x.fillStyle = '#8a93a2'; x.font = '600 20px sans-serif'; x.textAlign = 'center';
+    for (let i = 0; i <= 10; i++) x.fillText(String(i), M + W * i / 10, M - 18);
+    x.textAlign = 'right';
+    for (let i = 0; i <= 10; i++) x.fillText(String(i), M - 12, M + H * i / 10 + 7);
+    x.drawImage(inkC, M, M);
+    return { any, img, blobP: new Promise((r) => c.toBlob(r, 'image/png')) };
+  }
+
+  function prompt(stage) {
+    return `You are a patient, precise teacher checking a student's handwritten work on a whiteboard. The attached image is a photo of the board.
+
+Image layout: the writing area is the white rectangle inside the gray frame. Faint grid lines divide it into tenths. The gray numbers 0-10 along the TOP edge mark tenths of the writing area's width (0 = left edge, 10 = right edge); the gray numbers along the LEFT edge mark tenths of its height (0 = top, 10 = bottom). The frame, grid lines and gray numbers are NOT the student's writing; never treat them as content.
+
+The student wrote a question or problem (any subject, any grade) and then their own solution. The writing may be Arabic (right to left), English, math notation, or a mix. Student's school stage (a hint, may be empty): ${stage || 'not given'}.
+
+Do this:
+1. Read everything. Identify the question and each step of the student's solution.
+2. Solve the question yourself carefully, then check every step of the student's work against your solution.
+3. Mark each place where the student made a mistake (wrong step, number, sign, unit, formula, concept, spelling of a key term, or final answer). The box must tightly cover the exact written part that is wrong: the wrong term or number if it is small, otherwise the wrong line. Mark the root mistake. Lines that only carry an earlier mistake forward are not marked again, except a wrong final answer, which is marked and explained as following from the earlier mistake.
+4. Mark each place where the handwriting is so unclear that you cannot be sure what it says (an ambiguous digit, letter, symbol or word). Mark only genuinely ambiguous spots, not merely untidy ones. Never count an unclear spot as an error; ask the student to rewrite it. If an unclear spot decides whether the work is right, say so in "summary".
+5. If the question itself is unreadable or missing, set "readable" to false, put the unreadable parts in "unclear", and leave "steps" empty.
+6. If the student only wrote a question with no attempt, set verdict "incomplete" and still give the full solution.
+
+Boxes: "box": [x, y, w, h] as fractions from 0 to 1 of the writing area. x and y are the box's top-left corner measured from the LEFT edge and the TOP edge (read them off the grid: 3.5 on the top scale = 0.35). Arabic text runs right to left, but coordinates are always measured from the left.
+
+Write every text field in clear, simple Arabic suited to the student's stage. Keep formulas and numbers as math, using Unicode symbols (× ÷ − √ ² ³ π ≤ ≥ ≠ ∞ →), never LaTeX. Be kind and encouraging but direct. Keep each field short; "steps" is the full correct solution, one step per item, at most 12 items.
+
+Reply with ONLY this JSON, no other text:
+{"readable": true, "subject": "المادة", "question": "the question as you read it", "student_work": "short transcription of the student's solution", "verdict": "correct" | "partially_correct" | "incorrect" | "incomplete" | "unreadable", "summary": "one or two sentences to the student", "errors": [{"box": [0.1, 0.2, 0.3, 0.06], "wrote": "what the student wrote there", "why": "why it is wrong", "fix": "the correct version"}], "unclear": [{"box": [0.5, 0.4, 0.05, 0.07], "read_as": "your best guess, or empty", "note": "what to rewrite more clearly"}], "steps": ["...", "..."], "final_answer": "..."}`;
+  }
+
+  async function check() {
+    if (ctl) return;
+    if (isExample) { toast('هذا مثال جاهز. امسحه واكتب سؤالك أنت ثم اضغط «تصحيح»'); return; }
+    const ex = exportBoard();
+    if (!ex.any) { toast('السبورة فارغة. اكتب السؤال وحلّك أولًا'); return; }
+    sampleP = sampleP || (window.claude && window.claude.use ? window.claude.use('sample') : Promise.resolve(null));
+    const sample = await sampleP;
+    if (!sample) { showError('التصحيح الذكي يعمل عند فتح السبورة داخل Claude. يمكنك الكتابة والتمرّن هنا، لكن التصحيح غير متاح في هذا العرض.'); return; }
+    const blob = await ex.blobP;
+    ctl = new AbortController();
+    const t0 = Date.now();
+    renderWorking(t0);
+    const tick = setInterval(() => { const el = $('#elapsed'); if (el) el.textContent = Math.round((Date.now() - t0) / 1000); }, 1000);
+    $('#checkBtn').disabled = true;
+    try {
+      const data = await sample.json(prompt($('#stage').value), { images: [blob], modelTier: $('#depth').value, signal: ctl.signal });
+      if (!data || typeof data !== 'object') throw { code: 'invalid_json' };
+      const arr = (v) => Array.isArray(v) ? v.filter((o) => o && typeof o === 'object') : [];
+      data.errors = arr(data.errors); data.unclear = arr(data.unclear);
+      data.steps = Array.isArray(data.steps) ? data.steps.map(String) : [];
+      result = { data, boxes: { e: data.errors.map((o) => snap(o.box, ex.img)), u: data.unclear.map((o) => snap(o.box, ex.img)) }, example: false };
+      stale = false;
+      drawMarks(); renderPanel();
+    } catch (e) {
+      const code = e && e.code;
+      if (code === 'cancelled') { renderPanel(); }
+      else showError(copyFor(code));
+    } finally {
+      clearInterval(tick); ctl = null; $('#checkBtn').disabled = false;
+    }
+  }
+  $('#checkBtn').onclick = check;
+
+  function copyFor(code) {
+    switch (code) {
+      case 'not_granted': case 'sampling_disabled': case 'not_declared': case 'capability_disabled': case 'capability_removed':
+        return 'التصحيح الذكي غير مسموح في هذا العرض. اسمح للسبورة باستخدام Claude من نافذة الإذن ثم أعد فتحها.';
+      case 'images_unavailable': return 'هذا العرض لا يستطيع إرسال صورة السبورة إلى Claude. افتح السبورة في متصفح أو في تطبيق Claude المحدّث.';
+      case 'image_rejected': return 'تعذّر إرسال صورة السبورة. امسح بعض الكتابة الزائدة ثم حاول مرة أخرى.';
+      case 'rate_limited': return 'أرسلت طلبات كثيرة في وقت قصير أو بلغت حد الاستخدام. انتظر قليلًا ثم اضغط «تصحيح» مرة أخرى.';
+      case 'session_expired': return 'انتهت الجلسة. سجّل الدخول من جديد ثم اضغط «تصحيح».';
+      case 'refused': return 'لم يتمكن Claude من تصحيح هذا المحتوى. اكتب سؤالًا دراسيًا وحاول مرة أخرى.';
+      default: return 'تعذّر الحصول على التصحيح هذه المرة. اضغط «تصحيح» مرة أخرى.';
+    }
+  }
+
+  // ---------- panel ----------
+  const VERDICT = {
+    correct: ['ok', 'إجابة صحيحة'], partially_correct: ['warn', 'صحيحة جزئيًا'], incorrect: ['bad', 'فيها أخطاء'],
+    incomplete: ['warn', 'الحل غير مكتمل'], unreadable: ['plain', 'الكتابة غير مقروءة'],
+  };
+  function renderIdle() {
+    panel.innerHTML = `
+      <h2>كيف تستخدم السبورة</h2>
+      <ol class="howto">
+        <li>اكتب السؤال أو المسألة بخطّك، من أي مادة وأي صف.</li>
+        <li>اكتب حلّك تحته خطوة بخطوة.</li>
+        <li>اضغط <b>✓ تصحيح</b>: تظهر دائرة حمراء حول كل خطأ، ودائرة خضراء حول أي كتابة غير واضحة، والحل الصحيح هنا.</li>
+      </ol>
+      <p class="muted">إذا ظهرت دائرة خضراء فامسح ذلك الموضع بالممحاة وأعد كتابته بوضوح، ثم صحّح مرة أخرى.</p>`;
+  }
+  function renderWorking(t0) {
+    panel.innerHTML = `
+      <div class="working"><span class="spin"></span><div><h2>جارٍ التصحيح…</h2><p class="muted tnum">يقرأ Claude كتابتك ويحل السؤال · <span id="elapsed">0</span> ث</p></div></div>
+      <p class="muted">قد يستغرق التصحيح الدقيق دقيقة أو أكثر.</p>
+      <button class="ghost" id="stopBtn">إيقاف</button>`;
+    $('#stopBtn').onclick = () => ctl && ctl.abort();
+  }
+  function showError(msg) {
+    panel.innerHTML = `<h2>التصحيح</h2><div class="errbox">${esc(msg)}</div>`;
+    if (result) { const b = document.createElement('button'); b.className = 'ghost'; b.textContent = 'عرض آخر تصحيح'; b.onclick = renderPanel; panel.appendChild(b); }
+  }
+  function clearResult() { result = null; stale = false; drawMarks(); renderPanel(); }
+
+  function renderPanel() {
+    if (!result) { renderIdle(); return; }
+    const d = result.data;
+    const [cls, label] = VERDICT[d.verdict] || ['plain', 'نتيجة التصحيح'];
+    let h = `<div class="chiprow">${result.example ? '<span class="chip warn">مثال</span>' : ''}<span class="chip ${cls}">${label}</span>${d.subject ? `<span class="chip plain">${esc(d.subject)}</span>` : ''}</div>`;
+    if (stale) h += `<div class="notice">عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى لتحديث الدوائر.</div>`;
+    if (d.question) h += `<div class="qbox"><small>السؤال كما قرأته</small>${fmt(d.question)}</div>`;
+    if (d.summary) h += `<p>${fmt(d.summary)}</p>`;
+    if (d.unclear.length) {
+      h += `<div><h3>أعد كتابة هذه المواضع</h3><ul class="items">` + d.unclear.map((u, i) => `
+        <li class="item u" data-key="u${i}"><span class="num">${LETTERS[i] || i + 1}</span><div>${fmt(u.note || 'الكتابة هنا غير واضحة')}${u.read_as ? `<br><span class="muted">قرأتها: ${fmt(u.read_as)}</span>` : ''}${result.boxes.u[i] ? '' : '<br><span class="muted">لم يُحدَّد موضعها بدقة</span>'}</div></li>`).join('') + `</ul></div>`;
+    }
+    if (d.errors.length) {
+      h += `<div><h3>الأخطاء</h3><ul class="items">` + d.errors.map((e, i) => `
+        <li class="item e" data-key="e${i}"><span class="num">${i + 1}</span><div>${e.wrote ? `كتبت: <b>${fmt(e.wrote)}</b><br>` : ''}${fmt(e.why || '')}${e.fix ? `<br><span class="fix">الصحيح: ${fmt(e.fix)}</span>` : ''}</div></li>`).join('') + `</ul></div>`;
+    }
+    if (d.steps.length) h += `<div><h3>الحل الصحيح</h3><ol class="steps">${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol></div>`;
+    if (d.final_answer) h += `<div class="final"><small>الإجابة النهائية</small><div>${fmt(d.final_answer)}</div></div>`;
+    if (result.example) h += `<p class="muted">هذا مثال يوضح شكل التصحيح. ابدأ الكتابة على السبورة أو اضغط «مسح» لتجرّب بنفسك.</p>`;
+    panel.innerHTML = h;
+    panel.querySelectorAll('.item').forEach((it) => {
+      it.addEventListener('mouseenter', () => focusItem(it.dataset.key));
+      it.addEventListener('mouseleave', () => focusItem(''));
+      it.addEventListener('click', () => focusItem(it.dataset.key));
+    });
+  }
+
+  // ---------- example ----------
+  async function loadExample() {
+    try { await Promise.all([document.fonts.load('64px "Aref Ruqaa"'), document.fonts.load('76px Caveat')]); } catch (_) {}
+    const right = L.w - 90, lead = L.h > L.w ? 150 : 118;
+    const mk = document.createElement('canvas').getContext('2d');
+    const T = [];
+    const box = (text, font, xr, y) => {
+      mk.font = font; const m = mk.measureText(text);
+      const asc = m.actualBoundingBoxAscent || 50, des = m.actualBoundingBoxDescent || 12;
+      return [xr - m.width, y - asc, m.width, asc + des];
+    };
+    const ar = '64px "Aref Ruqaa", serif', eq = '76px Caveat, cursive';
+    const y = (i) => 120 + lead * i;
+    T.push({ type: 'text', text: 'حل المعادلة الآتية:', font: ar, color: INK_BLUE, x: right, y: y(0), align: 'right', dir: 'rtl' });
+    T.push({ type: 'text', text: '2x + 5 = 13', font: eq, color: INK_BLUE, x: right, y: y(1), align: 'right' });
+    T.push({ type: 'text', text: '2x = 13 + 5', font: eq, color: INK_BLUE, x: right, y: y(2), align: 'right' });
+    const errBox1 = box('2x = 13 + 5', eq, right, y(2));
+    T.push({ type: 'text', text: 'x = 18', font: eq, color: INK_BLUE, x: right, y: y(3), align: 'right' });
+    // a hurried "2" that also reads as "z"
+    mk.font = eq; const w3 = mk.measureText('x = 18').width;
+    const sx = right - w3 - 52, sy = y(3);
+    const scrib = [[0, -40], [8, -48], [22, -50], [33, -42], [34, -30], [24, -16], [10, -4], [2, 2], [14, 0], [28, 1], [42, -1]]
+      .map(([a, b], i) => [sx + a + (i % 2 ? 1.5 : -1), sy + b]);
+    T.push({ type: 'stroke', color: INK_BLUE, size: 4.5, pts: scrib });
+    const xs = scrib.map((p) => p[0]), ys = scrib.map((p) => p[1]);
+    const uncBox = [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)];
+    T.push({ type: 'text', text: 'x = 9', font: eq, color: INK_BLUE, x: right, y: y(4), align: 'right' });
+    const errBox2 = box('x = 9', eq, right, y(4));
+    ops = T; redoStack = []; isExample = true;
+    $('#exampleTag').hidden = false;
+    result = {
+      example: true,
+      boxes: { e: [errBox1, errBox2], u: [uncBox] },
+      data: {
+        verdict: 'incorrect', subject: 'رياضيات',
+        question: 'حل المعادلة: 2x + 5 = 13',
+        summary: 'بدايتك صحيحة، لكنك نقلت العدد 5 إلى الطرف الآخر دون تغيير إشارته.',
+        errors: [
+          { wrote: '2x = 13 + 5', why: 'عند نقل حدٍّ إلى الطرف الآخر من المعادلة تنعكس إشارته، فالعدد +5 يصبح −5.', fix: '2x = 13 − 5' },
+          { wrote: 'x = 9', why: 'الإجابة النهائية خاطئة لأنها مبنية على الخطأ الأول.', fix: 'x = 4' },
+        ],
+        unclear: [{ read_as: '2 أو z', note: 'الرقم في بداية السطر الرابع يشبه الحرف z. أعد كتابة 2x بوضوح.' }],
+        steps: ['2x + 5 = 13', 'ننقل 5 إلى الطرف الأيسر مع تغيير إشارتها: 2x = 13 − 5', '2x = 8', 'نقسم الطرفين على 2: x = 8 ÷ 2', 'x = 4', 'التحقق: 2 × 4 + 5 = 13 ✓'],
+        final_answer: 'x = 4',
+      },
+    };
+    stale = false;
+    redraw(); drawMarks(); renderPanel(); updateButtons();
+  }
+  function wipeExample() {
+    isExample = false; ops = []; redoStack = [];
+    $('#exampleTag').hidden = true;
+    clearResult(); redraw(); updateButtons();
+  }
+
+  // ---------- start ----------
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (_) {}
+  try { const p = localStorage.getItem(STORE + '.paper'); if (p) { $('#paper').value = p; $('#paper').onchange({ target: $('#paper') }); } } catch (_) {}
+  const narrow = board.clientWidth < 640;
+  if (saved && Array.isArray(saved.ops) && saved.ops.length && saved.L && saved.L.w > 0 && saved.L.h > 0) {
+    L = { w: saved.L.w, h: saved.L.h }; ops = saved.ops;
+  } else if (narrow) {
+    L = { w: 900, h: 1200 };
+  }
+  layout();
+  new ResizeObserver(() => layout()).observe(board.parentElement);
+  if (ops.length) { renderPanel(); updateButtons(); } else loadExample();
+})();
+</script>
