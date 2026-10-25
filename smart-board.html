@@ -189,6 +189,14 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
         </select>
       </div>
       <div class="field">
+        <label for="digits">الأرقام</label>
+        <select id="digits">
+          <option value="auto">أرقام عربية أو إنجليزية</option>
+          <option value="ar">أرقام عربية ١٢٣</option>
+          <option value="en">أرقام إنجليزية 123</option>
+        </select>
+      </div>
+      <div class="field">
         <label for="lang">لغة الشرح</label>
         <select id="lang">
           <option value="auto">الشرح بلغة السؤال</option>
@@ -687,7 +695,12 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     return { any: true, img, crop, blobP: new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9)) };
   }
 
-  function prompt(stage, lang, confirmed) {
+  function prompt(stage, lang, confirmed, digits) {
+    const digitRule = digits === 'ar'
+      ? 'The student says they write numbers with ARABIC-INDIC digits (٠١٢٣٤٥٦٧٨٩). Read every numeral shape as an Arabic-Indic digit.'
+      : digits === 'en'
+        ? 'The student says they write numbers with WESTERN digits (0123456789). Read every numeral shape as a Western digit.'
+        : 'Most students using this board are Arab school students who very often write numbers with Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩), so expect them as readily as Western digits.';
     const langRule = lang === 'en'
       ? 'Write every text field in clear, simple English.'
       : lang === 'ar'
@@ -699,7 +712,9 @@ Image layout: the writing area is the white rectangle inside the gray frame. Fai
 
 The student wrote a question or problem (any subject, any grade) and then their own solution. Student's school stage (hint, may be empty): ${stage || 'not given'}.
 
-READING ARABIC AND ENGLISH. The board may be in Arabic, in English, or mixed, and you must read both equally well:
+READING ARABIC AND ENGLISH. The board may be in Arabic, in English, or mixed, and you must read both equally well. ${digitRule}
+- Handwritten Arabic-Indic digits are easily mistaken for Greek or Latin letters. In a math line, read these shapes as digits, never as letters: a shape like ξ, ε, a reversed 3 or the letter ع is ٤ (four); a shape like Λ or an inverted V is ٨ (eight); a shape like V is ٧ (seven); a shape like a backwards 7 or ٦ is ٦ (six); a shape like Latin 0 or a small circle is ٥ (five); a single dot is ٠ (zero); a vertical stroke is ١ (one); a stroke with one hook at the top-left is ٢ (two), with two hooks ٣ (three); a closed loop with a tail like 9 is ٩ (nine). Never output Greek letters for a school problem unless the subject clearly uses them (π, θ, α, β, Δ, λ in physics or trigonometry).
+- Sanity check your reading: if a line reads as nonsense with letters but as a sensible exercise with digits (for example ξ + ξ = Λ is really ٤ + ٤ = ٨), the digits reading is correct and is NOT uncertain.
 - Digits may be Western (0 1 2 3 4 5 6 7 8 9) or Arabic-Indic (٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩, also Persian forms ۴ ۵ ۶), even mixed on one board. Watch the look-alikes: Arabic ٠ (zero) is a small dot while Arabic ٥ (five) looks like a Latin 0; Arabic ١ looks like 1; Arabic ٧ is a V shape and ٨ an inverted V; ٢ and ٣ differ only by the number of top teeth; ٦ resembles a reversed 7. Arabic decimal separator is ٫ or a comma, thousands ٬.
 - Arabic math uses Arabic letters for unknowns (س، ص، ع، ل، م، ن، أ، ب، ج) and Arabic words for functions and units (جا، جتا، ظا، لو، سم، كجم، م، ث، ريال). English uses x, y, z, sin, cos, log, cm, kg, s.
 - Arabic text is written right to left. Arabic-style math may also be written right to left (for example ٧ = ٣ + س means س + ٣ = ٧, and in Arabic RTL notation "٨ ÷ ٢" is read from the right); judge from the student's layout which direction each line goes, and keep the order of subtraction and division correct for that direction. English and Western-style math go left to right.
@@ -713,7 +728,7 @@ Read everything, solve the question yourself, then check each step of the studen
 
 ${confirmed ? `CONFIRMED READING. The student reviewed your earlier reading of the board and corrected it. This transcription is AUTHORITATIVE: it is exactly what the student means on each line, top to bottom. Check the work as written here; use the image only to locate the boxes. Do not output any "line" objects.
 ${confirmed.map((l, i) => (i + 1) + '. ' + l).join('\n')}
-` : `TRANSCRIPTION. The student will see your reading of the board and correct anything you misread, so first write out every handwritten line, top to bottom, exactly as the student wrote it: their digits, letters, symbols and mistakes, uncorrected. Wrap every part you are not sure you read correctly in ⟦ ⟧, for example 2x = ⟦18⟧ or ⟦س⟧ + ٣ = ٧. Be honest about doubts.
+` : `TRANSCRIPTION. The student will see your reading of the board and correct anything you misread, so first write out every handwritten line, top to bottom, exactly as the student wrote it: their digits, letters, symbols and mistakes, uncorrected, in the student's own digit system. Write each line in its reading order: for a line written right to left (Arabic style, for example ٤ + ٤ = ٨ written with ٤ on the right and ٨ on the left), the text starts with the rightmost symbol. Wrap in ⟦ ⟧ only the few symbols you genuinely could read two ways after the checks above, for example 2x = ⟦18⟧ or ⟦س⟧ + ٣ = ٧; a clearly written line has no ⟦ ⟧ at all.
 `}
 Box format: "box": [x, y, w, h] as fractions 0-1 of the writing area; x, y = top-left corner measured from the LEFT and TOP edges (read them off the grid: 3.5 on the top scale = 0.35). Arabic runs right to left, but x is always measured from the left.
 
@@ -785,7 +800,7 @@ then last: {"t":"final","answer":"..."}`;
         for (const ln of lines) changedAny = applyLine(live, ln) || changedAny;
         if (changedAny) { result = live; stale = false; shown = true; drawMarks(); renderPanel(); }
       };
-      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value, confirmed), {
+      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value, confirmed, $('#digits').value), {
         images: [blob], modelTier: $('#depth').value, signal: myCtl.signal, cache: false,
         onText: ({ delta }) => eat(delta),
       });
@@ -975,6 +990,11 @@ then last: {"t":"final","answer":"..."}`;
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (_) {}
   try { const p = localStorage.getItem(STORE + '.paper'); if (p) { $('#paper').value = p; $('#paper').onchange({ target: $('#paper') }); } } catch (_) {}
+  for (const id of ['stage', 'digits', 'lang', 'depth']) {   // remember the student's choices on this device
+    const el = $('#' + id);
+    try { const v = localStorage.getItem(STORE + '.' + id); if (v != null && [...el.options].some((o) => o.value === v)) el.value = v; } catch (_) {}
+    el.addEventListener('change', () => { try { localStorage.setItem(STORE + '.' + id, el.value); } catch (_) {} });
+  }
   const narrow = board.clientWidth < 640;
   if (saved && Array.isArray(saved.ops) && saved.ops.length && saved.L && saved.L.w > 0 && saved.L.h > 0) {
     L = { w: saved.L.w, h: Math.max(saved.L.h, saved.L.w === 900 ? 1400 : saved.L.w === 1400 ? 1000 : saved.L.h) }; ops = saved.ops;
