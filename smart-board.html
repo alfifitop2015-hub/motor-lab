@@ -207,8 +207,8 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       <div class="field">
         <label for="depth">التصحيح</label>
         <select id="depth">
-          <option value="default">تصحيح عادي (أسرع)</option>
-          <option value="complex">تصحيح دقيق جدًا (أبطأ)</option>
+          <option value="complex">قراءة دقيقة (موصى بها)</option>
+          <option value="default">قراءة سريعة</option>
         </select>
       </div>
       <div class="field">
@@ -677,7 +677,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     const crop = { x: cx0, y: cy0, w: cx1 - cx0, h: cy1 - cy0 };
     const k = Math.min(2, Math.sqrt(1.05e6 / (crop.w * crop.h)), 1500 / Math.max(crop.w, crop.h));
     const OW = Math.round(crop.w * k), OH = Math.round(crop.h * k), M = 44;
-    const c = document.createElement('canvas'); c.width = OW + M; c.height = OH + M;
+    const c = document.createElement('canvas'); c.width = OW + M + 26; c.height = OH + M + 14;
     const x = c.getContext('2d');
     x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
     x.strokeStyle = '#eceff4'; x.lineWidth = 1;
@@ -692,10 +692,19 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     for (let i = 0; i <= 10; i++) x.fillText(String(i), M - 10, M + OH * i / 10 + 6);
     x.imageSmoothingQuality = 'high';
     x.drawImage(inkC, crop.x, crop.y, crop.w, crop.h, M, M, OW, OH);
-    return { any: true, img, crop, blobP: new Promise((r) => c.toBlob(r, 'image/jpeg', 0.9)) };
+    // a clean copy for reading: black ink on plain white, no grid lines crossing the strokes, no gray numbers
+    const t = document.createElement('canvas'); t.width = OW; t.height = OH;
+    const tx = t.getContext('2d'); tx.imageSmoothingQuality = 'high';
+    tx.drawImage(inkC, crop.x, crop.y, crop.w, crop.h, 0, 0, OW, OH);
+    tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#111111'; tx.fillRect(0, 0, OW, OH);
+    const P = 40, cl = document.createElement('canvas'); cl.width = OW + 2 * P; cl.height = OH + 2 * P;
+    const cx = cl.getContext('2d'); cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, cl.width, cl.height); cx.drawImage(t, P, P);
+    return { any: true, img, crop,
+      cleanP: new Promise((r) => cl.toBlob(r, 'image/png')),
+      blobP: new Promise((r) => c.toBlob(r, 'image/png')) };
   }
 
-  function prompt(stage, lang, confirmed, digits) {
+  function prompt(stage, lang, confirmed, digits, twoImages) {
     const digitRule = digits === 'ar'
       ? 'The student says they write numbers with ARABIC-INDIC digits (٠١٢٣٤٥٦٧٨٩). Read every numeral shape as an Arabic-Indic digit.'
       : digits === 'en'
@@ -706,9 +715,13 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       : lang === 'ar'
         ? 'Write every text field in clear, simple Arabic.'
         : 'Write every text field in the language the question is written in: Arabic if the question is in Arabic, English if it is in English (for a mixed board, use the language of the question\'s words; for a bare equation with no words, use Arabic if the student used Arabic digits or Arabic letters, otherwise English).';
-    return `You are a patient, precise teacher checking a student's handwritten work on a whiteboard. The attached image shows the written part of the board.
+    return `You are a patient, precise teacher checking a student's handwritten work on a whiteboard. ${twoImages
+      ? 'Two images are attached, both showing the written part of the board. IMAGE 1 is the clean board (black ink on white): READ the writing from IMAGE 1 only. IMAGE 2 is the same board with a coordinate grid: use it ONLY to measure boxes.'
+      : 'The attached image shows the written part of the board.'}
 
-Image layout: the writing area is the white rectangle inside the gray frame. Faint grid lines divide it into tenths. The gray numbers 0-10 along the TOP edge mark tenths of the writing area's width (0 = left edge, 10 = right edge); the numbers along the LEFT edge mark tenths of its height (0 = top, 10 = bottom). The frame, grid and gray numbers are NOT the student's writing.
+Before anything else, look carefully at each handwritten symbol one by one, the way a teacher reads a student's paper. Handwritten math is usually simple; prefer the reading that makes a sensible school exercise.
+
+Image layout${twoImages ? ' of IMAGE 2' : ''}: the writing area is the white rectangle inside the gray frame. Faint grid lines divide it into tenths. The gray numbers 0-10 along the TOP edge mark tenths of the writing area's width (0 = left edge, 10 = right edge); the numbers along the LEFT edge mark tenths of its height (0 = top, 10 = bottom). The frame, grid and gray numbers are NOT the student's writing.
 
 The student wrote a question or problem (any subject, any grade) and then their own solution. Student's school stage (hint, may be empty): ${stage || 'not given'}.
 
@@ -788,7 +801,9 @@ then last: {"t":"final","answer":"..."}`;
     try {
       const sample = await getSample();
       if (!sample) throw { code: 'no_runtime' };
-      const blob = await ex.blobP;
+      const blob = await ex.blobP, clean = await ex.cleanP;
+      const lim = typeof sample.limits === 'function' ? await sample.limits().catch(() => null) : null;
+      const twoImages = !!(lim && lim.images && lim.images.maxCount >= 2 && clean);
       if (myCtl.signal.aborted) throw { code: 'cancelled' };
       renderWorking('think');
       const live = newLiveResult(ex.img, ex.crop);
@@ -800,8 +815,8 @@ then last: {"t":"final","answer":"..."}`;
         for (const ln of lines) changedAny = applyLine(live, ln) || changedAny;
         if (changedAny) { result = live; stale = false; shown = true; drawMarks(); renderPanel(); }
       };
-      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value, confirmed, $('#digits').value), {
-        images: [blob], modelTier: $('#depth').value, signal: myCtl.signal, cache: false,
+      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value, confirmed, $('#digits').value, twoImages), {
+        images: twoImages ? [clean, blob] : [blob], modelTier: $('#depth').value, signal: myCtl.signal, cache: false,
         onText: ({ delta }) => eat(delta),
       });
       eat('\n');
@@ -872,12 +887,12 @@ then last: {"t":"final","answer":"..."}`;
     const msg = phase === 'connect' ? 'جارٍ الاتصال بـ Claude…' : 'يقرأ Claude كتابتك ويحل السؤال…';
     const hint = phase === 'connect'
       ? 'إذا ظهرت نافذة تطلب الإذن باستخدام Claude فاضغط «سماح».'
-      : 'تظهر النتيجة هنا تدريجيًا فور بدء الكتابة، وعادة خلال 10 إلى 40 ثانية.';
+      : 'تظهر النتيجة هنا تدريجيًا فور بدء الكتابة، وعادة خلال 20 إلى 60 ثانية.';
     panel.dir = 'rtl'; panel.lang = 'ar';
     panel.innerHTML = `
       <div class="working"><span class="spin"></span><div><h2>${msg}</h2><p class="muted tnum">مضى <span id="elapsed">0</span> ث</p></div></div>
       <p class="muted">${hint}</p>
-      <p class="notice" id="slow" hidden>يستغرق وقتًا أطول من المعتاد. اختر «تصحيح عادي» من القائمة إن كنت على «تصحيح دقيق جدًا»، أو انتظر قليلًا.</p>
+      <p class="notice" id="slow" hidden>يستغرق وقتًا أطول من المعتاد. يمكنك اختيار «قراءة سريعة» من القائمة، لكن «قراءة دقيقة» أدق في قراءة الخط.</p>
       <button class="ghost" id="stopBtn">إيقاف</button>`;
     $('#stopBtn').onclick = () => ctl && ctl.abort();
   }
@@ -990,8 +1005,8 @@ then last: {"t":"final","answer":"..."}`;
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (_) {}
   try { const p = localStorage.getItem(STORE + '.paper'); if (p) { $('#paper').value = p; $('#paper').onchange({ target: $('#paper') }); } } catch (_) {}
-  for (const id of ['stage', 'digits', 'lang', 'depth']) {   // remember the student's choices on this device
-    const el = $('#' + id);
+  for (const id of ['stage', 'digits', 'lang', 'depth2']) {   // remember the student's choices on this device
+    const el = $('#' + id.replace(/\d$/, ''));
     try { const v = localStorage.getItem(STORE + '.' + id); if (v != null && [...el.options].some((o) => o.value === v)) el.value = v; } catch (_) {}
     el.addEventListener('change', () => { try { localStorage.setItem(STORE + '.' + id, el.value); } catch (_) {} });
   }
