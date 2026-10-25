@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
-/* Layout: a framed whiteboard of typed lines with a math keyboard under it, and the teacher's correction sheet beside it (stacked on phones). */
+/* Layout: a framed whiteboard of typed lines and fill-in layouts (long division, column sums) with a math keyboard under it, and the teacher's correction sheet beside it (stacked on phones). */
 :root {
   --bg: #e9edf2;
   --surface: #ffffff;
@@ -72,14 +72,25 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
 .row .n { font-family: var(--font-display); color: #8a94a6; text-align: center; padding-top: .55rem; font-size: 1rem; }
 .row.q { border-bottom: 2px solid #c5cedb; margin-bottom: 4px; }
 .row.q .n { font-size: .72rem; color: var(--ink); padding-top: .9rem; }
-.ln, .view { display: block; width: 100%; font: 500 1.5rem/1.65 var(--font-body); color: var(--ink); padding: .15rem .4rem; min-height: 2.8rem; overflow-wrap: anywhere; }
+.lw { position: relative; min-width: 0; }
+.ln, .view, .pv { display: block; width: 100%; font: 500 1.5rem/1.65 var(--font-body); color: var(--ink); padding: .15rem .4rem; min-height: 2.8rem; overflow-wrap: anywhere; }
 .ln { border: 0; background: transparent; resize: none; overflow: hidden; margin: 0; }
 .ln::placeholder { color: #a9b3c3; font-weight: 400; font-size: 1.15rem; }
 .ln:focus { outline: none; background: rgba(31, 79, 209, .06); border-radius: 6px; }
-.view { white-space: pre-wrap; cursor: text; }
+.view, .pv { white-space: pre-wrap; cursor: text; }
+.pv { display: none; }
+.row.has-text:not(.editing) .pv { display: block; }
+.row.has-text:not(.editing) .ln { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+/* typed math shown the way it is written on paper */
+.fr { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; font-size: .78em; line-height: 1.15; margin: 0 .12em; }
+.fr > span { padding: 0 .2em; }
+.fr .nu { border-bottom: 2px solid currentColor; }
+.rt { white-space: nowrap; }
+.rt .rad { border-top: 2px solid currentColor; padding: .05em .1em 0; }
+.view sup, .pv sup, .sol sup { font-size: .6em; }
 .ring { position: relative; border: 3px solid #d6322b; border-radius: 1.1em / .9em; padding: 0 .2em; margin: 0 .05em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
-.ring sup { position: absolute; top: -.75em; inset-inline-end: -.6em; width: 1.35em; height: 1.35em; border-radius: 50%; background: #d6322b; color: #fff; font: 700 .55em/1.35em var(--font-display); text-align: center; }
-.ring.hl, .ann.hl { box-shadow: 0 0 0 3px rgba(214, 50, 43, .25); }
+.ring > sup, .cell > sup, .blk > sup { position: absolute; top: -.75em; inset-inline-end: -.6em; width: 1.35em; height: 1.35em; border-radius: 50%; background: #d6322b; color: #fff; font: 700 .55em/1.35em var(--font-display); text-align: center; z-index: 1; }
+.ring.hl, .ann.hl, .cell.hl, .blk.hl { box-shadow: 0 0 0 3px rgba(214, 50, 43, .25); }
 .ann { color: #c62828; font: 500 1.05rem/1.5 var(--font-body); padding: .1rem .4rem .45rem; border-radius: 6px; }
 .ann .why { font-size: .9em; color: #a63a2f; }
 .notes-stale .ann, .notes-stale .sol { opacity: .35; }
@@ -92,16 +103,42 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
 .tag { display: inline-block; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 2px 12px; font: 600 .78rem var(--font-body); margin-bottom: 4px; }
 .addline { font: 500 .9rem var(--font-body); color: #7b879b; background: transparent; border: 1px dashed #c5cedb; border-radius: 8px; padding: 4px 12px; margin-top: 8px; cursor: pointer; }
 
+/* fill-in layouts: long division and column operations */
+.blk { position: relative; display: inline-flex; flex-direction: column; gap: 4px; margin: 6px .4rem 8px; padding: 6px 8px 8px; border-radius: 8px; --cw: 2.1rem; }
+.blk-t { font: 600 .78rem var(--font-body); color: #7b879b; direction: rtl; }
+.blk .g { display: grid; gap: 3px 2px; direction: ltr; align-items: center; }
+.cell { position: relative; width: var(--cw); height: 2.4rem; text-align: center; font: 500 1.45rem/2.4rem var(--font-body); color: var(--ink); border: 1px dashed #c9d2e0; border-radius: 5px; background: transparent; padding: 0; caret-color: var(--accent); }
+input.cell:focus { outline: none; border: 2px solid var(--accent); background: rgba(31, 79, 209, .07); }
+span.cell { border-color: transparent; }
+.cell.sm { height: 1.6rem; font-size: .95rem; line-height: 1.6rem; color: #6a7590; }
+.cell.top { border: 0; border-top: 3px solid var(--ink); border-radius: 0; }
+.cell.sub { border-bottom: 3px solid var(--ink); border-radius: 5px 5px 0 0; }
+.cell.bad { background: #fff1ef; box-shadow: inset 0 0 0 2.5px #d6322b; border-radius: 6px; }
+.dv { font: 500 1.45rem var(--font-body); color: var(--ink); text-align: center; padding: 0 .3rem; white-space: nowrap; }
+.dv.br { border-right: 3px solid var(--ink); border-top: 3px solid transparent; border-top-right-radius: 1rem; }
+.dv.sub { border-bottom: 3px solid var(--ink); }
+.rl { font: 500 .72rem var(--font-body); color: #8a94a6; padding-inline-start: .4rem; direction: rtl; white-space: nowrap; }
+.blk.bad-all { box-shadow: inset 0 0 0 3px #d6322b; }
+.blk-ctl { display: flex; flex-wrap: wrap; gap: 6px; direction: rtl; }
+.mini { font: 500 .8rem var(--font-body); color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 10px; cursor: pointer; }
+.mini.go { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.setup { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; direction: rtl; font: 500 1rem var(--font-body); color: var(--ink); }
+.sf { width: 6.5rem; font: 500 1.3rem var(--font-body); color: var(--ink); text-align: center; border: 1px dashed #c9d2e0; border-radius: 6px; background: transparent; padding: 2px 4px; }
+.sf:focus { outline: none; border: 2px solid var(--accent); }
+
 /* keyboard */
 .kb { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 5px; user-select: none; -webkit-user-select: none; }
 .keys { display: grid; grid-template-columns: repeat(var(--cols, 8), minmax(0, 1fr)); gap: 5px; direction: ltr; }
 .keys.rtl { direction: rtl; }
-.key { font: 500 1.2rem/1 var(--font-body); min-height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; touch-action: manipulation; padding: 0 2px; }
+.key { font: 500 1.2rem/1.1 var(--font-body); min-height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; touch-action: manipulation; padding: 2px; }
+.key small { display: block; font-size: .62rem; color: var(--muted); font-weight: 400; margin-top: 1px; }
 .key:hover { border-color: var(--frame); }
 .key:active, .key.down { background: var(--line); }
 .key.op { color: var(--accent); font-weight: 600; }
 .key.fn { font-size: .85rem; color: var(--muted); }
+.key.lay { font-size: .9rem; font-weight: 600; color: var(--accent); }
 .key.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.key.on small { color: inherit; }
 .key.s2 { grid-column: span 2; }
 .key.enter { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-size: .95rem; }
 
@@ -143,9 +180,11 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   .brand h1 { font-size: 1rem; }
   .opts label { display: none; }
   .tb .lbl { display: none; }
-  .ln, .view { font-size: 1.3rem; min-height: 2.5rem; }
+  .ln, .view, .pv { font-size: 1.3rem; min-height: 2.5rem; }
   .row { grid-template-columns: 1.8rem minmax(0, 1fr); }
   .board { min-height: 220px; padding: 8px 8px 14px; }
+  .blk { --cw: 1.85rem; margin-inline: 0; padding-inline: 2px; }
+  .cell, .dv { font-size: 1.25rem; }
   .key { min-height: 42px; font-size: 1.1rem; }
   .kb { padding: 4px; gap: 4px; } .keys { gap: 4px; }
 }
@@ -231,8 +270,9 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   const STORE = 'smartboard.kb1';
   const DIG = { ar: '٠١٢٣٤٥٦٧٨٩', en: '0123456789' };
 
-  let lines = ['', ''];               // [question, solution line 1, ...]
-  let focusIdx = 0;
+  // lines[0] is the question; each later line is typed text or a fill-in layout object
+  let lines = ['', ''];
+  let focusIdx = 0, curEl = null;
   let digits = 'ar', tab = 'math', shift = false, sysKb = false, showNotes = true;
   let result = null, stale = false, isExample = false;
   let sampleP = null, ctl = null;
@@ -250,10 +290,19 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     return out + esc(s.slice(last));
   };
   const num = (n) => String(n).replace(/\d/g, (d) => DIG[digits][d]);
+  const isBlock = (x) => !!x && typeof x === 'object';
+  const isBlank = (x) => isBlock(x) ? !blockHasContent(x) : !String(x).trim();
   let toastT;
-  function toast(msg) {
-    const t = $('#toast'); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2800);
+  function toast(msg, action) {
+    const t = $('#toast');
+    t.textContent = msg;
+    if (action) {
+      const b = document.createElement('button'); b.className = 'ghost'; b.textContent = action.label;
+      b.style.cssText = 'margin-inline-start:8px;padding:2px 10px';
+      b.onclick = () => { action.run(); t.hidden = true; };
+      t.appendChild(b);
+    }
+    t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, action ? 6000 : 2800);
   }
   function save() {
     if (isExample) return;
@@ -263,17 +312,169 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   // with Arabic digits a line reads right to left (٤ + ٤ = ٨ starts on the right), as on paper
   const lineDir = () => digits === 'ar' ? 'rtl' : 'auto';
 
+  // Typed math shown as on paper: a/b and (..)/(..) stacked, ^ raised, √ and ∛ with a bar.
+  function pretty(s) {
+    s = String(s); let i = 0;
+    const atomCh = /[0-9٠-٩A-Za-zء-ي٫.π∞]/;
+    function group(open, close) {
+      let d = 0, j = i;
+      for (; j < s.length; j++) { if (s[j] === open) d++; else if (s[j] === close && --d === 0) break; }
+      if (j >= s.length) return null;
+      const inner = s.slice(i + 1, j); i = j + 1; return inner;
+    }
+    function atom() {
+      if (s[i] === '(') { const inner = group('(', ')'); return inner == null ? null : { html: pretty(inner), paren: true }; }
+      if (s[i] === '√' || s[i] === '∛') {
+        const r = s[i]; i++; const a = atom();
+        return { html: `<span class="rt">${r}<span class="rad">${a ? a.html : ''}</span></span>` };
+      }
+      let j = i; while (j < s.length && atomCh.test(s[j])) j++;
+      if (j === i) return null;
+      const raw = s.slice(i, j); i = j; return { html: esc(raw) };
+    }
+    let out = '';
+    while (i < s.length) {
+      const a = atom();
+      if (!a) { out += esc(s[i]); i++; continue; }
+      let inner = a.html, shown = a.paren ? `(${a.html})` : a.html;
+      while (s[i] === '^') {
+        const at = i; i++; const b = atom();
+        if (!b) { i = at; break; }
+        shown += `<sup>${b.html}</sup>`; inner = shown;
+      }
+      if (s[i] === '/') {
+        const at = i; i++; const b = atom();
+        if (b) { out += `<span class="fr"><span class="nu">${inner}</span><span class="de">${b.html}</span></span>`; continue; }
+        i = at;
+      }
+      out += shown;
+    }
+    return out;
+  }
+
+  // ---------- fill-in layouts ----------
+  const VCOLS = 7;
+  function makeLdiv() { return { type: 'ldiv', dividend: '', divisor: '', rows: null }; }
+  function startLdiv(b) {
+    const n = Math.max(1, Array.from(b.dividend.replace(/\s/g, '')).length);
+    b.rows = [{ key: 'quotient', cells: Array(n).fill('') }];
+    addWorkRows(b, 4);
+  }
+  function addWorkRows(b, k) {
+    const n = b.rows[0].cells.length;
+    for (let j = 0; j < k; j++) b.rows.push({ key: 'work row ' + b.rows.length, cells: Array(n).fill('') });
+  }
+  function makeVert(op) {
+    const mk = (key, label, o = {}) => ({ key, label, cells: Array(VCOLS).fill(''), ...o });
+    const top = op === '−' ? mk('borrow', 'الاستلاف', { sm: true, adv: -1 }) : mk('carry', 'الحمل', { sm: true, adv: -1 });
+    const rows = [top, mk('row 1', '', { adv: 1 }), mk('row 2', '', { sign: op, line: true, adv: 1 })];
+    if (op === '×') rows.push(mk('partial 1', 'ناتج جزئي', { adv: -1 }), mk('partial 2', 'ناتج جزئي', { adv: -1, line: true, sign: '+' }));
+    rows.push(mk('result', 'الناتج', { adv: -1 }));
+    return { type: 'vert', op, rows };
+  }
+  function addPartial(b) {
+    const parts = b.rows.filter((r) => r.key.startsWith('partial'));
+    const last = parts[parts.length - 1];
+    last.line = false; delete last.sign;
+    const at = b.rows.indexOf(last) + 1;
+    b.rows.splice(at, 0, { key: 'partial ' + (parts.length + 1), label: 'ناتج جزئي', cells: Array(VCOLS).fill(''), adv: -1, line: true, sign: '+' });
+  }
+  function blockHasContent(b) {
+    if (b.type === 'ldiv') return !!(b.dividend.trim() || b.divisor.trim());
+    return b.rows.some((r) => r.cells.some(Boolean));
+  }
+  const BLOCK_NAME = { ldiv: 'قسمة مطولة', '+': 'جمع عمودي', '−': 'طرح عمودي', '×': 'ضرب عمودي' };
+  const blockName = (b) => b.type === 'ldiv' ? BLOCK_NAME.ldiv : BLOCK_NAME[b.op];
+  // the text Claude reads for a layout: a grid of columns c1..cN, "." for an empty cell
+  function serialize(it) {
+    if (!isBlock(it)) return String(it);
+    const row = (label, cells) => '   ' + label.padEnd(12) + cells.map((c) => c || '.').join(' ');
+    if (it.type === 'ldiv') {
+      const out = [`[LONG DIVISION] ${it.dividend} ÷ ${it.divisor}`];
+      if (!it.rows) return out[0] + ' (layout not filled in)';
+      const n = it.rows[0].cells.length;
+      out.push('   ' + 'columns'.padEnd(12) + Array.from({ length: n }, (_, k) => 'c' + (k + 1)).join(' '));
+      out.push(row('quotient', it.rows[0].cells));
+      out.push(row('dividend', Array.from(it.dividend.replace(/\s/g, ''))) + `   (divisor ${it.divisor})`);
+      it.rows.slice(1).forEach((r, k) => out.push(row(r.key, r.cells) + (k % 2 === 0 ? '   (subtracted, line under it)' : '')));
+      return out.join('\n');
+    }
+    const name = { '+': 'VERTICAL ADDITION', '−': 'VERTICAL SUBTRACTION', '×': 'VERTICAL MULTIPLICATION' }[it.op];
+    const out = [`[${name}]`, '   ' + 'columns'.padEnd(12) + Array.from({ length: VCOLS }, (_, k) => 'c' + (k + 1)).join(' ')];
+    for (const r of it.rows) out.push(row(r.key, r.cells) + (r.sign ? `   (${r.sign})` : '') + (r.line ? '   (line under it)' : ''));
+    return out.join('\n');
+  }
+  // "work row 3 c2" → which row and column of a layout an error points at
+  function matchPart(b, part) {
+    const p = String(part || '').toLowerCase();
+    const col = (p.match(/\bc(\d+)\b/) || [])[1];
+    const rows = b.type === 'ldiv' ? (b.rows || []) : b.rows;
+    const hit = rows.map((r, k) => ({ r, k })).sort((x, y) => y.r.key.length - x.r.key.length).find(({ r }) => p.includes(r.key));
+    if (hit) return { row: hit.k, col: col ? +col - 1 : null };
+    if (b.type === 'ldiv' && p.includes('dividend')) return { row: 'dividend', col: col ? +col - 1 : null };
+    return null;
+  }
+  const ROW_AR = { quotient: 'خارج القسمة', dividend: 'المقسوم', carry: 'الحمل', borrow: 'الاستلاف', result: 'الناتج' };
+  function partLabel(p) {
+    return String(p).replace(/work row (\d+)/gi, (_, n) => 'صف العمل ' + num(n)).replace(/partial (\d+)/gi, (_, n) => 'ناتج جزئي ' + num(n))
+      .replace(/row (\d+)/gi, (_, n) => 'العدد ' + num(n)).replace(/\s*\bc(\d+)\b/gi, (_, n) => ' · العمود ' + num(n))
+      .replace(/quotient|dividend|carry|borrow|result/gi, (w) => ROW_AR[w.toLowerCase()]);
+  }
+
+  function blockHTML(b, i, view, errs) {
+    const marks = {}; let whole = null;
+    for (const { e, k } of errs) {
+      const m = matchPart(b, e.part);
+      if (m) (marks[m.row] = marks[m.row] || []).push({ col: m.col, k });
+      else if (whole == null) whole = k;
+    }
+    const badged = new Set();
+    const cell = (r, c, val, cls = '') => {
+      const ms = (marks[r] || []).filter((m) => m.col == null || m.col === c);
+      let extra = '';
+      if (ms.length) { cls += ' bad'; const k = ms[0].k; if (!badged.has(k)) { badged.add(k); extra = `<sup>${num(k + 1)}</sup>`; } }
+      const key = ms.length ? ` data-key="e${ms[0].k}"` : '';
+      if (view || r === 'dividend') return `<span class="cell${cls}"${key}>${esc(val)}${extra}</span>`;
+      return `<input class="cell${cls}" id="c-${i}-${r}-${c}" data-i="${i}" data-r="${r}" data-c="${c}" value="${esc(val)}" inputmode="none" autocomplete="off" maxlength="2" aria-label="خانة">`;
+    };
+    let h = `<div class="blk${whole != null ? ' bad-all' : ''}"${whole != null ? ` data-key="e${whole}"` : ''}><span class="blk-t">${blockName(b)}</span>`;
+    if (whole != null) h += `<sup>${num(whole + 1)}</sup>`;
+    if (b.type === 'ldiv' && !b.rows) {
+      if (view) return h + `<div class="setup">${esc(b.dividend)} ÷ ${esc(b.divisor)}</div></div>`;
+      return h + `<div class="setup"><input class="sf" id="sf-${i}-dividend" data-i="${i}" data-f="dividend" value="${esc(b.dividend)}" placeholder="المقسوم" inputmode="none" dir="ltr"> ÷
+        <input class="sf" id="sf-${i}-divisor" data-i="${i}" data-f="divisor" value="${esc(b.divisor)}" placeholder="المقسوم عليه" inputmode="none" dir="ltr">
+        <button class="mini go" data-act="start" data-i="${i}">ابدأ</button><button class="mini" data-act="del" data-i="${i}">✕ حذف</button></div></div>`;
+    }
+    if (b.type === 'ldiv') {
+      const n = b.rows[0].cells.length, dd = Array.from(b.dividend.replace(/\s/g, ''));
+      h += `<div class="g" style="grid-template-columns:auto repeat(${n}, var(--cw))">`;
+      h += `<span class="dv"></span>` + b.rows[0].cells.map((v, c) => cell(0, c, v)).join('');
+      h += `<span class="dv br">${esc(b.divisor)}</span>` + dd.map((v, c) => cell('dividend', c, v, ' top')).join('');
+      b.rows.slice(1).forEach((r, k) => {
+        const sub = k % 2 === 0;
+        h += `<span class="dv">${sub ? '−' : ''}</span>` + r.cells.map((v, c) => cell(k + 1, c, v, sub ? ' sub' : '')).join('');
+      });
+      h += `</div>`;
+      if (!view) h += `<div class="blk-ctl"><button class="mini" data-act="rows" data-i="${i}">+ صفّان</button><button class="mini" data-act="del" data-i="${i}">✕ حذف</button></div>`;
+      return h + `</div>`;
+    }
+    h += `<div class="g" style="grid-template-columns:var(--cw) repeat(${VCOLS}, var(--cw)) auto">`;
+    b.rows.forEach((r, k) => {
+      h += `<span class="dv${r.line ? ' sub' : ''}">${r.sign || ''}</span>` + r.cells.map((v, c) => cell(k, c, v, (r.sm ? ' sm' : '') + (r.line ? ' sub' : ''))).join('') + `<span class="rl">${r.label || ''}</span>`;
+    });
+    h += `</div>`;
+    if (!view) h += `<div class="blk-ctl">${b.op === '×' ? `<button class="mini" data-act="partial" data-i="${i}">+ ناتج جزئي</button>` : ''}<button class="mini" data-act="del" data-i="${i}">✕ حذف</button></div>`;
+    return h + `</div>`;
+  }
+
   // ---------- board ----------
   function lineErrors(i) {
     if (!result) return [];
     const last = lines.length - 1;
-    return result.data.errors.map((e, k) => ({ e, k })).filter(({ e }) => {
-      const n = Math.max(0, Math.min(last, parseInt(e.line, 10) || 0));
-      return n === i;
-    });
+    return result.data.errors.map((e, k) => ({ e, k })).filter(({ e }) => Math.max(0, Math.min(last, parseInt(e.line, 10) || 0)) === i);
   }
   function ringed(text, errs) {
-    // wrap each wrong part of the line in a red ring; a part that can't be found rings the whole line
+    // ring each wrong part of the line in red; a part that can't be found rings the whole line
     const spans = [];
     for (const { e, k } of errs) {
       const part = String(e.part || '').trim();
@@ -285,20 +486,26 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     spans.sort((a, b) => a.at - b.at);
     let out = '', pos = 0;
     for (const s of spans) {
-      out += esc(text.slice(pos, s.at)) + `<span class="ring" data-key="e${s.k}">${esc(text.slice(s.at, s.at + s.len)) || '&nbsp;'}<sup>${num(s.k + 1)}</sup></span>`;
+      out += pretty(text.slice(pos, s.at)) + `<span class="ring" data-key="e${s.k}">${pretty(text.slice(s.at, s.at + s.len)) || '&nbsp;'}<sup>${num(s.k + 1)}</sup></span>`;
       pos = s.at + s.len;
     }
-    return out + esc(text.slice(pos));
+    return out + pretty(text.slice(pos));
   }
   function render(focusAt) {
     const T = result && result.data.lang === 'en' ? EN : AR;
     let h = isExample ? '<div class="tag">مثال مصحَّح · اضغط على السبورة لتبدأ سؤالك</div>' : '';
-    lines.forEach((text, i) => {
+    lines.forEach((item, i) => {
       const errs = lineErrors(i);
-      h += `<div class="row${i === 0 ? ' q' : ''}"><span class="n">${i === 0 ? 'السؤال' : num(i)}</span>`;
-      if (viewing()) h += `<div class="view" dir="${lineDir()}" data-i="${i}">${ringed(text, errs) || '&nbsp;'}</div>`;
-      else h += `<textarea class="ln" id="ln${i}" data-i="${i}" dir="${lineDir()}" rows="1" spellcheck="false" autocomplete="off" inputmode="${sysKb ? 'text' : 'none'}" placeholder="${i === 0 ? 'اكتب السؤال أو المسألة هنا…' : i === 1 ? 'اكتب أول خطوة من حلّك…' : 'الخطوة التالية…'}">${esc(text)}</textarea>`;
-      h += `</div>`;
+      const label = i === 0 ? 'السؤال' : num(i);
+      if (isBlock(item)) {
+        h += `<div class="row"><span class="n">${label}</span><div class="lw">${blockHTML(item, i, viewing(), result ? errs : [])}</div></div>`;
+      } else {
+        const text = String(item);
+        h += `<div class="row${i === 0 ? ' q' : ''}${text.trim() ? ' has-text' : ''}"><span class="n">${label}</span><div class="lw">`;
+        if (viewing()) h += `<div class="view" dir="${lineDir()}" data-i="${i}">${ringed(text, errs) || '&nbsp;'}</div>`;
+        else h += `<div class="pv" dir="${lineDir()}" data-i="${i}">${pretty(text)}</div><textarea class="ln" id="ln${i}" data-i="${i}" dir="${lineDir()}" rows="1" spellcheck="false" autocomplete="off" inputmode="${sysKb ? 'text' : 'none'}" placeholder="${i === 0 ? 'اكتب السؤال أو المسألة هنا…' : i === 1 ? 'اكتب أول خطوة من حلّك…' : 'الخطوة التالية…'}">${esc(text)}</textarea>`;
+        h += `</div></div>`;
+      }
       if (result && showNotes) for (const { e, k } of errs) {
         h += `<div class="ann" data-key="e${k}"><b>${num(k + 1)}.</b> ${e.fix ? fmt(T.fix + ' ' + e.fix) : ''}${e.why ? `<div class="why">${fmt(e.why)}</div>` : ''}</div>`;
       }
@@ -311,9 +518,20 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
         + (d.final_answer ? `<div class="fa">${fmt(T.final + ': ' + d.final_answer)}</div>` : '') + `</div>`;
     }
     boardEl.innerHTML = h;
+    curEl = null;
     boardEl.classList.toggle('notes-stale', !!(result && stale));
     boardEl.querySelectorAll('.ln').forEach(wireLine);
-    boardEl.querySelectorAll('.view').forEach((v) => v.addEventListener('click', () => { if (!ctl) editAt(+v.dataset.i); }));
+    boardEl.querySelectorAll('input.cell').forEach(wireCell);
+    boardEl.querySelectorAll('.sf').forEach(wireSetup);
+    boardEl.querySelectorAll('.pv').forEach((v) => v.addEventListener('click', () => focusLine(+v.dataset.i)));
+    boardEl.querySelectorAll('.view, span.cell, .blk-t').forEach((v) => v.addEventListener('click', () => {
+      const r = v.closest('.row'); const i = [...boardEl.querySelectorAll('.row')].indexOf(r);
+      if (!ctl && viewing() && i >= 0) editAt(i);
+    }));
+    boardEl.querySelectorAll('[data-act]').forEach((b) => {
+      b.addEventListener('mousedown', (e) => e.preventDefault());
+      b.addEventListener('click', () => blockAction(b.dataset.act, +b.dataset.i));
+    });
     boardEl.querySelectorAll('[data-key]').forEach((el) => {
       el.addEventListener('mouseenter', () => highlight(el.dataset.key));
       el.addEventListener('mouseleave', () => highlight(''));
@@ -323,7 +541,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       add.onmousedown = (e) => e.preventDefault();
       add.onclick = () => { lines.push(''); save(); render(lines.length - 1); };
     }
-    if (focusAt != null) focusLine(focusAt);
+    if (focusAt != null) focusItem(focusAt);
   }
   function editAt(i) {
     if (isExample) { wipeExample(); return; }
@@ -338,78 +556,186 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     if (atEnd) { const n = ta.value.length; ta.setSelectionRange(n, n); }
     focusIdx = i;
   }
+  function focusItem(i) {
+    if (isBlock(lines[i])) {
+      const first = [`.sf[data-i="${i}"]`, lines[i].type === 'vert' ? `input.cell[data-i="${i}"][data-r="1"]` : `input.cell[data-i="${i}"][data-r="0"]`]
+        .map((s) => boardEl.querySelector(s)).find(Boolean);
+      if (first) first.focus();
+      focusIdx = i;
+    } else focusLine(i);
+  }
   function wireLine(ta) {
-    const i = +ta.dataset.i;
+    const i = +ta.dataset.i, row = ta.closest('.row'), pv = row.querySelector('.pv');
     grow(ta);
-    ta.addEventListener('focus', () => { focusIdx = i; if (isExample) wipeExample(); });
-    ta.addEventListener('input', () => { lines[i] = ta.value.replace(/\n/g, ' '); grow(ta); changed(); });
+    ta.addEventListener('focus', () => { focusIdx = i; curEl = ta; row.classList.add('editing'); grow(ta); if (isExample) wipeExample(); });
+    ta.addEventListener('blur', () => { row.classList.remove('editing'); pv.innerHTML = pretty(ta.value); });
+    ta.addEventListener('input', () => { lines[i] = ta.value.replace(/\n/g, ' '); row.classList.toggle('has-text', !!ta.value.trim()); grow(ta); changed(); });
     ta.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); newLine(); }
       else if (e.key === 'Backspace' && ta.selectionStart === 0 && ta.selectionEnd === 0 && i > 1 && !ta.value) { e.preventDefault(); removeLine(i); }
     });
   }
+  function cellRow(el) {
+    const b = lines[+el.dataset.i]; return b.rows[+el.dataset.r];
+  }
+  function cellAdv(el) { const b = lines[+el.dataset.i]; return b.type === 'ldiv' ? 1 : (cellRow(el).adv || 1); }
+  function moveCell(el, dir) {
+    const nx = document.getElementById(`c-${el.dataset.i}-${el.dataset.r}-${+el.dataset.c + dir}`);
+    if (nx) { nx.focus(); nx.select(); }
+  }
+  function setCell(el, v) {
+    el.value = v; cellRow(el).cells[+el.dataset.c] = v; changed();
+  }
+  function wireCell(el) {
+    el.addEventListener('focus', () => { curEl = el; focusIdx = +el.dataset.i; el.select(); });
+    el.addEventListener('input', () => {
+      const v = Array.from(el.value).pop() || '';
+      setCell(el, v); if (v) moveCell(el, cellAdv(el));
+    });
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !el.value) { e.preventDefault(); moveCell(el, -cellAdv(el)); }
+      else if (e.key === 'Enter') { e.preventDefault(); lineAfter(+el.dataset.i); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); moveCell(el, e.key === 'ArrowRight' ? 1 : -1); }
+    });
+  }
+  function wireSetup(el) {
+    el.addEventListener('focus', () => { curEl = el; focusIdx = +el.dataset.i; });
+    el.addEventListener('input', () => { lines[+el.dataset.i][el.dataset.f] = el.value; changed(); });
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); if (el.dataset.f === 'dividend') document.getElementById(`sf-${el.dataset.i}-divisor`).focus(); else blockAction('start', +el.dataset.i); }
+    });
+  }
+  function blockAction(act, i) {
+    const b = lines[i];
+    if (act === 'del') {
+      const keep = lines.slice();
+      lines.splice(i, 1); if (lines.length < 2) lines.push('');
+      changed(); render();
+      toast('حُذف ' + blockName(b) + '.', { label: 'استعادة', run: () => { lines = keep; save(); render(); } });
+    } else if (act === 'start') {
+      if (!b.dividend.trim() || !b.divisor.trim()) { toast('اكتب المقسوم والمقسوم عليه أولًا'); return; }
+      startLdiv(b); changed(); render();
+      const c = document.getElementById(`c-${i}-0-0`); if (c) c.focus();
+    } else if (act === 'rows') { addWorkRows(b, 2); changed(); render(); }
+    else if (act === 'partial') { addPartial(b); changed(); render(); }
+  }
   function changed() {
     if (result && !stale) { stale = true; boardEl.classList.add('notes-stale'); renderPanel(); }
     save();
   }
-  function currentTa() {
-    let ta = document.getElementById('ln' + focusIdx);
-    if (!ta) {
-      if (viewing()) { stale = true; renderPanel(); render(); }
-      ta = document.getElementById('ln' + focusIdx) || document.getElementById('ln0');
-    }
-    if (document.activeElement !== ta) ta.focus();
-    return ta;
+  function currentEl() {
+    if (curEl && boardEl.contains(curEl)) { if (document.activeElement !== curEl) curEl.focus(); return curEl; }
+    if (viewing()) { stale = true; renderPanel(); render(); }
+    let el = document.getElementById('ln' + focusIdx);
+    if (!el) { focusItem(focusIdx); el = curEl; }
+    if (!el) el = document.getElementById('ln0');
+    el.focus(); curEl = el;
+    return el;
+  }
+  function lineAfter(i) {
+    lines.splice(i + 1, 0, ''); changed(); render(i + 1);
   }
   function newLine() {
-    const ta = currentTa(), i = +ta.dataset.i;
-    const before = ta.value.slice(0, ta.selectionStart), after = ta.value.slice(ta.selectionEnd);
+    const el = currentEl(), i = +el.dataset.i;
+    if (!el.classList.contains('ln')) { if (el.classList.contains('sf')) blockAction('start', i); else lineAfter(i); return; }
+    const before = el.value.slice(0, el.selectionStart), after = el.value.slice(el.selectionEnd);
     if (i === 0) { if (lines.length < 2) lines.push(''); save(); render(1); return; }
     lines[i] = before; lines.splice(i + 1, 0, after);
-    changed(); render(i + 1, false);
+    changed(); render();
     focusLine(i + 1, false);
     const nt = document.getElementById('ln' + (i + 1)); if (nt) nt.setSelectionRange(0, 0);
   }
   function removeLine(i) { lines.splice(i, 1); changed(); render(i - 1); }
-  function insert(t) {
+  function insert(t, caretBack = 0) {
     if (isExample) wipeExample();
-    const ta = currentTa();
-    if (!document.execCommand('insertText', false, t)) {
-      ta.setRangeText(t, ta.selectionStart, ta.selectionEnd, 'end');
-      ta.dispatchEvent(new Event('input'));
+    const el = currentEl();
+    if (el.classList.contains('cell')) {
+      const v = t.trim();
+      if (!v || Array.from(v).length > 2) return;
+      setCell(el, v); moveCell(el, cellAdv(el));
+      return;
     }
+    if (!document.execCommand('insertText', false, t)) {
+      el.setRangeText(t, el.selectionStart, el.selectionEnd, 'end');
+      el.dispatchEvent(new Event('input'));
+    }
+    if (caretBack) { const p = el.selectionStart - caretBack; el.setSelectionRange(p, p); }
   }
   function backspace() {
     if (isExample) { wipeExample(); return; }
-    const ta = currentTa(), i = +ta.dataset.i;
-    if (ta.selectionStart === 0 && ta.selectionEnd === 0) { if (i > 1 && !ta.value) removeLine(i); else if (i > 0) focusLine(i - 1); return; }
-    if (ta.selectionStart === ta.selectionEnd) {
-      // one press removes a whole spaced operator like " + "
-      const s = ta.selectionStart;
-      const m = ta.value.slice(0, s).match(/ [+−×÷=≠<>≤≥±] $/);
-      ta.setSelectionRange(s - (m ? 3 : 1), s);
+    const el = currentEl(), i = +el.dataset.i;
+    if (el.classList.contains('cell')) {
+      if (el.value) setCell(el, ''); else moveCell(el, -cellAdv(el));
+      return;
     }
-    if (!document.execCommand('delete', false)) { ta.setRangeText('', ta.selectionStart, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input')); }
+    if (el.selectionStart === 0 && el.selectionEnd === 0) {
+      if (el.classList.contains('ln')) { if (i > 1 && !el.value) removeLine(i); else if (i > 0) focusItem(i - 1); }
+      return;
+    }
+    if (el.selectionStart === el.selectionEnd) {
+      // one press removes a whole spaced operator like " + "
+      const s = el.selectionStart;
+      const m = el.value.slice(0, s).match(/ [+−×÷=≠<>≤≥±≈] $/);
+      el.setSelectionRange(s - (m ? 3 : 1), s);
+    }
+    if (!document.execCommand('delete', false)) { el.setRangeText('', el.selectionStart, el.selectionEnd, 'end'); el.dispatchEvent(new Event('input')); }
+  }
+  function insertBlock(b) {
+    if (isExample) wipeExample();
+    let i = Math.max(1, focusIdx);
+    if (focusIdx === 0) i = 1;
+    else if (!isBlock(lines[i]) && !String(lines[i]).trim()) { lines.splice(i, 1); }
+    else i = i + 1;
+    lines.splice(i, 0, b);
+    if (i === lines.length - 1) lines.push('');
+    changed(); render(i);
   }
   function highlight(key) {
-    document.querySelectorAll('.ring, .ann, .item').forEach((el) => el.classList.toggle('hl', !!key && el.dataset.key === key));
+    document.querySelectorAll('.ring, .ann, .item, .cell, .blk').forEach((el) => el.classList.toggle('hl', !!key && el.dataset.key === key));
   }
 
   // ---------- keyboard ----------
-  const OPS = '+−×÷=≠<>≤≥±';
+  const OPS = '+−×÷=≠<>≤≥±≈';
   function mathKeys() {
     const D = DIG[digits];
     const dec = digits === 'ar' ? '٫' : '.', com = digits === 'ar' ? '،' : ',';
     const vars = digits === 'ar' ? ['س', 'ص', 'ع', 'x'] : ['x', 'y', 'z', 'س'];
     return [
-      D[7], D[8], D[9], '÷', '(', ')', '√', '^',
-      D[4], D[5], D[6], '×', '[', ']', '²', '³',
-      D[1], D[2], D[3], '−', '<', '>', '≤', '≥',
-      D[0], dec, com, '+', '=', '≠', 'π', '%',
-      ...vars, '/', '°', '±', '∞',
-      { k: 'digits', label: digits === 'ar' ? '123 ⇄' : '١٢٣ ⇄', cls: 'fn s2', aria: 'تبديل الأرقام' }, '؟', ':', '!', '|', '→', 'θ',
+      D[7], D[8], D[9], '÷', '(', ')', '<', '>',
+      D[4], D[5], D[6], '×', '[', ']', '≤', '≥',
+      D[1], D[2], D[3], '−', '²', '³', '=', '≠',
+      D[0], dec, com, '+', '^', '√', '≈', '%',
+      ...vars, '/', '°', '±', 'π',
+      { k: 'digits', label: digits === 'ar' ? '123 ⇄' : '١٢٣ ⇄', cls: 'fn s2', aria: 'تبديل الأرقام' }, '؟', ':', '!', '|', '→', '∞',
     ];
   }
+  // ready-made layouts and templates
+  const TPL_KEYS = [
+    { k: 'blk', v: 'ldiv', label: '÷', sub: 'قسمة مطولة', cls: 'lay' },
+    { k: 'blk', v: '+', label: '＋', sub: 'جمع عمودي', cls: 'lay' },
+    { k: 'blk', v: '−', label: '−', sub: 'طرح عمودي', cls: 'lay' },
+    { k: 'blk', v: '×', label: '×', sub: 'ضرب عمودي', cls: 'lay' },
+    { k: 'tpl', v: '()/()', back: 4, label: '▭⁄▭', sub: 'كسر' },
+    { k: 'tpl', v: ' ()/()', back: 4, label: '١ ▭⁄▭', sub: 'عدد كسري' },
+    { k: 'tpl', v: '^()', back: 1, label: 'xⁿ', sub: 'أُس' },
+    { k: 'tpl', v: '√()', back: 1, label: '√▭', sub: 'جذر' },
+    { k: 'tpl', v: '∛()', back: 1, label: '∛▭', sub: 'جذر تكعيبي' },
+    { k: 'tpl', v: '||', back: 1, label: '|▭|', sub: 'قيمة مطلقة' },
+    { k: 'text', v: ' والباقي ', label: 'ب', sub: 'الباقي' },
+    { k: 'text', v: ' ∴ ', label: '∴', sub: 'إذن' },
+    { k: 'text', v: '∠', label: '∠', sub: 'زاوية' },
+    { k: 'text', v: '△', label: '△', sub: 'مثلث' },
+    { k: 'text', v: ' ⊥ ', label: '⊥', sub: 'عمودي على' },
+    { k: 'text', v: ' ∥ ', label: '∥', sub: 'يوازي' },
+    { k: 'text', v: ' ∈ ', label: '∈', sub: 'ينتمي' },
+    { k: 'text', v: ' ∪ ', label: '∪', sub: 'اتحاد' },
+    { k: 'text', v: ' ∩ ', label: '∩', sub: 'تقاطع' },
+    { k: 'text', v: '∅', label: '∅', sub: 'مجموعة خالية' },
+    { k: 'text', v: ' سم', label: 'سم', sub: 'سنتيمتر' },
+    { k: 'text', v: ' سم²', label: 'سم²', sub: 'مساحة' },
+    { k: 'text', v: ' كجم', label: 'كجم', sub: 'كتلة' },
+    { k: 'text', v: ' ريال', label: 'ريال', sub: 'نقود' },
+  ];
   const AR_KEYS = ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج',
     'ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ط',
     'ذ', 'ء', 'ؤ', 'ر', 'ى', 'ة', 'و', 'ز', 'ظ', 'د', 'ئ',
@@ -423,16 +749,19 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     b.type = 'button';
     b.className = 'key' + (o.cls ? ' ' + o.cls : '') + (o.k === 'text' && OPS.includes(o.v) ? ' op' : '');
     b.textContent = o.label;
-    b.dataset.k = o.k; if (o.v != null) b.dataset.v = o.v;
+    if (o.sub) { const s = document.createElement('small'); s.textContent = o.sub; b.appendChild(s); }
+    b.dataset.k = o.k; if (o.v != null) b.dataset.v = o.v; if (o.back) b.dataset.back = o.back;
     if (o.aria) b.setAttribute('aria-label', o.aria);
     return b;
   }
   function renderKeys() {
     keysEl.textContent = ''; barEl.textContent = '';
-    let list, cols;
-    if (tab === 'math') { list = mathKeys(); cols = 8; keysEl.classList.remove('rtl'); }
-    else if (tab === 'ar') { list = AR_KEYS; cols = 11; keysEl.classList.add('rtl'); }
-    else { list = EN_KEYS.map((x) => typeof x === 'string' && shift ? x.toUpperCase() : x); cols = 10; keysEl.classList.remove('rtl'); }
+    let list, cols, rtl = false;
+    if (tab === 'math') { list = mathKeys(); cols = 8; }
+    else if (tab === 'tpl') { list = TPL_KEYS.map((o) => o.label === 'ب' ? { ...o, label: digits === 'ar' ? 'باقي' : 'R' } : o.label === '١ ▭⁄▭' ? { ...o, label: num(1) + ' ▭⁄▭' } : o); cols = 6; rtl = true; }
+    else if (tab === 'ar') { list = AR_KEYS; cols = 11; rtl = true; }
+    else { list = EN_KEYS.map((x) => typeof x === 'string' && shift ? x.toUpperCase() : x); cols = 10; }
+    keysEl.classList.toggle('rtl', rtl);
     keysEl.style.setProperty('--cols', cols);
     for (const s of list) {
       const b = key(s);
@@ -441,9 +770,10 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     }
     const bar = [
       { k: 'tab', v: 'math', label: digits === 'ar' ? '١٢٣ +' : '123 +', cls: 'fn' + (tab === 'math' ? ' on' : ''), aria: 'أرقام ورموز' },
+      { k: 'tab', v: 'tpl', label: 'قوالب', cls: 'fn' + (tab === 'tpl' ? ' on' : ''), aria: 'قوالب: قسمة مطولة وعمليات عمودية وكسور' },
       { k: 'tab', v: 'ar', label: 'أ ب ج', cls: 'fn' + (tab === 'ar' ? ' on' : ''), aria: 'حروف عربية' },
       { k: 'tab', v: 'en', label: 'abc', cls: 'fn' + (tab === 'en' ? ' on' : ''), aria: 'English letters' },
-      { k: 'text', v: ' ', label: 'مسافة', cls: 'fn s2' },
+      { k: 'text', v: ' ', label: 'مسافة', cls: 'fn' },
       { k: 'back', label: '⌫', cls: 'fn', aria: 'حذف' },
       { k: 'enter', label: '↵ سطر', cls: 'enter s2', aria: 'سطر جديد' },
     ];
@@ -454,7 +784,9 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     if (k === 'text') {
       insert(OPS.includes(v) ? ' ' + v + ' ' : v);
       if (shift && tab === 'en') { shift = false; renderKeys(); }
-    } else if (k === 'back') backspace();
+    } else if (k === 'tpl') insert(v, +b.dataset.back || 0);
+    else if (k === 'blk') insertBlock(v === 'ldiv' ? makeLdiv() : makeVert(v));
+    else if (k === 'back') backspace();
     else if (k === 'enter') newLine();
     else if (k === 'tab') { tab = v; shift = false; renderKeys(); }
     else if (k === 'shift') { shift = !shift; renderKeys(); }
@@ -464,7 +796,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   function stopRepeat() { clearTimeout(repeatT); clearInterval(repeatT); repeatT = null; }
   $('#kb').addEventListener('pointerdown', (e) => {
     const b = e.target.closest('.key'); if (!b) return;
-    e.preventDefault();                       // keep the caret in the line being typed
+    e.preventDefault();                       // keep the caret where the student is typing
     b.classList.add('down');
     press(b);
     if (b.dataset.k === 'back') repeatT = setTimeout(() => { repeatT = setInterval(backspace, 70); }, 420);
@@ -486,8 +818,8 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     sysKb = !sysKb;
     $('#sysKbBtn').setAttribute('aria-pressed', sysKb);
     $('#kb').hidden = sysKb;
-    document.querySelectorAll('.ln').forEach((ta) => ta.setAttribute('inputmode', sysKb ? 'text' : 'none'));
-    const ta = document.getElementById('ln' + focusIdx); if (ta) { ta.blur(); ta.focus(); }
+    document.querySelectorAll('.ln, .cell, .sf').forEach((el) => el.setAttribute('inputmode', sysKb ? 'text' : 'none'));
+    const el = curEl; if (el) { el.blur(); el.focus(); }
   };
   $('#notesBtn').onclick = () => {
     showNotes = !showNotes; $('#notesBtn').setAttribute('aria-pressed', showNotes);
@@ -495,17 +827,13 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     render();
   };
   $('#undoBtn').onmousedown = (e) => e.preventDefault();
-  $('#undoBtn').onclick = () => { const ta = currentTa(); if (!document.execCommand('undo')) toast('لا يوجد ما يمكن التراجع عنه'); grow(ta); };
-  let cleared = null;
+  $('#undoBtn').onclick = () => { const el = currentEl(); if (!document.execCommand('undo')) toast('لا يوجد ما يمكن التراجع عنه'); if (el.classList.contains('ln')) grow(el); };
   $('#clearBtn').onclick = () => {
     if (isExample) { wipeExample(); return; }
-    if (!lines.some((l) => l.trim())) return;
-    cleared = lines.slice();
+    if (lines.every(isBlank)) return;
+    const keep = lines.slice();
     lines = ['', '']; result = null; stale = false; save(); render(0); renderPanel();
-    const t = $('#toast');
-    t.innerHTML = 'مُسحت السبورة. <button class="ghost" id="restoreBtn" style="margin-inline-start:8px;padding:2px 10px">استعادة</button>';
-    t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 6000);
-    $('#restoreBtn').onclick = () => { if (cleared) { lines = cleared; cleared = null; save(); render(); } t.hidden = true; };
+    toast('مُسحت السبورة.', { label: 'استعادة', run: () => { lines = keep; save(); render(); } });
   };
 
   // ---------- checking ----------
@@ -521,24 +849,29 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
         : 'Write every text field in the language of the question: Arabic if the question is in Arabic, English if it is in English (for a bare equation with no words, Arabic if it uses Arabic digits or Arabic letters, otherwise English).';
     return `You are a patient, precise teacher. A student typed a question or problem (any subject, any grade) and then their own solution, line by line, on a digital board. Student's school stage (hint, may be empty): ${stage || 'not given'}.
 
-The text is exactly what the student typed, in typing order. It may be Arabic, English or mixed. Digits may be Arabic-Indic (٠١٢٣٤٥٦٧٨٩, decimal separator ٫) or Western (0123456789); the student prefers ${dg === 'ar' ? 'Arabic-Indic' : 'Western'} digits. Unknowns may be Arabic letters (س، ص، ع) or Latin (x, y, z). Symbols: × ÷ − for times, divide, minus; ^ means power; √ square root; / a fraction or division.
+The text is exactly what the student typed, in typing order. It may be Arabic, English or mixed. Digits may be Arabic-Indic (٠١٢٣٤٥٦٧٨٩, decimal separator ٫) or Western (0123456789); the student prefers ${dg === 'ar' ? 'Arabic-Indic' : 'Western'} digits. Unknowns may be Arabic letters (س، ص، ع) or Latin (x, y, z). Notation: × ÷ − for times, divide, minus; ^ a power; √ square root and ∛ cube root of what follows; a/b or (a)/(b) a fraction, and a whole number followed by a space and a fraction is a mixed number; |a| absolute value; "والباقي" means "remainder".
+
+Some solution lines are fill-in layouts the student completed cell by cell, written as a grid of columns c1, c2, … ("." is an empty cell):
+- LONG DIVISION: the quotient row sits above the dividend; below it, odd work rows are the products being subtracted (a line is drawn under each) and even work rows are the differences with the next digit brought down.
+- VERTICAL ADDITION / SUBTRACTION / MULTIPLICATION: the carry (or borrow) row, the two numbers, partial products for multiplication, then the result, all right-aligned in the columns.
+Check every cell of a layout as a teacher checks a worked column calculation.
 
 QUESTION:
 ${q || '(empty)'}
 
 STUDENT'S SOLUTION (numbered lines):
-${sol.length ? sol.map((l, i) => (i + 1) + '. ' + l).join('\n') : '(no solution written)'}
+${sol.length ? sol.map((l, i) => (i + 1) + '. ' + serialize(l)).join('\n') : '(no solution written)'}
 
 Solve the question yourself carefully, then check every line of the student's solution.
-- An error is a wrong step, number, sign, unit, formula, concept or final answer. Mark the root mistake; lines that only carry it forward are not marked again, except a wrong final answer, which you mark and explain as following from the earlier mistake. A harmless typo or formatting choice is not an error.
+- An error is a wrong step, number, sign, unit, formula, concept or final answer. Mark the root mistake; lines that only carry it forward are not marked again, except a wrong final answer, which you mark and explain as following from the earlier mistake. A harmless typo or formatting choice is not an error. An empty carry cell is not an error.
 - If there is no solution, verdict is "incomplete" and still give the full solution. If the question cannot be understood, verdict is "unreadable", say what is missing in "summary", and give no steps.
-- "part" must be copied character for character from that line (the shortest piece that is wrong: a number, a term, or the whole line).
+- For a typed line, "part" must be copied character for character from that line (the shortest piece that is wrong: a number, a term, or the whole line). For a layout line, "part" is the row name exactly as written in the grid (for example "quotient", "work row 3", "row 2", "partial 1", "result"), followed by the column when one cell is wrong, for example "work row 3 c2".
 
-${langRule} Keep it short and kind, suited to the stage. Use the student's digit system and letters in "fix", "steps" and "final_answer". Math as plain Unicode (× ÷ − √ ² ³ π ≤ ≥ ≠ →), never LaTeX.
+${langRule} Keep it short and kind, suited to the stage. Use the student's digit system and letters in "fix", "steps" and "final_answer". Math as plain Unicode (× ÷ − √ ² ³ π ≤ ≥ ≠ →, fractions as a/b), never LaTeX.
 
 OUTPUT FORMAT (shown to the student live, line by line): ONE compact JSON object per line, nothing else (no code fences, no prose), in exactly this order:
 {"t":"read","lang":"ar or en (the language you write in)","subject":"subject name"}
-then one line per error: {"t":"error","line":2,"part":"exact wrong text copied from that line","why":"why it is wrong","fix":"the corrected line"}   ("line" is the solution line number; use 0 for a problem in the question itself)
+then one line per error: {"t":"error","line":2,"part":"exact wrong text, or the layout row name","why":"why it is wrong","fix":"the correct version"}   ("line" is the solution line number; use 0 for a problem in the question itself)
 then: {"t":"verdict","v":"correct|partially_correct|incorrect|incomplete|unreadable","summary":"one or two sentences to the student"}
 then one line per solution step (at most 10): {"t":"step","s":"..."}
 then last: {"t":"final","answer":"..."}`;
@@ -565,7 +898,8 @@ then last: {"t":"final","answer":"..."}`;
   async function check() {
     if (ctl) return;
     if (isExample) { showInfo('هذا مثال جاهز. اضغط على السبورة واكتب سؤالك وحلّك، ثم اضغط «تصحيح».'); return; }
-    const q = lines[0].trim(), sol = lines.slice(1).map((l) => l.trim()).filter(Boolean);
+    const q = String(lines[0]).trim();
+    const sol = lines.slice(1).filter((l) => !isBlank(l)).map((l) => isBlock(l) ? l : String(l).trim());
     if (!q && !sol.length) { showInfo('السبورة فارغة. اكتب السؤال وحلّك أولًا، ثم اضغط «تصحيح».'); render(0); return; }
     lines = [lines[0], ...sol]; if (lines.length < 2) lines.push(''); save();   // line numbers match what Claude sees
     ctl = new AbortController();
@@ -629,13 +963,13 @@ then last: {"t":"final","answer":"..."}`;
   const AR = {
     verdict: { correct: 'إجابة صحيحة', partially_correct: 'صحيحة جزئيًا', incorrect: 'فيها أخطاء', incomplete: 'الحل غير مكتمل', unreadable: 'السؤال غير مفهوم' },
     result: 'نتيجة التصحيح', example: 'مثال', writing: 'يكتب التصحيح…', stale: 'عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى.',
-    errors: 'الأخطاء', wrote: 'كتبت:', fix: 'الصحيح:', line: 'السطر', question: 'السؤال', solution: 'الحل الصحيح', final: 'الإجابة النهائية',
+    errors: 'الأخطاء', wrote: 'كتبت:', at: 'الموضع:', fix: 'الصحيح:', line: 'السطر', question: 'السؤال', solution: 'الحل الصحيح', final: 'الإجابة النهائية',
     incomplete: 'التصحيح لم يكتمل. اضغط «تصحيح» مرة أخرى لإكماله.', stop: 'إيقاف', noErrors: 'لا توجد أخطاء في حلّك.',
   };
   const EN = {
     verdict: { correct: 'Correct', partially_correct: 'Partly correct', incorrect: 'Has mistakes', incomplete: 'Incomplete solution', unreadable: 'Question unclear' },
     result: 'Result', example: 'Example', writing: 'Writing the correction…', stale: 'You changed the board after checking. Press «تصحيح» again.',
-    errors: 'Mistakes', wrote: 'You wrote:', fix: 'Correct:', line: 'Line', question: 'Question', solution: 'Correct solution', final: 'Final answer',
+    errors: 'Mistakes', wrote: 'You wrote:', at: 'Where:', fix: 'Correct:', line: 'Line', question: 'Question', solution: 'Correct solution', final: 'Final answer',
     incomplete: 'The correction stopped early. Press «تصحيح» again to finish it.', stop: 'Stop', noErrors: 'No mistakes in your solution.',
   };
   function renderIdle() {
@@ -645,9 +979,10 @@ then last: {"t":"final","answer":"..."}`;
       <ol class="howto">
         <li>اكتب السؤال في السطر الأول بلوحة المفاتيح، من أي مادة وأي صف.</li>
         <li>اضغط <b>↵ سطر</b> واكتب حلّك، كل خطوة في سطر.</li>
+        <li>للقسمة المطولة أو الجمع والطرح والضرب العمودي، افتح صفحة <b>قوالب</b> في لوحة المفاتيح، واختر القالب، ثم املأ الخانات.</li>
         <li>اضغط <b>✓ تصحيح</b>: تظهر دائرة حمراء حول كل خطأ مع تصحيحه، ثم الحل الصحيح على السبورة.</li>
       </ol>
-      <p class="muted">في لوحة المفاتيح أرقام عربية وإنجليزية ورموز الرياضيات وحروف عربية وإنجليزية. وإذا أردت لوحة جهازك فاضغط «لوحة الجهاز».</p>`;
+      <p class="muted">في صفحة القوالب أيضًا الكسور والأسس والجذور والقيمة المطلقة ورموز الهندسة والمجموعات والوحدات.</p>`;
   }
   function renderWorking(phase) {
     panel.dir = 'rtl'; panel.lang = 'ar';
@@ -683,7 +1018,10 @@ then last: {"t":"final","answer":"..."}`;
     if (d.errors.length) {
       h += `<div><h3>${T.errors}</h3><ul class="items">` + d.errors.map((e, i) => {
         const n = parseInt(e.line, 10) || 0;
-        return `<li class="item" data-key="e${i}"><span class="num">${num(i + 1)}</span><div><span class="muted">${n ? T.line + ' ' + num(n) : T.question}</span>${e.part ? `<br>${T.wrote} <b>${fmt(e.part)}</b>` : ''}<br>${fmt(e.why)}${e.fix ? `<br><span class="fix">${T.fix} ${fmt(e.fix)}</span>` : ''}</div></li>`;
+        const onBlock = isBlock(lines[Math.min(n, lines.length - 1)]);
+        const where = n ? T.line + ' ' + num(n) + (onBlock ? ' · ' + blockName(lines[n]) : '') : T.question;
+        const part = e.part ? `<br>${onBlock ? T.at : T.wrote} <b>${onBlock && !en ? esc(partLabel(e.part)) : fmt(e.part)}</b>` : '';
+        return `<li class="item" data-key="e${i}"><span class="num">${num(i + 1)}</span><div><span class="muted">${where}</span>${part}<br>${fmt(e.why)}${e.fix ? `<br><span class="fix">${T.fix} ${fmt(e.fix)}</span>` : ''}</div></li>`;
       }).join('') + `</ul></div>`;
     } else if (!live && d.verdict === 'correct') h += `<p class="muted">${T.noErrors}</p>`;
     if (d.steps.length) h += `<div><h3>${T.solution}</h3><ol class="steps">${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol></div>`;
@@ -698,7 +1036,7 @@ then last: {"t":"final","answer":"..."}`;
       it.addEventListener('mouseleave', () => highlight(''));
       it.addEventListener('click', () => {
         highlight(it.dataset.key);
-        const r = boardEl.querySelector(`.ring[data-key="${it.dataset.key}"]`); if (r) r.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        const r = boardEl.querySelector(`[data-key="${it.dataset.key}"]`); if (r) r.scrollIntoView({ block: 'center', behavior: 'smooth' });
       });
     });
   }
@@ -706,16 +1044,18 @@ then last: {"t":"final","answer":"..."}`;
   // ---------- example ----------
   function loadExample() {
     isExample = true;
-    lines = ['حل المعادلة: ٢س + ٥ = ١٣', '٢س = ١٣ + ٥', '٢س = ١٨', 'س = ٩'];
+    const ld = makeLdiv(); ld.dividend = '١٥٦'; ld.divisor = '١٢'; startLdiv(ld);
+    [['', '١', '٢'], ['١', '٢', ''], ['', '٣', '٦'], ['', '٣', '٦'], ['', '', '٠']].forEach((cells, r) => { ld.rows[r].cells = cells; });
+    lines = ['اقسم: ١٥٦ ÷ ١٢', ld, '١٥٦ ÷ ١٢ = ١٢'];
     result = { data: {
       lang: 'ar', subject: 'رياضيات', verdict: 'incorrect',
-      summary: 'بدايتك صحيحة، لكنك نقلت العدد ٥ إلى الطرف الآخر دون تغيير إشارته.',
+      summary: 'خطوات القسمة صحيحة، لكنك كتبت الرقم الثاني من خارج القسمة خطأ.',
       errors: [
-        { line: 1, part: '١٣ + ٥', why: 'عند نقل حدٍّ إلى الطرف الآخر من المعادلة تنعكس إشارته، فـ +٥ تصبح −٥.', fix: '٢س = ١٣ − ٥' },
-        { line: 3, part: 'س = ٩', why: 'الإجابة النهائية خاطئة لأنها مبنية على الخطأ الأول.', fix: 'س = ٤' },
+        { line: 1, part: 'quotient c3', why: '٣٦ ÷ ١٢ = ٣، فالرقم الثاني في خارج القسمة ٣ وليس ٢.', fix: 'خارج القسمة ١٣' },
+        { line: 2, part: '١٢', why: 'الإجابة النهائية مبنية على الخطأ في خارج القسمة.', fix: '١٥٦ ÷ ١٢ = ١٣' },
       ],
-      steps: ['٢س + ٥ = ١٣', 'ننقل ٥ إلى الطرف الآخر مع تغيير إشارتها: ٢س = ١٣ − ٥', '٢س = ٨', 'نقسم الطرفين على ٢: س = ٨ ÷ ٢', 'س = ٤', 'التحقق: ٢ × ٤ + ٥ = ١٣ ✓'],
-      final_answer: 'س = ٤',
+      steps: ['١٥ ÷ ١٢ = ١ والباقي ٣', 'ننزل ٦ فيصبح العدد ٣٦', '٣٦ ÷ ١٢ = ٣ والباقي ٠', 'خارج القسمة ١٣', 'التحقق: ١٣ × ١٢ = ١٥٦ ✓'],
+      final_answer: '١٣',
     } };
     stale = false;
     render(); renderPanel();
@@ -740,8 +1080,8 @@ then last: {"t":"final","answer":"..."}`;
   try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (_) {}
   getSample();
   renderKeys();
-  if (Array.isArray(saved) && saved.some((l) => String(l).trim())) {
-    lines = saved.map(String); if (lines.length < 2) lines.push('');
+  if (Array.isArray(saved) && saved.some((l) => !isBlank(l))) {
+    lines = saved.map((l) => isBlock(l) ? l : String(l)); if (lines.length < 2) lines.push('');
     render(); renderPanel();
   } else loadExample();
 })();
