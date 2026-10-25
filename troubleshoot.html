@@ -236,6 +236,11 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 @media (max-height:500px) and (orientation:landscape){.db{height:44px}}
 /* the ⋮ menu sits at the far left of the bar, the usual place in Arabic apps */
 .bar1>.more{order:98;margin-inline-start:auto}.ib.kebab{font-size:1.35rem;font-weight:900;min-width:36px}
+
+/* one row always: on narrow screens the buttons share the width and shrink instead of wrapping */
+@media (max-width:760px){.drow{flex-wrap:nowrap;justify-content:stretch;gap:3px;padding:5px 4px 6px}.drow>*{flex:1 1 0;min-width:0}.drow>.dsep{display:none}
+  .db{min-width:0;max-width:none;height:50px;padding:0 1px;font-size:.58rem;white-space:normal;text-align:center;line-height:1.05;overflow:hidden}.db .ic{font-size:1rem}.db svg{width:17px;height:21px}.db .cnt{font-size:.55rem}}
+@media (max-width:360px){.db{font-size:.52rem;height:46px}.db .ic{font-size:.92rem}}
 </style>
 </head>
 <body>
