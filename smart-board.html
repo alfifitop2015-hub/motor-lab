@@ -2,9 +2,9 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Caveat:wght@500&family=Aref+Ruqaa&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
 <style>
-/* Layout: a framed whiteboard with its marker tray on top, and the teacher's correction sheet beside it (stacked on phones). */
+/* Layout: a framed whiteboard of typed lines with a math keyboard under it, and the teacher's correction sheet beside it (stacked on phones). */
 :root {
   --bg: #e9edf2;
   --surface: #ffffff;
@@ -23,6 +23,7 @@
   --warn-soft: #fbf0d9;
   --board: #fdfdfb;
   --board-rule: #dfe6ef;
+  --ink: #1d3a8a;
   --font-display: "Readex Pro", "IBM Plex Sans Arabic", system-ui, sans-serif;
   --font-body: "IBM Plex Sans Arabic", system-ui, "Segoe UI", Tahoma, sans-serif;
 }
@@ -44,81 +45,65 @@
 body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.6; }
 .app { max-width: 1800px; margin: 0 auto; padding-block: 8px 20px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 8px; }
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
-.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; line-height: 1.2; margin: 0; }
 .brand p { margin: 0; color: var(--muted); font-size: .78rem; }
-@media (max-width: 980px) { .brand p { display: none; } }
 .opts { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
 .opts label { color: var(--muted); font-size: .72rem; }
 .field { display: flex; align-items: center; gap: 4px; }
 select { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; font-size: .78rem; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; align-items: start; }
-@media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 12px; align-items: start; }
+@media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr); } .brand p { display: none; } }
 .boardcol { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 
-.tray { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px 8px; }
-.grp { display: flex; align-items: center; gap: 4px; }
-.sep { width: 1px; align-self: stretch; background: var(--line); }
-.tb { font: inherit; font-size: .9rem; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 4px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; min-height: 32px; font-size: .85rem; }
+.tray { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px 8px; }
+.tb { font: inherit; font-size: .85rem; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 4px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; min-height: 32px; }
 .tb:hover:not(:disabled) { background: var(--surface-2); }
 .tb[aria-pressed="true"] { background: var(--surface-2); border-color: var(--frame); }
 .tb:disabled { opacity: .4; cursor: default; }
 .tb svg { width: 18px; height: 18px; flex: none; }
-.swatch { width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 50%; min-height: 0; }
-.swatch span { width: 18px; height: 18px; border-radius: 50%; display: block; }
-.swatch[aria-pressed="true"] { border-color: var(--fg); background: transparent; }
-.dot { justify-content: center; width: 34px; padding: 0; }
-.dot span { display: block; border-radius: 50%; background: var(--fg); }
-.check { margin-inline-start: auto; font-family: var(--font-display); font-weight: 700; font-size: 1rem; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 10px; padding: 6px 16px; min-height: 34px; }
+.check { margin-inline-start: auto; font-family: var(--font-display); font-weight: 700; font-size: 1rem; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 10px; padding: 6px 18px; min-height: 36px; }
 .check:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
 button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .frame { background: var(--frame); border-radius: 10px; padding: 5px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 10px 26px -18px rgba(10,20,40,.55); }
-.board { position: relative; width: 100%; background-color: var(--board); border-radius: 6px; overflow: hidden; touch-action: none; }
-.board.lines { background-image: linear-gradient(var(--board-rule) 1.5px, transparent 1.5px); background-size: 100% var(--cell, 40px); }
-.board.grid { background-image: linear-gradient(var(--board-rule) 1px, transparent 1px), linear-gradient(90deg, var(--board-rule) 1px, transparent 1px); background-size: var(--cell, 40px) var(--cell, 40px); }
-.board canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
-.board.erasing canvas { cursor: cell; }
-.board svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
-.board svg.stale { opacity: .35; }
-.ring { fill: none; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width .15s; }
-.ring.err { stroke: #d6322b; stroke-width: 5; }
-.ring.unc { stroke: #1f9d55; stroke-width: 5; stroke-dasharray: 16 11; }
-.mk.hl .ring { stroke-width: 9; }
-.badge { pointer-events: auto; cursor: pointer; }
-.badge circle { stroke: #fff; stroke-width: 3; }
-.badge text { fill: #fff; font: 700 26px var(--font-display); }
-.notes { position: absolute; inset: 0; pointer-events: none; font-family: "Caveat", "IBM Plex Sans Arabic", cursive; font-weight: 500; line-height: 1.35; }
-.notes.stale { opacity: .3; }
-.note { position: absolute; overflow-wrap: anywhere; }
-.note.err { color: #c62828; }
-.note.unc { color: #178a4a; }
-.note .why { font-size: .78em; opacity: .92; }
-.note.side-l { text-align: end; }
-.note.side-r { text-align: start; }
-.sol { position: absolute; color: #0b6b3a; border-top: 3px dashed currentColor; padding-top: .3em; overflow-wrap: anywhere; }
-.sol h4 { margin: 0 0 .15em; font-size: 1.1em; font-weight: 700; }
-.sol .sum { margin: 0 0 .2em; font-size: .85em; }
+.board { position: relative; background: var(--board); border-radius: 6px; min-height: 300px; padding: 10px 14px 18px; color: var(--ink); }
+.row { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); align-items: start; border-bottom: 1.5px solid var(--board-rule); }
+.row .n { font-family: var(--font-display); color: #8a94a6; text-align: center; padding-top: .55rem; font-size: 1rem; }
+.row.q { border-bottom: 2px solid #c5cedb; margin-bottom: 4px; }
+.row.q .n { font-size: .72rem; color: var(--ink); padding-top: .9rem; }
+.ln, .view { display: block; width: 100%; font: 500 1.5rem/1.65 var(--font-body); color: var(--ink); padding: .15rem .4rem; min-height: 2.8rem; overflow-wrap: anywhere; }
+.ln { border: 0; background: transparent; resize: none; overflow: hidden; margin: 0; }
+.ln::placeholder { color: #a9b3c3; font-weight: 400; font-size: 1.15rem; }
+.ln:focus { outline: none; background: rgba(31, 79, 209, .06); border-radius: 6px; }
+.view { white-space: pre-wrap; cursor: text; }
+.ring { position: relative; border: 3px solid #d6322b; border-radius: 1.1em / .9em; padding: 0 .2em; margin: 0 .05em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.ring sup { position: absolute; top: -.75em; inset-inline-end: -.6em; width: 1.35em; height: 1.35em; border-radius: 50%; background: #d6322b; color: #fff; font: 700 .55em/1.35em var(--font-display); text-align: center; }
+.ring.hl, .ann.hl { box-shadow: 0 0 0 3px rgba(214, 50, 43, .25); }
+.ann { color: #c62828; font: 500 1.05rem/1.5 var(--font-body); padding: .1rem .4rem .45rem; border-radius: 6px; }
+.ann .why { font-size: .9em; color: #a63a2f; }
+.notes-stale .ann, .notes-stale .sol { opacity: .35; }
+.sol { margin-top: 14px; border-top: 3px dashed #0b6b3a; padding-top: 6px; color: #0b6b3a; font: 500 1.15rem/1.6 var(--font-body); }
+.sol h4 { margin: 0 0 2px; font: 700 1.2rem var(--font-display); }
+.sol .sum { margin: 0 0 4px; font-size: .95em; }
 .sol ol { margin: 0; padding-inline-start: 1.5em; }
-.sol .fa { display: inline-block; border: 3px solid currentColor; border-radius: .4em; padding: 0 .5em; margin-top: .3em; font-weight: 700; }
-.tr { position: absolute; pointer-events: auto; font-family: var(--font-body); font-weight: 500; color: #2b3240; background: rgba(255,255,255,.9); border: 2px solid #c9d2e0; border-radius: .45em; padding: .35em .7em .5em; }
-.tr h4 { margin: 0 0 .2em; font-size: .85em; color: #4a5468; font-weight: 600; }
-.tr h4 span { font-weight: 400; }
-.tr ol { margin: 0; padding-inline-start: 1.5em; display: flex; flex-direction: column; gap: .15em; }
-.trl { outline: none; border-radius: .25em; padding: 0 .25em; cursor: text; min-height: 1.3em; overflow-wrap: anywhere; }
-.notes[dir="rtl"] .trl { text-align: right; }
-.notes[dir="ltr"] .trl { text-align: left; }
-.trl:hover { background: #eef2f8; }
-.trl:focus { background: #fff; box-shadow: 0 0 0 3px #1f4fd1; }
-.trl.edited { background: #e8eefc; }
-.trl mark { background: #c9f0d8; color: inherit; border-bottom: 3px dashed #1f9d55; border-radius: .15em; padding: 0 .1em; }
-.trbtn { font: 600 .9em var(--font-display); background: #1f4fd1; color: #fff; border: 0; border-radius: .4em; padding: .25em .9em; margin-top: .4em; cursor: pointer; }
-.ghost.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
-.tag { position: absolute; bottom: 10px; left: 10px; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 3px 12px; font-size: .8rem; font-weight: 600; pointer-events: none; }
-.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: .85rem; }
-.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: -2px; margin-inline-end: 6px; }
-.legend .r { border: 3px solid #d6322b; }
-.legend .g { width: 22px; height: 12px; border-radius: 3px; background: #c9f0d8; border-bottom: 3px dashed #1f9d55; }
+.ar-digits .sol ol, .ar-digits .steps { list-style-type: arabic-indic; }
+.sol .fa { display: inline-block; border: 3px solid currentColor; border-radius: .4em; padding: 0 .6em; margin-top: 6px; font-weight: 700; }
+.tag { display: inline-block; background: var(--warn-soft); color: var(--warn); border-radius: 999px; padding: 2px 12px; font: 600 .78rem var(--font-body); margin-bottom: 4px; }
+.addline { font: 500 .9rem var(--font-body); color: #7b879b; background: transparent; border: 1px dashed #c5cedb; border-radius: 8px; padding: 4px 12px; margin-top: 8px; cursor: pointer; }
+
+/* keyboard */
+.kb { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 5px; user-select: none; -webkit-user-select: none; }
+.keys { display: grid; grid-template-columns: repeat(var(--cols, 8), minmax(0, 1fr)); gap: 5px; direction: ltr; }
+.keys.rtl { direction: rtl; }
+.key { font: 500 1.2rem/1 var(--font-body); min-height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; touch-action: manipulation; padding: 0 2px; }
+.key:hover { border-color: var(--frame); }
+.key:active, .key.down { background: var(--line); }
+.key.op { color: var(--accent); font-weight: 600; }
+.key.fn { font-size: .85rem; color: var(--muted); }
+.key.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.key.s2 { grid-column: span 2; }
+.key.enter { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-size: .95rem; }
 
 .panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 .panel h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
@@ -132,17 +117,11 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
 .chip.bad { background: var(--bad-soft); color: var(--bad); }
 .chip.warn { background: var(--warn-soft); color: var(--warn); }
 .chip.plain { background: var(--surface-2); color: var(--muted); }
-.qbox { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; }
-.qbox small { display: block; color: var(--muted); font-size: .78rem; letter-spacing: .02em; }
 .items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; border-radius: 10px; padding: 10px; border: 1px solid var(--line); cursor: pointer; overflow-wrap: anywhere; }
+.item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; border-radius: 10px; padding: 10px; border: 1px solid var(--line); cursor: pointer; overflow-wrap: anywhere; color: var(--bad); }
 .item.hl { border-color: currentColor; }
-.item.e { color: var(--bad); }
-.item.u { color: var(--good); }
 .item > div { color: var(--fg); }
-.num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-family: var(--font-display); font-weight: 700; font-size: .9rem; }
-.item.e .num { background: #d6322b; }
-.item.u .num { background: #1f9d55; }
+.num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: #d6322b; font-family: var(--font-display); font-weight: 700; font-size: .9rem; }
 .item b { font-weight: 600; }
 .item .fix { color: var(--good); font-weight: 600; }
 .steps { margin: 0; padding-inline-start: 1.4em; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
@@ -152,22 +131,23 @@ button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); o
 .notice { background: var(--warn-soft); color: var(--warn); border-radius: 10px; padding: 8px 12px; font-size: .9rem; }
 .errbox { background: var(--bad-soft); color: var(--bad); border-radius: 10px; padding: 10px 12px; }
 .working { display: flex; align-items: center; gap: 12px; }
-.spin.mini { width: 12px; height: 12px; border-width: 2px; display: inline-block; vertical-align: -1px; }
 .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .9s linear infinite; flex: none; }
+.spin.mini { width: 12px; height: 12px; border-width: 2px; display: inline-block; vertical-align: -1px; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } .ring { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
 .ghost { font: inherit; font-size: .9rem; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer; align-self: flex-start; }
-bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 .tnum { font-variant-numeric: tabular-nums; }
+bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 .toast { position: fixed; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 16px; border-radius: 10px; font-size: .9rem; max-width: calc(100% - 32px); z-index: 20; }
 @media (max-width: 560px) {
   .brand h1 { font-size: 1rem; }
   .opts label { display: none; }
-  .tray { gap: 4px 6px; padding: 4px 6px; }
-  .sep { display: none; }
   .tb .lbl { display: none; }
-  .swatch { width: 28px; height: 28px; }
-  .dot { width: 28px; }
+  .ln, .view { font-size: 1.3rem; min-height: 2.5rem; }
+  .row { grid-template-columns: 1.8rem minmax(0, 1fr); }
+  .board { min-height: 220px; padding: 8px 8px 14px; }
+  .key { min-height: 42px; font-size: 1.1rem; }
+  .kb { padding: 4px; gap: 4px; } .keys { gap: 4px; }
 }
 </style>
 
@@ -175,7 +155,7 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   <header class="top">
     <div class="brand">
       <h1>السبورة الذكية</h1>
-      <p>اكتب السؤال وحلّه بخطّك بالعربي أو الإنجليزي، بالأرقام العربية (١٢٣) أو الإنجليزية (123)، ثم اضغط «تصحيح».</p>
+      <p>اكتب السؤال وحلّك بلوحة المفاتيح سطرًا سطرًا، ثم اضغط «تصحيح».</p>
     </div>
     <div class="opts">
       <div class="field">
@@ -191,7 +171,6 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       <div class="field">
         <label for="digits">الأرقام</label>
         <select id="digits">
-          <option value="auto">أرقام عربية أو إنجليزية</option>
           <option value="ar">أرقام عربية ١٢٣</option>
           <option value="en">أرقام إنجليزية 123</option>
         </select>
@@ -207,16 +186,8 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
       <div class="field">
         <label for="depth">التصحيح</label>
         <select id="depth">
-          <option value="complex">قراءة دقيقة (موصى بها)</option>
-          <option value="default">قراءة سريعة</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="paper">الخلفية</label>
-        <select id="paper">
-          <option value="lines">سطور</option>
-          <option value="grid">مربعات</option>
-          <option value="plain">بيضاء</option>
+          <option value="complex">تصحيح دقيق (موصى به)</option>
+          <option value="default">تصحيح سريع</option>
         </select>
       </div>
     </div>
@@ -224,56 +195,27 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 
   <main class="layout">
     <section class="boardcol">
-      <div class="tray" role="toolbar" aria-label="أدوات الكتابة">
-        <div class="grp">
-          <button class="tb" id="penBtn" aria-pressed="true" title="قلم (P)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span class="lbl">قلم</span>
-          </button>
-          <button class="tb" id="eraserBtn" aria-pressed="false" title="ممحاة (E)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20h12"/><path d="M5 15l9-9 5 5-8 8H8z"/></svg><span class="lbl">ممحاة</span>
-          </button>
-        </div>
-        <span class="sep"></span>
-        <div class="grp" id="colors">
-          <button class="tb swatch" data-color="#1d3a8a" aria-pressed="true" aria-label="أزرق"><span style="background:#1d3a8a"></span></button>
-          <button class="tb swatch" data-color="#1b1f27" aria-pressed="false" aria-label="أسود"><span style="background:#1b1f27"></span></button>
-          <button class="tb swatch" data-color="#6b2fa0" aria-pressed="false" aria-label="بنفسجي"><span style="background:#6b2fa0"></span></button>
-        </div>
-        <span class="sep"></span>
-        <div class="grp" id="sizes">
-          <button class="tb dot" data-size="3" aria-pressed="false" aria-label="خط رفيع"><span style="width:5px;height:5px"></span></button>
-          <button class="tb dot" data-size="5" aria-pressed="true" aria-label="خط متوسط"><span style="width:8px;height:8px"></span></button>
-          <button class="tb dot" data-size="9" aria-pressed="false" aria-label="خط عريض"><span style="width:12px;height:12px"></span></button>
-        </div>
-        <span class="sep"></span>
-        <div class="grp">
-          <button class="tb" id="undoBtn" title="تراجع (Ctrl+Z)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7l5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h2"/></svg><span class="lbl">تراجع</span>
-          </button>
-          <button class="tb" id="redoBtn" title="إعادة (Ctrl+Y)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7l-5 5 5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-2"/></svg><span class="lbl">إعادة</span>
-          </button>
-          <button class="tb" id="clearBtn" title="مسح السبورة">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="lbl">مسح</span>
-          </button>
-        </div>
-        <button class="tb" id="notesBtn" aria-pressed="true" title="كتابة الحل والشرح على السبورة">
+      <div class="tray" role="toolbar" aria-label="أدوات السبورة">
+        <button class="tb" id="clearBtn" title="مسح السبورة">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg><span class="lbl">مسح</span>
+        </button>
+        <button class="tb" id="undoBtn" title="تراجع">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7l5 5-5 5"/><path d="M20 12H9a5 5 0 0 0 0 10h2"/></svg><span class="lbl">تراجع</span>
+        </button>
+        <button class="tb" id="sysKbBtn" aria-pressed="false" title="استخدام لوحة مفاتيح الجهاز بدل لوحة الرياضيات">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg><span class="lbl">لوحة الجهاز</span>
+        </button>
+        <button class="tb" id="notesBtn" aria-pressed="true" title="كتابة التصحيح والحل على السبورة">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19c3-1 4-6 7-6s2 5 5 5 3-3 4-4"/><path d="M4 7h10M4 11h6"/></svg><span class="lbl">الحل</span>
         </button>
         <button class="tb check" id="checkBtn">✓ تصحيح</button>
       </div>
 
-      <div class="frame">
-        <div class="board lines" id="board">
-          <canvas id="ink" aria-label="مساحة الكتابة"></canvas>
-          <svg id="marks" aria-hidden="true"></svg>
-          <div class="notes" id="notes"></div>
-          <div class="tag" id="exampleTag" hidden>مثال مصحَّح · ابدأ الكتابة لمسحه</div>
-        </div>
-      </div>
-      <div class="legend">
-        <span><i class="r"></i>دائرة حمراء: موضع خطأ</span>
-        <span><i class="g"></i>تظليل أخضر: جزء لم يتأكد Claude من قراءته، اضغط عليه وعدّله</span>
+      <div class="frame"><div class="board" id="board" lang="ar"></div></div>
+
+      <div class="kb" id="kb" aria-label="لوحة المفاتيح">
+        <div class="keys" id="keys"></div>
+        <div class="keys" id="kbBar" style="--cols:8"></div>
       </div>
     </section>
 
@@ -285,26 +227,19 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
 <script>
 (() => {
   const $ = (s) => document.querySelector(s);
-  const board = $('#board'), cv = $('#ink'), svg = $('#marks'), panel = $('#panel');
-  const ctx = cv.getContext('2d');
-  const SVGNS = 'http://www.w3.org/2000/svg';
-  const STORE = 'smartboard.v1';
-  const LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'];
-  const INK_BLUE = '#1d3a8a';
+  const boardEl = $('#board'), panel = $('#panel'), keysEl = $('#keys'), barEl = $('#kbBar');
+  const STORE = 'smartboard.kb1';
+  const DIG = { ar: '٠١٢٣٤٥٦٧٨٩', en: '0123456789' };
 
-  let L = { w: 1400, h: 1000 };          // logical board size (points are stored in these units)
-  let ops = [], redoStack = [];
-  let tool = 'pen', color = INK_BLUE, size = 5;
-  let isExample = false;
-  let result = null;                   // {data, boxes:{e:[], u:[]}, example}
-  let stale = false;
-  let scale = 1;
-  let sampleP = null;
-  let ctl = null;
+  let lines = ['', ''];               // [question, solution line 1, ...]
+  let focusIdx = 0;
+  let digits = 'ar', tab = 'math', shift = false, sysKb = false, showNotes = true;
+  let result = null, stale = false, isExample = false;
+  let sampleP = null, ctl = null;
 
   // ---------- helpers ----------
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  // Keep runs of math (equations, numbers, Latin symbols) in left-to-right order inside Arabic text.
+  // keep runs of Latin math in left-to-right order inside Arabic text
   const MATH = /[A-Za-z0-9(\[√π∞|−\-+][A-Za-z0-9\s=+\-−×÷*/^().,،²³√π∞≤≥≠<>|°%\[\]→]*[A-Za-z0-9)\]²³π∞°%|]/g;
   const fmt = (s) => {
     s = String(s ?? ''); let out = '', last = 0;
@@ -314,452 +249,303 @@ bdi.m { direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
     }
     return out + esc(s.slice(last));
   };
+  const num = (n) => String(n).replace(/\d/g, (d) => DIG[digits][d]);
   let toastT;
   function toast(msg) {
     const t = $('#toast'); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2800);
   }
   function save() {
     if (isExample) return;
-    try { localStorage.setItem(STORE, JSON.stringify({ L, ops: ops.slice(lastClear() + 1) })); } catch (_) {}
+    try { localStorage.setItem(STORE, JSON.stringify(lines)); } catch (_) {}
   }
-  function lastClear() {
-    for (let i = ops.length - 1; i >= 0; i--) if (ops[i].type === 'clear') return i;
-    return -1;
-  }
-  function visibleOps() { return ops.slice(lastClear() + 1); }
+  const viewing = () => !!(result && !stale);
+  // with Arabic digits a line reads right to left (٤ + ٤ = ٨ starts on the right), as on paper
+  const lineDir = () => digits === 'ar' ? 'rtl' : 'auto';
 
-  // ---------- drawing ----------
-  function paint(c, op) {
-    c.save();
-    if (op.type === 'text') {
-      c.fillStyle = op.color; c.font = op.font; c.textAlign = op.align || 'left'; c.direction = op.dir || 'ltr';
-      c.fillText(op.text, op.x, op.y);
-      c.restore(); return;
+  // ---------- board ----------
+  function lineErrors(i) {
+    if (!result) return [];
+    const last = lines.length - 1;
+    return result.data.errors.map((e, k) => ({ e, k })).filter(({ e }) => {
+      const n = Math.max(0, Math.min(last, parseInt(e.line, 10) || 0));
+      return n === i;
+    });
+  }
+  function ringed(text, errs) {
+    // wrap each wrong part of the line in a red ring; a part that can't be found rings the whole line
+    const spans = [];
+    for (const { e, k } of errs) {
+      const part = String(e.part || '').trim();
+      let at = part ? text.indexOf(part) : -1;
+      const len = at < 0 ? text.length : part.length;
+      if (at < 0) at = 0;
+      if (!spans.some((s) => at < s.at + s.len && s.at < at + len)) spans.push({ at, len, k });
     }
-    c.globalCompositeOperation = op.type === 'erase' ? 'destination-out' : 'source-over';
-    c.strokeStyle = c.fillStyle = op.color || '#000';
-    c.lineWidth = op.size; c.lineCap = 'round'; c.lineJoin = 'round';
-    const p = op.pts;
-    c.beginPath();
-    if (p.length === 1) { c.arc(p[0][0], p[0][1], op.size / 2, 0, Math.PI * 2); c.fill(); }
-    else { c.moveTo(p[0][0], p[0][1]); for (let i = 1; i < p.length; i++) c.lineTo(p[i][0], p[i][1]); c.stroke(); }
-    c.restore();
+    spans.sort((a, b) => a.at - b.at);
+    let out = '', pos = 0;
+    for (const s of spans) {
+      out += esc(text.slice(pos, s.at)) + `<span class="ring" data-key="e${s.k}">${esc(text.slice(s.at, s.at + s.len)) || '&nbsp;'}<sup>${num(s.k + 1)}</sup></span>`;
+      pos = s.at + s.len;
+    }
+    return out + esc(text.slice(pos));
   }
-  function renderTo(c, s) {
-    c.setTransform(1, 0, 0, 1, 0, 0);
-    c.clearRect(0, 0, c.canvas.width, c.canvas.height);
-    c.setTransform(s, 0, 0, s, 0, 0);
-    for (const op of visibleOps()) paint(c, op);
+  function render(focusAt) {
+    const T = result && result.data.lang === 'en' ? EN : AR;
+    let h = isExample ? '<div class="tag">مثال مصحَّح · اضغط على السبورة لتبدأ سؤالك</div>' : '';
+    lines.forEach((text, i) => {
+      const errs = lineErrors(i);
+      h += `<div class="row${i === 0 ? ' q' : ''}"><span class="n">${i === 0 ? 'السؤال' : num(i)}</span>`;
+      if (viewing()) h += `<div class="view" dir="${lineDir()}" data-i="${i}">${ringed(text, errs) || '&nbsp;'}</div>`;
+      else h += `<textarea class="ln" id="ln${i}" data-i="${i}" dir="${lineDir()}" rows="1" spellcheck="false" autocomplete="off" inputmode="${sysKb ? 'text' : 'none'}" placeholder="${i === 0 ? 'اكتب السؤال أو المسألة هنا…' : i === 1 ? 'اكتب أول خطوة من حلّك…' : 'الخطوة التالية…'}">${esc(text)}</textarea>`;
+      h += `</div>`;
+      if (result && showNotes) for (const { e, k } of errs) {
+        h += `<div class="ann" data-key="e${k}"><b>${num(k + 1)}.</b> ${e.fix ? fmt(T.fix + ' ' + e.fix) : ''}${e.why ? `<div class="why">${fmt(e.why)}</div>` : ''}</div>`;
+      }
+    });
+    if (!viewing()) h += `<button class="addline" id="addLine" type="button">+ سطر جديد</button>`;
+    const d = result && result.data;
+    if (d && showNotes && (d.steps.length || d.final_answer || d.summary)) {
+      h += `<div class="sol" dir="${d.lang === 'en' ? 'ltr' : 'rtl'}"><h4>${T.solution}</h4>${d.summary ? `<p class="sum">${fmt(d.summary)}</p>` : ''}`
+        + (d.steps.length ? `<ol>${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol>` : '')
+        + (d.final_answer ? `<div class="fa">${fmt(T.final + ': ' + d.final_answer)}</div>` : '') + `</div>`;
+    }
+    boardEl.innerHTML = h;
+    boardEl.classList.toggle('notes-stale', !!(result && stale));
+    boardEl.querySelectorAll('.ln').forEach(wireLine);
+    boardEl.querySelectorAll('.view').forEach((v) => v.addEventListener('click', () => { if (!ctl) editAt(+v.dataset.i); }));
+    boardEl.querySelectorAll('[data-key]').forEach((el) => {
+      el.addEventListener('mouseenter', () => highlight(el.dataset.key));
+      el.addEventListener('mouseleave', () => highlight(''));
+    });
+    const add = $('#addLine');
+    if (add) {
+      add.onmousedown = (e) => e.preventDefault();
+      add.onclick = () => { lines.push(''); save(); render(lines.length - 1); };
+    }
+    if (focusAt != null) focusLine(focusAt);
   }
-  function redraw() { renderTo(ctx, scale * (window.devicePixelRatio || 1)); }
+  function editAt(i) {
+    if (isExample) { wipeExample(); return; }
+    if (result && !stale) { stale = true; renderPanel(); }
+    render(i);
+  }
+  function grow(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+  function focusLine(i, atEnd = true) {
+    const ta = document.getElementById('ln' + i);
+    if (!ta) return;
+    ta.focus();
+    if (atEnd) { const n = ta.value.length; ta.setSelectionRange(n, n); }
+    focusIdx = i;
+  }
+  function wireLine(ta) {
+    const i = +ta.dataset.i;
+    grow(ta);
+    ta.addEventListener('focus', () => { focusIdx = i; if (isExample) wipeExample(); });
+    ta.addEventListener('input', () => { lines[i] = ta.value.replace(/\n/g, ' '); grow(ta); changed(); });
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); newLine(); }
+      else if (e.key === 'Backspace' && ta.selectionStart === 0 && ta.selectionEnd === 0 && i > 1 && !ta.value) { e.preventDefault(); removeLine(i); }
+    });
+  }
+  function changed() {
+    if (result && !stale) { stale = true; boardEl.classList.add('notes-stale'); renderPanel(); }
+    save();
+  }
+  function currentTa() {
+    let ta = document.getElementById('ln' + focusIdx);
+    if (!ta) {
+      if (viewing()) { stale = true; renderPanel(); render(); }
+      ta = document.getElementById('ln' + focusIdx) || document.getElementById('ln0');
+    }
+    if (document.activeElement !== ta) ta.focus();
+    return ta;
+  }
+  function newLine() {
+    const ta = currentTa(), i = +ta.dataset.i;
+    const before = ta.value.slice(0, ta.selectionStart), after = ta.value.slice(ta.selectionEnd);
+    if (i === 0) { if (lines.length < 2) lines.push(''); save(); render(1); return; }
+    lines[i] = before; lines.splice(i + 1, 0, after);
+    changed(); render(i + 1, false);
+    focusLine(i + 1, false);
+    const nt = document.getElementById('ln' + (i + 1)); if (nt) nt.setSelectionRange(0, 0);
+  }
+  function removeLine(i) { lines.splice(i, 1); changed(); render(i - 1); }
+  function insert(t) {
+    if (isExample) wipeExample();
+    const ta = currentTa();
+    if (!document.execCommand('insertText', false, t)) {
+      ta.setRangeText(t, ta.selectionStart, ta.selectionEnd, 'end');
+      ta.dispatchEvent(new Event('input'));
+    }
+  }
+  function backspace() {
+    if (isExample) { wipeExample(); return; }
+    const ta = currentTa(), i = +ta.dataset.i;
+    if (ta.selectionStart === 0 && ta.selectionEnd === 0) { if (i > 1 && !ta.value) removeLine(i); else if (i > 0) focusLine(i - 1); return; }
+    if (ta.selectionStart === ta.selectionEnd) {
+      // one press removes a whole spaced operator like " + "
+      const s = ta.selectionStart;
+      const m = ta.value.slice(0, s).match(/ [+−×÷=≠<>≤≥±] $/);
+      ta.setSelectionRange(s - (m ? 3 : 1), s);
+    }
+    if (!document.execCommand('delete', false)) { ta.setRangeText('', ta.selectionStart, ta.selectionEnd, 'end'); ta.dispatchEvent(new Event('input')); }
+  }
+  function highlight(key) {
+    document.querySelectorAll('.ring, .ann, .item').forEach((el) => el.classList.toggle('hl', !!key && el.dataset.key === key));
+  }
 
-  function layout() {
-    board.style.aspectRatio = L.w + ' / ' + L.h;
-    svg.setAttribute('viewBox', `0 0 ${L.w} ${L.h}`);
-    const w = board.clientWidth, h = w * L.h / L.w;
-    const dpr = window.devicePixelRatio || 1;
-    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-    scale = w / L.w;
-    board.style.setProperty('--cell', (70 * scale) + 'px');
-    redraw();
-    renderNotes();
+  // ---------- keyboard ----------
+  const OPS = '+−×÷=≠<>≤≥±';
+  function mathKeys() {
+    const D = DIG[digits];
+    const dec = digits === 'ar' ? '٫' : '.', com = digits === 'ar' ? '،' : ',';
+    const vars = digits === 'ar' ? ['س', 'ص', 'ع', 'x'] : ['x', 'y', 'z', 'س'];
+    return [
+      D[7], D[8], D[9], '÷', '(', ')', '√', '^',
+      D[4], D[5], D[6], '×', '[', ']', '²', '³',
+      D[1], D[2], D[3], '−', '<', '>', '≤', '≥',
+      D[0], dec, com, '+', '=', '≠', 'π', '%',
+      ...vars, '/', '°', '±', '∞',
+      { k: 'digits', label: digits === 'ar' ? '123 ⇄' : '١٢٣ ⇄', cls: 'fn s2', aria: 'تبديل الأرقام' }, '؟', ':', '!', '|', '→', 'θ',
+    ];
   }
+  const AR_KEYS = ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج',
+    'ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ط',
+    'ذ', 'ء', 'ؤ', 'ر', 'ى', 'ة', 'و', 'ز', 'ظ', 'د', 'ئ',
+    'أ', 'إ', 'آ', 'لا', '،', '؟', '.', ':', '(', ')', '"'];
+  const EN_KEYS = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p',
+    'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '?',
+    { k: 'shift', label: '⇧', cls: 'fn', aria: 'Shift' }, 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.'];
+  function key(spec) {
+    const o = typeof spec === 'string' ? { k: 'text', v: spec, label: spec } : spec;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'key' + (o.cls ? ' ' + o.cls : '') + (o.k === 'text' && OPS.includes(o.v) ? ' op' : '');
+    b.textContent = o.label;
+    b.dataset.k = o.k; if (o.v != null) b.dataset.v = o.v;
+    if (o.aria) b.setAttribute('aria-label', o.aria);
+    return b;
+  }
+  function renderKeys() {
+    keysEl.textContent = ''; barEl.textContent = '';
+    let list, cols;
+    if (tab === 'math') { list = mathKeys(); cols = 8; keysEl.classList.remove('rtl'); }
+    else if (tab === 'ar') { list = AR_KEYS; cols = 11; keysEl.classList.add('rtl'); }
+    else { list = EN_KEYS.map((x) => typeof x === 'string' && shift ? x.toUpperCase() : x); cols = 10; keysEl.classList.remove('rtl'); }
+    keysEl.style.setProperty('--cols', cols);
+    for (const s of list) {
+      const b = key(s);
+      if (s && s.k === 'shift' && shift) b.classList.add('on');
+      keysEl.appendChild(b);
+    }
+    const bar = [
+      { k: 'tab', v: 'math', label: digits === 'ar' ? '١٢٣ +' : '123 +', cls: 'fn' + (tab === 'math' ? ' on' : ''), aria: 'أرقام ورموز' },
+      { k: 'tab', v: 'ar', label: 'أ ب ج', cls: 'fn' + (tab === 'ar' ? ' on' : ''), aria: 'حروف عربية' },
+      { k: 'tab', v: 'en', label: 'abc', cls: 'fn' + (tab === 'en' ? ' on' : ''), aria: 'English letters' },
+      { k: 'text', v: ' ', label: 'مسافة', cls: 'fn s2' },
+      { k: 'back', label: '⌫', cls: 'fn', aria: 'حذف' },
+      { k: 'enter', label: '↵ سطر', cls: 'enter s2', aria: 'سطر جديد' },
+    ];
+    for (const s of bar) barEl.appendChild(key(s));
+  }
+  function press(b) {
+    const k = b.dataset.k, v = b.dataset.v;
+    if (k === 'text') {
+      insert(OPS.includes(v) ? ' ' + v + ' ' : v);
+      if (shift && tab === 'en') { shift = false; renderKeys(); }
+    } else if (k === 'back') backspace();
+    else if (k === 'enter') newLine();
+    else if (k === 'tab') { tab = v; shift = false; renderKeys(); }
+    else if (k === 'shift') { shift = !shift; renderKeys(); }
+    else if (k === 'digits') setDigits(digits === 'ar' ? 'en' : 'ar');
+  }
+  let repeatT = null;
+  function stopRepeat() { clearTimeout(repeatT); clearInterval(repeatT); repeatT = null; }
+  $('#kb').addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('.key'); if (!b) return;
+    e.preventDefault();                       // keep the caret in the line being typed
+    b.classList.add('down');
+    press(b);
+    if (b.dataset.k === 'back') repeatT = setTimeout(() => { repeatT = setInterval(backspace, 70); }, 420);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((t) => $('#kb').addEventListener(t, () => {
+    stopRepeat(); document.querySelectorAll('.key.down').forEach((x) => x.classList.remove('down'));
+  }));
+  $('#kb').addEventListener('click', (e) => { if (e.detail === 0) { const b = e.target.closest('.key'); if (b) press(b); } });   // Enter/Space on a focused key
 
-  // ---------- teacher's writing on the board ----------
-  const notesEl = $('#notes');
-  const NOTE_FONT = 34;                 // logical units
-  let showNotes = true, growing = false;
-  try { showNotes = localStorage.getItem(STORE + '.notes') !== 'off'; } catch (_) {}
-  $('#notesBtn').setAttribute('aria-pressed', showNotes);
+  function setDigits(d) {
+    digits = d; $('#digits').value = d;
+    document.querySelector('.app').classList.toggle('ar-digits', d === 'ar');
+    try { localStorage.setItem(STORE + '.digits', d); } catch (_) {}
+    renderKeys(); render(); renderPanel();
+  }
+  $('#digits').addEventListener('change', (e) => setDigits(e.target.value));
+
+  $('#sysKbBtn').onclick = () => {
+    sysKb = !sysKb;
+    $('#sysKbBtn').setAttribute('aria-pressed', sysKb);
+    $('#kb').hidden = sysKb;
+    document.querySelectorAll('.ln').forEach((ta) => ta.setAttribute('inputmode', sysKb ? 'text' : 'none'));
+    const ta = document.getElementById('ln' + focusIdx); if (ta) { ta.blur(); ta.focus(); }
+  };
   $('#notesBtn').onclick = () => {
     showNotes = !showNotes; $('#notesBtn').setAttribute('aria-pressed', showNotes);
     try { localStorage.setItem(STORE + '.notes', showNotes ? 'on' : 'off'); } catch (_) {}
-    renderNotes();
+    render();
   };
-  function inkBounds() {
-    const k = 0.25, c = document.createElement('canvas');
-    c.width = Math.ceil(L.w * k); c.height = Math.ceil(L.h * k);
-    const x = c.getContext('2d'); renderTo(x, k);
-    const a = x.getImageData(0, 0, c.width, c.height).data;
-    let x0 = Infinity, y0 = Infinity, x1 = -1, y1 = -1;
-    for (let yy = 0; yy < c.height; yy++) for (let xx = 0; xx < c.width; xx++) {
-      if (a[(yy * c.width + xx) * 4 + 3] > 30) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
-    }
-    return x1 < 0 ? null : { x0: x0 / k, y0: y0 / k, x1: (x1 + 1) / k, y1: (y1 + 1) / k };
-  }
-  function putNote(html, cls, x, y, w) {
-    const el = document.createElement('div');
-    el.className = 'note ' + cls; el.innerHTML = html;
-    el.style.left = (x / L.w * 100) + '%'; el.style.top = (y / L.h * 100) + '%'; el.style.width = (w / L.w * 100) + '%';
-    notesEl.appendChild(el);
-    return el;
-  }
-  const hits = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
-  function markUnsure(text) {
-    return String(text).split(/⟦([^⟧]*)⟧/).map((part, i) => i % 2 ? `<mark>${fmt(part)}</mark>` : fmt(part)).join('');
-  }
-  function wireTranscript(tr) {
-    tr.querySelectorAll('.trl').forEach((el) => {
-      const i = +el.dataset.i;
-      el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
-      el.addEventListener('paste', (e) => {
-        e.preventDefault();
-        const t = (e.clipboardData && e.clipboardData.getData('text/plain') || '').replace(/\s*\n\s*/g, ' ');
-        document.execCommand('insertText', false, t);
-      });
-      el.addEventListener('input', () => {
-        result.data.lines[i] = el.innerText.replace(/\s*\n\s*/g, ' ').trim();
-        result.editedLines = result.editedLines || {}; result.editedLines[i] = true;
-        el.classList.add('edited');
-        if (!result.edited) { result.edited = true; renderPanel(); }
-        const b = tr.querySelector('#recheckBoard'); if (b) b.hidden = false;
-      });
-    });
-    const b = tr.querySelector('#recheckBoard');
-    if (b) b.onclick = recheck;
-  }
-  function recheck() {
-    if (!result || ctl) return;
-    if (result.example) { showInfo('هذا مثال. اكتب سؤالك أنت واضغط «تصحيح»، ثم عدّل ما كتبه Claude إن لزم.'); return; }
-    check(result.data.lines.map((l) => l.replace(/[⟦⟧]/g, '')).filter((l) => l.trim()));
-  }
-  function renderNotes() {
-    if (notesEl.contains(document.activeElement) && result && !result.live) return;   // never wipe what the student is typing
-    notesEl.textContent = '';
-    notesEl.classList.toggle('stale', stale);
-    if (!result || !result.data) return;
-    const d = result.data, en = d.lang === 'en', T = en ? EN : AR;
-    notesEl.dir = en ? 'ltr' : 'rtl'; notesEl.lang = en ? 'en' : 'ar';
-    notesEl.style.fontSize = (NOTE_FONT * scale) + 'px';
-    const placed = [];
-    let lowest = 0;
-    // a short correction beside each circle, on whichever side has room
-    const side = (b, html, cls) => {
-      if (!b) return;
-      const [bx, by, bw, bh] = b;
-      const cx = bx + bw / 2, cy = by + bh / 2, rx = bw / 2 * 1.1 + 18, ry = bh / 2 * 1.2 + 16;
-      const ringL = cx - rx, ringR = cx + rx, ringB = cy + ry;
-      const spaceL = ringL - 40, spaceR = L.w - ringR - 40;
-      let x, w, where;
-      if (spaceL >= 240 && spaceL >= Math.min(spaceR, 600)) { w = Math.min(620, spaceL); x = ringL - 16 - w; where = 'side-l'; }
-      else if (spaceR >= 240) { w = Math.min(620, spaceR); x = ringR + 16; where = 'side-r'; }
-      else { w = Math.min(L.w - 60, 700); x = Math.min(Math.max(30, cx - w / 2), L.w - 30 - w); where = 'below'; }
-      const el = putNote(html, cls + ' ' + where, x, 0, w);
-      const h = el.offsetHeight / scale;
-      let y = where === 'below' ? ringB + 6 : Math.max(10, cy - h / 2);
-      let r = { x, y, w, h };
-      for (let guard = 0; guard < 20; guard++) {
-        const o = placed.find((p) => hits(p, r));
-        if (!o) break;
-        r.y = y = o.y + o.h + 8;
-      }
-      el.style.top = (y / L.h * 100) + '%';
-      placed.push(r); lowest = Math.max(lowest, y + h);
-    };
-    if (showNotes) d.errors.forEach((e, i) => side(result.boxes.e[i],
-      `<b>${i + 1}.</b> ${e.fix ? fmt(T.fix + ' ' + e.fix) : ''}${e.why ? `<div class="why">${fmt(e.why)}</div>` : ''}`, 'err'));
-    const ink = inkBounds();
-    let top = Math.max(ink ? ink.y1 : 0, lowest) + 36;
-    const x = 40, w = L.w - 80;
-    let bottom = top;
-    // Claude's own rewrite of the board, which the student corrects in place
-    if (d.lines.length) {
-      const tr = document.createElement('div');
-      tr.className = 'tr';
-      tr.style.fontSize = Math.max(15, NOTE_FONT * 0.85 * scale) + 'px';   // stays comfortable to edit on phones
-      tr.innerHTML = `<h4>${T.transcript} <span>· ${T.trHint}</span></h4><ol>${d.lines.map((ln, i) =>
-        `<li><div class="trl${result.editedLines && result.editedLines[i] ? ' edited' : ''}" contenteditable="${result.live ? 'false' : 'true'}" spellcheck="false" dir="auto" data-i="${i}">${markUnsure(ln)}</div></li>`).join('')}</ol>`
-        + `<button class="trbtn" id="recheckBoard"${result.edited && !result.live ? '' : ' hidden'}>${T.recheck}</button>`;
-      tr.style.left = (x / L.w * 100) + '%'; tr.style.top = (top / L.h * 100) + '%'; tr.style.width = (w / L.w * 100) + '%';
-      notesEl.appendChild(tr);
-      wireTranscript(tr);
-      bottom = top + tr.offsetHeight / scale;
-      top = bottom + 30;
-    }
-    // the correct solution, written under the student's work
-    if (showNotes && (d.steps.length || d.final_answer || d.summary)) {
-    const el = document.createElement('div');
-    el.className = 'sol';
-    el.innerHTML = `<h4>${T.solution}</h4>${d.summary ? `<p class="sum">${fmt(d.summary)}</p>` : ''}`
-      + (d.steps.length ? `<ol>${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol>` : '')
-      + (d.final_answer ? `<div class="fa">${fmt(T.final + ': ' + d.final_answer)}</div>` : '');
-    el.style.left = (x / L.w * 100) + '%'; el.style.top = (top / L.h * 100) + '%'; el.style.width = (w / L.w * 100) + '%';
-    notesEl.appendChild(el);
-    bottom = top + el.offsetHeight / scale;
-    }
-    const need = Math.ceil(bottom + 40);
-    if (need > L.h && !growing && need < 6000) {
-      // the board grows downward so the solution has room
-      growing = true; L = { w: L.w, h: need }; layout(); growing = false; save();
-    }
-  }
-
-  // ---------- input ----------
-  let cur = null, penSeen = false, activeId = null;
-  function pt(e) {
-    const r = cv.getBoundingClientRect();
-    return [Math.round((e.clientX - r.left) / r.width * L.w * 10) / 10, Math.round((e.clientY - r.top) / r.height * L.h * 10) / 10];
-  }
-  cv.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'pen') penSeen = true;
-    if (e.pointerType === 'touch' && penSeen) return;      // palm rejection once a stylus is used
-    if (e.button > 0 || cur) return;
-    if (isExample) wipeExample();
-    cv.setPointerCapture(e.pointerId); activeId = e.pointerId;
-    cur = tool === 'eraser' ? { type: 'erase', size: 34, pts: [pt(e)] } : { type: 'stroke', color, size, pts: [pt(e)] };
-    const s = scale * (window.devicePixelRatio || 1);
-    ctx.setTransform(s, 0, 0, s, 0, 0); paint(ctx, cur);
-    e.preventDefault();
-  });
-  cv.addEventListener('pointermove', (e) => {
-    if (!cur || e.pointerId !== activeId) return;
-    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-    const from = cur.pts.length - 1;
-    for (const ev of (evs.length ? evs : [e])) cur.pts.push(pt(ev));
-    const seg = { ...cur, pts: cur.pts.slice(from) };
-    const s = scale * (window.devicePixelRatio || 1);
-    ctx.setTransform(s, 0, 0, s, 0, 0); paint(ctx, seg);
-  });
-  function endStroke(e) {
-    if (!cur || e.pointerId !== activeId) return;
-    ops.push(cur); cur = null; activeId = null; redoStack = [];
-    redraw(); changed();
-  }
-  cv.addEventListener('pointerup', endStroke);
-  cv.addEventListener('pointercancel', endStroke);
-
-  function changed() {
-    if (result && !stale) { stale = true; svg.classList.add('stale'); notesEl.classList.add('stale'); renderPanel(); }
-    updateButtons(); save();
-  }
-  function updateButtons() {
-    $('#undoBtn').disabled = ops.length === 0 || isExample;
-    $('#redoBtn').disabled = redoStack.length === 0;
-    $('#clearBtn').disabled = visibleOps().length === 0;
-  }
-
-  // ---------- toolbar ----------
-  function setTool(t) {
-    tool = t;
-    $('#penBtn').setAttribute('aria-pressed', t === 'pen');
-    $('#eraserBtn').setAttribute('aria-pressed', t === 'eraser');
-    board.classList.toggle('erasing', t === 'eraser');
-  }
-  $('#penBtn').onclick = () => setTool('pen');
-  $('#eraserBtn').onclick = () => setTool('eraser');
-  document.querySelectorAll('#colors .swatch').forEach((b) => b.onclick = () => {
-    color = b.dataset.color; setTool('pen');
-    document.querySelectorAll('#colors .swatch').forEach((x) => x.setAttribute('aria-pressed', x === b));
-  });
-  document.querySelectorAll('#sizes .dot').forEach((b) => b.onclick = () => {
-    size = +b.dataset.size; setTool('pen');
-    document.querySelectorAll('#sizes .dot').forEach((x) => x.setAttribute('aria-pressed', x === b));
-  });
-  function undo() { if (!ops.length || isExample) return; redoStack.push(ops.pop()); redraw(); changed(); }
-  function redo() { if (!redoStack.length) return; ops.push(redoStack.pop()); redraw(); changed(); }
-  $('#undoBtn').onclick = undo;
-  $('#redoBtn').onclick = redo;
+  $('#undoBtn').onmousedown = (e) => e.preventDefault();
+  $('#undoBtn').onclick = () => { const ta = currentTa(); if (!document.execCommand('undo')) toast('لا يوجد ما يمكن التراجع عنه'); grow(ta); };
+  let cleared = null;
   $('#clearBtn').onclick = () => {
-    if (isExample) { wipeExample(); toast('مُسح المثال، السبورة جاهزة'); return; }
-    if (!visibleOps().length) return;
-    ops.push({ type: 'clear' }); redoStack = [];
-    clearResult(); redraw(); updateButtons(); save();
-    toast('مُسحت السبورة. اضغط «تراجع» لاستعادتها');
+    if (isExample) { wipeExample(); return; }
+    if (!lines.some((l) => l.trim())) return;
+    cleared = lines.slice();
+    lines = ['', '']; result = null; stale = false; save(); render(0); renderPanel();
+    const t = $('#toast');
+    t.innerHTML = 'مُسحت السبورة. <button class="ghost" id="restoreBtn" style="margin-inline-start:8px;padding:2px 10px">استعادة</button>';
+    t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 6000);
+    $('#restoreBtn').onclick = () => { if (cleared) { lines = cleared; cleared = null; save(); render(); } t.hidden = true; };
   };
-  $('#paper').onchange = (e) => {
-    board.classList.remove('lines', 'grid', 'plain'); board.classList.add(e.target.value);
-    try { localStorage.setItem(STORE + '.paper', e.target.value); } catch (_) {}
-  };
-  document.addEventListener('keydown', (e) => {
-    if (e.target.closest('select')) return;
-    const k = e.key.toLowerCase();
-    if ((e.ctrlKey || e.metaKey) && k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
-    else if ((e.ctrlKey || e.metaKey) && (k === 'y' || (k === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
-    else if (!e.ctrlKey && !e.metaKey && k === 'p') setTool('pen');
-    else if (!e.ctrlKey && !e.metaKey && k === 'e') setTool('eraser');
-  });
 
-  // ---------- marks ----------
-  function ringPath(cx, cy, rx, ry, seed) {
-    // a hand-drawn marker loop: slightly more than one turn, with a gentle wobble
-    let r = seed * 9301 + 49297;
-    const rnd = () => { r = (r * 9301 + 49297) % 233280; return r / 233280; };
-    const start = -Math.PI * 0.75 + rnd() * 0.5, turn = Math.PI * 2.12, n = 40;
-    let d = '';
-    for (let i = 0; i <= n; i++) {
-      const a = start + turn * i / n;
-      const k = 1 + (rnd() - 0.5) * 0.05 + (i / n) * 0.06;
-      d += (i ? ' L' : 'M') + (cx + Math.cos(a) * rx * k).toFixed(1) + ' ' + (cy + Math.sin(a) * ry * k).toFixed(1);
-    }
-    return d;
+  // ---------- checking ----------
+  function getSample() {
+    if (!sampleP) sampleP = (window.claude && window.claude.use) ? window.claude.use('sample').catch(() => null) : Promise.resolve(null);
+    return sampleP;
   }
-  function drawMarks() {
-    renderNotes();
-    svg.textContent = '';
-    svg.classList.toggle('stale', stale);
-    if (!result) return;
-    const groups = [['e', result.boxes.e], ['u', result.boxes.u]];
-    for (const [kind, list] of groups) {
-      list.forEach((b, i) => {
-        if (!b) return;
-        const [x, y, w, h] = b;
-        const cx = x + w / 2, cy = y + h / 2;
-        const rx = w / 2 * 1.1 + 18, ry = h / 2 * 1.2 + 16;
-        const g = document.createElementNS(SVGNS, 'g');
-        g.setAttribute('class', 'mk'); g.dataset.key = kind + i;
-        const p = document.createElementNS(SVGNS, 'path');
-        p.setAttribute('d', ringPath(cx, cy, rx, ry, i + (kind === 'u' ? 17 : 3)));
-        p.setAttribute('class', 'ring ' + (kind === 'e' ? 'err' : 'unc'));
-        g.appendChild(p);
-        // number badge on the ring's upper-right
-        const bx = Math.min(L.w - 22, Math.max(22, cx + rx * 0.8)), by = Math.min(L.h - 22, Math.max(22, cy - ry * 0.85));
-        const bg = document.createElementNS(SVGNS, 'g');
-        bg.setAttribute('class', 'badge');
-        const c = document.createElementNS(SVGNS, 'circle');
-        c.setAttribute('cx', bx); c.setAttribute('cy', by); c.setAttribute('r', 20);
-        c.setAttribute('fill', kind === 'e' ? '#d6322b' : '#1f9d55');
-        const t = document.createElementNS(SVGNS, 'text');
-        t.setAttribute('x', bx); t.setAttribute('y', by + 9); t.setAttribute('text-anchor', 'middle');
-        t.textContent = kind === 'e' ? String(i + 1) : LETTERS[i] || String(i + 1);
-        bg.append(c, t);
-        bg.addEventListener('click', () => focusItem(kind + i, true));
-        g.appendChild(bg);
-        svg.appendChild(g);
-      });
-    }
-  }
-  function focusItem(key, scroll) {
-    document.querySelectorAll('.mk, .item').forEach((el) => el.classList.toggle('hl', el.dataset.key === key));
-    if (scroll) { const it = panel.querySelector(`.item[data-key="${key}"]`); it && it.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
-  }
-
-  // Turn a model box (fractions of the cropped writing area) into board units, tightened around the ink near it.
-  function snap(box, img, crop) {
-    if (!Array.isArray(box) || box.length < 4) return null;
-    let [x, y, w, h] = box.map(Number);
-    if (![x, y, w, h].every(Number.isFinite)) return null;
-    if (x > 1.5 || y > 1.5 || w > 1.5 || h > 1.5) { x /= 10; y /= 10; w /= 10; h /= 10; }   // answered on the 0–10 scale
-    x = Math.min(Math.max(x, 0), 1); y = Math.min(Math.max(y, 0), 1);
-    w = Math.max(0.01, Math.min(w, 1 - x)); h = Math.max(0.01, Math.min(h, 1 - y));
-    const W = img.width, H = img.height, a = img.data;
-    const X = crop.x + x * crop.w, Y = crop.y + y * crop.h, BW = w * crop.w, BH = h * crop.h;
-    const ex = Math.max(16, BW * 0.18), ey = Math.max(14, BH * 0.3);
-    const x0 = Math.max(0, Math.floor(X - ex)), x1 = Math.min(W - 1, Math.ceil(X + BW + ex));
-    const y0 = Math.max(0, Math.floor(Y - ey)), y1 = Math.min(H - 1, Math.ceil(Y + BH + ey));
-    let mnx = Infinity, mny = Infinity, mxx = -1, mxy = -1;
-    for (let yy = y0; yy <= y1; yy += 2) {
-      const row = yy * W;
-      for (let xx = x0; xx <= x1; xx += 2) {
-        if (a[(row + xx) * 4 + 3] > 40) { if (xx < mnx) mnx = xx; if (xx > mxx) mxx = xx; if (yy < mny) mny = yy; if (yy > mxy) mxy = yy; }
-      }
-    }
-    if (mxx < 0) return [X, Y, BW, BH];
-    return [mnx, mny, Math.max(12, mxx - mnx), Math.max(12, mxy - mny)];
-  }
-
-  // ---------- export ----------
-  // Only the written part of the board is sent, enlarged, so small handwriting stays legible and the request stays light.
-  function exportBoard() {
-    const W = L.w, H = L.h;
-    const inkC = document.createElement('canvas'); inkC.width = W; inkC.height = H;
-    const ic = inkC.getContext('2d'); renderTo(ic, 1);
-    const img = ic.getImageData(0, 0, W, H), a = img.data;
-    let mnx = W, mny = H, mxx = -1, mxy = -1;
-    for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
-      if (a[(y * W + x) * 4 + 3] > 40) { if (x < mnx) mnx = x; if (x > mxx) mxx = x; if (y < mny) mny = y; if (y > mxy) mxy = y; }
-    }
-    if (mxx < 0) return { any: false };
-    const pad = 40;
-    let cx0 = Math.max(0, mnx - pad), cy0 = Math.max(0, mny - pad), cx1 = Math.min(W, mxx + pad), cy1 = Math.min(H, mxy + pad);
-    const grow = (lo, hi, min, max) => { const d = min - (hi - lo); if (d <= 0) return [lo, hi]; lo = Math.max(0, lo - d / 2); return [lo, Math.min(max, lo + min)]; };
-    [cx0, cx1] = grow(cx0, cx1, 320, W); [cy0, cy1] = grow(cy0, cy1, 200, H);
-    const crop = { x: cx0, y: cy0, w: cx1 - cx0, h: cy1 - cy0 };
-    const k = Math.min(2, Math.sqrt(1.05e6 / (crop.w * crop.h)), 1500 / Math.max(crop.w, crop.h));
-    const OW = Math.round(crop.w * k), OH = Math.round(crop.h * k), M = 44;
-    const c = document.createElement('canvas'); c.width = OW + M + 26; c.height = OH + M + 14;
-    const x = c.getContext('2d');
-    x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
-    x.strokeStyle = '#eceff4'; x.lineWidth = 1;
-    for (let i = 1; i < 10; i++) {
-      x.beginPath(); x.moveTo(M + OW * i / 10, M); x.lineTo(M + OW * i / 10, M + OH); x.stroke();
-      x.beginPath(); x.moveTo(M, M + OH * i / 10); x.lineTo(M + OW, M + OH * i / 10); x.stroke();
-    }
-    x.strokeStyle = '#a3abb8'; x.lineWidth = 2; x.strokeRect(M, M, OW, OH);
-    x.fillStyle = '#8a93a2'; x.font = '600 17px sans-serif'; x.textAlign = 'center';
-    for (let i = 0; i <= 10; i++) x.fillText(String(i), M + OW * i / 10, M - 14);
-    x.textAlign = 'right';
-    for (let i = 0; i <= 10; i++) x.fillText(String(i), M - 10, M + OH * i / 10 + 6);
-    x.imageSmoothingQuality = 'high';
-    x.drawImage(inkC, crop.x, crop.y, crop.w, crop.h, M, M, OW, OH);
-    // a clean copy for reading: black ink on plain white, no grid lines crossing the strokes, no gray numbers
-    const t = document.createElement('canvas'); t.width = OW; t.height = OH;
-    const tx = t.getContext('2d'); tx.imageSmoothingQuality = 'high';
-    tx.drawImage(inkC, crop.x, crop.y, crop.w, crop.h, 0, 0, OW, OH);
-    tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#111111'; tx.fillRect(0, 0, OW, OH);
-    const P = 40, cl = document.createElement('canvas'); cl.width = OW + 2 * P; cl.height = OH + 2 * P;
-    const cx = cl.getContext('2d'); cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, cl.width, cl.height); cx.drawImage(t, P, P);
-    return { any: true, img, crop,
-      cleanP: new Promise((r) => cl.toBlob(r, 'image/png')),
-      blobP: new Promise((r) => c.toBlob(r, 'image/png')) };
-  }
-
-  function prompt(stage, lang, confirmed, digits, twoImages) {
-    const digitRule = digits === 'ar'
-      ? 'The student says they write numbers with ARABIC-INDIC digits (٠١٢٣٤٥٦٧٨٩). Read every numeral shape as an Arabic-Indic digit.'
-      : digits === 'en'
-        ? 'The student says they write numbers with WESTERN digits (0123456789). Read every numeral shape as a Western digit.'
-        : 'Most students using this board are Arab school students who very often write numbers with Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩), so expect them as readily as Western digits.';
+  function prompt(stage, lang, dg, q, sol) {
     const langRule = lang === 'en'
       ? 'Write every text field in clear, simple English.'
       : lang === 'ar'
         ? 'Write every text field in clear, simple Arabic.'
-        : 'Write every text field in the language the question is written in: Arabic if the question is in Arabic, English if it is in English (for a mixed board, use the language of the question\'s words; for a bare equation with no words, use Arabic if the student used Arabic digits or Arabic letters, otherwise English).';
-    return `You are a patient, precise teacher checking a student's handwritten work on a whiteboard. ${twoImages
-      ? 'Two images are attached, both showing the written part of the board. IMAGE 1 is the clean board (black ink on white): READ the writing from IMAGE 1 only. IMAGE 2 is the same board with a coordinate grid: use it ONLY to measure boxes.'
-      : 'The attached image shows the written part of the board.'}
+        : 'Write every text field in the language of the question: Arabic if the question is in Arabic, English if it is in English (for a bare equation with no words, Arabic if it uses Arabic digits or Arabic letters, otherwise English).';
+    return `You are a patient, precise teacher. A student typed a question or problem (any subject, any grade) and then their own solution, line by line, on a digital board. Student's school stage (hint, may be empty): ${stage || 'not given'}.
 
-Before anything else, look carefully at each handwritten symbol one by one, the way a teacher reads a student's paper. Handwritten math is usually simple; prefer the reading that makes a sensible school exercise.
+The text is exactly what the student typed, in typing order. It may be Arabic, English or mixed. Digits may be Arabic-Indic (٠١٢٣٤٥٦٧٨٩, decimal separator ٫) or Western (0123456789); the student prefers ${dg === 'ar' ? 'Arabic-Indic' : 'Western'} digits. Unknowns may be Arabic letters (س، ص، ع) or Latin (x, y, z). Symbols: × ÷ − for times, divide, minus; ^ means power; √ square root; / a fraction or division.
 
-Image layout${twoImages ? ' of IMAGE 2' : ''}: the writing area is the white rectangle inside the gray frame. Faint grid lines divide it into tenths. The gray numbers 0-10 along the TOP edge mark tenths of the writing area's width (0 = left edge, 10 = right edge); the numbers along the LEFT edge mark tenths of its height (0 = top, 10 = bottom). The frame, grid and gray numbers are NOT the student's writing.
+QUESTION:
+${q || '(empty)'}
 
-The student wrote a question or problem (any subject, any grade) and then their own solution. Student's school stage (hint, may be empty): ${stage || 'not given'}.
+STUDENT'S SOLUTION (numbered lines):
+${sol.length ? sol.map((l, i) => (i + 1) + '. ' + l).join('\n') : '(no solution written)'}
 
-READING ARABIC AND ENGLISH. The board may be in Arabic, in English, or mixed, and you must read both equally well. ${digitRule}
-- Handwritten Arabic-Indic digits are easily mistaken for Greek or Latin letters. In a math line, read these shapes as digits, never as letters: a shape like ξ, ε, a reversed 3 or the letter ع is ٤ (four); a shape like Λ or an inverted V is ٨ (eight); a shape like V is ٧ (seven); a shape like a backwards 7 or ٦ is ٦ (six); a shape like Latin 0 or a small circle is ٥ (five); a single dot is ٠ (zero); a vertical stroke is ١ (one); a stroke with one hook at the top-left is ٢ (two), with two hooks ٣ (three); a closed loop with a tail like 9 is ٩ (nine). Never output Greek letters for a school problem unless the subject clearly uses them (π, θ, α, β, Δ, λ in physics or trigonometry).
-- Sanity check your reading: if a line reads as nonsense with letters but as a sensible exercise with digits (for example ξ + ξ = Λ is really ٤ + ٤ = ٨), the digits reading is correct and is NOT uncertain.
-- Digits may be Western (0 1 2 3 4 5 6 7 8 9) or Arabic-Indic (٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩, also Persian forms ۴ ۵ ۶), even mixed on one board. Watch the look-alikes: Arabic ٠ (zero) is a small dot while Arabic ٥ (five) looks like a Latin 0; Arabic ١ looks like 1; Arabic ٧ is a V shape and ٨ an inverted V; ٢ and ٣ differ only by the number of top teeth; ٦ resembles a reversed 7. Arabic decimal separator is ٫ or a comma, thousands ٬.
-- Arabic math uses Arabic letters for unknowns (س، ص، ع، ل، م، ن، أ، ب، ج) and Arabic words for functions and units (جا، جتا، ظا، لو، سم، كجم، م، ث، ريال). English uses x, y, z, sin, cos, log, cm, kg, s.
-- Arabic text is written right to left. Arabic-style math may also be written right to left (for example ٧ = ٣ + س means س + ٣ = ٧, and in Arabic RTL notation "٨ ÷ ٢" is read from the right); judge from the student's layout which direction each line goes, and keep the order of subtraction and division correct for that direction. English and Western-style math go left to right.
-- Arabic handwriting relies on dots: check the number and position of dots (ب ت ث ن ي، ج ح خ، س ش، ص ض، ط ظ، ع غ، ف ق) before deciding a word or variable.
-- When two readings are both plausible (for example ٥ vs 0, ٢ vs ٣, ٦ vs 7, 1 vs ١ vs l, x vs ×, س vs ش), pick the more likely one and wrap it in ⟦ ⟧ in your transcription.
-- When you quote the student ("wrote", "question") keep their digits, letters and symbols exactly as written. In "fix", "steps" and "final_answer" use the same digit system and variable letters the student used.
+Solve the question yourself carefully, then check every line of the student's solution.
+- An error is a wrong step, number, sign, unit, formula, concept or final answer. Mark the root mistake; lines that only carry it forward are not marked again, except a wrong final answer, which you mark and explain as following from the earlier mistake. A harmless typo or formatting choice is not an error.
+- If there is no solution, verdict is "incomplete" and still give the full solution. If the question cannot be understood, verdict is "unreadable", say what is missing in "summary", and give no steps.
+- "part" must be copied character for character from that line (the shortest piece that is wrong: a number, a term, or the whole line).
 
-Read everything, solve the question yourself, then check each step of the student's work.
-- An error is a wrong step, number, sign, unit, formula, concept or final answer. Box the exact wrong part (the term or number if small, otherwise that line). Mark the root mistake; lines that only carry it forward are not marked again, except a wrong final answer, which you mark and explain as following from the earlier mistake.
-- If the question is unreadable or missing, say so and give no solution steps. If the student wrote only the question, verdict is "incomplete" and still give the solution.
+${langRule} Keep it short and kind, suited to the stage. Use the student's digit system and letters in "fix", "steps" and "final_answer". Math as plain Unicode (× ÷ − √ ² ³ π ≤ ≥ ≠ →), never LaTeX.
 
-${confirmed ? `CONFIRMED READING. The student reviewed your earlier reading of the board and corrected it. This transcription is AUTHORITATIVE: it is exactly what the student means on each line, top to bottom. Check the work as written here; use the image only to locate the boxes. Do not output any "line" objects.
-${confirmed.map((l, i) => (i + 1) + '. ' + l).join('\n')}
-` : `TRANSCRIPTION. The student will see your reading of the board and correct anything you misread, so first write out every handwritten line, top to bottom, exactly as the student wrote it: their digits, letters, symbols and mistakes, uncorrected, in the student's own digit system. Write each line in its reading order: for a line written right to left (Arabic style, for example ٤ + ٤ = ٨ written with ٤ on the right and ٨ on the left), the text starts with the rightmost symbol. Wrap in ⟦ ⟧ only the few symbols you genuinely could read two ways after the checks above, for example 2x = ⟦18⟧ or ⟦س⟧ + ٣ = ٧; a clearly written line has no ⟦ ⟧ at all.
-`}
-Box format: "box": [x, y, w, h] as fractions 0-1 of the writing area; x, y = top-left corner measured from the LEFT and TOP edges (read them off the grid: 3.5 on the top scale = 0.35). Arabic runs right to left, but x is always measured from the left.
-
-${langRule} Keep it short and kind, suited to the stage. Math as plain Unicode (× ÷ − √ ² ³ π ≤ ≥ ≠ →), never LaTeX.
-
-OUTPUT FORMAT (it is shown to the student live, line by line): write ONE compact JSON object per line, nothing else (no code fences, no prose), in exactly this order:
-{"t":"read","lang":"ar or en (the language you write the feedback in)","subject":"subject name","question":"the question as you read it"}
-${confirmed ? '' : 'then one line per handwritten line of the board, top to bottom: {"t":"line","text":"the line exactly as written, unsure parts in ⟦ ⟧"}\n'}then one line per error: {"t":"error","box":[0.1,0.2,0.3,0.06],"wrote":"what the student wrote","why":"why it is wrong","fix":"the correct version"}
+OUTPUT FORMAT (shown to the student live, line by line): ONE compact JSON object per line, nothing else (no code fences, no prose), in exactly this order:
+{"t":"read","lang":"ar or en (the language you write in)","subject":"subject name"}
+then one line per error: {"t":"error","line":2,"part":"exact wrong text copied from that line","why":"why it is wrong","fix":"the corrected line"}   ("line" is the solution line number; use 0 for a problem in the question itself)
 then: {"t":"verdict","v":"correct|partially_correct|incorrect|incomplete|unreadable","summary":"one or two sentences to the student"}
 then one line per solution step (at most 10): {"t":"step","s":"..."}
 then last: {"t":"final","answer":"..."}`;
   }
-
-  function newLiveResult(img, crop) {
-    return { live: true, example: false, img, crop, boxes: { e: [], u: [] },
-      data: { lang: '', subject: '', question: '', verdict: '', summary: '', errors: [], lines: [], steps: [], final_answer: '' } };
+  function newLiveResult() {
+    return { live: true, data: { lang: '', subject: '', verdict: '', summary: '', errors: [], steps: [], final_answer: '' } };
   }
-  // Apply one streamed line to the result being built. Returns true when something changed.
   function applyLine(r, line) {
     line = line.trim().replace(/^```\w*|```$/g, '').trim().replace(/,$/, '');
     if (!line.startsWith('{')) return false;
@@ -767,9 +553,8 @@ then last: {"t":"final","answer":"..."}`;
     if (!o || typeof o !== 'object') return false;
     const d = r.data;
     switch (o.t) {
-      case 'read': d.lang = o.lang === 'en' ? 'en' : 'ar'; d.subject = String(o.subject || ''); d.question = String(o.question || ''); return true;
-      case 'line': if (r.confirmed || o.text == null) return false; d.lines.push(String(o.text)); return true;
-      case 'error': d.errors.push(o); r.boxes.e.push(snap(o.box, r.img, r.crop)); return true;
+      case 'read': d.lang = o.lang === 'en' ? 'en' : 'ar'; d.subject = String(o.subject || ''); return true;
+      case 'error': d.errors.push({ line: o.line, part: String(o.part || ''), why: String(o.why || ''), fix: String(o.fix || '') }); return true;
       case 'verdict': d.verdict = String(o.v || ''); d.summary = String(o.summary || ''); return true;
       case 'step': if (o.s) { d.steps.push(String(o.s)); return true; } return false;
       case 'final': d.final_answer = String(o.answer || ''); return true;
@@ -777,122 +562,101 @@ then last: {"t":"final","answer":"..."}`;
     return false;
   }
 
-  function getSample() {
-    if (!sampleP) sampleP = (window.claude && window.claude.use) ? window.claude.use('sample').catch(() => null) : Promise.resolve(null);
-    return sampleP;
-  }
-
-  async function check(confirmed) {
+  async function check() {
     if (ctl) return;
-    if (!Array.isArray(confirmed)) confirmed = null;
-    if (isExample) { showInfo('هذا مثال جاهز يوضح شكل التصحيح. اضغط «مسح» أو ابدأ الكتابة على السبورة، ثم اكتب سؤالك وحلّك واضغط «تصحيح».'); return; }
-    const ex = exportBoard();
-    if (!ex.any) { showInfo('السبورة فارغة. اكتب السؤال وحلّك أولًا، ثم اضغط «تصحيح».'); return; }
+    if (isExample) { showInfo('هذا مثال جاهز. اضغط على السبورة واكتب سؤالك وحلّك، ثم اضغط «تصحيح».'); return; }
+    const q = lines[0].trim(), sol = lines.slice(1).map((l) => l.trim()).filter(Boolean);
+    if (!q && !sol.length) { showInfo('السبورة فارغة. اكتب السؤال وحلّك أولًا، ثم اضغط «تصحيح».'); render(0); return; }
+    lines = [lines[0], ...sol]; if (lines.length < 2) lines.push(''); save();   // line numbers match what Claude sees
     ctl = new AbortController();
-    const myCtl = ctl;
-    const t0 = Date.now();
+    const myCtl = ctl, t0 = Date.now();
     $('#checkBtn').disabled = true;
-    result = null; stale = false; drawMarks();
+    if (document.activeElement) document.activeElement.blur();
+    result = null; stale = false; render();
     renderWorking('connect');
     const tick = setInterval(() => {
       const el = $('#elapsed'); if (el) el.textContent = Math.round((Date.now() - t0) / 1000);
-      const slow = $('#slow'); if (slow && Date.now() - t0 > 60000) slow.hidden = false;
+      const slow = $('#slow'); if (slow && Date.now() - t0 > 45000) slow.hidden = false;
     }, 1000);
     try {
       const sample = await getSample();
       if (!sample) throw { code: 'no_runtime' };
-      const blob = await ex.blobP, clean = await ex.cleanP;
-      const lim = typeof sample.limits === 'function' ? await sample.limits().catch(() => null) : null;
-      const twoImages = !!(lim && lim.images && lim.images.maxCount >= 2 && clean);
       if (myCtl.signal.aborted) throw { code: 'cancelled' };
       renderWorking('think');
-      const live = newLiveResult(ex.img, ex.crop);
-      if (confirmed) { live.confirmed = true; live.data.lines = confirmed.slice(); }
+      const live = newLiveResult();
       let pending = '', shown = false;
       const eat = (chunk) => {
-        const lines = (pending + chunk).split('\n'); pending = lines.pop();
-        let changedAny = false;
-        for (const ln of lines) changedAny = applyLine(live, ln) || changedAny;
-        if (changedAny) { result = live; stale = false; shown = true; drawMarks(); renderPanel(); }
+        const ls = (pending + chunk).split('\n'); pending = ls.pop();
+        let any = false;
+        for (const ln of ls) any = applyLine(live, ln) || any;
+        if (any) { result = live; stale = false; shown = true; render(); renderPanel(); }
       };
-      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value, confirmed, $('#digits').value, twoImages), {
-        images: twoImages ? [clean, blob] : [blob], modelTier: $('#depth').value, signal: myCtl.signal, cache: false,
+      const { truncated } = await sample(prompt($('#stage').value, $('#lang').value, digits, q, sol), {
+        modelTier: $('#depth').value, signal: myCtl.signal, cache: false,
         onText: ({ delta }) => eat(delta),
       });
       eat('\n');
-      if (!shown || (!live.data.question && !live.data.verdict && !live.data.steps.length)) throw { code: 'invalid_json' };
+      if (!shown || (!live.data.verdict && !live.data.steps.length)) throw { code: 'invalid_json' };
       live.live = false; live.truncated = truncated;
-      result = live; drawMarks(); renderPanel();
+      result = live; render(); renderPanel();
     } catch (e) {
       const code = e && e.code;
-      if (code === 'cancelled') { if (result && result.live) result.live = false; renderPanel(); }
-      else {
-        if (result && result.live) { result.live = false; result.interrupted = true; renderPanel(); }
-        showError(copyFor(code), code);
-      }
+      if (result && result.live) { result.live = false; if (code !== 'cancelled') result.interrupted = true; }
+      render(); renderPanel();
+      if (code !== 'cancelled') showError(copyFor(code), code);
     } finally {
       clearInterval(tick); ctl = null; $('#checkBtn').disabled = false;
     }
   }
-  $('#checkBtn').onclick = () => check();
+  $('#checkBtn').onclick = check;
 
   function copyFor(code) {
     switch (code) {
-      case 'no_runtime': return 'التصحيح الذكي يعمل فقط عند فتح السبورة من رابطها داخل Claude (claude.ai أو تطبيق Claude) وأنت مسجّل الدخول. الكتابة والتمرين يعملان هنا، لكن التصحيح غير متاح في هذا العرض.';
+      case 'no_runtime': return 'التصحيح الذكي يعمل فقط عند فتح السبورة من رابطها داخل Claude (claude.ai أو تطبيق Claude) وأنت مسجّل الدخول.';
       case 'not_granted': return 'لم يُسمح للسبورة باستخدام Claude. أعد فتح الصفحة واضغط «سماح» عندما تظهر نافذة الإذن.';
       case 'sampling_disabled': case 'not_declared': case 'capability_disabled': case 'capability_removed':
         return 'التصحيح الذكي غير متاح لهذا الحساب أو في هذا العرض. جرّب فتح الرابط في المتصفح على claude.ai.';
-      case 'images_unavailable': return 'هذا العرض لا يستطيع إرسال صورة السبورة إلى Claude. افتح الرابط في المتصفح على claude.ai أو حدّث تطبيق Claude.';
-      case 'image_rejected': return 'تعذّر إرسال صورة السبورة. امسح بعض الكتابة الزائدة ثم حاول مرة أخرى.';
       case 'rate_limited': return 'أرسلت طلبات كثيرة في وقت قصير أو بلغت حد الاستخدام. انتظر قليلًا ثم اضغط «تصحيح» مرة أخرى.';
       case 'session_expired': return 'انتهت الجلسة. سجّل الدخول من جديد ثم اضغط «تصحيح».';
       case 'refused': return 'لم يتمكن Claude من تصحيح هذا المحتوى. اكتب سؤالًا دراسيًا وحاول مرة أخرى.';
-      case 'invalid_json': case 'empty_completion': return 'لم يصل رد مفهوم هذه المرة. اكتب بخط أكبر قليلًا ثم اضغط «تصحيح» مرة أخرى.';
+      case 'invalid_json': case 'empty_completion': return 'لم يصل رد مفهوم هذه المرة. اضغط «تصحيح» مرة أخرى.';
       default: return 'انقطع الاتصال أثناء التصحيح. اضغط «تصحيح» مرة أخرى.';
     }
   }
 
   // ---------- panel ----------
-  const VERDICT = {
-    correct: ['ok', 'إجابة صحيحة'], partially_correct: ['warn', 'صحيحة جزئيًا'], incorrect: ['bad', 'فيها أخطاء'],
-    incomplete: ['warn', 'الحل غير مكتمل'], unreadable: ['plain', 'الكتابة غير مقروءة'],
-  };
+  const VERDICT_CLS = { correct: 'ok', partially_correct: 'warn', incorrect: 'bad', incomplete: 'warn', unreadable: 'plain' };
   const AR = {
-    verdict: { correct: 'إجابة صحيحة', partially_correct: 'صحيحة جزئيًا', incorrect: 'فيها أخطاء', incomplete: 'الحل غير مكتمل', unreadable: 'الكتابة غير مقروءة' },
-    result: 'نتيجة التصحيح', example: 'مثال', writing: 'يكتب التصحيح…', stale: 'عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى لتحديث الدوائر.',
-    question: 'السؤال كما قرأته', transcript: 'كما قرأتُ كتابتك', trHint: 'اضغط على أي سطر لتعديله', recheck: '✓ صحّح حسب تعديلي', trHelp: 'كتبتُ تحت حلّك على السبورة ما قرأته من كتابتك. إذا قرأتُ شيئًا خطأ فاضغط عليه هناك وعدّله، ثم اضغط «صحّح حسب تعديلي». المظلَّل بالأخضر جزء لم أتأكد منه.', trConfirmed: 'التصحيح مبني على قراءتك المعدّلة.', rewriteHere: 'أعد كتابة هذا بوضوح', rewrite: 'أعد كتابة هذه المواضع', unclearDefault: 'الكتابة هنا غير واضحة', readAs: 'قرأتها:', noPlace: 'لم يُحدَّد موضعها بدقة',
-    errors: 'الأخطاء', wrote: 'كتبت:', fix: 'الصحيح:', solution: 'الحل الصحيح', final: 'الإجابة النهائية',
-    incomplete: 'التصحيح لم يكتمل. اضغط «تصحيح» مرة أخرى لإكماله.', stop: 'إيقاف',
+    verdict: { correct: 'إجابة صحيحة', partially_correct: 'صحيحة جزئيًا', incorrect: 'فيها أخطاء', incomplete: 'الحل غير مكتمل', unreadable: 'السؤال غير مفهوم' },
+    result: 'نتيجة التصحيح', example: 'مثال', writing: 'يكتب التصحيح…', stale: 'عدّلت السبورة بعد التصحيح. اضغط «تصحيح» مرة أخرى.',
+    errors: 'الأخطاء', wrote: 'كتبت:', fix: 'الصحيح:', line: 'السطر', question: 'السؤال', solution: 'الحل الصحيح', final: 'الإجابة النهائية',
+    incomplete: 'التصحيح لم يكتمل. اضغط «تصحيح» مرة أخرى لإكماله.', stop: 'إيقاف', noErrors: 'لا توجد أخطاء في حلّك.',
   };
   const EN = {
-    verdict: { correct: 'Correct', partially_correct: 'Partly correct', incorrect: 'Has mistakes', incomplete: 'Incomplete solution', unreadable: 'Unreadable' },
-    result: 'Result', example: 'Example', writing: 'Writing the correction…', stale: 'You changed the board after checking. Press «تصحيح» again to update the circles.',
-    question: 'Question as I read it', transcript: 'How I read your writing', trHint: 'tap any line to edit it', recheck: '✓ Re-check with my edits', trHelp: 'Under your work on the board I wrote what I read. If I misread something, tap it there and fix it, then press «Re-check with my edits». Green highlights are parts I was not sure about.', trConfirmed: 'This check uses your corrected reading.', rewriteHere: 'Rewrite this clearly', rewrite: 'Rewrite these spots', unclearDefault: 'This writing is unclear', readAs: 'I read it as:', noPlace: 'Exact spot not found',
-    errors: 'Mistakes', wrote: 'You wrote:', fix: 'Correct:', solution: 'Correct solution', final: 'Final answer',
-    incomplete: 'The correction stopped early. Press «تصحيح» again to finish it.', stop: 'Stop',
+    verdict: { correct: 'Correct', partially_correct: 'Partly correct', incorrect: 'Has mistakes', incomplete: 'Incomplete solution', unreadable: 'Question unclear' },
+    result: 'Result', example: 'Example', writing: 'Writing the correction…', stale: 'You changed the board after checking. Press «تصحيح» again.',
+    errors: 'Mistakes', wrote: 'You wrote:', fix: 'Correct:', line: 'Line', question: 'Question', solution: 'Correct solution', final: 'Final answer',
+    incomplete: 'The correction stopped early. Press «تصحيح» again to finish it.', stop: 'Stop', noErrors: 'No mistakes in your solution.',
   };
   function renderIdle() {
     panel.dir = 'rtl'; panel.lang = 'ar';
     panel.innerHTML = `
       <h2>كيف تستخدم السبورة</h2>
       <ol class="howto">
-        <li>اكتب السؤال أو المسألة بخطّك، من أي مادة وأي صف، بالعربي أو الإنجليزي وبأي نوع من الأرقام.</li>
-        <li>اكتب حلّك تحته خطوة بخطوة.</li>
-        <li>اضغط <b>✓ تصحيح</b>: يكتب Claude تحت حلّك ما قرأه من كتابتك، ويضع دائرة حمراء حول كل خطأ، ويكتب الحل الصحيح.</li>
-        <li>إذا قرأ Claude شيئًا خطأ فاضغط على السطر الذي كتبه وعدّله، ثم اضغط <b>صحّح حسب تعديلي</b>.</li>
+        <li>اكتب السؤال في السطر الأول بلوحة المفاتيح، من أي مادة وأي صف.</li>
+        <li>اضغط <b>↵ سطر</b> واكتب حلّك، كل خطوة في سطر.</li>
+        <li>اضغط <b>✓ تصحيح</b>: تظهر دائرة حمراء حول كل خطأ مع تصحيحه، ثم الحل الصحيح على السبورة.</li>
       </ol>
-      <p class="muted">الأجزاء المظللة بالأخضر في قراءة Claude هي التي لم يتأكد منها، فراجعها أولًا.</p>`;
+      <p class="muted">في لوحة المفاتيح أرقام عربية وإنجليزية ورموز الرياضيات وحروف عربية وإنجليزية. وإذا أردت لوحة جهازك فاضغط «لوحة الجهاز».</p>`;
   }
   function renderWorking(phase) {
-    const msg = phase === 'connect' ? 'جارٍ الاتصال بـ Claude…' : 'يقرأ Claude كتابتك ويحل السؤال…';
-    const hint = phase === 'connect'
-      ? 'إذا ظهرت نافذة تطلب الإذن باستخدام Claude فاضغط «سماح».'
-      : 'تظهر النتيجة هنا تدريجيًا فور بدء الكتابة، وعادة خلال 20 إلى 60 ثانية.';
     panel.dir = 'rtl'; panel.lang = 'ar';
+    const msg = phase === 'connect' ? 'جارٍ الاتصال بـ Claude…' : 'يحل Claude السؤال ويراجع حلّك…';
+    const hint = phase === 'connect' ? 'إذا ظهرت نافذة تطلب الإذن باستخدام Claude فاضغط «سماح».' : 'تظهر النتيجة على السبورة وهنا تدريجيًا فور بدء الكتابة.';
     panel.innerHTML = `
       <div class="working"><span class="spin"></span><div><h2>${msg}</h2><p class="muted tnum">مضى <span id="elapsed">0</span> ث</p></div></div>
       <p class="muted">${hint}</p>
-      <p class="notice" id="slow" hidden>يستغرق وقتًا أطول من المعتاد. يمكنك اختيار «قراءة سريعة» من القائمة، لكن «قراءة دقيقة» أدق في قراءة الخط.</p>
+      <p class="notice" id="slow" hidden>يستغرق وقتًا أطول من المعتاد. يمكنك اختيار «تصحيح سريع» من القائمة.</p>
       <button class="ghost" id="stopBtn">إيقاف</button>`;
     $('#stopBtn').onclick = () => ctl && ctl.abort();
   }
@@ -900,125 +664,85 @@ then last: {"t":"final","answer":"..."}`;
     const box = document.createElement('div');
     box.className = 'errbox';
     box.innerHTML = esc(msg) + (code && code !== 'no_runtime' ? `<br><small class="tnum">(${esc(code)})</small>` : '');
-    if (result && !result.example) { renderPanel(); panel.prepend(box); return; }
-    panel.dir = 'rtl'; panel.lang = 'ar';
-    panel.innerHTML = '<h2>التصحيح</h2>'; panel.appendChild(box);
+    if (result) { panel.prepend(box); return; }
+    panel.dir = 'rtl'; panel.innerHTML = '<h2>التصحيح</h2>'; panel.appendChild(box);
   }
   function showInfo(msg) {
     const old = panel.querySelector('.notice.info'); if (old) old.remove();
     const n = document.createElement('div'); n.className = 'notice info'; n.textContent = msg;
-    panel.prepend(n); n.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    toast(msg);
+    panel.prepend(n); toast(msg);
   }
-  function clearResult() { result = null; stale = false; drawMarks(); renderPanel(); }
-
   function renderPanel() {
     if (!result) { renderIdle(); return; }
-    const d = result.data;
-    const en = d.lang === 'en';
-    const T = en ? EN : AR;
+    const d = result.data, en = d.lang === 'en', T = en ? EN : AR, live = result.live;
     panel.dir = en ? 'ltr' : 'rtl'; panel.lang = en ? 'en' : 'ar';
-    const [cls] = VERDICT[d.verdict] || ['plain'];
     const label = T.verdict[d.verdict] || T.result;
-    const live = result.live;
-    let h = `<div class="chiprow">${result.example ? `<span class="chip warn">${T.example}</span>` : ''}${live ? '<span class="chip plain"><span class="spin mini"></span> ' + T.writing + '</span>' : ''}${d.verdict || !live ? `<span class="chip ${cls}">${label}</span>` : ''}${d.subject ? `<span class="chip plain">${esc(d.subject)}</span>` : ''}</div>`;
+    let h = `<div class="chiprow">${isExample ? `<span class="chip warn">${T.example}</span>` : ''}${live ? `<span class="chip plain"><span class="spin mini"></span> ${T.writing}</span>` : ''}${d.verdict || !live ? `<span class="chip ${VERDICT_CLS[d.verdict] || 'plain'}">${label}</span>` : ''}${d.subject ? `<span class="chip plain">${esc(d.subject)}</span>` : ''}</div>`;
     if (stale) h += `<div class="notice">${T.stale}</div>`;
-    if (d.question) h += `<div class="qbox"><small>${T.question}</small>${fmt(d.question)}</div>`;
     if (d.summary) h += `<p>${fmt(d.summary)}</p>`;
-    if (d.lines.length) {
-      h += `<div><h3>${T.transcript}</h3><p class="muted">${result.confirmed && !result.edited ? T.trConfirmed : T.trHelp}</p>`
-        + (result.edited && !live ? `<button class="ghost primary" id="recheckPanel">${T.recheck}</button>` : '') + `</div>`;
-    }
     if (d.errors.length) {
-      h += `<div><h3>${T.errors}</h3><ul class="items">` + d.errors.map((e, i) => `
-        <li class="item e" data-key="e${i}"><span class="num">${i + 1}</span><div>${e.wrote ? `${T.wrote} <b>${fmt(e.wrote)}</b><br>` : ''}${fmt(e.why || '')}${e.fix ? `<br><span class="fix">${T.fix} ${fmt(e.fix)}</span>` : ''}</div></li>`).join('') + `</ul></div>`;
-    }
+      h += `<div><h3>${T.errors}</h3><ul class="items">` + d.errors.map((e, i) => {
+        const n = parseInt(e.line, 10) || 0;
+        return `<li class="item" data-key="e${i}"><span class="num">${num(i + 1)}</span><div><span class="muted">${n ? T.line + ' ' + num(n) : T.question}</span>${e.part ? `<br>${T.wrote} <b>${fmt(e.part)}</b>` : ''}<br>${fmt(e.why)}${e.fix ? `<br><span class="fix">${T.fix} ${fmt(e.fix)}</span>` : ''}</div></li>`;
+      }).join('') + `</ul></div>`;
+    } else if (!live && d.verdict === 'correct') h += `<p class="muted">${T.noErrors}</p>`;
     if (d.steps.length) h += `<div><h3>${T.solution}</h3><ol class="steps">${d.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol></div>`;
     if (d.final_answer) h += `<div class="final"><small>${T.final}</small><div>${fmt(d.final_answer)}</div></div>`;
     if (result.truncated || result.interrupted) h += `<div class="notice">${T.incomplete}</div>`;
     if (live) h += `<button class="ghost" id="stopBtn">${T.stop}</button>`;
-    if (result.example) h += `<p class="muted">هذا مثال يوضح شكل التصحيح. ابدأ الكتابة على السبورة أو اضغط «مسح» لتجرّب بنفسك.</p>`;
+    if (isExample) h += `<p class="muted">هذا مثال يوضح شكل التصحيح. اضغط على السبورة لتكتب سؤالك أنت.</p>`;
     panel.innerHTML = h;
     const sb = $('#stopBtn'); if (sb) sb.onclick = () => ctl && ctl.abort();
-    const rb = $('#recheckPanel'); if (rb) rb.onclick = recheck;
     panel.querySelectorAll('.item').forEach((it) => {
-      it.addEventListener('mouseenter', () => focusItem(it.dataset.key));
-      it.addEventListener('mouseleave', () => focusItem(''));
-      it.addEventListener('click', () => focusItem(it.dataset.key));
+      it.addEventListener('mouseenter', () => highlight(it.dataset.key));
+      it.addEventListener('mouseleave', () => highlight(''));
+      it.addEventListener('click', () => {
+        highlight(it.dataset.key);
+        const r = boardEl.querySelector(`.ring[data-key="${it.dataset.key}"]`); if (r) r.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
     });
   }
 
   // ---------- example ----------
-  async function loadExample() {
-    try { await Promise.all([document.fonts.load('64px "Aref Ruqaa"'), document.fonts.load('76px Caveat')]); } catch (_) {}
-    const right = L.w - 90, lead = L.h > L.w ? 150 : 118;
-    const mk = document.createElement('canvas').getContext('2d');
-    const T = [];
-    const box = (text, font, xr, y) => {
-      mk.font = font; const m = mk.measureText(text);
-      const asc = m.actualBoundingBoxAscent || 50, des = m.actualBoundingBoxDescent || 12;
-      return [xr - m.width, y - asc, m.width, asc + des];
-    };
-    const ar = '64px "Aref Ruqaa", serif', eq = '76px Caveat, cursive';
-    const y = (i) => 120 + lead * i;
-    T.push({ type: 'text', text: 'حل المعادلة الآتية:', font: ar, color: INK_BLUE, x: right, y: y(0), align: 'right', dir: 'rtl' });
-    T.push({ type: 'text', text: '2x + 5 = 13', font: eq, color: INK_BLUE, x: right, y: y(1), align: 'right' });
-    T.push({ type: 'text', text: '2x = 13 + 5', font: eq, color: INK_BLUE, x: right, y: y(2), align: 'right' });
-    const errBox1 = box('2x = 13 + 5', eq, right, y(2));
-    T.push({ type: 'text', text: 'x = 18', font: eq, color: INK_BLUE, x: right, y: y(3), align: 'right' });
-    // a hurried "2" that also reads as "z"
-    mk.font = eq; const w3 = mk.measureText('x = 18').width;
-    const sx = right - w3 - 52, sy = y(3);
-    const scrib = [[0, -40], [8, -48], [22, -50], [33, -42], [34, -30], [24, -16], [10, -4], [2, 2], [14, 0], [28, 1], [42, -1]]
-      .map(([a, b], i) => [sx + a + (i % 2 ? 1.5 : -1), sy + b]);
-    T.push({ type: 'stroke', color: INK_BLUE, size: 4.5, pts: scrib });
-    T.push({ type: 'text', text: 'x = 9', font: eq, color: INK_BLUE, x: right, y: y(4), align: 'right' });
-    const errBox2 = box('x = 9', eq, right, y(4));
-    ops = T; redoStack = []; isExample = true;
-    $('#exampleTag').hidden = false;
-    result = {
-      example: true,
-      boxes: { e: [errBox1, errBox2], u: [] },
-      data: {
-        verdict: 'incorrect', subject: 'رياضيات',
-        question: 'حل المعادلة: 2x + 5 = 13',
-        summary: 'بدايتك صحيحة، لكنك نقلت العدد 5 إلى الطرف الآخر دون تغيير إشارته.',
-        errors: [
-          { wrote: '2x = 13 + 5', why: 'عند نقل حدٍّ إلى الطرف الآخر من المعادلة تنعكس إشارته، فالعدد +5 يصبح −5.', fix: '2x = 13 − 5' },
-          { wrote: 'x = 9', why: 'الإجابة النهائية خاطئة لأنها مبنية على الخطأ الأول.', fix: 'x = 4' },
-        ],
-        lines: ['حل المعادلة الآتية:', '2x + 5 = 13', '2x = 13 + 5', '⟦2⟧x = 18', 'x = 9'],
-        steps: ['2x + 5 = 13', 'ننقل 5 إلى الطرف الأيسر مع تغيير إشارتها: 2x = 13 − 5', '2x = 8', 'نقسم الطرفين على 2: x = 8 ÷ 2', 'x = 4', 'التحقق: 2 × 4 + 5 = 13 ✓'],
-        final_answer: 'x = 4',
-      },
-    };
+  function loadExample() {
+    isExample = true;
+    lines = ['حل المعادلة: ٢س + ٥ = ١٣', '٢س = ١٣ + ٥', '٢س = ١٨', 'س = ٩'];
+    result = { data: {
+      lang: 'ar', subject: 'رياضيات', verdict: 'incorrect',
+      summary: 'بدايتك صحيحة، لكنك نقلت العدد ٥ إلى الطرف الآخر دون تغيير إشارته.',
+      errors: [
+        { line: 1, part: '١٣ + ٥', why: 'عند نقل حدٍّ إلى الطرف الآخر من المعادلة تنعكس إشارته، فـ +٥ تصبح −٥.', fix: '٢س = ١٣ − ٥' },
+        { line: 3, part: 'س = ٩', why: 'الإجابة النهائية خاطئة لأنها مبنية على الخطأ الأول.', fix: 'س = ٤' },
+      ],
+      steps: ['٢س + ٥ = ١٣', 'ننقل ٥ إلى الطرف الآخر مع تغيير إشارتها: ٢س = ١٣ − ٥', '٢س = ٨', 'نقسم الطرفين على ٢: س = ٨ ÷ ٢', 'س = ٤', 'التحقق: ٢ × ٤ + ٥ = ١٣ ✓'],
+      final_answer: 'س = ٤',
+    } };
     stale = false;
-    redraw(); drawMarks(); renderPanel(); updateButtons();
+    render(); renderPanel();
   }
   function wipeExample() {
-    isExample = false; ops = []; redoStack = [];
-    $('#exampleTag').hidden = true;
-    clearResult(); redraw(); updateButtons();
+    isExample = false; lines = ['', '']; result = null; stale = false;
+    render(0); renderPanel();
   }
 
   // ---------- start ----------
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (_) {}
-  try { const p = localStorage.getItem(STORE + '.paper'); if (p) { $('#paper').value = p; $('#paper').onchange({ target: $('#paper') }); } } catch (_) {}
-  for (const id of ['stage', 'digits', 'lang', 'depth2']) {   // remember the student's choices on this device
-    const el = $('#' + id.replace(/\d$/, ''));
+  try { const d = localStorage.getItem(STORE + '.digits'); if (d === 'ar' || d === 'en') digits = d; } catch (_) {}
+  try { showNotes = localStorage.getItem(STORE + '.notes') !== 'off'; } catch (_) {}
+  $('#digits').value = digits;
+  document.querySelector('.app').classList.toggle('ar-digits', digits === 'ar');
+  $('#notesBtn').setAttribute('aria-pressed', showNotes);
+  for (const id of ['stage', 'lang', 'depth']) {   // remember the student's choices on this device
+    const el = $('#' + id);
     try { const v = localStorage.getItem(STORE + '.' + id); if (v != null && [...el.options].some((o) => o.value === v)) el.value = v; } catch (_) {}
     el.addEventListener('change', () => { try { localStorage.setItem(STORE + '.' + id, el.value); } catch (_) {} });
   }
-  const narrow = board.clientWidth < 640;
-  if (saved && Array.isArray(saved.ops) && saved.ops.length && saved.L && saved.L.w > 0 && saved.L.h > 0) {
-    L = { w: saved.L.w, h: Math.max(saved.L.h, saved.L.w === 900 ? 1400 : saved.L.w === 1400 ? 1000 : saved.L.h) }; ops = saved.ops;
-  } else if (narrow) {
-    L = { w: 900, h: 1400 };
-  }
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (_) {}
   getSample();
-  layout();
-  new ResizeObserver(() => layout()).observe(board.parentElement);
-  if (ops.length) { renderPanel(); updateButtons(); } else loadExample();
+  renderKeys();
+  if (Array.isArray(saved) && saved.some((l) => String(l).trim())) {
+    lines = saved.map(String); if (lines.length < 2) lines.push('');
+    render(); renderPanel();
+  } else loadExample();
 })();
 </script>
