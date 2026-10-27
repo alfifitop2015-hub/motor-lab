@@ -83,7 +83,7 @@ const coilFill=i=>COILS[i].c==='ye'?'url(#ye)':COILS[i].c;
 /* ---------- state ---------- */
 let W=[];try{W=JSON.parse(localStorage.getItem('wlab.v1')||'[]')||[];}catch(_){W=[];}
 const saveW=()=>{try{localStorage.setItem('wlab.v1',JSON.stringify(W));}catch(_){}};
-const S={st:'a',a:null,b:null,need:0,coil:null,f1:false,s1:false,len:0,end:0,ends:[0,0],tx:0,ty:0,sq:false,pull:0,pull0:0,sel:null,inst:0,spin:null};
+const S={st:'coil',a:null,b:null,need:0,coil:null,f1:false,s1:false,len:0,end:0,ends:[0,0],tx:0,ty:0,sq:false,pull:0,pull0:0,sel:null,inst:0,spin:null};
 const CUT={y:860,x0:930,k:.7,ppc:8},CLO={y:880,ex:760,k:.8,ppm:12};
 /* the tool zones in tool coordinates (pivot at 0,0, jaws upward): top = stripper notch, bottom = cutter */
 const ZS=[-150,-80],ZC=[-70,-12];
@@ -120,7 +120,7 @@ function coil(i){const y=coilY(i),f=coilFill(i),sel=S.coil===i,can=S.st==='coil'
   if(sel)s+=`<circle cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffb300" stroke-width="5"/>`;
   else if(can)s+=`<circle class="hl" cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffd24a" stroke-width="3" stroke-dasharray="8 6"/>`;
   return s+`<circle cx="${CX}" cy="${y}" r="55" fill="transparent"/></g>`;}
-function term(k){const [x,y,l]=TT[k],act=S.st==='a'||S.st==='b'||(S.st==='inst'&&(S.inst?k===S.b:(k===S.a||k===S.b))),pick=k===S.a||k===S.b,top=y<250;
+function term(k){const [x,y,l]=TT[k],act=false,pick=S.st==='inst'&&k===S.a,top=y<250;
   let s=`<g data-term="${k}" style="cursor:pointer"><rect x="${x-17}" y="${y-17}" width="34" height="34" rx="5" fill="#2b3036"/><circle cx="${x}" cy="${y}" r="13" fill="url(#screw)" stroke="#555"/><path d="M${x-8} ${y+5}L${x+8} ${y-5}" stroke="#444" stroke-width="3"/>`;
   s+=T(x,top?y+36:y-24,l,15,'#1d2329');
   if(pick)s+=`<circle cx="${x}" cy="${y}" r="24" fill="none" stroke="#ffb300" stroke-width="5"/>`;
@@ -193,7 +193,6 @@ function bench(){let s=`<rect x="0" y="650" width="1000" height="670" fill="url(
       `<path d="M${CX+56} ${y0+64} C${CX+70} ${y0+150} 60 ${CUT.y-80} 0 ${CUT.y}" fill="none" stroke="${f}" stroke-width="8"/>`;}
   if(S.st==='cut'){const {y,x0,ppc}=CUT,f=coilFill(S.coil);
     s+=ruler(x0,-1,110,ppc,10,1,y+40,'سم');
-    s+=`<rect x="${x0-S.need*ppc-28*ppc}" y="${y+40}" width="${28*ppc}" height="44" fill="rgba(46,204,113,.45)"/>`+T(x0-S.need*ppc-14*ppc,y+108,'الطول المناسب',14,'#0d4d23',800);
     s+=`<path d="M0 ${y}H${x0}" stroke="rgba(0,0,0,.5)" stroke-width="13"/><path d="M0 ${y}H${x0}" stroke="${f}" stroke-width="10"/><path d="M0 ${y}H${x0}" stroke="url(#sheen)" stroke-width="5" opacity=".5"/><rect x="${x0}" y="${y-3}" width="4" height="6" fill="url(#cu)"/>`;
     const L=Math.max(0,(x0-S.tx)/ppc),z=zone();
     s+=`<line x1="${S.tx}" y1="${y-40}" x2="${S.tx}" y2="${y+40}" stroke="${z==='C'?'#c62828':'#777'}" stroke-width="2" stroke-dasharray="6 5"/>`+T(S.tx,y-50,L.toFixed(0)+' سم',18,'#fff',800);
@@ -214,7 +213,7 @@ function bench(){let s=`<rect x="0" y="650" width="1000" height="670" fill="url(
     s+=`<line x1="${S.tx}" y1="${y-60}" x2="${S.tx}" y2="${y+48}" stroke="${z==='S'?'#ffd24a':z==='C'?'#c62828':'#777'}" stroke-width="2" stroke-dasharray="6 5"/>`;
     if(S.tx<ex)s+=T(S.tx,y-70,Math.abs(d).toFixed(1)+' مم من الطرف',18,'#fff',800);
     s+=`<g transform="translate(${S.tx} ${S.ty})" filter="url(#sh)" data-tool="1">${tool(CLO.k,!S.sq)}</g>`;}
-  if(S.st==='a'||S.st==='b'||S.st==='coil'||S.st==='inst'||S.st==='idle'){s+=T(500,760,'طاولة العمل',22,'rgba(60,35,8,.55)',800);
+  if(S.st==='coil'||S.st==='inst'){s+=T(500,760,'طاولة العمل',22,'rgba(60,35,8,.55)',800);
     s+=`<g transform="translate(560 1010) rotate(-90)" opacity=".85">${tool(.55,true)}</g>`;}
   return s;}
 /* wide screens: the work bench sits to the right of the panel instead of below it */
@@ -234,32 +233,31 @@ function tasks(){$('tasks').innerHTML=TASKS.map(([a,b,c,t])=>{const w=W.find(w=>
 /* ---------- bottom bar ---------- */
 let NOTE=['',''];const note=(t,c)=>{NOTE=[t,c||''];const n=$('note');n.textContent=t;n.className='note '+(c||'');};
 function ui(light){const m=$('msg'),B=[];let t='';
-  if(S.st==='a')t=S.sel!=null?'سلك محدد: احذفه أو اضغط مكانًا آخر.':'① اضغط <b>الترمينال الأول</b> للسلك الجديد في اللوحة.';
-  else if(S.st==='b')t='② اضغط <b>الترمينال الثاني</b>: من '+tName(S.a)+' إلى …';
-  else if(S.st==='coil')t='③ اختر <b>لفّة السلك</b> من اليسار (الطول اللازم تقريبًا '+S.need+' سم'+(sugg()!=null?'، اللون المقترح: '+COILS[sugg()].n:'')+').';
-  else if(S.st==='cut')t='④ حرّك العدة على السلك، واجعل <b>القطّاعة</b> (الجزء السفلي من الفك) عند الطول المناسب ثم اضغط ✊.';
-  else if(S.st==='strip')t=S.sq&&S.pullOn?'اسحب العدة <b>نحو طرف السلك</b> (يمينًا) لنزع العازل.':'⑤ ضع <b>العرّاية</b> (أعلى الفك) على بعد 8 إلى 10 مم من الطرف، ثم اضغط ✊ واسحب نحو الطرف.';
-  else if(S.st==='inst')t=S.inst?'⑦ السلك في يدك: حرّكه إلى <b>'+tName(S.b)+'</b> واضغطه لتثبيته.':'⑥ اضغط <b>'+tName(S.a)+'</b> أو <b>'+tName(S.b)+'</b> لتثبيت أول طرف بالمفك.';
+  if(S.st==='coil')t=S.sel!=null?'سلك محدد: احذفه أو اضغط مكانًا آخر.':'① اختر <b>لفّة السلك</b> من اليسار لتبدأ سلكًا جديدًا.';
+  else if(S.st==='cut')t='② قدّر الطول الذي تحتاجه، واجعل <b>القطّاعة</b> (الجزء السفلي من الفك) عنده على السلك ثم اضغط ✊.';
+  else if(S.st==='strip')t=S.sq&&S.pullOn?'اسحب العدة <b>نحو طرف السلك</b> (يمينًا) لنزع العازل.':'③ ضع <b>العرّاية</b> (أعلى الفك) على بعد 8 إلى 10 مم من الطرف، ثم اضغط ✊ واسحب نحو الطرف.';
+  else if(S.st==='inst')t=S.inst?'⑤ السلك في يدك من '+tName(S.a)+': حرّكه إلى <b>الترمينال الثاني</b> واضغطه لتثبيته.':'④ اضغط <b>الترمينال</b> الذي تثبّت فيه أول طرف.';
   m.innerHTML=t;if(light&&$('btns').dataset.st===S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null)+goodEnd())return;
   if(S.st==='cut'||S.st==='strip')B.push(`<button class="b big sq" data-b="sq">✊ اضغط العدة</button>`);
   if(S.st==='strip'&&S.ends[S.end]>0&&!goodEnd())B.push(`<button class="b" data-b="next">متابعة رغم ذلك ←</button>`);
-  if(S.st==='a'&&S.sel!=null)B.push(`<button class="b" data-b="del">🗑 حذف السلك</button>`);
-  if(S.st!=='a'&&!S.busy)B.push(`<button class="b" data-b="cancel">✕ إلغاء هذا السلك</button>`);
+  if(S.st==='coil'&&S.sel!=null)B.push(`<button class="b" data-b="del">🗑 حذف السلك</button>`);
+  if(S.st!=='coil'&&!S.busy)B.push(`<button class="b" data-b="cancel">✕ إلغاء هذا السلك</button>`);
   $('btns').innerHTML=B.join('');$('btns').dataset.st=S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null)+goodEnd();}
+const needLen=(a,b)=>{const [ax,ay]=TT[a],[bx,by]=TT[b];return Math.round((Math.abs(ax-bx)+Math.abs(ay-by)+240)*.08+12);};
 const sugg=()=>{const t=TASKS.find(([a,b])=>(a===S.a&&b===S.b)||(a===S.b&&b===S.a));return t?t[2]:null;};
 /* a well stripped end (7 to 12 mm) moves on by itself: to the second end, then the wire is fastened at both terminals */
 const goodEnd=()=>{const m=S.ends[S.end];return m>=7&&m<=12;};
 function nextEnd(){if(S.st!=='strip')return;if(S.end===0){S.end=1;S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;note('الطرف الثاني: عرِّه بالطريقة نفسها.','');return render();}
   S.st='inst';S.inst=0;S.hp=null;note('السلك جاهز للتركيب.','ok');render();}
 function autoNext(){if(!goodEnd())return;const e=S.end,c=S.coil;setTimeout(()=>{if(S.st==='strip'&&S.end===e&&S.coil===c&&goodEnd()&&!S.sq)nextEnd();},1300);}
-function reset0(){Object.assign(S,{busy:false,hp:null,st:'a',a:null,b:null,need:0,coil:null,sq:false,pullOn:false,pull:0,ends:[0,0],end:0,inst:0,sel:null});}
+function reset0(){Object.assign(S,{busy:false,hp:null,st:'coil',a:null,b:null,need:0,coil:null,sq:false,pullOn:false,pull:0,ends:[0,0],end:0,inst:0,sel:null});}
 /* ---------- actions ---------- */
 function squeeze(){if(S.st==='cut'){const z=zone();
     if(z!=='C'){S.sq=true;renderB();setTimeout(()=>{S.sq=false;renderB();},350);return note(z==='S'?'هذه العرّاية (أعلى الفك): حرّك العدة لأعلى قليلًا لتكون القطّاعة على السلك.':'السلك ليس بين فكّي العدة: حرّكها حتى يمر السلك بين الفكين.','warn');}
     const L=(CUT.x0-S.tx)/CUT.ppc;if(L<3)return note('قرّب العدة من مكان القطع على السلك.','warn');
     S.sq=true;snd('cut');renderB();
-    setTimeout(()=>{S.sq=false;if(L<S.need){note('✂ قطعت '+L.toFixed(0)+' سم: قصير ولن يصل بين الترمينالين. اقطع قطعة أطول.','bad');renderB();return;}
-      S.len=L;note(L>S.need+28?'✂ قطعت '+L.toFixed(0)+' سم: أطول من اللازم (هدر)، لكنه يصلح.':'✂ ممتاز: قطعت '+L.toFixed(0)+' سم.',L>S.need+28?'warn':'ok');
+    setTimeout(()=>{S.sq=false;if(L<10){note('✂ القطعة '+L.toFixed(0)+' سم قصيرة جدًا: اقطع أطول.','bad');renderB();return;}
+      S.len=L;note('✂ قطعت '+L.toFixed(0)+' سم.','ok');
       S.st='strip';S.end=0;S.ends=[0,0];S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;render();},380);return;}
   if(S.st==='strip'){const z=zone(),d=(CLO.ex-S.tx)/CLO.ppm;
     if(z==='C'){if(d<=0.3)return note('ضع القطّاعة على السلك داخل الطرف لقص الزائد.','warn');S.sq=true;snd('cut');renderB();
@@ -276,7 +274,8 @@ function install(k){const [x,y]=TT[k];const g=document.createElementNS('http://w
   setTimeout(()=>{g.remove();S.busy=false;if(!S.inst){S.inst=1;S.hp={x:x+(x<600?90:-90),y:y+(y<250?-70:90)};note('✔ ثُبّت الطرف الأول في '+tName(S.a)+'.','ok');render();return;}
     W.push({a:S.a,b:S.b,c:S.coil,sa:+S.ends[0].toFixed(1),sb:+S.ends[1].toFixed(1),len:Math.round(S.len)});saveW();
     const bad=[S.ends[0],S.ends[1]].some(m=>m<7),lng=[S.ends[0],S.ends[1]].some(m=>m>12);
-    note(bad?'⚠ رُكّب السلك، لكن أحد طرفيه معرّى قليلًا فهو مرتخٍ (✖) ولن يوصل التيار. احذفه وأعده.':lng?'⚠ رُكّب السلك، لكن نحاسًا ظاهرًا خارج الترمينال (⚠): هذا خطر في الواقع.':'✔ رُكّب السلك بإحكام.',bad?'bad':lng?'warn':'ok');
+    const sg=sugg(),cl=sg!=null&&sg!==S.coil?' اللون المعتاد لهذا السلك '+COILS[sg].n+'.':'',ex=S.len-needLen(S.a,S.b)>35?' السلك أطول من اللازم بكثير (هدر).':'';
+    note((bad?'⚠ رُكّب السلك، لكن أحد طرفيه معرّى قليلًا فهو مرتخٍ (✖) ولن يوصل التيار. احذفه وأعده.':lng?'⚠ رُكّب السلك، لكن نحاسًا ظاهرًا خارج الترمينال (⚠): هذا خطر في الواقع.':'✔ رُكّب السلك بإحكام.')+cl+ex,bad?'bad':lng||cl||ex?'warn':'ok');
     reset0();shortCk();render();},750);}
 /* ---------- input ---------- */
 const P=e=>{const p=sv.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(sv.getScreenCTM().inverse());return LAND&&q.x>1000?{x:q.x-1000,y:q.y+640}:q;};
@@ -295,18 +294,17 @@ sv.addEventListener('pointerup',endDrag);sv.addEventListener('pointercancel',end
 sv.addEventListener('click',e=>{const t=e.target.closest('[data-term]'),c=e.target.closest('[data-coil]'),w=e.target.closest('[data-wire]'),f1=e.target.closest('[data-act="f1"]');
   if(f1){S.f1=!S.f1;snd('clk');note(S.f1?'القاطع F1 مغلق (I).':'القاطع F1 مفصول (0).','');shortCk();return render();}
   if(t){const k=t.dataset.term;
-    if(S.st==='a'){S.sel=null;S.a=k;S.st='b';note('');return render();}
-    if(S.st==='b'){if(k===S.a){S.a=null;S.st='a';return render();}S.b=k;const [ax,ay]=TT[S.a],[bx,by]=TT[k];
-      S.need=Math.round((Math.abs(ax-bx)+Math.abs(ay-by)+(ay<250?120:120)+(by<250?120:120))*.08+12);S.st='coil';return render();}
     if(S.st==='inst'){if(S.busy)return;
-      if(!S.inst){if(k!==S.a&&k!==S.b)return note('اضغط '+tName(S.a)+' أو '+tName(S.b)+' (المضيئين بالأخضر).','warn');if(k===S.b){S.b=S.a;S.a=k;S.ends.reverse();}}
-      else if(k!==S.b)return note('هذا ليس مكانه: الطرف الثاني يذهب إلى '+tName(S.b)+'.','warn');
+      if(!S.inst)S.a=k;
+      else{if(k===S.a)return note('هذا الطرف مثبّت هنا: اختر ترمينالًا آخر.','warn');
+        const need=needLen(S.a,k);if(S.len<need)return note('✖ السلك قصير: طوله '+Math.round(S.len)+' سم، ولا يصل إلى '+tName(k)+' (يحتاج نحو '+need+' سم). اختر ترمينالًا أقرب أو ألغِ السلك.','bad');
+        S.b=k;}
       S.busy=true;return install(k);}
     return;}
-  if(c&&S.st==='coil'){S.coil=+c.dataset.coil;const sg=sugg();note(sg!=null&&sg!==S.coil?'ملاحظة: اللون المقترح لهذا السلك '+COILS[sg].n+'.':'سُحب السلك من اللفة إلى طاولة العمل.',sg!=null&&sg!==S.coil?'warn':'');
-    S.st='cut';S.tx=CUT.x0-(S.need+10)*CUT.ppc;S.ty=CUT.y+40*CUT.k;return render();}
-  if(w&&S.st==='a'){S.sel=+w.dataset.wire;return render();}
-  if(S.st==='a'&&S.sel!=null&&!e.target.closest('[data-b]')){S.sel=null;render();}});
+  if(c&&S.st==='coil'){S.coil=+c.dataset.coil;S.sel=null;note('سُحب السلك '+COILS[S.coil].n+' من اللفة إلى طاولة العمل.','');
+    S.st='cut';S.tx=CUT.x0-60*CUT.ppc;S.ty=CUT.y+40*CUT.k;return render();}
+  if(w&&S.st==='coil'){S.sel=+w.dataset.wire;return render();}
+  if(S.st==='coil'&&S.sel!=null&&!e.target.closest('[data-b]')){S.sel=null;render();}});
 $('btns').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;const k=b.dataset.b;
   if(k==='sq')return squeeze();
   if(k==='next')return nextEnd();
