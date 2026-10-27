@@ -120,7 +120,7 @@ function coil(i){const y=coilY(i),f=coilFill(i),sel=S.coil===i,can=S.st==='coil'
   if(sel)s+=`<circle cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffb300" stroke-width="5"/>`;
   else if(can)s+=`<circle class="hl" cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffd24a" stroke-width="3" stroke-dasharray="8 6"/>`;
   return s+`<circle cx="${CX}" cy="${y}" r="55" fill="transparent"/></g>`;}
-function term(k){const [x,y,l]=TT[k],act=S.st==='a'||S.st==='b'||(S.st==='inst'&&k===(S.inst?S.b:S.a)),pick=k===S.a||k===S.b,top=y<250;
+function term(k){const [x,y,l]=TT[k],act=S.st==='a'||S.st==='b'||(S.st==='inst'&&(S.inst?k===S.b:(k===S.a||k===S.b))),pick=k===S.a||k===S.b,top=y<250;
   let s=`<g data-term="${k}" style="cursor:pointer"><rect x="${x-17}" y="${y-17}" width="34" height="34" rx="5" fill="#2b3036"/><circle cx="${x}" cy="${y}" r="13" fill="url(#screw)" stroke="#555"/><path d="M${x-8} ${y+5}L${x+8} ${y-5}" stroke="#444" stroke-width="3"/>`;
   s+=T(x,top?y+36:y-24,l,15,'#1d2329');
   if(pick)s+=`<circle cx="${x}" cy="${y}" r="24" fill="none" stroke="#ffb300" stroke-width="5"/>`;
@@ -151,6 +151,13 @@ function panel(){let s=`<rect x="190" y="20" width="800" height="600" rx="10" fi
   return s;}
 function wirePath(w){const [ax,ay]=TT[w.a],[bx,by]=TT[w.b],da=ay<250?-1:1,db=by<250?-1:1;
   return `M${ax} ${ay}C${ax} ${ay+da*120} ${bx} ${by+db*120} ${bx} ${by}`;}
+function handWire(){if(S.st!=='inst'||!S.inst||!S.hp)return '';const [ax,ay]=TT[S.a],{x,y}=S.hp,da=ay<250?-1:1,c=coilFill(S.coil);
+  const d=`M${ax} ${ay}C${ax} ${ay+da*120} ${x} ${y+70} ${x} ${y}`;
+  return `<g pointer-events="none"><path d="${d}" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="10" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/>
+  <rect x="${x-3}" y="${y-16}" width="6" height="14" fill="url(#cu)"/>
+  <g transform="translate(${x} ${y}) scale(.42)"><path d="M-30 20 Q-58 60 -46 120 Q-30 170 20 172 Q66 168 70 118 Q74 60 44 24 Z" fill="url(#skin)" stroke="#8f5a39" stroke-width="3"/>
+  <path d="M-30 30 Q-40 -10 -8 -4 Q4 8 -4 40 Z" fill="url(#skin)" stroke="#8f5a39" stroke-width="3"/><path d="M8 34 Q20 -6 40 2 Q50 16 34 44 Z" fill="url(#skin)" stroke="#8f5a39" stroke-width="3"/>
+  <path d="M-40 150 L60 150 L64 210 L-44 214 Z" fill="#244b7a" stroke="#132c4a" stroke-width="3"/></g></g>`;}
 function wiresSvg(){let s='';W.forEach((w,i)=>{const d=wirePath(w),c=coilFill(w.c),sel=S.sel===i;
     s+=`<g data-wire="${i}" style="cursor:pointer"><path d="${d}" fill="none" stroke="transparent" stroke-width="26"/>${sel?`<path d="${d}" fill="none" stroke="#ffb300" stroke-width="15" stroke-linecap="round"/>`:''}<path d="${d}" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="10" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="${d}" fill="none" stroke="url(#sheen)" stroke-width="3" opacity=".5"/>`;
     [[w.a,w.sa],[w.b,w.sb]].forEach(([k,m])=>{const [x,y]=TT[k],dy=y<250?-1:1;
@@ -213,7 +220,7 @@ function bench(){let s=`<rect x="0" y="650" width="1000" height="670" fill="url(
 /* wide screens: the work bench sits to the right of the panel instead of below it */
 let LAND=false;const layout=()=>{const st=document.querySelector('.stage'),r=st.getBoundingClientRect();LAND=r.width>r.height*1.15;sv.setAttribute('viewBox',LAND?'0 0 2000 680':'0 0 1000 1320');};
 function render(){layout();sv.innerHTML=defs+`<rect width="1000" height="650" fill="#4b5560"/>`+`<rect x="20" y="20" width="150" height="600" rx="8" fill="#39424b"/>`+T(95,14,'لفّات الأسلاك 1.5 مم²',13,'#cfd8e0')+
-  COILS.map((_,i)=>coil(i)).join('')+panel()+wiresSvg()+`<g id="gB"${LAND?' transform="translate(1000 -640)"':''}>${bench()}</g>`;tasks();ui();}
+  COILS.map((_,i)=>coil(i)).join('')+panel()+wiresSvg()+`<g id="gH">${handWire()}</g>`+`<g id="gB"${LAND?' transform="translate(1000 -640)"':''}>${bench()}</g>`;tasks();ui();}
 const renderB=()=>{const g=$('gB');if(g)g.innerHTML=bench();ui(true);};
 /* ---------- the circuit: L → F1 → S1 → A1, A2 → N ---------- */
 function comp(){const P={},f=k=>P[k]==null||P[k]===k?(P[k]=k):(P[k]=f(P[k])),u=(a,b)=>{P[f(a)]=f(b);};
@@ -232,20 +239,20 @@ function ui(light){const m=$('msg'),B=[];let t='';
   else if(S.st==='coil')t='③ اختر <b>لفّة السلك</b> من اليسار (الطول اللازم تقريبًا '+S.need+' سم'+(sugg()!=null?'، اللون المقترح: '+COILS[sugg()].n:'')+').';
   else if(S.st==='cut')t='④ حرّك العدة على السلك، واجعل <b>القطّاعة</b> (الجزء السفلي من الفك) عند الطول المناسب ثم اضغط ✊.';
   else if(S.st==='strip')t=S.sq&&S.pullOn?'اسحب العدة <b>نحو طرف السلك</b> (يمينًا) لنزع العازل.':'⑤ ضع <b>العرّاية</b> (أعلى الفك) على بعد 8 إلى 10 مم من الطرف، ثم اضغط ✊ واسحب نحو الطرف.';
-  else if(S.st==='inst')t='⑥ يُدخَل الطرف '+(S.inst?'الثاني في <b>'+tName(S.b):'الأول في <b>'+tName(S.a))+'</b> ويُشَدّ بالمفك…';
+  else if(S.st==='inst')t=S.inst?'⑦ السلك في يدك: حرّكه إلى <b>'+tName(S.b)+'</b> واضغطه لتثبيته.':'⑥ اضغط <b>'+tName(S.a)+'</b> أو <b>'+tName(S.b)+'</b> لتثبيت أول طرف بالمفك.';
   m.innerHTML=t;if(light&&$('btns').dataset.st===S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null)+goodEnd())return;
   if(S.st==='cut'||S.st==='strip')B.push(`<button class="b big sq" data-b="sq">✊ اضغط العدة</button>`);
   if(S.st==='strip'&&S.ends[S.end]>0&&!goodEnd())B.push(`<button class="b" data-b="next">متابعة رغم ذلك ←</button>`);
   if(S.st==='a'&&S.sel!=null)B.push(`<button class="b" data-b="del">🗑 حذف السلك</button>`);
-  if(S.st!=='a'&&S.st!=='inst')B.push(`<button class="b" data-b="cancel">✕ إلغاء هذا السلك</button>`);
+  if(S.st!=='a'&&!S.busy)B.push(`<button class="b" data-b="cancel">✕ إلغاء هذا السلك</button>`);
   $('btns').innerHTML=B.join('');$('btns').dataset.st=S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null)+goodEnd();}
 const sugg=()=>{const t=TASKS.find(([a,b])=>(a===S.a&&b===S.b)||(a===S.b&&b===S.a));return t?t[2]:null;};
 /* a well stripped end (7 to 12 mm) moves on by itself: to the second end, then the wire is fastened at both terminals */
 const goodEnd=()=>{const m=S.ends[S.end];return m>=7&&m<=12;};
 function nextEnd(){if(S.st!=='strip')return;if(S.end===0){S.end=1;S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;note('الطرف الثاني: عرِّه بالطريقة نفسها.','');return render();}
-  S.st='inst';S.inst=0;note('يُركَّب السلك…','');render();setTimeout(()=>{if(S.st==='inst')install(S.a);},250);}
+  S.st='inst';S.inst=0;S.hp=null;note('السلك جاهز للتركيب.','ok');render();}
 function autoNext(){if(!goodEnd())return;const e=S.end,c=S.coil;setTimeout(()=>{if(S.st==='strip'&&S.end===e&&S.coil===c&&goodEnd()&&!S.sq)nextEnd();},1300);}
-function reset0(){Object.assign(S,{st:'a',a:null,b:null,need:0,coil:null,sq:false,pullOn:false,pull:0,ends:[0,0],end:0,inst:0,sel:null});}
+function reset0(){Object.assign(S,{busy:false,hp:null,st:'a',a:null,b:null,need:0,coil:null,sq:false,pullOn:false,pull:0,ends:[0,0],end:0,inst:0,sel:null});}
 /* ---------- actions ---------- */
 function squeeze(){if(S.st==='cut'){const z=zone();
     if(z!=='C'){S.sq=true;renderB();setTimeout(()=>{S.sq=false;renderB();},350);return note(z==='S'?'هذه العرّاية (أعلى الفك): حرّك العدة لأعلى قليلًا لتكون القطّاعة على السلك.':'السلك ليس بين فكّي العدة: حرّكها حتى يمر السلك بين الفكين.','warn');}
@@ -266,7 +273,7 @@ function pullDone(){const d=S.stripD;S.ends[S.end]=d;S.sq=false;S.pullOn=false;S
   render();autoNext();const g=$('gB');if(g){const y=CLO.y;g.insertAdjacentHTML('beforeend',`<rect class="fall" x="${CLO.ex+20}" y="${y-19}" width="${(d-0)*CLO.ppm*0.9}" height="38" fill="${coilFill(S.coil)}" stroke="rgba(0,0,0,.3)"/>`);}}
 function install(k){const [x,y]=TT[k];const g=document.createElementNS('http://www.w3.org/2000/svg','g');
   g.innerHTML=`<g transform="translate(${x} ${y})"><g class="spin"><rect x="-5" y="-60" width="10" height="44" fill="#c9ced3" stroke="#555"/><rect x="-11" y="-120" width="22" height="64" rx="8" fill="#f2b632" stroke="#7a5600"/><rect x="-3" y="-16" width="6" height="14" fill="#555"/></g></g>`;sv.appendChild(g);snd('clk');
-  setTimeout(()=>{g.remove();if(!S.inst){S.inst=1;note('✔ رُبط الطرف الأول في '+tName(S.a)+'.','ok');render();setTimeout(()=>{if(S.st==='inst')install(S.b);},300);return;}
+  setTimeout(()=>{g.remove();S.busy=false;if(!S.inst){S.inst=1;S.hp={x:x+(x<600?90:-90),y:y+(y<250?-70:90)};note('✔ ثُبّت الطرف الأول في '+tName(S.a)+'.','ok');render();return;}
     W.push({a:S.a,b:S.b,c:S.coil,sa:+S.ends[0].toFixed(1),sb:+S.ends[1].toFixed(1),len:Math.round(S.len)});saveW();
     const bad=[S.ends[0],S.ends[1]].some(m=>m<7),lng=[S.ends[0],S.ends[1]].some(m=>m>12);
     note(bad?'⚠ رُكّب السلك، لكن أحد طرفيه معرّى قليلًا فهو مرتخٍ (✖) ولن يوصل التيار. احذفه وأعده.':lng?'⚠ رُكّب السلك، لكن نحاسًا ظاهرًا خارج الترمينال (⚠): هذا خطر في الواقع.':'✔ رُكّب السلك بإحكام.',bad?'bad':lng?'warn':'ok');
@@ -277,7 +284,8 @@ let drag=null;
 sv.addEventListener('pointerdown',e=>{ac();const p=P(e);
   if((S.st==='cut'||S.st==='strip')&&p.y>650){drag={x:p.x,y:p.y,tx:S.tx,ty:S.ty,m:false,onTool:!!e.target.closest('[data-tool]')};try{sv.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();return;}
   const s1=e.target.closest('[data-act="s1"]');if(s1){S.s1=true;snd('clk');shortCk();render();const up=()=>{S.s1=false;render();removeEventListener('pointerup',up);removeEventListener('pointercancel',up);};addEventListener('pointerup',up);addEventListener('pointercancel',up);}});
-sv.addEventListener('pointermove',e=>{if(!drag)return;const p=P(e),dx=p.x-drag.x,dy=p.y-drag.y;if(!drag.m&&Math.hypot(dx,dy)<6)return;drag.m=true;
+sv.addEventListener('pointermove',e=>{if(S.st==='inst'&&S.inst&&!drag){const p=P(e);if(p.y<650){S.hp={x:Math.max(20,Math.min(990,p.x)),y:Math.max(30,Math.min(640,p.y))};const g=$('gH');if(g)g.innerHTML=handWire();}return;}
+  if(!drag)return;const p=P(e),dx=p.x-drag.x,dy=p.y-drag.y;if(!drag.m&&Math.hypot(dx,dy)<6)return;drag.m=true;
   if(S.st==='strip'&&S.sq&&S.pullOn){S.pull=Math.max(0,dx);S.tx=drag.tx+S.pull;if(S.pull>=(S.slugB-S.slugA)*.8+8){drag=null;pullDone();return;}renderB();return;}
   if(S.sq)return;S.tx=Math.max(40,Math.min(980,drag.tx+dx));S.ty=Math.max(700,Math.min(1250,drag.ty+dy));renderB();});
 const endDrag=()=>{if(!drag)return;const d=drag;drag=null;
@@ -290,6 +298,10 @@ sv.addEventListener('click',e=>{const t=e.target.closest('[data-term]'),c=e.targ
     if(S.st==='a'){S.sel=null;S.a=k;S.st='b';note('');return render();}
     if(S.st==='b'){if(k===S.a){S.a=null;S.st='a';return render();}S.b=k;const [ax,ay]=TT[S.a],[bx,by]=TT[k];
       S.need=Math.round((Math.abs(ax-bx)+Math.abs(ay-by)+(ay<250?120:120)+(by<250?120:120))*.08+12);S.st='coil';return render();}
+    if(S.st==='inst'){if(S.busy)return;
+      if(!S.inst){if(k!==S.a&&k!==S.b)return note('اضغط '+tName(S.a)+' أو '+tName(S.b)+' (المضيئين بالأخضر).','warn');if(k===S.b){S.b=S.a;S.a=k;S.ends.reverse();}}
+      else if(k!==S.b)return note('هذا ليس مكانه: الطرف الثاني يذهب إلى '+tName(S.b)+'.','warn');
+      S.busy=true;return install(k);}
     return;}
   if(c&&S.st==='coil'){S.coil=+c.dataset.coil;const sg=sugg();note(sg!=null&&sg!==S.coil?'ملاحظة: اللون المقترح لهذا السلك '+COILS[sg].n+'.':'سُحب السلك من اللفة إلى طاولة العمل.',sg!=null&&sg!==S.coil?'warn':'');
     S.st='cut';S.tx=CUT.x0-(S.need+10)*CUT.ppc;S.ty=CUT.y+40*CUT.k;return render();}
