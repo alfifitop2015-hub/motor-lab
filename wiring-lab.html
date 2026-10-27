@@ -232,14 +232,19 @@ function ui(light){const m=$('msg'),B=[];let t='';
   else if(S.st==='coil')t='③ اختر <b>لفّة السلك</b> من اليسار (الطول اللازم تقريبًا '+S.need+' سم'+(sugg()!=null?'، اللون المقترح: '+COILS[sugg()].n:'')+').';
   else if(S.st==='cut')t='④ حرّك العدة على السلك، واجعل <b>القطّاعة</b> (الجزء السفلي من الفك) عند الطول المناسب ثم اضغط ✊.';
   else if(S.st==='strip')t=S.sq&&S.pullOn?'اسحب العدة <b>نحو طرف السلك</b> (يمينًا) لنزع العازل.':'⑤ ضع <b>العرّاية</b> (أعلى الفك) على بعد 8 إلى 10 مم من الطرف، ثم اضغط ✊ واسحب نحو الطرف.';
-  else if(S.st==='inst')t='⑥ اضغط <b>'+tName(S.inst?S.b:S.a)+'</b> لإدخال الطرف '+(S.inst?'الثاني':'الأول')+' وشدّه بالمفك.';
-  m.innerHTML=t;if(light&&$('btns').dataset.st===S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null))return;
+  else if(S.st==='inst')t='⑥ يُدخَل الطرف '+(S.inst?'الثاني في <b>'+tName(S.b):'الأول في <b>'+tName(S.a))+'</b> ويُشَدّ بالمفك…';
+  m.innerHTML=t;if(light&&$('btns').dataset.st===S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null)+goodEnd())return;
   if(S.st==='cut'||S.st==='strip')B.push(`<button class="b big sq" data-b="sq">✊ اضغط العدة</button>`);
-  if(S.st==='strip'&&S.ends[S.end]>0)B.push(`<button class="b big prim" data-b="next">✔ ${S.end?'انتهيت: ركّب السلك':'الطرف الثاني'}</button>`);
+  if(S.st==='strip'&&S.ends[S.end]>0&&!goodEnd())B.push(`<button class="b" data-b="next">متابعة رغم ذلك ←</button>`);
   if(S.st==='a'&&S.sel!=null)B.push(`<button class="b" data-b="del">🗑 حذف السلك</button>`);
-  if(S.st!=='a')B.push(`<button class="b" data-b="cancel">✕ إلغاء هذا السلك</button>`);
-  $('btns').innerHTML=B.join('');$('btns').dataset.st=S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null);}
+  if(S.st!=='a'&&S.st!=='inst')B.push(`<button class="b" data-b="cancel">✕ إلغاء هذا السلك</button>`);
+  $('btns').innerHTML=B.join('');$('btns').dataset.st=S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null)+goodEnd();}
 const sugg=()=>{const t=TASKS.find(([a,b])=>(a===S.a&&b===S.b)||(a===S.b&&b===S.a));return t?t[2]:null;};
+/* a well stripped end (7 to 12 mm) moves on by itself: to the second end, then the wire is fastened at both terminals */
+const goodEnd=()=>{const m=S.ends[S.end];return m>=7&&m<=12;};
+function nextEnd(){if(S.st!=='strip')return;if(S.end===0){S.end=1;S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;note('الطرف الثاني: عرِّه بالطريقة نفسها.','');return render();}
+  S.st='inst';S.inst=0;note('يُركَّب السلك…','');render();setTimeout(()=>{if(S.st==='inst')install(S.a);},250);}
+function autoNext(){if(!goodEnd())return;const e=S.end,c=S.coil;setTimeout(()=>{if(S.st==='strip'&&S.end===e&&S.coil===c&&goodEnd()&&!S.sq)nextEnd();},1300);}
 function reset0(){Object.assign(S,{st:'a',a:null,b:null,need:0,coil:null,sq:false,pullOn:false,pull:0,ends:[0,0],end:0,inst:0,sel:null});}
 /* ---------- actions ---------- */
 function squeeze(){if(S.st==='cut'){const z=zone();
@@ -251,17 +256,17 @@ function squeeze(){if(S.st==='cut'){const z=zone();
       S.st='strip';S.end=0;S.ends=[0,0];S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;render();},380);return;}
   if(S.st==='strip'){const z=zone(),d=(CLO.ex-S.tx)/CLO.ppm;
     if(z==='C'){if(d<=0.3)return note('ضع القطّاعة على السلك داخل الطرف لقص الزائد.','warn');S.sq=true;snd('cut');renderB();
-      setTimeout(()=>{S.sq=false;const cu=S.ends[S.end];S.ends[S.end]=Math.max(0,cu-d);note('✂ قصصت '+d.toFixed(1)+' مم من الطرف'+(cu?' (النحاس الظاهر الآن '+S.ends[S.end].toFixed(1)+' مم)':'')+'.','ok');renderB();},350);return;}
+      setTimeout(()=>{S.sq=false;const cu=S.ends[S.end];S.ends[S.end]=Math.max(0,cu-d);note('✂ قصصت '+d.toFixed(1)+' مم من الطرف'+(cu?' (النحاس الظاهر الآن '+S.ends[S.end].toFixed(1)+' مم)':'')+'.','ok');renderB();ui();autoNext();},350);return;}
     if(z!=='S')return note('ضع السلك في فتحة العرّاية (أعلى الفك) ثم اضغط.','warn');
     if(d<1.5)return note('العرّاية قريبة جدًا من الطرف: ابتعد قليلًا (8 إلى 10 مم).','warn');
     if(d<=S.ends[S.end]+.3)return note('هذا الجزء معرّى أصلًا: ضع العرّاية على العازل.','warn');
     S.sq=true;S.pullOn=true;S.pull=0;S.slugA=S.tx;S.slugB=CLO.ex-S.ends[S.end]*CLO.ppm;S.stripD=d;snd('clk');renderB();}}
 function pullDone(){const d=S.stripD;S.ends[S.end]=d;S.sq=false;S.pullOn=false;S.pull=0;snd('cut');
   note(d<7?'عرّيت '+d.toFixed(1)+' مم: قصير، قد لا يمسكه الترمينال جيدًا. عرِّ أكثر.':d>12?'عرّيت '+d.toFixed(1)+' مم: طويل، سيظهر النحاس خارج الترمينال. قص الزائد بالقطّاعة.':'✔ ممتاز: عرّيت '+d.toFixed(1)+' مم.',d<7?'bad':d>12?'warn':'ok');
-  render();const g=$('gB');if(g){const y=CLO.y;g.insertAdjacentHTML('beforeend',`<rect class="fall" x="${CLO.ex+20}" y="${y-19}" width="${(d-0)*CLO.ppm*0.9}" height="38" fill="${coilFill(S.coil)}" stroke="rgba(0,0,0,.3)"/>`);}}
+  render();autoNext();const g=$('gB');if(g){const y=CLO.y;g.insertAdjacentHTML('beforeend',`<rect class="fall" x="${CLO.ex+20}" y="${y-19}" width="${(d-0)*CLO.ppm*0.9}" height="38" fill="${coilFill(S.coil)}" stroke="rgba(0,0,0,.3)"/>`);}}
 function install(k){const [x,y]=TT[k];const g=document.createElementNS('http://www.w3.org/2000/svg','g');
   g.innerHTML=`<g transform="translate(${x} ${y})"><g class="spin"><rect x="-5" y="-60" width="10" height="44" fill="#c9ced3" stroke="#555"/><rect x="-11" y="-120" width="22" height="64" rx="8" fill="#f2b632" stroke="#7a5600"/><rect x="-3" y="-16" width="6" height="14" fill="#555"/></g></g>`;sv.appendChild(g);snd('clk');
-  setTimeout(()=>{g.remove();if(!S.inst){S.inst=1;note('✔ رُبط الطرف الأول. الآن الطرف الثاني.','ok');render();return;}
+  setTimeout(()=>{g.remove();if(!S.inst){S.inst=1;note('✔ رُبط الطرف الأول في '+tName(S.a)+'.','ok');render();setTimeout(()=>{if(S.st==='inst')install(S.b);},300);return;}
     W.push({a:S.a,b:S.b,c:S.coil,sa:+S.ends[0].toFixed(1),sb:+S.ends[1].toFixed(1),len:Math.round(S.len)});saveW();
     const bad=[S.ends[0],S.ends[1]].some(m=>m<7),lng=[S.ends[0],S.ends[1]].some(m=>m>12);
     note(bad?'⚠ رُكّب السلك، لكن أحد طرفيه معرّى قليلًا فهو مرتخٍ (✖) ولن يوصل التيار. احذفه وأعده.':lng?'⚠ رُكّب السلك، لكن نحاسًا ظاهرًا خارج الترمينال (⚠): هذا خطر في الواقع.':'✔ رُكّب السلك بإحكام.',bad?'bad':lng?'warn':'ok');
@@ -285,7 +290,6 @@ sv.addEventListener('click',e=>{const t=e.target.closest('[data-term]'),c=e.targ
     if(S.st==='a'){S.sel=null;S.a=k;S.st='b';note('');return render();}
     if(S.st==='b'){if(k===S.a){S.a=null;S.st='a';return render();}S.b=k;const [ax,ay]=TT[S.a],[bx,by]=TT[k];
       S.need=Math.round((Math.abs(ax-bx)+Math.abs(ay-by)+(ay<250?120:120)+(by<250?120:120))*.08+12);S.st='coil';return render();}
-    if(S.st==='inst'){if(k!==(S.inst?S.b:S.a))return note('اضغط '+tName(S.inst?S.b:S.a)+' (المضيء بالأخضر).','warn');return install(k);}
     return;}
   if(c&&S.st==='coil'){S.coil=+c.dataset.coil;const sg=sugg();note(sg!=null&&sg!==S.coil?'ملاحظة: اللون المقترح لهذا السلك '+COILS[sg].n+'.':'سُحب السلك من اللفة إلى طاولة العمل.',sg!=null&&sg!==S.coil?'warn':'');
     S.st='cut';S.tx=CUT.x0-(S.need+10)*CUT.ppc;S.ty=CUT.y+40*CUT.k;return render();}
@@ -293,7 +297,7 @@ sv.addEventListener('click',e=>{const t=e.target.closest('[data-term]'),c=e.targ
   if(S.st==='a'&&S.sel!=null&&!e.target.closest('[data-b]')){S.sel=null;render();}});
 $('btns').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;const k=b.dataset.b;
   if(k==='sq')return squeeze();
-  if(k==='next'){if(S.end===0){S.end=1;S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;note('','');return render();}S.st='inst';S.inst=0;note('');return render();}
+  if(k==='next')return nextEnd();
   if(k==='cancel'){reset0();note('أُلغي السلك.','');return render();}
   if(k==='del'&&S.sel!=null){W.splice(S.sel,1);saveW();S.sel=null;note('حُذف السلك.','');return render();}});
 $('bReset').onclick=()=>{if(W.length&&!confirm('إزالة كل الأسلاك من اللوحة؟'))return;W=[];saveW();reset0();S.f1=false;note('');render();};
