@@ -1281,12 +1281,12 @@ const TRACK={x1:560,x2:840,y:1565};
 function carX(){return TRACK.x1+(TRACK.x2-TRACK.x1)*S.pos;}
 /* the conduit from the terminal strip to the device board, laid on the panel's bottom and right ducts; it follows the board while it is dragged */
 let CABX=0;const cabD=()=>{const sc=S.fbp.sc,fx=S.fbp.x,fy=S.fbp.y+FBH*sc;return `M${CABX} 1079H978V${fy+14-DY}H${fx+6*sc}V${fy-12*sc-DY}`;};
-/* each push button's or limit switch's terminals get their own wire colour under the strip, so a group of four is seen at once */
-const SGC={S0:'#e0342f',S1:'#ff8a1f',S2:'#9b59d0',S3:'#d6249f',S4:'#2aa84a',LS1:'#00a6a6',LS2:'#f2c200'};
+/* under the strip each push button's or limit switch's wires are black or red in turn, so where one group ends and the next begins is seen at once */
+const SGC={S0:'#1b1b1b',S1:'#e0342f',S2:'#1b1b1b',S3:'#e0342f',S4:'#1b1b1b',LS1:'#e0342f',LS2:'#1b1b1b'}; // black and red in turn, group by group
 function drawField(){
   const fb=fieldH();let s=`<rect x="0" y="1112" width="${W}" height="${fb-1112}" fill="#2a333c"/>`;
   let bx1=1e9,bx2=0,fw='';const fwire=(cx,core,edge)=>`<line x1="${cx}" y1="1020" x2="${cx}" y2="1079" stroke="${edge}" stroke-width="6.5" stroke-linecap="round"/><line x1="${cx}" y1="1020" x2="${cx}" y2="1079" stroke="${core}" stroke-width="4"/><line x1="${cx-.9}" y1="1021" x2="${cx-.9}" y2="1077" stroke="#fff" stroke-opacity=".35" stroke-width="1"/>`;
-  GROUPS.forEach(g=>{if(['M','M2'].includes(g.to))return;for(let n=g.from;n<=g.to2;n++){const cx=SX+tOX(n)+SW/2;bx1=Math.min(bx1,cx);bx2=Math.max(bx2,cx);fw+=g.to==='N'?fwire(cx,'#4aa3df','#123a5a'):g.to==='H'?fwire(cx,'#8a5426','#2e1808'):fwire(cx,SGC[g.to]||'#e0342f',shade(SGC[g.to]||'#e0342f',-.65));}});
+  GROUPS.forEach(g=>{if(['M','M2'].includes(g.to))return;for(let n=g.from;n<=g.to2;n++){const cx=SX+tOX(n)+SW/2;bx1=Math.min(bx1,cx);bx2=Math.max(bx2,cx);fw+=g.to==='N'?fwire(cx,'#4aa3df','#123a5a'):g.to==='H'?fwire(cx,'#8a5426','#2e1808'):(SGC[g.to]==='#1b1b1b'?fwire(cx,'#1b1b1b','#8a9096'):fwire(cx,'#e0342f','#4a0c09'));}});
   CABX=bx1-4;const cab=cabD();
   s+=`<path class="fbCab" d="${cab}" fill="none" stroke="#6f6a58" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path class="fbCab" d="${cab}" fill="none" stroke="#ece6d2" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>`+fw;
   /* group names over the wires, so they stay readable */
