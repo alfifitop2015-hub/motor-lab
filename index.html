@@ -502,6 +502,18 @@ body.fs{padding-bottom:0}
   #bBackRes{flex-direction:column;gap:1px;line-height:1.1;font-size:1.05rem}#bBackRes span{display:block;font-size:.62rem;font-weight:700}
   .bar1>.more>summary{width:100%;height:100%;min-height:44px}}
 .menu .msep{border:0;border-top:1px solid var(--line);margin:4px 6px;width:auto}
+/* optional "how much did the app help you" rating */
+.rtbox{max-width:380px;text-align:center}.rtbox h2{margin:0 0 4px;font-size:1.15rem}
+.rtsub{margin:0 0 8px;color:var(--muted);font-size:.86rem}
+.rtnum{font:800 2.6rem/1.1 sans-serif;color:var(--rtc,#888);direction:ltr}.rtword{font-weight:700;color:var(--rtc,var(--muted));min-height:1.3em;margin-bottom:6px}
+#rtIn{width:100%;accent-color:var(--rtc,#888);height:28px;direction:ltr}
+.rtscale{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);direction:ltr;margin:-2px 2px 8px}
+#rtC{width:100%;height:58px;direction:rtl;font-size:.88rem;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;resize:vertical}
+.rtwho{margin:6px 0 0;font-size:.8rem;color:var(--muted)}.rtmsg{margin:4px 0 0;font-size:.86rem;min-height:1.2em}
+.rsavg{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--chip);border-radius:10px;padding:10px 12px}
+.rsavg b{font:800 2.2rem sans-serif;direction:ltr}.rsbars{display:flex;gap:4px;align-items:flex-end;height:54px;flex:1;min-width:150px}
+.rsbars div{flex:1;background:#2e86de;border-radius:3px 3px 0 0;position:relative;min-height:2px}.rsbars span{direction:ltr;unicode-bidi:isolate;position:absolute;bottom:-15px;left:0;right:0;text-align:center;font-size:.62rem;color:var(--muted)}
+.rsrow{display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid var(--line);padding:7px 2px;font-size:.88rem}.rsrow b{min-width:42px;text-align:center;border-radius:6px;color:#fff;padding:2px 0}
 </style>
 </head>
 <body>
@@ -519,9 +531,11 @@ body.fs{padding-bottom:0}
         <button class="mi" id="bHelp2">📖 شرح الدوائر والتركيبات</button>
         <a class="mi" id="bPneu2" style="text-decoration:none;color:inherit"><svg class="cylIc" viewBox="0 0 34 20" width="24" height="14" aria-hidden="true" style="direction:ltr;flex:none;vertical-align:middle" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><rect x="1.5" y="3" width="20" height="12"/><line x1="8" y1="3" x2="8" y2="15" stroke-width="3"/><line x1="8" y1="9" x2="32.5" y2="9" stroke-width="2.2"/><polyline points="9.5,9 11,4.5 13,13.5 15,4.5 17,13.5 19,4.5 20.5,9" stroke-width="1.1"/><line x1="4.5" y1="15" x2="4.5" y2="19"/></svg> ورشة التحكم الهوائي</a>
         <a class="mi" id="bFault2" style="text-decoration:none;color:inherit"><img src="data:image/jpeg;base64,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" width="24" height="15" alt="" aria-hidden="true" style="border-radius:3px;object-fit:cover;flex:none;vertical-align:middle"> شنطة اكتشاف الأعطال</a>
+        <button class="mi" id="bRate">⭐ قيّم استفادتك من التطبيق</button>
         <hr class="msep">
         <button class="mi trainer-only" id="bResults">📋 نتائج المتدربين</button>
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
+        <button class="mi trainer-only" id="bRates">⭐ تقييمات الاستفادة</button>
         <button class="mi trainer-only" id="bReal">📷 تقييم لوحة حقيقية بالصور</button>
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
         <button class="mi" id="bShare">⇪ مشاركة التوصيلات</button>
@@ -795,6 +809,26 @@ body.fs{padding-bottom:0}
       <label>تأكيد الرقم الجديد<input id="pcNew2" type="password" inputmode="numeric" autocomplete="new-password"></label></div>
     <p id="pcMsg" style="margin:8px 0 0;color:var(--warn);font-size:.88rem;min-height:1.2em"></p>
     <div class="grp" style="justify-content:center;margin-top:8px"><button class="btn" id="pcOk" style="font-weight:700">حفظ الرقم الجديد</button><button class="btn" id="pcCancel">إغلاق</button></div>
+  </div>
+</div>
+<div class="modal" id="rateModal" role="dialog" aria-modal="true" aria-labelledby="rtT">
+  <div class="box rtbox">
+    <h2 id="rtT">⭐ كم استفدت من التطبيق؟</h2>
+    <p class="rtsub">تقييم اختياري يساعد المدرب على تطوير التدريب. حرّك المؤشر من 0 إلى 100.</p>
+    <div class="rtnum" id="rtNum" aria-live="polite">—</div>
+    <div class="rtword" id="rtWord">حرّك المؤشر</div>
+    <input type="range" id="rtIn" min="0" max="100" step="5" value="50" aria-label="نسبة الاستفادة من 100">
+    <div class="rtscale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+    <textarea id="rtC" maxlength="500" placeholder="ملاحظة أو اقتراح (اختياري)" aria-label="ملاحظة اختيارية"></textarea>
+    <p class="rtwho" id="rtWho"></p>
+    <p class="rtmsg" id="rtMsg"></p>
+    <div class="grp" style="justify-content:center;margin-top:6px"><button class="btn" id="rtOk" style="font-weight:700">إرسال التقييم</button><button class="btn" id="rtX">لاحقًا</button></div>
+  </div>
+</div>
+<div class="modal" id="ratesModal" role="dialog" aria-modal="true" aria-labelledby="rsT">
+  <div class="box" style="max-width:560px;max-height:88vh;overflow:auto">
+    <div style="display:flex;align-items:center;gap:8px"><h2 id="rsT" style="margin:0;font-size:1.1rem;flex:1">⭐ تقييمات الاستفادة من التطبيق</h2><button class="btn" id="rsRe">↻ تحديث</button><button class="btn" id="rsX">✕</button></div>
+    <div id="rsBody" style="margin-top:10px"></div>
   </div>
 </div>
 <div class="modal" id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinT">
@@ -4740,6 +4774,40 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
   if(bI)bI.onclick=async()=>{if(dp){dp.prompt();try{await dp.userChoice;}catch(_){}dp=null;upd();}
     else alert('لتثبيت التطبيق على الآيفون أو الآيباد:\n\n١) افتح الموقع في متصفح Safari\n٢) اضغط زر المشاركة ⬆ أسفل الشاشة\n٣) اختر «إضافة إلى الشاشة الرئيسية»\n٤) اضغط «إضافة»');};
   upd();}
+/* ⭐ optional rating: the trainee says how much the app helped, 0 to 100. Kept on this device and sent to the trainer's sheet;
+   sending again from the same device replaces the earlier rating instead of adding a new one */
+{const rtM=$('rateModal'),rsM=$('ratesModal'),rtWords=[[90,'استفدت كثيرًا جدًا','#1a8a42'],[70,'استفدت كثيرًا','#4caf50'],[50,'استفدت بشكل متوسط','#e0a800'],[25,'استفدت قليلًا','#e67e22'],[0,'لم أستفد تقريبًا','#d63b31']];
+  const rtCol=v=>(rtWords.find(w=>v>=w[0])||rtWords[4]),rid=()=>{let r=lsG('wsRid');if(!r){r=Math.random().toString(36).slice(2,10)+Date.now().toString(36);lsS('wsRid',r);}return r;};
+  let rtTouched=false;
+  const rtShow=()=>{const v=+$('rtIn').value,w=rtCol(v),b=$('rtNum').parentNode;b.style.setProperty('--rtc',rtTouched?w[2]:'');$('rtNum').textContent=rtTouched?v+'%':'—';$('rtWord').textContent=rtTouched?w[1]:'حرّك المؤشر';};
+  const rtSend=async o=>{if(!CLOUD_ON)return 'local';try{await cloud({action:'rate',rid:rid(),...o});lsS('wsRateQ',null);return 'ok';}catch(e){lsS('wsRateQ','1');return e.message==='net'?'net':'srv';}};
+  const close=()=>rtM.classList.remove('open');
+  $('bRate').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;let o=null;try{o=JSON.parse(lsG('wsRate')||'null');}catch(_){}
+    rtTouched=!!o;$('rtIn').value=o?o.v:50;$('rtC').value=o&&o.c||'';const st=stGet();
+    $('rtWho').textContent=(st.n?'يُرسل باسم: '+st.n+(st.id?' ('+st.id+')':''):'يُرسل بدون اسم (اكتب اسمك في نافذة الإرسال إن أردت).')+(o?' · قيّمت سابقًا '+o.v+'%، ويمكنك تعديله.':'');
+    $('rtMsg').textContent='';rtShow();rtM.classList.add('open');};
+  $('rtIn').addEventListener('input',()=>{rtTouched=true;rtShow();});
+  $('rtX').onclick=close;rtM.addEventListener('click',e=>{if(e.target===rtM)close();});
+  $('rtOk').onclick=async()=>{const m=$('rtMsg');if(!rtTouched){m.style.color='var(--warn)';m.textContent='حرّك المؤشر لاختيار نسبتك أولًا.';return;}
+    const st=stGet(),o={v:+$('rtIn').value,c:$('rtC').value.trim().slice(0,500),n:st.n||'',id:st.id||''};lsS('wsRate',JSON.stringify({...o,t:Date.now()}));
+    $('rtOk').disabled=true;m.style.color='var(--muted)';m.textContent='جارٍ الإرسال…';const r=await rtSend(o);$('rtOk').disabled=false;
+    m.style.color=r==='ok'||r==='local'?'var(--ok)':'var(--warn)';
+    m.textContent=r==='ok'?'✔ شكرًا لك! وصل تقييمك ('+o.v+'%) للمدرب.':r==='local'?'✔ شكرًا لك! حُفظ تقييمك على هذا الجهاز.':r==='net'?'لا يوجد اتصال الآن: حُفظ تقييمك وسيُرسل تلقائيًا عند عودة الإنترنت.':'حُفظ تقييمك على الجهاز، وسيُعاد إرساله لاحقًا.';
+    if(r==='ok'||r==='local')setTimeout(close,1600);};
+  /* a rating that could not be sent is tried again when the page opens */
+  if(lsG('wsRateQ')==='1')setTimeout(()=>{try{const o=JSON.parse(lsG('wsRate')||'null');if(o){delete o.t;rtSend(o);}}catch(_){}},4000);
+  /* trainer: average, spread and every rating */
+  const rsLoad=async()=>{const B=$('rsBody');if(!CLOUD_ON){B.innerHTML='<p>التقييمات تُجمع عند فتح الموقع من الإنترنت.</p>';return;}
+    B.innerHTML='<p style="color:var(--muted)">جارٍ التحميل…</p>';let key='';try{key=localStorage.getItem('wsKey')||'';}catch(_){}
+    try{const j=await cloud({action:'rates',key});const R=(j.rows||[]).filter(r=>r.v>=0).sort((a,b)=>b.t-a.t);
+      if(!R.length){B.innerHTML='<p>لا توجد تقييمات بعد. يقيّم المتدرب من ⋮ ← ⭐ قيّم استفادتك من التطبيق.</p>';return;}
+      const avg=Math.round(R.reduce((a,r)=>a+r.v,0)/R.length),bins=[0,0,0,0,0];R.forEach(r=>bins[Math.min(4,Math.floor(r.v/20))]++);const mx=Math.max(...bins);
+      B.innerHTML=`<div class="rsavg"><div style="text-align:center"><b style="color:${rtCol(avg)[2]}">${avg}%</b><div style="font-size:.8rem;color:var(--muted)">متوسط ${R.length} تقييم</div></div>
+        <div class="rsbars" title="عدد التقييمات في كل فئة">${bins.map((n,i)=>`<div style="height:${mx?Math.max(3,54*n/mx):3}px;background:${rtCol(i*20+10)[2]}" title="${i*20}–${i*20+(i<4?19:20)}: ${n}"><span>${i*20}+</span></div>`).join('')}</div></div>
+        <div style="margin-top:20px">${R.map(r=>`<div class="rsrow"><b style="background:${rtCol(r.v)[2]}">${r.v}%</b><div style="flex:1"><div><strong>${esc(r.n||'بدون اسم')}</strong>${r.id?' · '+esc(r.id):''} <span style="color:var(--muted);font-size:.78rem">${fmtT(r.t)}</span></div>${r.c?`<div style="color:var(--ink);margin-top:2px">${esc(r.c)}</div>`:''}</div></div>`).join('')}</div>`;}
+    catch(e){B.innerHTML=e.message==='key'?'<p>افتح «📋 نتائج المتدربين» مرة واحدة وأدخل كلمة السر، ثم أعد المحاولة.</p>':e.message==='action'||e.message==='setup'?'<p>كود الخادم قديم: انسخ apps-script.gs الجديد إلى مشروع Google Apps Script وانشر إصدارًا جديدًا (نشر ← إدارة عمليات النشر ← تعديل ← إصدار جديد).</p>':'<p>تعذّر التحميل: تحقق من الاتصال وأعد المحاولة.</p>';}};
+  $('bRates').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;rsM.classList.add('open');rsLoad();};
+  $('rsRe').onclick=rsLoad;$('rsX').onclick=()=>rsM.classList.remove('open');rsM.addEventListener('click',e=>{if(e.target===rsM)rsM.classList.remove('open');});}
 measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());addEventListener("load",()=>{measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());});
 })();
 /* ---------- الفيديو التعريفي: مشاهد متحركة بتعليق صوتي مسجّل بصوت رجالي، ونطق الجهاز عند تعذّر التسجيل ---------- */

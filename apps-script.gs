@@ -7,6 +7,7 @@ const KEY = '4178';
 
 const SHEET = 'التجارب';
 const FOLDER = 'صور تجارب المحاكي';
+const RATES = 'تقييم الاستفادة';
 
 // يعمل الكود سواء كان مربوطًا بجدول أو مشروعًا مستقلًا: يحفظ رقم الجدول ويعيد استخدامه
 // إذا تعثّر فتح الجدول المحفوظ (انشغال مؤقت في Google) يُعاد المحاولة، ولا يُنشأ جدول جديد فارغ أبدًا مكانه،
@@ -38,6 +39,18 @@ function sheet_() {
   return s;
 }
 
+// ورقة تقييم المتدربين لاستفادتهم من التطبيق (من 100)، صف واحد لكل جهاز يُحدَّث إذا عدّل المتدرب تقييمه
+function rates_() {
+  const ss = ss_();
+  let r = ss.getSheetByName(RATES);
+  if (!r) {
+    r = ss.insertSheet(RATES);
+    r.appendRow(['معرف الجهاز', 'الوقت', 'الاسم', 'الرقم التدريبي', 'الاستفادة من 100', 'الملاحظة']);
+    r.setFrozenRows(1);
+  }
+  return r;
+}
+
 function folder_() {
   const it = DriveApp.getFoldersByName(FOLDER);
   return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER);
@@ -66,7 +79,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
   // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
-  const write = ['submit', 'del', 'setScores'].indexOf(d.action) >= 0;
+  const write = ['submit', 'del', 'setScores', 'rate'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
   if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
@@ -90,7 +103,28 @@ function doPost(e) {
       return out_({ ok: true, uid: uid });
     }
 
+    // تقييم المتدرب لاستفادته (اختياري): لا يحتاج كلمة السر
+    if (d.action === 'rate') {
+      const v = Math.round(Number(d.v));
+      if (!(v >= 0 && v <= 100)) return out_({ ok: false, err: 'missing' });
+      const r = rates_(), rid = String(d.rid || '').slice(0, 40);
+      const row = [rid, new Date(), String(d.n || '').trim().slice(0, 80), "'" + String(d.id || '').trim().slice(0, 30), v, String(d.c || '').slice(0, 500)];
+      const vals = r.getDataRange().getValues();
+      for (let i = 1; i < vals.length; i++) {
+        if (rid && String(vals[i][0]) === rid) { r.getRange(i + 1, 1, 1, 6).setValues([row]); return out_({ ok: true, upd: true }); }
+      }
+      r.appendRow(row);
+      return out_({ ok: true });
+    }
+
     if (String(d.key || '') !== KEY) return out_({ ok: false, err: 'key' });
+
+    if (d.action === 'rates') {
+      const v = rates_().getDataRange().getValues().slice(1).filter(r => r[4] !== '' && r[4] != null);
+      return out_({ ok: true, rows: v.map(r => ({
+        t: r[1] instanceof Date ? r[1].getTime() : r[1], n: String(r[2]), id: String(r[3]).replace(/^'/, ''), v: Number(r[4]), c: String(r[5] || '')
+      })) });
+    }
 
     if (d.action === 'list') {
       SpreadsheetApp.flush();
