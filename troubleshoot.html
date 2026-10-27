@@ -242,9 +242,19 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 @media (max-width:760px){.drow{flex-wrap:nowrap;justify-content:stretch;gap:3px;padding:5px 4px 6px}.drow>*{flex:1 1 0;min-width:0}.drow>.dsep{display:none}
   .db{min-width:0;max-width:none;height:50px;padding:0 1px;font-size:.58rem;white-space:normal;text-align:center;line-height:1.05;overflow:hidden}.db .ic{font-size:1rem}.db svg{width:17px;height:21px}.db .cnt{font-size:.55rem}}
 @media (max-width:360px){.db{font-size:.52rem;height:46px}.db .ic{font-size:.92rem}}
+/* big screens: --ui (set at the top of <body>) scales the bars, menus and windows; lengths inside a zoomed box that depend on the screen are divided back */
+:root{--ui:1}
+.top,.wtop,body>.stu,.dock,.cpop,.insp,.clbar,.modal{zoom:var(--ui)}
+.cpop{bottom:calc((var(--dockh,120px) + 8px) / var(--ui));max-width:calc((100vw - 16px) / var(--ui))}
+.insp{bottom:calc((var(--dockh,150px) + 8px) / var(--ui));width:min(calc(94vw / var(--ui)),420px)}
+.clbar{width:min(calc(94vw / var(--ui)),460px)}
+.modal .box{max-height:calc((100vh - 32px) / var(--ui));overflow:auto}
+.appbox{max-height:calc(94vh / var(--ui))}
 </style>
 </head>
 <body>
+<script>/* on big screens the bars, menus and windows grow with the screen (the board fits itself already); phones and tablets stay at 1 */
+(function(){var f=function(){var u=Math.min(innerWidth/1400,innerHeight/850);u=Math.max(1,Math.min(2,Math.round(u*20)/20));window.UIZ=u;document.documentElement.style.setProperty('--ui',u);};f();addEventListener('resize',f);})();</script>
 <div class="top">
   <div class="bar1">
     <h1>محاكي شنطة اكتشاف الأعطال (ELWE)<span class="credit">فكرة وتنفيذ م. جابر الفيفي بواسطة Claude · © جميع الحقوق محفوظة</span></h1>
@@ -998,7 +1008,7 @@ function mmSVG(){const m=S.mm,r=mmRead(),md=S.mode==='V'?'v':S.mode==='R'?'r':'o
   <text x="75" y="250" text-anchor="middle" style="font:500 8px sans-serif;fill:#c7d2dc" pointer-events="none">اضغط المقبس ثم الطرف</text></g>`;}
 function renderMeter(){const L=$('mmL');if(L)L.innerHTML=S.mm.on?mmSVG():'';$('dMM').classList.toggle('on',S.mm.on);}
 function mmShow(){const m=S.mm;m.on=true;const r=svg.getBoundingClientRect(),k=W/r.width,vw=innerWidth,vh=innerHeight;
-  const cx=(Math.max(r.left,0)+Math.min(r.right,vw))/2,cy=(Math.max(r.top,0)+Math.min(r.bottom,vh-($('dock').offsetHeight||0)))/2;
+  const cx=(Math.max(r.left,0)+Math.min(r.right,vw))/2,cy=(Math.max(r.top,0)+Math.min(r.bottom,vh-($('dock').getBoundingClientRect().height||0)))/2;
   m.x=clampN((cx-r.left)*k-75*MS,0,W-150*MS);m.y=clampN((cy-r.top)*k-131*MS,0,H-262*MS);}
 $('dMM').onclick=()=>{S.mmPick=null;if(S.mm.on)S.mm.on=false;else{mmAudio();mmShow();}renderMeter();save();};
 const svgPt=e=>{const r=svg.getBoundingClientRect(),k=W/r.width;return[(e.clientX-r.left)*k,(e.clientY-r.top)*k];};
@@ -1275,7 +1285,7 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
     else alert('لتثبيت التطبيق على الآيفون أو الآيباد:\n\n١) افتح الموقع في متصفح Safari\n٢) اضغط زر المشاركة ⬆ أسفل الشاشة\n٣) اختر «إضافة إلى الشاشة الرئيسية»\n٤) اضغط «إضافة»');};
   upd();}
 
-function measureDock(){document.body.style.setProperty('--dockh',$('dock').offsetHeight+'px');}
+function measureDock(){document.body.style.setProperty('--dockh',$('dock').getBoundingClientRect().height+'px');}
 renderSel();drawStatic();S.zoom=Math.max(fitZ(),wrap.clientWidth<700?.55:0);applyZoom();hint();$('dView').classList.toggle('on',S.view);update();measureDock();
 window.addEventListener('resize',measureDock);
 if(/^#t=/.test(location.hash))decodeCode(location.hash).then(o=>{openObj(o);history.replaceState(null,'',location.pathname+location.search);}).catch(()=>{});
