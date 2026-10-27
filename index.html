@@ -2593,19 +2593,21 @@ function endFDrag(){if(!fdrag)return;const d=fdrag;fdrag=null;if(d.moved)say('ن
 svg.addEventListener('pointerup',endFDrag);svg.addEventListener('pointercancel',endFDrag);
 /* drag a rail device sideways: changes the gap to its left neighbour, the devices to its right follow.
    mouse drags straight away; on touch the device is tapped (selected) first so the panel still scrolls */
-let ddrag=null,draf=0;
+let ddrag=null,draf=0,ddClk=0;
 svg.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-dev]');if(!g||e.target.closest('[data-press],[data-act],[data-term],[data-wh]'))return;
   let d=S.devs.find(x=>x.id===g.dataset.dev);if(d&&d.host)d=S.devs.find(x=>x.id===d.host);if(!d)return;
   if(e.pointerType!=='mouse'&&S.selDev!==g.dataset.dev&&S.selDev!==d.id)return;
   const L=S.devs.filter(q=>q.rail===d.rail&&!q.host),i=L.indexOf(d),pv=i>0?devices.find(q=>q.id===L[i-1].id):null;
   const prevEnd=pv?pv.x+pv.w:railStart(d.rail);let rest=0;L.slice(i).forEach((q,j)=>{rest+=DEFS[q.type].w+(j?devGap(q,false):0);});
-  const g0=devGap(d,i===0);ddrag={d,p0:svgPt(e),g0,min:i?GAPMIN:0,max:Math.max(g0,railEnd(d.rail)-prevEnd-rest),moved:false};
+  const g0=devGap(d,i===0);ddrag={d,sid:g.dataset.dev,p0:svgPt(e),g0,min:i?GAPMIN:0,max:Math.max(g0,railEnd(d.rail)-prevEnd-rest),moved:false};
   try{svg.setPointerCapture(e.pointerId);}catch(_){}});
 svg.addEventListener('pointermove',e=>{if(!ddrag)return;const dx=svgPt(e).x-ddrag.p0.x;
   if(!ddrag.moved){if(Math.abs(dx)<5)return;ddrag.moved=true;snap();}
   const g=Math.round(clampN(ddrag.g0+dx,ddrag.min,ddrag.max));if(g===ddrag.d.gap)return;ddrag.d.gap=g;
   if(!draf)draf=requestAnimationFrame(()=>{draf=0;relayout();render();});});
-function endDDrag(){if(!ddrag)return;const d=ddrag;ddrag=null;if(d.moved){d.d.gap=Math.round(clampN(d.d.gap,d.min,d.max));relayout();say('المسافة قبل '+d.d.id+' صارت '+d.d.gap);update();}}
+function endDDrag(){if(!ddrag)return;const d=ddrag;ddrag=null;if(d.moved){d.d.gap=Math.round(clampN(d.d.gap,d.min,d.max));relayout();say('المسافة قبل '+d.d.id+' صارت '+d.d.gap);update();}
+  /* a mouse click without moving selects the part, as a tap does on touch: the captured pointer sends the click to the board itself, so it is handled here and that click is skipped */
+  else{S.selDev=d.sid;S.sel=null;S.pending=null;ddClk=Date.now();render();}}
 svg.addEventListener('pointerup',endDDrag);svg.addEventListener('pointercancel',endDDrag);
 /* keep the board still while a part, wire or the meter is dragged: on touch screens (iPad/iPhone Safari ignores
    touch-action on SVG parts) the finger would otherwise also scroll or pan the board under the part */
@@ -2629,6 +2631,7 @@ window.addEventListener('scroll',()=>{if(bLock&&(scrollX!==bLock.x||scrollY!==bL
   document.getElementById('fxClose').onclick=()=>fm.classList.remove('open');
   fm.addEventListener('click',e=>{if(e.target===fm)fm.classList.remove('open');});}
 svg.addEventListener('click',e=>{
+  if(Date.now()-ddClk<400){ddClk=0;return;}
   if(e.target.closest('[data-wh]'))return;
   if(e.target.closest('[data-drag]')&&!e.target.closest('[data-press],[data-act],[data-term]'))return;
   if(e.target.closest('[data-fx]')&&!e.target.closest('[data-press],[data-act],[data-term]'))return;
