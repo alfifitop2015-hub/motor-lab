@@ -213,6 +213,7 @@ body.cloud #sWa{background:var(--panel)}
 .clh button{background:none;border:0;font-size:1.05rem}
 .clpg{height:4px;background:var(--chip);border-radius:2px;margin:6px 0}.clpg i{display:block;height:100%;width:0;background:var(--accent);border-radius:2px;transition:width .3s}
 #clTx{margin:0 0 8px;font-size:.92rem;line-height:1.65;min-height:3.3em}.clk{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;padding:0 7px;font-size:.78rem;margin-inline-end:4px}
+#clLoop.on{background:#1d6b3a;border-color:#4cd07d;color:#fff}
 .clc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.clc button:disabled{opacity:.4}.clc #clGo{margin-inline-start:auto;background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
 body.clip .dock,body.clip .clbtn,body.clip .clb,body.clip .stu{display:none}
 @media (max-width:420px){.ib.clb .t2{display:none}}
@@ -272,7 +273,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
   <div class="clh"><b id="clT"></b><span id="clN"></span><button id="clX" title="إغلاق المقطع والرجوع إلى الشنطة" aria-label="إغلاق المقطع">✕</button></div>
   <div class="clpg"><i id="clPg"></i></div>
   <p id="clTx" aria-live="polite"></p>
-  <div class="clc"><button id="clPrev" title="الخطوة السابقة">السابق</button><button id="clPlay" title="إيقاف مؤقت">⏸</button><button id="clNext" title="الخطوة التالية">التالي</button><button id="clSpd" title="سرعة الشرح">×1</button><button id="clSnd" title="الشرح الصوتي">🔊</button><button id="clGo" title="إنهاء الشرح والبدء بالتنفيذ">✋ نفّذ الآن</button></div>
+  <div class="clc"><button id="clPrev" title="الخطوة السابقة">السابق</button><button id="clPlay" title="إيقاف مؤقت">⏸</button><button id="clNext" title="الخطوة التالية">التالي</button><button id="clSpd" title="سرعة الشرح">×1</button><button id="clSnd" title="الشرح الصوتي">🔊</button><button id="clLoop" title="تكرار المقطع: يعيد نفسه من البداية كلما انتهى حتى تطفئه" aria-pressed="false">🔁</button><button id="clGo" title="إنهاء الشرح والبدء بالتنفيذ">✋ نفّذ الآن</button></div>
 </div>
 <section class="kit" aria-label="لوحة تشغيل الشنطة">
   <div class="ksel"><svg id="dial" viewBox="0 0 230 150" role="radiogroup" aria-label="مفتاح اختيار رقم الدائرة"></svg><div class="cinfo"><span class="kl">رقم الدائرة · <span dir="ltr">Schaltungsnr. / Circuit No.</span></span><b id="cName"></b><span class="de" id="cDe"></span><span class="kl">اضغط الرقم أو أدر المقبض</span></div></div>
@@ -1323,7 +1324,10 @@ function clStep(i,fwd,keep){const c=S.cl;c.tok++;clearTimeout(c.t);clHush();c.i=
   /* moves on when the explanation is over and the step's event (st.til) has happened on the board */
   if(c.play)clSpeak((st.k?st.k+'. ':'')+st.tx,()=>{const tok=c.tok,t0=Date.now(),chk=()=>{if(S.cl!==c||c.tok!==tok)return;
       if(!st.til||st.til()||Date.now()-t0>20000)clAuto();else c.t=setTimeout(chk,200);};c.t=setTimeout(chk,(st.ms||500)/c.spd);});}
-function clAuto(){const c=S.cl;if(!c)return;if(c.i<c.steps.length-1)return clStep(c.i+1,true);clClose(true);}
+function clAuto(){const c=S.cl;if(!c)return;if(c.i<c.steps.length-1)return clStep(c.i+1,true);
+  /* 🔁 on: the clip starts again from its first step a moment after it ends, until it is switched off */
+  if(clLs('clLoop')==='1'){const tok=c.tok;c.t=setTimeout(()=>{if(S.cl===c&&c.tok===tok&&c.play&&clLs('clLoop')==='1')clStep(0,true);},3000);return;}
+  clClose(true);}
 function clFocus(){setTimeout(()=>{const f=document.getElementById('clFocus')||document.querySelector('.clfoc');if(f&&f.scrollIntoView)try{f.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});}catch(_){}},60);}
 /* opts: {title, intro, steps, done(): the trainee's turn, abort(): close early} */
 function clStart(o){if(S.cl)clClose(false);clHush();clUnlock();
@@ -1339,6 +1343,8 @@ function clInit(){
   $('clPrev').onclick=()=>{const c=S.cl;if(c&&c.i>0)clStep(c.i-1,false);};
   $('clNext').onclick=()=>{const c=S.cl;if(c&&c.i<c.steps.length-1)clStep(c.i+1,true);};
   $('clSpd').onclick=()=>{const c=S.cl;if(!c)return;c.spd=CLSPD[(CLSPD.indexOf(c.spd)+1)%CLSPD.length];clLs('clSpd',String(c.spd));clShow();};
+  {const lb=$('clLoop'),show=()=>{const on=clLs('clLoop')==='1';lb.classList.toggle('on',on);lb.setAttribute('aria-pressed',on?'true':'false');};show();
+    lb.onclick=()=>{const on=clLs('clLoop')!=='1';clLs('clLoop',on?'1':'0');show();const c=S.cl;if(on&&c&&c.play&&c.i>=c.steps.length-1)clAuto();};}
   $('clSnd').onclick=()=>{const c=S.cl;if(!c)return;c.snd=!c.snd;clLs('clSnd',c.snd?'1':'0');if(!c.snd)clHush();clShow();};
   window.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.cl)clClose(false);});
   try{if(window.speechSynthesis)speechSynthesis.getVoices();}catch(_){}clVox();}
