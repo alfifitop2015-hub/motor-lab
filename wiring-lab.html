@@ -108,6 +108,20 @@ const defs=`<defs>
 <linearGradient id="skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b9774f"/><stop offset=".5" stop-color="#e2a57c"/><stop offset="1" stop-color="#c5835b"/></linearGradient>
 <linearGradient id="grip" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d1414"/><stop offset=".5" stop-color="#e53935"/><stop offset="1" stop-color="#8d1414"/></linearGradient>
 <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity=".35"/></filter>
+<pattern id="bholes" width="13" height="13" patternUnits="userSpaceOnUse"><rect width="13" height="13" fill="#1f5fbf"/><circle cx="6.5" cy="6.5" r="2.1" fill="#123c80"/></pattern>
+<pattern id="slotsC" width="16" height="10" patternUnits="userSpaceOnUse"><rect width="16" height="10" fill="#e4dec6"/><rect x="6" width="4" height="10" fill="#c3bb9c"/></pattern>
+<pattern id="slotsV" width="10" height="16" patternUnits="userSpaceOnUse"><rect width="10" height="16" fill="#e4dec6"/><rect y="6" width="10" height="4" fill="#c3bb9c"/></pattern>
+<linearGradient id="gDown" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+<linearGradient id="gWht" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dfe3e6"/><stop offset=".12" stop-color="#fbfcfc"/><stop offset=".7" stop-color="#eef1f3"/><stop offset="1" stop-color="#c9cfd4"/></linearGradient>
+<linearGradient id="gGry" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9cdd0"/><stop offset=".15" stop-color="#eceeef"/><stop offset=".75" stop-color="#dfe2e4"/><stop offset="1" stop-color="#b3b8bc"/></linearGradient>
+<linearGradient id="gShd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ecee"/><stop offset="1" stop-color="#cdd2d6"/></linearGradient>
+<linearGradient id="gDrk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a5f65"/><stop offset=".18" stop-color="#3d4146"/><stop offset="1" stop-color="#26292d"/></linearGradient>
+<linearGradient id="gBlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a8fe6"/><stop offset=".5" stop-color="#1f63c6"/><stop offset="1" stop-color="#174d9e"/></linearGradient>
+<linearGradient id="gRec" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa2a9"/><stop offset=".25" stop-color="#cdd2d6"/><stop offset="1" stop-color="#e4e7ea"/></linearGradient>
+<linearGradient id="gWin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121417"/><stop offset="1" stop-color="#3b4046"/></linearGradient>
+<linearGradient id="gCav" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0f11"/><stop offset=".6" stop-color="#25282c"/><stop offset="1" stop-color="#4a4f55"/></linearGradient>
+<linearGradient id="gStr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9ea5ab"/><stop offset=".2" stop-color="#d9dde0"/><stop offset=".8" stop-color="#c3c8cc"/><stop offset="1" stop-color="#8d949a"/></linearGradient>
+<linearGradient id="gStrN" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1a4f9c"/><stop offset=".2" stop-color="#4a8fe6"/><stop offset=".8" stop-color="#2f74d0"/><stop offset="1" stop-color="#174d9e"/></linearGradient>
 </defs>`;
 const T=(x,y,t,s,c,w,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:${w||700} ${s}px 'IBM Plex Sans Arabic',sans-serif;fill:${c||'#222'}">${t}</text>`;
 function coil(i){const y=coilY(i),f=coilFill(i),sel=S.coil===i,can=S.st==='coil';
@@ -120,33 +134,44 @@ function coil(i){const y=coilY(i),f=coilFill(i),sel=S.coil===i,can=S.st==='coil'
   if(sel)s+=`<circle cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffb300" stroke-width="5"/>`;
   else if(can)s+=`<circle class="hl" cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffd24a" stroke-width="3" stroke-dasharray="8 6"/>`;
   return s+`<circle cx="${CX}" cy="${y}" r="55" fill="transparent"/></g>`;}
-function term(k){const [x,y,l]=TT[k],act=false,pick=S.st==='inst'&&k===S.a,top=y<250;
-  let s=`<g data-term="${k}" style="cursor:pointer"><rect x="${x-17}" y="${y-17}" width="34" height="34" rx="5" fill="#2b3036"/><circle cx="${x}" cy="${y}" r="13" fill="url(#screw)" stroke="#555"/><path d="M${x-8} ${y+5}L${x+8} ${y-5}" stroke="#444" stroke-width="3"/>`;
-  s+=T(x,top?y+36:y-24,l,15,'#1d2329');
+/* the panel is drawn like the simulator's: blue perforated plate, cream trunking, silver DIN rail and the same parts */
+const hole=(cx,cy)=>`<circle cx="${cx}" cy="${cy}" r="13" fill="#c9cdd1" stroke="#7f868c"/><circle cx="${cx}" cy="${cy}" r="10.5" fill="#5d646a"/><path d="M${cx-7} ${cy+4}L${cx+7} ${cy-4}" stroke="#2c3135" stroke-width="2.6"/>`;
+const cav=(cx,cy,r)=>{r=r||16;return `<rect x="${cx-r}" y="${cy-r}" width="${2*r}" height="${2*r}" rx="4" fill="url(#gCav)" stroke="#0b0c0e" stroke-width="1.2"/><rect x="${cx-r+1.5}" y="${cy+r-4}" width="${2*r-3}" height="2.4" fill="#fff" opacity=".18"/>`+hole(cx,cy);};
+function term(k){const [x,y,l]=TT[k],pick=S.st==='inst'&&k===S.a,top=y<250,used=W.some(w=>w.a===k||w.b===k);
+  let s=`<g data-term="${k}" style="cursor:pointer">${cav(x,y)}`;
+  if(used)s+=`<circle cx="${x}" cy="${y}" r="13" fill="none" stroke="#f2c230" stroke-width="3"/>`;
+  s+=k.startsWith('K1.')?T(x,y-21,l,13,'#fff'):T(x,top?y+38:y-25,l,15,'#1f2a33');
   if(pick)s+=`<circle cx="${x}" cy="${y}" r="24" fill="none" stroke="#ffb300" stroke-width="5"/>`;
-  else if(act&&(S.st!=='a'||true))s+=`<circle class="hl" cx="${x}" cy="${y}" r="22" fill="none" stroke="${S.st==='inst'?'#2ecc71':'#ffd24a'}" stroke-width="3"/>`;
   return s+`<circle cx="${x}" cy="${y}" r="32" fill="transparent"/></g>`;}
-function panel(){let s=`<rect x="190" y="20" width="800" height="600" rx="10" fill="#9aa3ab"/><rect x="200" y="30" width="780" height="580" rx="6" fill="url(#holes)"/>`;
-  s+=`<rect x="200" y="235" width="780" height="40" fill="url(#rail)" stroke="#8a939a"/>`;
-  /* trunking at top and bottom */
-  s+=`<rect x="200" y="30" width="780" height="70" fill="#ececec" stroke="#b9bfc4"/><rect x="200" y="530" width="780" height="80" fill="#ececec" stroke="#b9bfc4"/>`;
-  for(let x=210;x<980;x+=26){s+=`<rect x="${x}" y="30" width="14" height="22" fill="#d6d9dc"/><rect x="${x}" y="588" width="14" height="22" fill="#d6d9dc"/>`;}
+function panel(){let s=`<rect x="190" y="20" width="800" height="600" rx="8" fill="#e9e2c8" stroke="#b8ae8a" stroke-width="2"/><rect x="226" y="100" width="728" height="430" fill="url(#bholes)"/>`;
+  /* cream trunking around the plate, with slots and covers */
+  const duct=(x,y,w,h,v)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${v?'slotsV':'slotsC'})" stroke="#b8ae8a"/><rect x="${x+(v?6:0)}" y="${y+(v?0:6)}" width="${v?w-12:w}" height="${v?h:h-12}" fill="#efe8d0" stroke="#cfc6a6"/>`;
+  s+=duct(200,30,780,70)+duct(200,530,780,80)+duct(200,100,26,430,1)+duct(954,100,26,430,1);
+  /* DIN rail */
+  s+=`<rect x="226" y="236" width="728" height="38" fill="url(#rail)" stroke="#7c858d"/><rect x="226" y="246" width="728" height="18" fill="#9aa3aa" opacity=".5"/><rect x="226" y="274" width="728" height="8" fill="url(#gDown)"/>`;
   /* supply cable into X1 */
-  s+=`<path d="M265 0V100" stroke="#5a3415" stroke-width="9"/><path d="M265 0V100" stroke="#7a4a21" stroke-width="6"/><path d="M320 0V100" stroke="#164e93" stroke-width="9"/><path d="M320 0V100" stroke="#1f6fd1" stroke-width="6"/>`+T(292,18,'230V',14,'#fff');
-  /* X1 terminals */
-  [['L',265,'#9ea4aa'],['N',320,'#1f6fd1']].forEach(([n,x,c])=>{s+=`<g filter="url(#sh)"><rect x="${x-25}" y="110" width="50" height="270" rx="5" fill="${c}" stroke="#555"/><rect x="${x-25}" y="215" width="50" height="80" fill="rgba(255,255,255,.18)"/></g>`+
-    `<rect x="${x-17}" y="113" width="34" height="34" rx="5" fill="#2b3036"/><circle cx="${x}" cy="130" r="13" fill="url(#screw)" stroke="#555"/>`+T(x,262,n,24,'#fff',800);});
-  s+=`<path d="M265 100V130M320 100V130" stroke="#d9823f" stroke-width="4"/>`+T(292,400,'X1',15,'#1d2329');
-  /* F1 */
-  s+=`<g filter="url(#sh)"><rect x="395" y="110" width="70" height="270" rx="6" fill="url(#dev)" stroke="#8a939a"/></g><rect x="405" y="200" width="50" height="22" rx="3" fill="#1f5fbf"/>`+T(430,216,'C6',14,'#fff')+
-    `<g data-act="f1" style="cursor:pointer"><rect x="412" y="232" width="36" height="56" rx="6" fill="#2b3036"/><rect x="417" y="${S.f1?236:262}" width="26" height="22" rx="4" fill="${S.f1?'#1a8a42':'#c62828'}"/>${T(430,S.f1?252:278,S.f1?'I':'0',13,'#fff')}</g>`+T(430,400,'F1',15,'#1d2329');
-  /* S1 modular push button */
-  s+=`<g filter="url(#sh)"><rect x="525" y="110" width="70" height="270" rx="6" fill="url(#dev)" stroke="#8a939a"/></g><g data-act="s1" style="cursor:pointer"><circle cx="560" cy="255" r="26" fill="#2b3036"/><circle cx="560" cy="255" r="${S.s1?17:20}" fill="#2e9e3f" stroke="#145c22" stroke-width="3"/></g>`+T(560,400,'S1',15,'#1d2329');
-  /* K1 contactor */
+  s+=`<path d="M265 0V112" stroke="#5a3415" stroke-width="9"/><path d="M265 0V112" stroke="#7a4a21" stroke-width="6"/><path d="M320 0V112" stroke="#164e93" stroke-width="9"/><path d="M320 0V112" stroke="#1f6fd1" stroke-width="6"/>`+T(292,18,'230V',14,'#fff');
+  /* X1: terminal blocks */
+  [['L',265,'url(#gStr)'],['N',320,'url(#gStrN)']].forEach(([n,x,c])=>{s+=`<g filter="url(#sh)"><rect x="${x-25}" y="108" width="50" height="274" rx="4" fill="${c}" stroke="#6f777e"/><rect x="${x-25}" y="108" width="50" height="8" rx="3" fill="#fff" opacity=".35"/></g>`+
+    cav(x,130)+`<rect x="${x-17}" y="226" width="34" height="58" rx="3" fill="#fff" opacity=".85"/>`+T(x,264,n,24,'#1f2a33',800);});
+  s+=`<path d="M265 112V130M320 112V130" stroke="#d9823f" stroke-width="4"/>`+T(292,406,'X1',15,'#fff');
+  /* F1: miniature circuit breaker */
+  s+=`<g filter="url(#sh)"><rect x="395" y="108" width="70" height="274" rx="6" fill="url(#gWht)" stroke="#9aa3aa"/></g><rect x="397" y="110" width="66" height="74" rx="5" fill="url(#gShd)"/><rect x="397" y="306" width="66" height="74" rx="5" fill="url(#gShd)"/>
+    <rect x="401" y="206" width="58" height="22" rx="3" fill="url(#gBlu)"/>${T(430,222,'F1 C6',13,'#fff')}
+    <rect x="${S.f1?424:424}" y="231" width="12" height="7" rx="1.5" fill="${S.f1?'#1fa34a':'#c0392b'}"/>
+    <g data-act="f1" style="cursor:pointer"><rect x="409" y="241" width="42" height="62" rx="6" fill="url(#gRec)" stroke="#9aa3aa"/><rect x="413" y="${S.f1?244:268}" width="34" height="30" rx="5" fill="url(#gBlu)" stroke="#123f86"/><rect x="416" y="${S.f1?246:270}" width="28" height="7" rx="3" fill="#fff" opacity=".3"/>${T(430,S.f1?265:289,S.f1?'I':'O',14,'#fff')}</g>`+T(430,406,'F1',15,'#fff');
+  /* S1: modular push button */
+  s+=`<g filter="url(#sh)"><rect x="525" y="108" width="70" height="274" rx="6" fill="url(#gWht)" stroke="#9aa3aa"/></g><rect x="527" y="110" width="66" height="74" rx="5" fill="url(#gShd)"/><rect x="527" y="306" width="66" height="74" rx="5" fill="url(#gShd)"/>
+    <g data-act="s1" style="cursor:pointer"><circle cx="560" cy="250" r="27" fill="#555"/><circle cx="560" cy="250" r="${S.s1?17:21}" fill="#2aa84a" stroke="rgba(0,0,0,.35)" stroke-width="${S.s1?5:2}"/><circle cx="553" cy="243" r="6" fill="#fff" opacity="${S.s1?.1:.3}"/></g>`+T(560,296,'S1',13,'#1f2a33')+T(560,406,'S1',15,'#fff');
+  /* K1: contactor */
   const on=coilOn();
-  s+=`<g filter="url(#sh)"><rect x="665" y="110" width="220" height="270" rx="8" fill="url(#dev)" stroke="#8a939a"/></g><rect x="712" y="210" width="126" height="78" rx="6" fill="#d0d4d8" stroke="#8a939a"/>`+
-    `<rect x="745" y="${on?232:222}" width="60" height="40" rx="4" fill="${on?'#1a8a42':'#a7adb3'}" stroke="#555"/>${T(775,on?258:248,on?'I':'O',16,'#fff')}`+T(775,400,'K1',15,'#1d2329')+
-    (on?T(775,300,'⚡ يعمل',14,'#1a8a42',800):'');
+  s+=`<g filter="url(#sh)"><rect x="665" y="108" width="220" height="274" rx="8" fill="url(#gGry)" stroke="#8f959a"/></g><rect x="665" y="108" width="220" height="62" rx="7" fill="url(#gDrk)"/><rect x="665" y="320" width="220" height="62" rx="7" fill="url(#gDrk)"/><rect x="665" y="170" width="220" height="5" fill="url(#gDown)" opacity=".6"/>
+    <rect x="700" y="186" width="150" height="122" rx="6" fill="url(#gWht)" stroke="#a3aab0"/><rect x="718" y="196" width="114" height="70" rx="4" fill="url(#gWin)" stroke="#0e1012"/>
+    <rect x="726" y="${on?224:206}" width="48" height="34" rx="2" fill="#7f9fcf"/><rect x="778" y="${on?224:206}" width="48" height="34" rx="2" fill="#7f9fcf"/>
+    <rect x="706" y="274" width="138" height="4" rx="1" fill="${on?'#3dcd58':'#9aa3aa'}"/>${T(775,298,'K1',20,'#1f2a33',800)}
+    <rect x="671" y="190" width="20" height="96" rx="2" fill="url(#gBlu)"/><text x="681" y="238" transform="rotate(-90 681 238)" text-anchor="middle" style="font:700 10px sans-serif;fill:#fff;dominant-baseline:middle">230V 50Hz</text>
+    <rect x="857" y="196" width="22" height="22" rx="3" fill="url(#gWin)"/><rect x="859" y="198" width="18" height="18" rx="2" fill="${on?'#2fbf5b':'#3a3f44'}"/>${T(868,212,on?'I':'O',12,'#fff')}`+T(775,406,'K1',15,'#fff')+
+    (on?T(775,176,'⚡ يعمل',14,'#3dcd58',800):'');
   Object.keys(TT).forEach(k=>{s+=term(k);});
   return s;}
 function wirePath(w){const [ax,ay]=TT[w.a],[bx,by]=TT[w.b],da=ay<250?-1:1,db=by<250?-1:1;
@@ -218,7 +243,7 @@ function bench(){let s=`<rect x="0" y="650" width="1000" height="670" fill="url(
   return s;}
 /* wide screens: the work bench sits to the right of the panel instead of below it */
 let LAND=false;const layout=()=>{const st=document.querySelector('.stage'),r=st.getBoundingClientRect();LAND=r.width>r.height*1.15;sv.setAttribute('viewBox',LAND?'0 0 2000 680':'0 0 1000 1320');};
-function render(){layout();sv.innerHTML=defs+`<rect width="1000" height="650" fill="#4b5560"/>`+`<rect x="20" y="20" width="150" height="600" rx="8" fill="#39424b"/>`+T(95,14,'لفّات الأسلاك 1.5 مم²',13,'#cfd8e0')+
+function render(){layout();sv.innerHTML=defs+`<rect width="1000" height="650" fill="#0c2753"/>`+`<rect x="20" y="20" width="150" height="600" rx="8" fill="#39424b"/>`+T(95,14,'لفّات الأسلاك 1.5 مم²',13,'#cfd8e0')+
   COILS.map((_,i)=>coil(i)).join('')+panel()+wiresSvg()+`<g id="gH">${handWire()}</g>`+`<g id="gB"${LAND?' transform="translate(1000 -640)"':''}>${bench()}</g>`;tasks();ui();}
 const renderB=()=>{const g=$('gB');if(g)g.innerHTML=bench();ui(true);};
 /* ---------- the circuit: L → F1 → S1 → A1, A2 → N ---------- */
