@@ -1,0 +1,304 @@
+<!doctype html>
+<!-- © 2026 م. جابر الفيفي (Jaber Alfaifi). جميع الحقوق محفوظة. يُمنع نسخ هذا الملف أو إعادة نشره أو تعديله أو استخدامه تجاريًا دون إذن كتابي مسبق من المؤلف. انظر ملف LICENSE. -->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b3d91">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<title>ورشة تحضير الأسلاك (تجريبية)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e6ebf0;--ink:#15202b;--muted:#586675;--panel:#fff;--line:#c8d2dc;--accent:#1f5fbf;--warn:#c42b22;--ok:#1a8a42;--chip:#eef2f6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f151c;--ink:#e5eaef;--muted:#93a0ad;--panel:#18212b;--line:#2a3846;--accent:#6ea4ff;--warn:#ff6b60;--ok:#4cd07d;--chip:#212d39}}
+:root[data-theme="dark"]{--bg:#0f151c;--ink:#e5eaef;--muted:#93a0ad;--panel:#18212b;--line:#2a3846;--accent:#6ea4ff;--warn:#ff6b60;--ok:#4cd07d;--chip:#212d39}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;font-size:15px;line-height:1.5;display:flex;flex-direction:column;overflow:hidden}
+button{font:inherit;color:inherit}
+.hd{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--bg);flex:none}
+.hd h1{margin:0;font-size:1.02rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd h1 small{display:block;font-size:.72rem;font-weight:400;color:var(--muted)}
+.b{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:6px 10px;cursor:pointer;white-space:nowrap;font-size:.9rem}
+.b.prim{background:#1f5fbf;border-color:#1f5fbf;color:#fff;font-weight:700}
+.b.big{font-size:1.05rem;padding:9px 16px;font-weight:700}
+.b:disabled{opacity:.45;cursor:default}
+.tag{background:#ffb300;color:#1c1400;border-radius:999px;padding:1px 9px;font-size:.72rem;font-weight:700}
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#sv{width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+.bar{flex:none;background:rgba(11,19,30,.96);color:#fff;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px}
+.msg{font-size:.98rem;font-weight:500;min-height:1.5em;text-align:center}
+.msg b{color:#ffd24a}
+.note{font-size:.84rem;text-align:center;min-height:1.2em}
+.note.ok{color:#6fe39a}.note.bad{color:#ff8a80}.note.warn{color:#ffd24a}
+.btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.btns .b{background:#223142;border-color:#3b5068;color:#fff}
+.btns .b.prim{background:#1f6fd1;border-color:#4a90e2}
+.btns .b.sq{background:#c62828;border-color:#ff6b60}
+.tasks{position:absolute;inset-inline-start:8px;top:58px;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.8rem;box-shadow:0 6px 18px rgba(0,0,0,.18);max-width:260px}
+.tasks summary{cursor:pointer;font-weight:700}
+.tasks ol{margin:4px 0 0;padding-inline-start:18px}
+.tasks li.done{color:var(--ok);text-decoration:line-through}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;border:1px solid rgba(0,0,0,.35)}
+@keyframes fall{to{transform:translateY(240px) rotate(70deg);opacity:0}}
+.fall{animation:fall .9s ease-in forwards;transform-box:fill-box;transform-origin:center}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(-540deg)}}
+.spin{animation:spin .7s ease-in-out;transform-box:fill-box;transform-origin:center}
+@keyframes hl{50%{opacity:.25}}
+.hl{animation:hl 1s infinite}
+</style>
+</head>
+<body>
+<div class="hd">
+  <a class="b" href="index.html" style="text-decoration:none">↩ المحاكي</a>
+  <h1>ورشة تحضير الأسلاك <span class="tag">تجريبية</span><small>اسحب السلك من اللفة، اقطعه، اعرِّ طرفيه، ثم اربطه في الترمينال</small></h1>
+  <button class="b" id="bReset" title="إزالة كل الأسلاك والبدء من جديد">⟲ من جديد</button>
+</div>
+<details class="tasks"><summary id="tSum">📋 التمرين</summary><ol id="tasks"></ol></details>
+<div class="stage"><svg id="sv" viewBox="0 0 1000 1320" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<div class="bar">
+  <div class="msg" id="msg"></div>
+  <div class="note" id="note"></div>
+  <div class="btns" id="btns"></div>
+</div>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),sv=$('sv');
+/* ---------- the board: wire coils hang on the left side, the panel is on the right, the work bench below ---------- */
+const COILS=[{c:'#7a4a21',n:'بني'},{c:'#1f6fd1',n:'أزرق'},{c:'#c62828',n:'أحمر'},{c:'#222',n:'أسود'},{c:'#8a8f94',n:'رمادي'},{c:'ye',n:'أصفر/أخضر'}];
+const coilY=i=>95+i*98,CX=95;
+const TT={ /* terminals: x, y, label */
+  'X1.L':[265,350,'L'],'X1.N':[320,350,'N'],
+  'F1.1':[430,160,'1'],'F1.2':[430,350,'2'],
+  'S1.13':[560,160,'13'],'S1.14':[560,350,'14'],
+  'K1.A1':[692,160,'A1'],'K1.1':[737,160,'1'],'K1.3':[777,160,'3'],'K1.5':[817,160,'5'],'K1.13':[860,160,'13'],
+  'K1.A2':[692,350,'A2'],'K1.2':[737,350,'2'],'K1.4':[777,350,'4'],'K1.6':[817,350,'6'],'K1.14':[860,350,'14']};
+const TASKS=[['X1.L','F1.1',0,'من الشعبة L إلى دخل القاطع F1'],['F1.2','S1.13',2,'من خرج القاطع F1 إلى الضاغط S1 (13)'],
+  ['S1.14','K1.A1',2,'من الضاغط S1 (14) إلى ملف الكونتاكتور A1'],['K1.A2','X1.N',1,'من A2 إلى شعبة التعادل N']];
+const tName=k=>({'X1.L':'الشعبة L','X1.N':'الشعبة N','F1.1':'F1 طرف 1','F1.2':'F1 طرف 2','S1.13':'S1 طرف 13','S1.14':'S1 طرف 14'})[k]||k.replace('K1.','K1 طرف ');
+const coilFill=i=>COILS[i].c==='ye'?'url(#ye)':COILS[i].c;
+/* ---------- state ---------- */
+let W=[];try{W=JSON.parse(localStorage.getItem('wlab.v1')||'[]')||[];}catch(_){W=[];}
+const saveW=()=>{try{localStorage.setItem('wlab.v1',JSON.stringify(W));}catch(_){}};
+const S={st:'a',a:null,b:null,need:0,coil:null,f1:false,s1:false,len:0,end:0,ends:[0,0],tx:0,ty:0,sq:false,pull:0,pull0:0,sel:null,inst:0,spin:null};
+const CUT={y:860,x0:930,k:.7,ppc:8},CLO={y:880,ex:760,k:.8,ppm:12};
+/* the tool zones in tool coordinates (pivot at 0,0, jaws upward): top = stripper notch, bottom = cutter */
+const ZS=[-150,-80],ZC=[-70,-12];
+function zone(){const v=S.st==='cut'?CUT:CLO,k=v.k,d=v.y-S.ty;
+  if(d>=ZS[0]*k&&d<=ZS[1]*k)return 'S';if(d>=ZC[0]*k&&d<=ZC[1]*k)return 'C';return null;}
+/* ---------- sound ---------- */
+let AC=null;const ac=()=>{try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();}catch(_){}return AC;};
+function snd(kind){const a=ac();if(!a)return;const t=a.currentTime,n=a.sampleRate*(kind==='cut'?.06:.03),b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,kind==='cut'?3:6);const s=a.createBufferSource(),g=a.createGain(),f=a.createBiquadFilter();
+  f.type=kind==='cut'?'highpass':'bandpass';f.frequency.value=kind==='cut'?2500:900;g.gain.value=kind==='clk'?.5:.35;s.buffer=b;s.connect(f);f.connect(g);g.connect(a.destination);s.start(t);}
+/* ---------- drawing ---------- */
+const defs=`<defs>
+<pattern id="ye" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="22" height="22" fill="#2e9e3f"/><rect width="11" height="22" fill="#f2d33a"/></pattern>
+<pattern id="holes" width="22" height="22" patternUnits="userSpaceOnUse"><rect width="22" height="22" fill="#cfd5da"/><rect x="8" y="8" width="6" height="6" rx="1.5" fill="#aeb6bd"/></pattern>
+<linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c79a62"/><stop offset="1" stop-color="#a87a45"/></linearGradient>
+<linearGradient id="rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9edf0"/><stop offset=".5" stop-color="#aeb6bd"/><stop offset="1" stop-color="#d8dde1"/></linearGradient>
+<linearGradient id="dev" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9dcdf"/><stop offset=".15" stop-color="#f4f5f6"/><stop offset=".85" stop-color="#eceef0"/><stop offset="1" stop-color="#c9cdd1"/></linearGradient>
+<radialGradient id="screw" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9ced3"/><stop offset="1" stop-color="#7c858d"/></radialGradient>
+<linearGradient id="cu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd2a0"/><stop offset=".45" stop-color="#d9823f"/><stop offset="1" stop-color="#8f4a1c"/></linearGradient>
+<linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient>
+<linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5f676e"/><stop offset=".45" stop-color="#d7dce0"/><stop offset="1" stop-color="#6b737a"/></linearGradient>
+<linearGradient id="skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b9774f"/><stop offset=".5" stop-color="#e2a57c"/><stop offset="1" stop-color="#c5835b"/></linearGradient>
+<linearGradient id="grip" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d1414"/><stop offset=".5" stop-color="#e53935"/><stop offset="1" stop-color="#8d1414"/></linearGradient>
+<filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity=".35"/></filter>
+</defs>`;
+const T=(x,y,t,s,c,w,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:${w||700} ${s}px 'IBM Plex Sans Arabic',sans-serif;fill:${c||'#222'}">${t}</text>`;
+function coil(i){const y=coilY(i),f=coilFill(i),sel=S.coil===i,can=S.st==='coil';
+  let s=`<g data-coil="${i}" style="cursor:${can?'pointer':'default'}"><line x1="${CX}" y1="${y-60}" x2="${CX}" y2="${y-30}" stroke="#555" stroke-width="5"/>`;
+  s+=`<circle cx="${CX}" cy="${y}" r="46" fill="#2a2f35"/>`;
+  for(let r=42;r>16;r-=4)s+=`<circle cx="${CX}" cy="${y}" r="${r}" fill="none" stroke="${f}" stroke-width="4.2"/><circle cx="${CX}" cy="${y}" r="${r}" fill="none" stroke="rgba(0,0,0,.25)" stroke-width=".8"/>`;
+  s+=`<circle cx="${CX}" cy="${y}" r="42" fill="url(#sheen)" opacity=".6"/><circle cx="${CX}" cy="${y}" r="15" fill="#3b4148" stroke="#111" stroke-width="2"/><circle cx="${CX}" cy="${y}" r="6" fill="#777" stroke="#222"/>`;
+  s+=`<path d="M${CX+40} ${y+12} q22 18 18 52" fill="none" stroke="${f}" stroke-width="5" stroke-linecap="round"/><rect x="${CX+53}" y="${y+60}" width="5" height="9" fill="url(#cu)"/>`;
+  s+=`<title>${COILS[i].n} 1.5 مم²</title>`;
+  if(sel)s+=`<circle cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffb300" stroke-width="5"/>`;
+  else if(can)s+=`<circle class="hl" cx="${CX}" cy="${y}" r="50" fill="none" stroke="#ffd24a" stroke-width="3" stroke-dasharray="8 6"/>`;
+  return s+`<circle cx="${CX}" cy="${y}" r="55" fill="transparent"/></g>`;}
+function term(k){const [x,y,l]=TT[k],act=S.st==='a'||S.st==='b'||(S.st==='inst'&&k===(S.inst?S.b:S.a)),pick=k===S.a||k===S.b,top=y<250;
+  let s=`<g data-term="${k}" style="cursor:pointer"><rect x="${x-17}" y="${y-17}" width="34" height="34" rx="5" fill="#2b3036"/><circle cx="${x}" cy="${y}" r="13" fill="url(#screw)" stroke="#555"/><path d="M${x-8} ${y+5}L${x+8} ${y-5}" stroke="#444" stroke-width="3"/>`;
+  s+=T(x,top?y+36:y-24,l,15,'#1d2329');
+  if(pick)s+=`<circle cx="${x}" cy="${y}" r="24" fill="none" stroke="#ffb300" stroke-width="5"/>`;
+  else if(act&&(S.st!=='a'||true))s+=`<circle class="hl" cx="${x}" cy="${y}" r="22" fill="none" stroke="${S.st==='inst'?'#2ecc71':'#ffd24a'}" stroke-width="3"/>`;
+  return s+`<circle cx="${x}" cy="${y}" r="32" fill="transparent"/></g>`;}
+function panel(){let s=`<rect x="190" y="20" width="800" height="600" rx="10" fill="#9aa3ab"/><rect x="200" y="30" width="780" height="580" rx="6" fill="url(#holes)"/>`;
+  s+=`<rect x="200" y="235" width="780" height="40" fill="url(#rail)" stroke="#8a939a"/>`;
+  /* trunking at top and bottom */
+  s+=`<rect x="200" y="30" width="780" height="70" fill="#ececec" stroke="#b9bfc4"/><rect x="200" y="530" width="780" height="80" fill="#ececec" stroke="#b9bfc4"/>`;
+  for(let x=210;x<980;x+=26){s+=`<rect x="${x}" y="30" width="14" height="22" fill="#d6d9dc"/><rect x="${x}" y="588" width="14" height="22" fill="#d6d9dc"/>`;}
+  /* supply cable into X1 */
+  s+=`<path d="M265 0V100" stroke="#5a3415" stroke-width="9"/><path d="M265 0V100" stroke="#7a4a21" stroke-width="6"/><path d="M320 0V100" stroke="#164e93" stroke-width="9"/><path d="M320 0V100" stroke="#1f6fd1" stroke-width="6"/>`+T(292,18,'230V',14,'#fff');
+  /* X1 terminals */
+  [['L',265,'#9ea4aa'],['N',320,'#1f6fd1']].forEach(([n,x,c])=>{s+=`<g filter="url(#sh)"><rect x="${x-25}" y="110" width="50" height="270" rx="5" fill="${c}" stroke="#555"/><rect x="${x-25}" y="215" width="50" height="80" fill="rgba(255,255,255,.18)"/></g>`+
+    `<rect x="${x-17}" y="113" width="34" height="34" rx="5" fill="#2b3036"/><circle cx="${x}" cy="130" r="13" fill="url(#screw)" stroke="#555"/>`+T(x,262,n,24,'#fff',800);});
+  s+=`<path d="M265 100V130M320 100V130" stroke="#d9823f" stroke-width="4"/>`+T(292,400,'X1',15,'#1d2329');
+  /* F1 */
+  s+=`<g filter="url(#sh)"><rect x="395" y="110" width="70" height="270" rx="6" fill="url(#dev)" stroke="#8a939a"/></g><rect x="405" y="200" width="50" height="22" rx="3" fill="#1f5fbf"/>`+T(430,216,'C6',14,'#fff')+
+    `<g data-act="f1" style="cursor:pointer"><rect x="412" y="232" width="36" height="56" rx="6" fill="#2b3036"/><rect x="417" y="${S.f1?236:262}" width="26" height="22" rx="4" fill="${S.f1?'#1a8a42':'#c62828'}"/>${T(430,S.f1?252:278,S.f1?'I':'0',13,'#fff')}</g>`+T(430,400,'F1',15,'#1d2329');
+  /* S1 modular push button */
+  s+=`<g filter="url(#sh)"><rect x="525" y="110" width="70" height="270" rx="6" fill="url(#dev)" stroke="#8a939a"/></g><g data-act="s1" style="cursor:pointer"><circle cx="560" cy="255" r="26" fill="#2b3036"/><circle cx="560" cy="255" r="${S.s1?17:20}" fill="#2e9e3f" stroke="#145c22" stroke-width="3"/></g>`+T(560,400,'S1',15,'#1d2329');
+  /* K1 contactor */
+  const on=coilOn();
+  s+=`<g filter="url(#sh)"><rect x="665" y="110" width="220" height="270" rx="8" fill="url(#dev)" stroke="#8a939a"/></g><rect x="712" y="210" width="126" height="78" rx="6" fill="#d0d4d8" stroke="#8a939a"/>`+
+    `<rect x="745" y="${on?232:222}" width="60" height="40" rx="4" fill="${on?'#1a8a42':'#a7adb3'}" stroke="#555"/>${T(775,on?258:248,on?'I':'O',16,'#fff')}`+T(775,400,'K1',15,'#1d2329')+
+    (on?T(775,300,'⚡ يعمل',14,'#1a8a42',800):'');
+  Object.keys(TT).forEach(k=>{s+=term(k);});
+  return s;}
+function wirePath(w){const [ax,ay]=TT[w.a],[bx,by]=TT[w.b],da=ay<250?-1:1,db=by<250?-1:1;
+  return `M${ax} ${ay}C${ax} ${ay+da*120} ${bx} ${by+db*120} ${bx} ${by}`;}
+function wiresSvg(){let s='';W.forEach((w,i)=>{const d=wirePath(w),c=coilFill(w.c),sel=S.sel===i;
+    s+=`<g data-wire="${i}" style="cursor:pointer"><path d="${d}" fill="none" stroke="transparent" stroke-width="26"/>${sel?`<path d="${d}" fill="none" stroke="#ffb300" stroke-width="15" stroke-linecap="round"/>`:''}<path d="${d}" fill="none" stroke="rgba(0,0,0,.55)" stroke-width="10" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="7" stroke-linecap="round"/><path d="${d}" fill="none" stroke="url(#sheen)" stroke-width="3" opacity=".5"/>`;
+    [[w.a,w.sa],[w.b,w.sb]].forEach(([k,m])=>{const [x,y]=TT[k],dy=y<250?-1:1;
+      if(m>12)s+=`<rect x="${x-3}" y="${dy<0?y-17-(m-11)*1.8:y+17}" width="6" height="${(m-11)*1.8}" fill="url(#cu)"/>`+T(x+26,y+dy*30,'⚠',20,'#d99000');
+      if(m<7)s+=T(x+26,y+dy*30,'✖',20,'#c62828');});
+    s+='</g>';});
+  return s;}
+/* the combined tool: two halves rotating on the pivot; stripper notches at the top of the jaws, cutting edges below them */
+function tool(k,open){const a=open?13:1.5,jaw=side=>{const m=side<0?-1:1;
+    let p=`<path d="M0 -6 L${m*24} -14 L${m*20} -150 Q${m*12} -168 0 -160 Z" fill="url(#steel)" stroke="#3d444a" stroke-width="1.5"/>`;
+    [-138,-115,-94].forEach((y,i)=>{p+=`<path d="M0 ${y-5-i} A${5+i} ${5+i} 0 0 ${m>0?1:0} 0 ${y+5+i}" fill="#2d3236" stroke="#111"/>`;});
+    p+=`<path d="M${m*1} -70 L${m*7} -64 L${m*7} -18 L${m*1} -12" fill="#eef2f5" stroke="#555" stroke-width="1"/>`;
+    return p;},
+    handle=side=>{const m=side<0?-1:1;return `<path d="M${-m*10} 10 L${m*30} 250 Q${m*36} 272 ${m*52} 262 L${m*22} 8 Z" fill="url(#grip)" stroke="#5d0c0c" stroke-width="1.5"/><path d="M${-m*10} 10 L${m*12} 90" stroke="#4d555c" stroke-width="10"/>`;};
+  let s=`<g transform="scale(${k})"><rect x="-75" y="-175" width="155" height="580" fill="transparent"/><g transform="rotate(${-a})">${jaw(-1)}${handle(1)}</g><g transform="rotate(${a})">${jaw(1)}${handle(-1)}</g>`;
+  s+=`<circle r="11" fill="url(#screw)" stroke="#333" stroke-width="2"/><circle r="4" fill="#555"/>`;
+  s+=`<text x="34" y="-118" style="font:700 15px sans-serif;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:3">عرّاية</text><text x="34" y="-36" style="font:700 15px sans-serif;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:3">قطّاعة</text>`;
+  /* the hand around the handles */
+  s+=`<g><path d="M-58 300 Q-70 210 -40 150 Q-10 118 30 130 Q70 150 74 220 Q78 290 58 330 L-50 340 Z" fill="url(#skin)" stroke="#8f5a39" stroke-width="2"/>`;
+  [140,172,204,236].forEach((y,i)=>{s+=`<rect x="${-6+i*2}" y="${y}" width="${82-i*6}" height="30" rx="15" fill="url(#skin)" stroke="#8f5a39" stroke-width="2"/><path d="M${58-i*4} ${y+6} q6 9 0 18" stroke="#9c6442" stroke-width="2" fill="none"/>`;});
+  s+=`<path d="M-44 230 Q-70 170 -40 120 Q-28 104 -16 116 Q-28 160 -14 214 Z" fill="url(#skin)" stroke="#8f5a39" stroke-width="2"/><path d="M-34 124 q8 -6 14 0" stroke="#f3d3bd" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  s+=`<path d="M-60 330 L66 322 L72 400 L-64 404 Z" fill="#244b7a" stroke="#132c4a" stroke-width="2"/><path d="M-60 336 L68 328" stroke="#f2b632" stroke-width="5"/></g>`;
+  return s+'</g>';}
+function ruler(x0,dir,n,step,big,label,y,unit){let s=`<rect x="${dir<0?x0-n*step-10:x0-10}" y="${y}" width="${n*step+20}" height="44" rx="4" fill="#f2e6a0" stroke="#8a7a32"/>`;
+  for(let i=0;i<=n;i++){const x=x0+dir*i*step,h=i%big===0?22:i%(big/2)===0?15:9;s+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+h}" stroke="#3a3200" stroke-width="1.4"/>`;
+    if(i%big===0)s+=T(x,y+38,String(i*label),13,'#3a3200');}
+  return s+T(dir<0?x0-n*step-30:x0+n*step+30,y+28,unit,13,'#3a3200');}
+function bench(){let s=`<rect x="0" y="650" width="1000" height="670" fill="url(#wood)"/>`;
+  for(let y=670;y<1320;y+=38)s+=`<path d="M0 ${y} Q250 ${y+8} 500 ${y} T1000 ${y}" stroke="rgba(90,50,10,.18)" stroke-width="2" fill="none"/>`;
+  s+=`<rect x="0" y="650" width="1000" height="10" fill="#7d5428"/>`;
+  if(S.coil!=null&&(S.st==='cut'||S.st==='strip')){const f=coilFill(S.coil),y0=coilY(S.coil);
+    if(S.st==='cut')s+=LAND?`<path d="M${CX+56-1000} ${y0+64+640} V1302 H-10 Q0 1302 0 1290 V${CUT.y}" fill="none" stroke="${f}" stroke-width="8" stroke-linejoin="round"/>`:
+      `<path d="M${CX+56} ${y0+64} C${CX+70} ${y0+150} 60 ${CUT.y-80} 0 ${CUT.y}" fill="none" stroke="${f}" stroke-width="8"/>`;}
+  if(S.st==='cut'){const {y,x0,ppc}=CUT,f=coilFill(S.coil);
+    s+=ruler(x0,-1,110,ppc,10,1,y+40,'سم');
+    s+=`<rect x="${x0-S.need*ppc-28*ppc}" y="${y+40}" width="${28*ppc}" height="44" fill="rgba(46,204,113,.45)"/>`+T(x0-S.need*ppc-14*ppc,y+108,'الطول المناسب',14,'#0d4d23',800);
+    s+=`<path d="M0 ${y}H${x0}" stroke="rgba(0,0,0,.5)" stroke-width="13"/><path d="M0 ${y}H${x0}" stroke="${f}" stroke-width="10"/><path d="M0 ${y}H${x0}" stroke="url(#sheen)" stroke-width="5" opacity=".5"/><rect x="${x0}" y="${y-3}" width="4" height="6" fill="url(#cu)"/>`;
+    const L=Math.max(0,(x0-S.tx)/ppc),z=zone();
+    s+=`<line x1="${S.tx}" y1="${y-40}" x2="${S.tx}" y2="${y+40}" stroke="${z==='C'?'#c62828':'#777'}" stroke-width="2" stroke-dasharray="6 5"/>`+T(S.tx,y-50,L.toFixed(0)+' سم',18,'#fff',800);
+    s+=`<g transform="translate(${S.tx} ${S.ty})" filter="url(#sh)" data-tool="1">${tool(CUT.k,!S.sq)}</g>`;}
+  if(S.st==='strip'){const {y,ex,ppm}=CLO,f=coilFill(S.coil),cur=S.ends[S.end],cuX=ex-cur*ppm;
+    s+=T(500,700,'الطرف '+(S.end?'الثاني':'الأول')+' (مكبّر) — طول التعرية المناسب 8 إلى 10 مم',20,'#3a2306',800);
+    s+=ruler(ex,-1,40,ppm,10,1,y+50,'مم');
+    s+=`<rect x="${ex-10*ppm}" y="${y+50}" width="${2*ppm}" height="44" fill="rgba(46,204,113,.5)"/>`;
+    /* copper core under the insulation, the insulation from the stripped part leftwards */
+    s+=`<rect x="0" y="${y-9}" width="${ex}" height="18" fill="url(#cu)"/>`;
+    for(let x=ex-4;x>cuX&&x>0;x-=7)s+=`<path d="M${x} ${y-9}l-5 18" stroke="rgba(120,60,20,.45)" stroke-width="1.4"/>`;
+    const insE=Math.max(0,S.pullOn?S.slugA:cuX);
+    s+=`<rect x="0" y="${y-19}" width="${insE}" height="38" fill="${f}"/><rect x="0" y="${y-19}" width="${insE}" height="38" fill="url(#sheen)"/>`;
+    if(S.sq&&S.pullOn){const p=S.pull;
+      /* the insulation slug between the notch and the end, pushed outward by the pull */
+      s+=`<rect x="${S.slugA+p}" y="${y-19}" width="${S.slugB-S.slugA}" height="38" fill="${f}" stroke="rgba(0,0,0,.3)"/><rect x="${S.slugA+p}" y="${y-19}" width="${S.slugB-S.slugA}" height="38" fill="url(#sheen)"/>`;}
+    const z=zone(),d=(S.tx-ex)/ppm;
+    s+=`<line x1="${S.tx}" y1="${y-60}" x2="${S.tx}" y2="${y+48}" stroke="${z==='S'?'#ffd24a':z==='C'?'#c62828':'#777'}" stroke-width="2" stroke-dasharray="6 5"/>`;
+    if(S.tx<ex)s+=T(S.tx,y-70,Math.abs(d).toFixed(1)+' مم من الطرف',18,'#fff',800);
+    s+=`<g transform="translate(${S.tx} ${S.ty})" filter="url(#sh)" data-tool="1">${tool(CLO.k,!S.sq)}</g>`;}
+  if(S.st==='a'||S.st==='b'||S.st==='coil'||S.st==='inst'||S.st==='idle'){s+=T(500,760,'طاولة العمل',22,'rgba(60,35,8,.55)',800);
+    s+=`<g transform="translate(560 1010) rotate(-90)" opacity=".85">${tool(.55,true)}</g>`;}
+  return s;}
+/* wide screens: the work bench sits to the right of the panel instead of below it */
+let LAND=false;const layout=()=>{const st=document.querySelector('.stage'),r=st.getBoundingClientRect();LAND=r.width>r.height*1.15;sv.setAttribute('viewBox',LAND?'0 0 2000 680':'0 0 1000 1320');};
+function render(){layout();sv.innerHTML=defs+`<rect width="1000" height="650" fill="#4b5560"/>`+`<rect x="20" y="20" width="150" height="600" rx="8" fill="#39424b"/>`+T(95,14,'لفّات الأسلاك 1.5 مم²',13,'#cfd8e0')+
+  COILS.map((_,i)=>coil(i)).join('')+panel()+wiresSvg()+`<g id="gB"${LAND?' transform="translate(1000 -640)"':''}>${bench()}</g>`;tasks();ui();}
+const renderB=()=>{const g=$('gB');if(g)g.innerHTML=bench();ui(true);};
+/* ---------- the circuit: L → F1 → S1 → A1, A2 → N ---------- */
+function comp(){const P={},f=k=>P[k]==null||P[k]===k?(P[k]=k):(P[k]=f(P[k])),u=(a,b)=>{P[f(a)]=f(b);};
+  W.forEach(w=>{if(w.sa>=7&&w.sb>=7)u(w.a,w.b);});if(S.f1)u('F1.1','F1.2');if(S.s1)u('S1.13','S1.14');return f;}
+function coilOn(){const f=comp();return f('K1.A1')===f('X1.L')&&f('K1.A2')===f('X1.N')&&f('X1.L')!==f('X1.N');}
+function shortCk(){const f=comp();if(f('X1.L')===f('X1.N')){S.f1=false;note('⚡ قِصَر! وصلت L بـ N مباشرة فانفصل القاطع F1. راجع التوصيل.','bad');snd('clk');}}
+/* ---------- tasks list ---------- */
+function tasks(){$('tasks').innerHTML=TASKS.map(([a,b,c,t])=>{const w=W.find(w=>(w.a===a&&w.b===b)||(w.a===b&&w.b===a)),ok=w&&w.sa>=7&&w.sb>=7;
+  return `<li class="${ok?'done':''}">${t} <span class="sw" style="background:${COILS[c].c==='ye'?'#2e9e3f':COILS[c].c}"></span> ${COILS[c].n}</li>`;}).join('')+'<li style="list-style:none;margin-top:4px;color:var(--muted)">ثم: شغّل F1 واضغط S1 مع الاستمرار.</li>';
+  const n=TASKS.filter(([a,b])=>W.some(w=>((w.a===a&&w.b===b)||(w.a===b&&w.b===a))&&w.sa>=7&&w.sb>=7)).length;$('tSum').textContent='📋 التمرين: تشغيل كونتاكتور بضاغط ('+n+'/'+TASKS.length+')';}
+/* ---------- bottom bar ---------- */
+let NOTE=['',''];const note=(t,c)=>{NOTE=[t,c||''];const n=$('note');n.textContent=t;n.className='note '+(c||'');};
+function ui(light){const m=$('msg'),B=[];let t='';
+  if(S.st==='a')t=S.sel!=null?'سلك محدد: احذفه أو اضغط مكانًا آخر.':'① اضغط <b>الترمينال الأول</b> للسلك الجديد في اللوحة.';
+  else if(S.st==='b')t='② اضغط <b>الترمينال الثاني</b>: من '+tName(S.a)+' إلى …';
+  else if(S.st==='coil')t='③ اختر <b>لفّة السلك</b> من اليسار (الطول اللازم تقريبًا '+S.need+' سم'+(sugg()!=null?'، اللون المقترح: '+COILS[sugg()].n:'')+').';
+  else if(S.st==='cut')t='④ حرّك العدة على السلك، واجعل <b>القطّاعة</b> (الجزء السفلي من الفك) عند الطول المناسب ثم اضغط ✊.';
+  else if(S.st==='strip')t=S.sq&&S.pullOn?'اسحب العدة <b>نحو طرف السلك</b> (يمينًا) لنزع العازل.':'⑤ ضع <b>العرّاية</b> (أعلى الفك) على بعد 8 إلى 10 مم من الطرف، ثم اضغط ✊ واسحب نحو الطرف.';
+  else if(S.st==='inst')t='⑥ اضغط <b>'+tName(S.inst?S.b:S.a)+'</b> لإدخال الطرف '+(S.inst?'الثاني':'الأول')+' وشدّه بالمفك.';
+  m.innerHTML=t;if(light&&$('btns').dataset.st===S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null))return;
+  if(S.st==='cut'||S.st==='strip')B.push(`<button class="b big sq" data-b="sq">✊ اضغط العدة</button>`);
+  if(S.st==='strip'&&S.ends[S.end]>0)B.push(`<button class="b big prim" data-b="next">✔ ${S.end?'انتهيت: ركّب السلك':'الطرف الثاني'}</button>`);
+  if(S.st==='a'&&S.sel!=null)B.push(`<button class="b" data-b="del">🗑 حذف السلك</button>`);
+  if(S.st!=='a')B.push(`<button class="b" data-b="cancel">✕ إلغاء هذا السلك</button>`);
+  $('btns').innerHTML=B.join('');$('btns').dataset.st=S.st+S.sq+(S.ends[S.end]>0)+(S.sel!=null);}
+const sugg=()=>{const t=TASKS.find(([a,b])=>(a===S.a&&b===S.b)||(a===S.b&&b===S.a));return t?t[2]:null;};
+function reset0(){Object.assign(S,{st:'a',a:null,b:null,need:0,coil:null,sq:false,pullOn:false,pull:0,ends:[0,0],end:0,inst:0,sel:null});}
+/* ---------- actions ---------- */
+function squeeze(){if(S.st==='cut'){const z=zone();
+    if(z!=='C'){S.sq=true;renderB();setTimeout(()=>{S.sq=false;renderB();},350);return note(z==='S'?'هذه العرّاية (أعلى الفك): حرّك العدة لأعلى قليلًا لتكون القطّاعة على السلك.':'السلك ليس بين فكّي العدة: حرّكها حتى يمر السلك بين الفكين.','warn');}
+    const L=(CUT.x0-S.tx)/CUT.ppc;if(L<3)return note('قرّب العدة من مكان القطع على السلك.','warn');
+    S.sq=true;snd('cut');renderB();
+    setTimeout(()=>{S.sq=false;if(L<S.need){note('✂ قطعت '+L.toFixed(0)+' سم: قصير ولن يصل بين الترمينالين. اقطع قطعة أطول.','bad');renderB();return;}
+      S.len=L;note(L>S.need+28?'✂ قطعت '+L.toFixed(0)+' سم: أطول من اللازم (هدر)، لكنه يصلح.':'✂ ممتاز: قطعت '+L.toFixed(0)+' سم.',L>S.need+28?'warn':'ok');
+      S.st='strip';S.end=0;S.ends=[0,0];S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;render();},380);return;}
+  if(S.st==='strip'){const z=zone(),d=(CLO.ex-S.tx)/CLO.ppm;
+    if(z==='C'){if(d<=0.3)return note('ضع القطّاعة على السلك داخل الطرف لقص الزائد.','warn');S.sq=true;snd('cut');renderB();
+      setTimeout(()=>{S.sq=false;const cu=S.ends[S.end];S.ends[S.end]=Math.max(0,cu-d);note('✂ قصصت '+d.toFixed(1)+' مم من الطرف'+(cu?' (النحاس الظاهر الآن '+S.ends[S.end].toFixed(1)+' مم)':'')+'.','ok');renderB();},350);return;}
+    if(z!=='S')return note('ضع السلك في فتحة العرّاية (أعلى الفك) ثم اضغط.','warn');
+    if(d<1.5)return note('العرّاية قريبة جدًا من الطرف: ابتعد قليلًا (8 إلى 10 مم).','warn');
+    if(d<=S.ends[S.end]+.3)return note('هذا الجزء معرّى أصلًا: ضع العرّاية على العازل.','warn');
+    S.sq=true;S.pullOn=true;S.pull=0;S.slugA=S.tx;S.slugB=CLO.ex-S.ends[S.end]*CLO.ppm;S.stripD=d;snd('clk');renderB();}}
+function pullDone(){const d=S.stripD;S.ends[S.end]=d;S.sq=false;S.pullOn=false;S.pull=0;snd('cut');
+  note(d<7?'عرّيت '+d.toFixed(1)+' مم: قصير، قد لا يمسكه الترمينال جيدًا. عرِّ أكثر.':d>12?'عرّيت '+d.toFixed(1)+' مم: طويل، سيظهر النحاس خارج الترمينال. قص الزائد بالقطّاعة.':'✔ ممتاز: عرّيت '+d.toFixed(1)+' مم.',d<7?'bad':d>12?'warn':'ok');
+  render();const g=$('gB');if(g){const y=CLO.y;g.insertAdjacentHTML('beforeend',`<rect class="fall" x="${CLO.ex+20}" y="${y-19}" width="${(d-0)*CLO.ppm*0.9}" height="38" fill="${coilFill(S.coil)}" stroke="rgba(0,0,0,.3)"/>`);}}
+function install(k){const [x,y]=TT[k];const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.innerHTML=`<g transform="translate(${x} ${y})"><g class="spin"><rect x="-5" y="-60" width="10" height="44" fill="#c9ced3" stroke="#555"/><rect x="-11" y="-120" width="22" height="64" rx="8" fill="#f2b632" stroke="#7a5600"/><rect x="-3" y="-16" width="6" height="14" fill="#555"/></g></g>`;sv.appendChild(g);snd('clk');
+  setTimeout(()=>{g.remove();if(!S.inst){S.inst=1;note('✔ رُبط الطرف الأول. الآن الطرف الثاني.','ok');render();return;}
+    W.push({a:S.a,b:S.b,c:S.coil,sa:+S.ends[0].toFixed(1),sb:+S.ends[1].toFixed(1),len:Math.round(S.len)});saveW();
+    const bad=[S.ends[0],S.ends[1]].some(m=>m<7),lng=[S.ends[0],S.ends[1]].some(m=>m>12);
+    note(bad?'⚠ رُكّب السلك، لكن أحد طرفيه معرّى قليلًا فهو مرتخٍ (✖) ولن يوصل التيار. احذفه وأعده.':lng?'⚠ رُكّب السلك، لكن نحاسًا ظاهرًا خارج الترمينال (⚠): هذا خطر في الواقع.':'✔ رُكّب السلك بإحكام.',bad?'bad':lng?'warn':'ok');
+    reset0();shortCk();render();},750);}
+/* ---------- input ---------- */
+const P=e=>{const p=sv.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(sv.getScreenCTM().inverse());return LAND&&q.x>1000?{x:q.x-1000,y:q.y+640}:q;};
+let drag=null;
+sv.addEventListener('pointerdown',e=>{ac();const p=P(e);
+  if((S.st==='cut'||S.st==='strip')&&p.y>650){drag={x:p.x,y:p.y,tx:S.tx,ty:S.ty,m:false,onTool:!!e.target.closest('[data-tool]')};try{sv.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();return;}
+  const s1=e.target.closest('[data-act="s1"]');if(s1){S.s1=true;snd('clk');shortCk();render();const up=()=>{S.s1=false;render();removeEventListener('pointerup',up);removeEventListener('pointercancel',up);};addEventListener('pointerup',up);addEventListener('pointercancel',up);}});
+sv.addEventListener('pointermove',e=>{if(!drag)return;const p=P(e),dx=p.x-drag.x,dy=p.y-drag.y;if(!drag.m&&Math.hypot(dx,dy)<6)return;drag.m=true;
+  if(S.st==='strip'&&S.sq&&S.pullOn){S.pull=Math.max(0,dx);S.tx=drag.tx+S.pull;if(S.pull>=(S.slugB-S.slugA)*.8+8){drag=null;pullDone();return;}renderB();return;}
+  if(S.sq)return;S.tx=Math.max(40,Math.min(980,drag.tx+dx));S.ty=Math.max(700,Math.min(1250,drag.ty+dy));renderB();});
+const endDrag=()=>{if(!drag)return;const d=drag;drag=null;
+  if(S.st==='strip'&&S.pullOn){S.sq=false;S.pullOn=false;S.tx=d.tx;S.pull=0;note('اسحب أكثر نحو الطرف حتى ينفصل العازل.','warn');renderB();return;}
+  if(!d.m&&d.onTool)squeeze();};
+sv.addEventListener('pointerup',endDrag);sv.addEventListener('pointercancel',endDrag);
+sv.addEventListener('click',e=>{const t=e.target.closest('[data-term]'),c=e.target.closest('[data-coil]'),w=e.target.closest('[data-wire]'),f1=e.target.closest('[data-act="f1"]');
+  if(f1){S.f1=!S.f1;snd('clk');note(S.f1?'القاطع F1 مغلق (I).':'القاطع F1 مفصول (0).','');shortCk();return render();}
+  if(t){const k=t.dataset.term;
+    if(S.st==='a'){S.sel=null;S.a=k;S.st='b';note('');return render();}
+    if(S.st==='b'){if(k===S.a){S.a=null;S.st='a';return render();}S.b=k;const [ax,ay]=TT[S.a],[bx,by]=TT[k];
+      S.need=Math.round((Math.abs(ax-bx)+Math.abs(ay-by)+(ay<250?120:120)+(by<250?120:120))*.08+12);S.st='coil';return render();}
+    if(S.st==='inst'){if(k!==(S.inst?S.b:S.a))return note('اضغط '+tName(S.inst?S.b:S.a)+' (المضيء بالأخضر).','warn');return install(k);}
+    return;}
+  if(c&&S.st==='coil'){S.coil=+c.dataset.coil;const sg=sugg();note(sg!=null&&sg!==S.coil?'ملاحظة: اللون المقترح لهذا السلك '+COILS[sg].n+'.':'سُحب السلك من اللفة إلى طاولة العمل.',sg!=null&&sg!==S.coil?'warn':'');
+    S.st='cut';S.tx=CUT.x0-(S.need+10)*CUT.ppc;S.ty=CUT.y+40*CUT.k;return render();}
+  if(w&&S.st==='a'){S.sel=+w.dataset.wire;return render();}
+  if(S.st==='a'&&S.sel!=null&&!e.target.closest('[data-b]')){S.sel=null;render();}});
+$('btns').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;const k=b.dataset.b;
+  if(k==='sq')return squeeze();
+  if(k==='next'){if(S.end===0){S.end=1;S.tx=CLO.ex-260;S.ty=CLO.y+115*CLO.k;note('','');return render();}S.st='inst';S.inst=0;note('');return render();}
+  if(k==='cancel'){reset0();note('أُلغي السلك.','');return render();}
+  if(k==='del'&&S.sel!=null){W.splice(S.sel,1);saveW();S.sel=null;note('حُذف السلك.','');return render();}});
+$('bReset').onclick=()=>{if(W.length&&!confirm('إزالة كل الأسلاك من اللوحة؟'))return;W=[];saveW();reset0();S.f1=false;note('');render();};
+reset0();render();addEventListener('resize',()=>{const o=LAND;layout();if(o!==LAND)render();});
+})();
+</script>
+</body>
+</html>
