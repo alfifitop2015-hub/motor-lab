@@ -546,7 +546,7 @@ body.fs{padding-bottom:0}
         <button class="mi trainer-only" id="bResults">📋 نتائج المتدربين</button>
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <button class="mi trainer-only" id="bRates">⭐ تقييمات الاستفادة</button>
-        <a class="mi trainer-only" href="wiring-lab.html" style="text-decoration:none;color:inherit">🧪 ورشة تحضير الأسلاك (تجريبية)</a>
+        <button class="mi trainer-only" id="bWReal">🧪 التوصيل الواقعي (تجريبي)</button>
         <button class="mi trainer-only" id="bReal">📷 تقييم لوحة حقيقية بالصور</button>
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
         <button class="mi trainer-only" id="bShare">⇪ مشاركة التوصيلات</button>
@@ -2516,6 +2516,7 @@ function mapKey(k){if(LEG[k])k=LEG[k];if(X0M[k])k=X0M[k];const mx=/^X2\.(U1|V1|W
 function setWires(list,ac){const A=new Set(ac||[]);S.wires=[];list.forEach(([a,b,c,m],i)=>{a=mapKey(a);b=mapKey(b);if(a&&b){const n=S.wires.length;addWire(a,b,c?normC(c):RD0);if(S.wires.length>n){if(m)S.wires[n].man=m;if(A.has(i))S.wires[n].ac=true;}}});}
 function termClick(k){
   if(S.mmPick){S.mm[S.mmPick]=k;say('وُضع المجس '+(S.mmPick==='red'?'الأحمر':'الأسود')+' على '+k);S.mmPick=null;return render();}
+  if(window.WR&&WR.term(k))return; /* realistic wiring (trial): the wire is prepared on a bench, then carried by hand */
   if(!S.pending){S.pending=k;S.sel=null;scrAdd(k,0,-1,true);if(vwOn())speak('من '+termDesc(k));}
   else if(S.pending===k)S.pending=null;
   else if(T[S.pending].zone!=='z'&&T[k].zone!=='z'&&(T[S.pending].zone||'p')!==(T[k].zone||'p')&&!((T[S.pending].m2&&!T[k].zone)||(T[k].m2&&!T[S.pending].zone))){say('لا يمكن توصيل طرف داخل اللوحة بالمحرك M1 مباشرة. وصّله من أسفل الشعب 1 إلى 6. أما M2 فيوصَّل مباشرة من الأوفرلود أو الكونتاكتور.');S.pending=null;}
@@ -4821,6 +4822,11 @@ if(!PWA_EMB&&isHosted()&&'serviceWorker' in navigator)navigator.serviceWorker.re
     catch(e){B.innerHTML=e.message==='key'?'<p>افتح «📋 نتائج المتدربين» مرة واحدة وأدخل كلمة السر، ثم أعد المحاولة.</p>':e.message==='action'||e.message==='setup'?'<p>كود الخادم قديم: انسخ apps-script.gs الجديد إلى مشروع Google Apps Script وانشر إصدارًا جديدًا (نشر ← إدارة عمليات النشر ← تعديل ← إصدار جديد).</p>':'<p>تعذّر التحميل: تحقق من الاتصال وأعد المحاولة.</p>';}};
   $('bRates').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;rsM.classList.add('open');rsLoad();};
   $('rsRe').onclick=rsLoad;$('rsX').onclick=()=>rsM.classList.remove('open');rsM.addEventListener('click',e=>{if(e.target===rsM)rsM.classList.remove('open');});}
+/* what the realistic-wiring trial (wiring-real.js) uses from the simulator */
+window.__wr={S,T:()=>T,svg,addWire,update,snap,scrAdd,say,routeAll,termDesc};
+{const b=document.getElementById('bWReal'),lab=()=>{b.textContent='🧪 التوصيل الواقعي (تجريبي)'+(window.WR&&WR.on?' ✓':'');};
+  b.onclick=()=>{if(!window.WR)return;const on=WR.toggle();lab();say(on?'🧪 التوصيل الواقعي يعمل: اضغط أي ترمينال لتحضير سلك من اللفّة وقصه وتعريته ثم تثبيته باليد.':'أُوقف التوصيل الواقعي، وعاد التوصيل بالنقر.');};
+  addEventListener('load',lab);}
 measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());addEventListener("load",()=>{measureTop();measureDock();if(fitMode==="w")setZoom(fitZoom());});
 })();
 /* ---------- الفيديو التعريفي: مشاهد متحركة بتعليق صوتي مسجّل بصوت رجالي، ونطق الجهاز عند تعذّر التسجيل ---------- */
@@ -4988,5 +4994,6 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing)pa
 try{if(!localStorage.getItem('vidSeen'))g('bVid').classList.add('vnew');}catch(_){}
 })();
 </script>
+<script src="wiring-real.js?v=1" defer></script>
 </body>
 </html>
