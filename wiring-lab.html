@@ -242,9 +242,11 @@ function bench(){let s=`<rect x="0" y="650" width="1000" height="670" fill="url(
     s+=`<g transform="translate(560 1010) rotate(-90)" opacity=".85">${tool(.55,true)}</g>`;}
   return s;}
 /* wide screens: the work bench sits to the right of the panel instead of below it */
-let LAND=false;const layout=()=>{const st=document.querySelector('.stage'),r=st.getBoundingClientRect();LAND=r.width>r.height*1.15;sv.setAttribute('viewBox',LAND?'0 0 2000 680':'0 0 1000 1320');};
+/* the work bench is shown only while a wire is being cut or stripped; otherwise the panel fills the screen */
+let LAND=false,BENCH=false,VB='';const layout=()=>{const st=document.querySelector('.stage'),r=st.getBoundingClientRect();BENCH=S.st==='cut'||S.st==='strip';LAND=BENCH&&r.width>r.height*1.15;
+  const v=!BENCH?'0 0 1000 650':LAND?'0 0 2000 680':'0 0 1000 1320';if(v!==VB){VB=v;sv.setAttribute('viewBox',v);}};
 function render(){layout();sv.innerHTML=defs+`<rect width="1000" height="650" fill="#0c2753"/>`+`<rect x="20" y="20" width="150" height="600" rx="8" fill="#39424b"/>`+T(95,14,'لفّات الأسلاك 1.5 مم²',13,'#cfd8e0')+
-  COILS.map((_,i)=>coil(i)).join('')+panel()+wiresSvg()+`<g id="gH">${handWire()}</g>`+`<g id="gB"${LAND?' transform="translate(1000 -640)"':''}>${bench()}</g>`;tasks();ui();}
+  COILS.map((_,i)=>coil(i)).join('')+panel()+wiresSvg()+`<g id="gH">${handWire()}</g>`+(BENCH?`<g id="gB"${LAND?' transform="translate(1000 -640)"':''}>${bench()}</g>`:'');tasks();ui();}
 const renderB=()=>{const g=$('gB');if(g)g.innerHTML=bench();ui(true);};
 /* ---------- the circuit: L → F1 → S1 → A1, A2 → N ---------- */
 function comp(){const P={},f=k=>P[k]==null||P[k]===k?(P[k]=k):(P[k]=f(P[k])),u=(a,b)=>{P[f(a)]=f(b);};
@@ -336,7 +338,7 @@ $('btns').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!
   if(k==='cancel'){reset0();note('أُلغي السلك.','');return render();}
   if(k==='del'&&S.sel!=null){W.splice(S.sel,1);saveW();S.sel=null;note('حُذف السلك.','');return render();}});
 $('bReset').onclick=()=>{if(W.length&&!confirm('إزالة كل الأسلاك من اللوحة؟'))return;W=[];saveW();reset0();S.f1=false;note('');render();};
-reset0();render();addEventListener('resize',()=>{const o=LAND;layout();if(o!==LAND)render();});
+reset0();render();addEventListener('resize',()=>{const o=VB;layout();if(o!==VB)render();});
 })();
 </script>
 </body>
