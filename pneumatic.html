@@ -685,10 +685,19 @@ const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn
 const SEENK='pnSeen';let SEEN=new Set(),ONLYNEW=false;try{SEEN=new Set(JSON.parse(localStorage.getItem(SEENK)||'[]'));}catch(_){}
 const seenSave=()=>{try{localStorage.setItem(SEENK,JSON.stringify([...SEEN].slice(-4000)));}catch(_){}};
 function seenInit(){let had=null;try{had=localStorage.getItem(SEENK);}catch(_){}if(had==null&&RS.rows.length){RS.rows.forEach(r=>SEEN.add(r.uid));seenSave();}}
-const seenMark=(u,on)=>{if(on===false)SEEN.delete(u);else SEEN.add(u);seenSave();};
+const seenMark=(u,on)=>{if(on===false)SEEN.delete(u);else SEEN.add(u);seenSave();seenPush([u],on!==false);};
+/* with the updated Google code the marks live in the results sheet, so every device of the trainer sees the same ✔ */
+let SEENSRV=false,seenRows=null;
+const seenKey=()=>{const i=document.getElementById('rKey');let k=i&&i.value.trim();if(!k)try{k=localStorage.getItem('wsKey')||'';}catch(_){}return k||'';};
+function seenPush(uids,on){if(!SEENSRV||!uids.length)return;cloud({action:'seen',key:seenKey(),uids,on}).catch(()=>{});}
+function seenSync(){SEENSRV=RS.rows.length>0&&RS.rows.every(r=>'seen' in r);if(!SEENSRV)return false;
+  if(!RS.rows.some(r=>r.seen)){let had=null;try{had=localStorage.getItem(SEENK);}catch(_){}
+    /* the first time the sheet carries marks: this device's marks are sent, or everything already sent counts as seen */
+    const up=RS.rows.filter(r=>had==null||SEEN.has(r.uid)).map(r=>r.uid);up.forEach(u=>{const r=RS.rows.find(x=>x.uid===u);if(r)r.seen=true;});seenPush(up,true);}
+  SEEN=new Set(RS.rows.filter(r=>r.seen).map(r=>r.uid));seenSave();return true;}
 const seenBtn=r=>SEEN.has(r.uid)?`<button class="rseen on" data-rseen="${esc(r.uid)}" title="اطّلعت عليها (اضغط لإعادتها جديدة)" aria-label="مُطّلع عليها">✔</button>`:`<button class="rseen" data-rseen="${esc(r.uid)}" title="جديدة: اضغط لتعليمها بعلامة الاطّلاع" aria-label="جديدة">جديد</button>`;
 function seenBar(){const n=RS.rows.filter(r=>!SEEN.has(r.uid)).length,b=$('rNew'),a=$('rSeenAll');if(!b)return;b.classList.toggle('on',ONLYNEW);b.textContent='🆕 الجديد فقط'+(n?' ('+n+')':'');a.disabled=!n;}
-function rRender(){seenInit();seenBar();const q=$('rFind').value.trim(),L=RS.rows.filter(r=>(!ONLYNEW||!SEEN.has(r.uid))&&(!q||(r.n+' '+r.id).includes(q)));$('rDelSel').disabled=!RS.sel.size;
+function rRender(){if(RS.rows!==seenRows){seenRows=RS.rows;if(!seenSync())seenInit();}else if(!SEENSRV)seenInit();seenBar();const q=$('rFind').value.trim(),L=RS.rows.filter(r=>(!ONLYNEW||!SEEN.has(r.uid))&&(!q||(r.n+' '+r.id).includes(q)));$('rDelSel').disabled=!RS.sel.size;
   $('rList').innerHTML=L.length?L.map(r=>`<div class="rrow${SEEN.has(r.uid)?'':' rnew'}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${seenBtn(r)}${r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="">`:'<div class="rth none">بلا صورة</div>'}
     <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${r.g&&EX[r.g.ex]?esc(EX[r.g.ex].n)+' · ':''}${fmtT(r.t)}</div>${r.s!==''&&r.s!=null?`<div style="font-weight:700">${esc(r.s)}<small style="color:var(--muted);font-weight:400">/20</small></div>`:''}<div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح الدائرة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${ONLYNEW&&RS.rows.length?'لا توجد نتائج جديدة: اطّلعت على الكل ✔':RS.rows.length?'لا نتائج مطابقة.':'لا توجد دوائر مرسلة.'}</p>`;}
 /* the results list: Google sometimes answers with an empty sheet for a moment (a slow or busy spreadsheet); when the last load had
@@ -715,7 +724,7 @@ $('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
 $('rDelSel').onclick=()=>arm($('rDelSel'),()=>rDelete([...RS.sel]));
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 $('rNew').onclick=()=>{ONLYNEW=!ONLYNEW;rRender();};
-$('rSeenAll').onclick=()=>{RS.rows.forEach(r=>SEEN.add(r.uid));seenSave();ONLYNEW=false;rRender();};
+$('rSeenAll').onclick=()=>{const up=RS.rows.filter(r=>!SEEN.has(r.uid)).map(r=>r.uid);RS.rows.forEach(r=>SEEN.add(r.uid));seenSave();seenPush(up,true);ONLYNEW=false;rRender();};
 $('rList').addEventListener('click',async e=>{{const sb=e.target.closest('[data-rseen]');if(sb){seenMark(sb.dataset.rseen,!SEEN.has(sb.dataset.rseen));rRender();return;}
   const sx=e.target.closest('[data-ropen],[data-rimg]');if(sx){seenMark(sx.dataset.ropen||sx.dataset.rimg);setTimeout(rRender,60);}}
   const im=e.target.closest('[data-rimg]'),o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
