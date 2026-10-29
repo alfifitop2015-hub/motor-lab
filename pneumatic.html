@@ -631,8 +631,13 @@ function rtKey(){return S.comps.map(c=>c.id+':'+c.x+','+c.y).join(';')+'|'+S.tub
 function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)return RT.m;
   const N=RC*RR,blk=new Uint8Array(N),near=new Uint8Array(N),oH=new Uint8Array(N),oV=new Uint8Array(N),m=new Map();
   S.comps.forEach(c=>{const D=DEF[c.t];for(let gy=Math.max(0,Math.ceil((c.y-8)/RG));gy<=Math.min(RR-1,Math.floor((c.y+D.h+8)/RG));gy++)for(let gx=Math.max(0,Math.ceil((c.x-8)/RG));gx<=Math.min(RC-1,Math.floor((c.x+D.w+8)/RG));gx++)blk[gy*RC+gx]=1;});
+  /* 24V sockets: a lead never runs over another socket; it may cross its own part to leave between the sockets */
+  const sk=new Uint8Array(N),skM=(X,Y,r)=>{for(let gy=Math.max(0,Math.floor((Y-r)/RG));gy<=Math.min(RR-1,Math.ceil((Y+r)/RG));gy++)for(let gx=Math.max(0,Math.floor((X-r)/RG));gx<=Math.min(RC-1,Math.ceil((X+r)/RG));gx++)if(Math.hypot(gx*RG-X,gy*RG-Y)<r)sk[gy*RC+gx]=1;};
+  S.comps.forEach(c=>{const E=DEF[c.t].e;if(!E)return;Object.values(E).forEach(([ex,ey])=>{skM(c.x+ex,c.y+ey,11.5);if(c.t!=='psu'&&!/^v[35]/.test(c.t))skM(c.x+ex,c.y+ey-15,7.5);});});
+  S.comps.forEach(c=>{if(c.t!=='psu')return;for(let x=c.x+10;x<=c.x+DEF.psu.w-10;x+=8)skM(x,c.y+32,12);});
   for(let i=0;i<N;i++)if(!blk[i]){const x=i%RC;if((x>0&&blk[i-1])||(x<RC-1&&blk[i+1])||(i>=RC&&blk[i-RC])||(i<N-RC&&blk[i+RC]))near[i]=1;}
-  const end=(k,P0,c0)=>{const P=P0||portXY(k),c=c0||comp(k.split('.')[0]);if(!P||!c)return null;const [dx,dy]=DV[P.s],D=DEF[c.t],own=(gx,gy)=>gx*RG>=c.x-8&&gx*RG<=c.x+D.w+8&&gy*RG>=c.y-8&&gy*RG<=c.y+D.h+8;let gx=Math.round(P.x/RG),gy=Math.round(P.y/RG);
+  const end=(k,P0,c0)=>{const P=P0||portXY(k),c=c0||comp(k.split('.')[0]);if(!P||!c)return null;
+    if(k.includes('.~')){const D=DEF[c.t];return{P,dx:0,dy:1,gx:Math.round(P.x/RG),gy:Math.round(P.y/RG),d:2,sock:true,r:[c.x-8,c.y-8,c.x+D.w+8,c.y+D.h+8]};}const [dx,dy]=DV[P.s],D=DEF[c.t],own=(gx,gy)=>gx*RG>=c.x-8&&gx*RG<=c.x+D.w+8&&gy*RG>=c.y-8&&gy*RG<=c.y+D.h+8;let gx=Math.round(P.x/RG),gy=Math.round(P.y/RG);
     if(dy)gy=dy>0?Math.ceil((P.y+6)/RG):Math.floor((P.y-6)/RG);else gx=dx>0?Math.ceil((P.x+6)/RG):Math.floor((P.x-6)/RG);
     for(let n=0;n<40&&gx>0&&gy>0&&gx<RC-1&&gy<RR-1&&own(gx,gy);n++){gx+=dx;gy+=dy;}
     return{P,dx,dy,gx:Math.max(0,Math.min(RC-1,gx)),gy:Math.max(0,Math.min(RR-1,gy)),d:dy<0?0:dx>0?1:dy>0?2:3};};
@@ -642,21 +647,24 @@ function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)re
   if(cp&&su)T2.unshift({t:{id:'feed'},a:end('',{x:cp.x+250,y:cp.y+22,s:'u'},cp),b:end('',{x:su.x+44,y:su.y+96,s:'l'},su)});
   const len=q=>Math.abs(q.a.gx-q.b.gx)+Math.abs(q.a.gy-q.b.gy);
   T2.push(...S.ew.map(w=>({t:{id:'w'+w.id},a:end(w.a),b:end(w.b)})).filter(q=>q.a&&q.b).sort((p,q)=>len(p)-len(q)));
-  T2.forEach(({t,a,b})=>{const c=rAstar(a,b,blk,near,oH,oV);if(!c)return;
+  T2.forEach(({t,a,b})=>{const c=rAstar(a,b,blk,near,oH,oV,sk);if(!c)return;
     for(let i=0;i<c.length-1;i++){const h=c[i]%RC!==c[i+1]%RC;(h?oH:oV)[c[i]]=1;(h?oH:oV)[c[i+1]]=1;}
     let P=c.map(i=>[(i%RC)*RG,((i/RC)|0)*RG]);
     const lead=(e,arr)=>{const k=e.dy?0:1,v=e.dy?e.P.x:e.P.y,g=arr[0][k];for(let i=0;i<arr.length&&arr[i][k]===g;i++)arr[i][k]=v;};
-    lead(a,P);P.reverse();lead(b,P);P.reverse();P=[[a.P.x,a.P.y],...P,[b.P.x,b.P.y]];
+    /* a socket end starts on the socket itself: its first run is moved onto the socket's exact centre */
+    const sock=(e,arr)=>{const g0=arr[0];arr[0]=[e.P.x,e.P.y];const hz=arr.length>1&&arr[1][1]===g0[1],k=hz?1:0,v=hz?e.P.y:e.P.x;for(let i=1;i<arr.length&&arr[i][k]===g0[k];i++)arr[i][k]=v;};
+    if(a.sock)sock(a,P);else lead(a,P);P.reverse();if(b.sock)sock(b,P);else lead(b,P);P.reverse();P=[...(a.sock?[]:[[a.P.x,a.P.y]]),...P,...(b.sock?[]:[[b.P.x,b.P.y]])];
     const Q=[P[0]];for(let i=1;i<P.length-1;i++){const p0=Q[Q.length-1],p1=P[i],p2=P[i+1];if((p0[0]===p1[0]&&p1[0]===p2[0])||(p0[1]===p1[1]&&p1[1]===p2[1]))continue;Q.push(p1);}Q.push(P[P.length-1]);m.set(t.id,Q);});
   RT={k:key,m};return m;}
-function rAstar(a,b,blk,near,oH,oV){const N=RC*RR,g=new Float32Array(N*4).fill(1e9),fr=new Int32Array(N*4).fill(-1),gc=b.gy*RC+b.gx,rd=(b.d+2)%4;
+function rAstar(a,b,blk,near,oH,oV,sk){const N=RC*RR,g=new Float32Array(N*4).fill(1e9),fr=new Int32Array(N*4).fill(-1),gc=b.gy*RC+b.gx,rd=(b.d+2)%4;
   const hf=[],hs=[],push=(f,st)=>{let i=hf.length;hf.push(f);hs.push(st);while(i){const pi=(i-1)>>1;if(hf[pi]<=f)break;hf[i]=hf[pi];hs[i]=hs[pi];i=pi;}hf[i]=f;hs[i]=st;},
     pop=()=>{const st=hs[0],lf=hf.pop(),ls=hs.pop();if(hf.length){let i=0;for(;;){let c=2*i+1;if(c>=hf.length)break;if(c+1<hf.length&&hf[c+1]<hf[c])c++;if(hf[c]>=lf)break;hf[i]=hf[c];hs[i]=hs[c];i=c;}hf[i]=lf;hs[i]=ls;}return st;};
-  const s0=(a.gy*RC+a.gx)*4+a.d;g[s0]=0;push(0,s0);let n=0,goal=-1;
+  const ci0=a.gy*RC+a.gx,own=(e,x,y)=>e.r&&x*RG>=e.r[0]&&x*RG<=e.r[2]&&y*RG>=e.r[1]&&y*RG<=e.r[3];
+  if(a.sock)for(let d=0;d<4;d++){g[ci0*4+d]=0;push(0,ci0*4+d);}else{const s0=ci0*4+a.d;g[s0]=0;push(0,s0);}let n=0,goal=-1;
   while(hf.length&&n++<90000){const st=pop(),ci=st>>2,d=st&3,gx=ci%RC,gy=(ci/RC)|0,g0=g[st];if(ci===gc){goal=st;break;}
-    for(let nd=0;nd<4;nd++){if(nd===((d+2)&3))continue;const nx=gx+RDX[nd],ny=gy+RDY[nd];if(nx<0||ny<0||nx>=RC||ny>=RR)continue;const ni=ny*RC+nx;
-      let cost=1+(blk[ni]&&ni!==gc?30:0)+(nd!==d?6:0)+(near[ni]?.6:0)+((nd&1)?(oH[ni]?14:0)+(oV[ni]?1.5:0):(oV[ni]?14:0)+(oH[ni]?1.5:0));
-      if(ni===gc)cost+=nd===rd?0:nd===b.d?40:6;const ns=ni*4+nd,ng=g0+cost;
+    for(let nd=0;nd<4;nd++){if(nd===((d+2)&3))continue;const nx=gx+RDX[nd],ny=gy+RDY[nd];if(nx<0||ny<0||nx>=RC||ny>=RR)continue;const ni=ny*RC+nx;if(sk&&sk[ni]&&!(a.sock&&Math.hypot(nx*RG-a.P.x,ny*RG-a.P.y)<13)&&!(b.sock&&Math.hypot(nx*RG-b.P.x,ny*RG-b.P.y)<13))continue;
+      let cost=1+(blk[ni]&&ni!==gc?(own(a,nx,ny)||own(b,nx,ny)?7:30):0)+(nd!==d?6:0)+(near[ni]?.6:0)+((nd&1)?(oH[ni]?14:0)+(oV[ni]?1.5:0):(oV[ni]?14:0)+(oH[ni]?1.5:0));
+      if(ni===gc&&!b.sock)cost+=nd===rd?0:nd===b.d?40:6;const ns=ni*4+nd,ng=g0+cost;
       if(ng<g[ns]){g[ns]=ng;fr[ns]=st;push(ng+Math.abs(nx-b.gx)+Math.abs(ny-b.gy),ns);}}}
   if(goal<0)return null;const c=[];for(let st=goal;st>=0;st=fr[st])c.push(st>>2);return c.reverse();}
 function rPath(P){const f=v=>+v.toFixed(1);let d=`M${P[0][0]} ${P[0][1]}`;
