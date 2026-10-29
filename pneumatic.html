@@ -1041,7 +1041,7 @@ const EX=[
 /* the air supply is at the top left: every exercise's parts sit below it */
 EX.forEach(x=>x.c.forEach(c=>{c.y+=240;}));
 $('dPreset').innerHTML='<option value="">اختر التمرين…</option>'+EX.map((x,i)=>`<option value="${i}">${x.n}</option>`).join('');
-$('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';if(v==='')return;loadEx(+v);};
+$('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';if(v==='')return;loadEx(+v);try{PNX=v;$('exPick').value=v;$('exClip').disabled=false;localStorage.setItem(PNXK,v);}catch(_){}};
 function loadEx(i){const x=EX[i];snap();applyObj({app:'pn',air:true,bar:6,comps:[{id:'0Z',t:'supply',x:20,y:20},{id:'0P',t:'compr',x:20,y:1120},...x.c],tubes:x.t,ew:x.w||[]});S.stu=null;say('حُمّل التمرين: '+x.n);update();}
 
 /* ---------- explanations ---------- */
@@ -1329,7 +1329,7 @@ let PNX=$('exPick').value;
 /* picking another exercise opens its saved version, or a clean board (only the air supply): a board made for one exercise is never
    carried into another one, and ↶ never goes back to another exercise's board (it is kept in 📂) */
 function pnPick(x){const prev=PNX;PNX=x;$('exPick').value=x;$('exClip').disabled=x==='';try{pgBtn();}catch(_){}try{x===''?localStorage.removeItem(PNXK):localStorage.setItem(PNXK,x);}catch(_){}
-  if(x===''||document.body.classList.contains('trainer'))return;const W=pnwAll()[x];S.prac=null;
+  if(x==='')return;if(document.body.classList.contains('trainer')){if(x!==prev||S.comps.length<3)loadEx(+x);return;}const W=pnwAll()[x];S.prac=null;
   if(W){if(JSON.stringify(serial().tubes)!==JSON.stringify(W.o.tubes)||JSON.stringify(serial().comps)!==JSON.stringify(W.o.comps)){try{applyObj(W.o);}catch(_){}S.hist=[];S.stu=null;S.sel=null;S.selC=null;S.pending=null;}
     say('فُتحت نسختك المحفوظة من '+EX[+x].n+' (آخر تعديل '+fmtT(W.t)+')');update();return;}
   if(prev!==''&&prev!==x&&(S.comps.length>1||S.tubes.length)){blank();S.hist=[];S.stu=null;S.sel=null;S.selC=null;S.pending=null;say('بدأت لوحة جديدة لـ '+EX[+x].n+'، ونسخة التمرين السابق محفوظة في 📂');update();}}
