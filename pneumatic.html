@@ -697,9 +697,9 @@ function flowDist(){const adj=new Map(),e=(a,b)=>{if(!adj.has(a))adj.set(a,[]);i
 let FK='';
 function tubesSVG(){const F=flowState();FK=F.key;const fl=F.press.size||F.exh.size,D=fl?flowDist():null,BIG=1e9;
   return S.tubes.map(t=>{const d=tubePath(t);if(!d)return '';const p=isP(t.a)||isP(t.b),sel=S.sel===t.id,r=S.P?S.P.R(t.a):null;
-  let o=`<path d="${d}" class="tube" stroke="${sel?'#ffb300':'#8d9da9'}" stroke-width="${sel?10:8}"/><path d="${d}" class="tube" stroke="#f4f8fb" stroke-opacity=".93" stroke-width="6"/>`;
-  if(p)o+=`<path d="${d}" class="tube" stroke="#a9dcf7" stroke-width="3.6"/>`;
-  o+=`<path d="${d}" class="tube" stroke="#fff" stroke-opacity=".95" stroke-width="1.2" transform="translate(-1.2 -1.2)"/>`;
+  let o=`<path d="${d}" class="tube" stroke="${sel?'#ffb300':'#5fa9bf'}" stroke-opacity="${sel?1:.85}" stroke-width="${sel?10:8}"/><path d="${d}" class="tube" stroke="#c8eef6" stroke-opacity=".7" stroke-width="6"/>`;
+  if(p)o+=`<path d="${d}" class="tube" stroke="#6fcbec" stroke-opacity=".85" stroke-width="3.6"/>`;
+  o+=`<path d="${d}" class="tube" stroke="#fff" stroke-opacity=".75" stroke-width="1.2" transform="translate(-1.2 -1.2)"/>`;
   if(fl&&r!=null){let sp=0,cls='',rev=false;
     if(p&&F.press.has(r)){sp=F.press.get(r);const a=D.src.has(t.a)?D.src.get(t.a):BIG,b=D.src.has(t.b)?D.src.get(t.b):BIG;rev=a>b;}
     else if(!p&&F.exh.has(r)){sp=F.exh.get(r);cls=' ex';const a=D.vent.has(t.a)?D.vent.get(t.a):BIG,b=D.vent.has(t.b)?D.vent.get(t.b):BIG;rev=a<b;}
@@ -1191,7 +1191,7 @@ function exRender(){document.querySelectorAll('[data-ex]').forEach(b=>b.setAttri
   else B.innerHTML=`<h3>ترقيم المنافذ (ISO 5599)</h3><ul><li><b>1</b>: دخول الهواء المضغوط.</li><li><b>2 و4</b>: منافذ الخرج إلى الأسطوانات أو الإشارات.</li><li><b>3 و5</b>: العادم (خروج الهواء للجو، عادة عبر كاتم صوت).</li><li><b>12 و14</b>: منافذ الإشارات الهوائية: 14 تصل 1 بـ 4، و12 تصل 1 بـ 2.</li></ul>
     <h3>تسمية العناصر</h3><ul><li><b>1A، 2A</b>: الأسطوانات (المشغلات).</li><li><b>1V1، 1V2</b>: الصمامات الخاصة بالأسطوانة 1.</li><li><b>1S1، 1S2</b>: عناصر الإشارة (ضواغط، بكرات نهاية المشوار).</li><li><b>0Z</b>: وحدة الإمداد بالهواء.</li></ul>
     <h3>قراءة رمز الصمام</h3><ul><li>عدد المربعات = عدد الأوضاع. «5/2» = 5 منافذ ووضعان.</li><li>الأسهم مسار الهواء، والرمز ⊥ منفذ مغلق.</li><li>المربع المظلل في المحاكي هو الوضع الحالي.</li></ul>
-    <h3>في المحاكي</h3><ul><li>الخراطيم بيضاء شفافة مثل الواقع. الخرطوم الذي عليه ضغط يظهر بداخله لون سماوي، وأثناء حركة الأسطوانة تجري فيه نقاط زرقاء باتجاه سريان الهواء.</li><li>النقاط الرمادية هي هواء العادم وهو يخرج من الأسطوانة إلى منفذ العادم 3 أو 5. سرعة النقاط تتبع سرعة الأسطوانة، فتبطؤ مع خفض الضغط أو تضييق الخانق.</li><li>اسحب العنصر من إطاره، واضغطه لفتح إعداداته.</li><li>اضغط منفذًا ثم منفذًا آخر لتركيب خرطوم، واضغط الخرطوم لحذفه.</li><li>قاعدة أمان: أغلق الهواء قبل تعديل الخراطيم.</li></ul>`;}
+    <h3>في المحاكي</h3><ul><li>الخراطيم شفافة بلون مائي مثل الواقع. الخرطوم الذي عليه ضغط يظهر بداخله لون سماوي، وأثناء حركة الأسطوانة تجري فيه نقاط زرقاء باتجاه سريان الهواء.</li><li>النقاط الرمادية هي هواء العادم وهو يخرج من الأسطوانة إلى منفذ العادم 3 أو 5. سرعة النقاط تتبع سرعة الأسطوانة، فتبطؤ مع خفض الضغط أو تضييق الخانق.</li><li>اسحب العنصر من إطاره، واضغطه لفتح إعداداته.</li><li>اضغط منفذًا ثم منفذًا آخر لتركيب خرطوم، واضغط الخرطوم لحذفه.</li><li>قاعدة أمان: أغلق الهواء قبل تعديل الخراطيم.</li></ul>`;}
 function openHelp(tab,hl){EXS.tab=tab;EXS.hl=hl||null;exM.classList.add('open');exRender();}
 $('bHelp').onclick=()=>openHelp('now');$('exClose').onclick=()=>exM.classList.remove('open');exM.addEventListener('click',e=>{if(e.target===exM)exM.classList.remove('open');});
 document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{EXS.tab=b.dataset.ex;EXS.hl=null;exRender();});
