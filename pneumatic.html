@@ -318,7 +318,7 @@ const DEF={
  counter:{n:'عداد كهربائي (عدّ تنازلي إلى قيمة)',pre:'KZ',w:180,h:190,e:{A1:[24,46],A2:[24,90],R1:[24,126],R2:[24,166],'12':[124,52],'14':[156,52],'11':[140,166]}},
  lamp:{n:'لمبة بيان 24V',pre:'H',w:90,h:120,e:{X1:[24,100],X2:[66,100]}},
  lse:{n:'مفتاح نهاية مشوار كهربائي',pre:'1B',w:120,h:96,e:{'1':[24,78],'2':[60,78],'4':[96,78]}},
- supply:{n:'وحدة الإمداد بالهواء',g:'Z',w:370,h:210,ports:Object.fromEntries([1,2,3,4,5,6,7,8].map(i=>['P'+i,[34+(i-1)*43,210,'d']]))}};
+ supply:{n:'وحدة الإمداد بالهواء',g:'Z',w:370,h:220,ports:Object.fromEntries([1,2,3,4,5,6,7,8].map(i=>['P'+i,[248+((i-1)%4)*32,i<5?160:196,'d']]))}};
 Object.values(DEF).forEach(d=>{d.ports=d.ports||{};});
 const LIB=['cyl1','cyl2','v32nc','v32no','v32sel','v32rol','v32pil','v52man','v52ps','v52pp','or','and','fcv','tim','gauge','tee','psu','pbno','pbnc','swe','relay','timer','counter','lamp','lse','v32sol','v52sol','v52dsol'];
 const SHORT={cyl1:'أسطوانة مفردة',cyl2:'أسطوانة مزدوجة',v32nc:'3/2 مغلق',v32no:'3/2 مفتوح',v32sel:'3/2 اختيار',v32rol:'3/2 بكرة',v32pil:'3/2 هوائي',v52man:'5/2 يدوي',v52ps:'5/2 هوائي',v52pp:'5/2 ذاكرة',or:'OR اختيار',and:'AND مزدوج',fcv:'خانق',tim:'تأخير زمني',gauge:'مانومتر',tee:'موزع T',psu:'مصدر 24V',pbno:'ضاغط NO',pbnc:'ضاغط NC',swe:'مفتاح اختيار',relay:'مرحل K',timer:'مؤقت KT',counter:'عداد KZ',lamp:'لمبة H',lse:'نهاية مشوار ك',v32sol:'3/2 كهربائي',v52sol:'5/2 كهربائي',v52dsol:'5/2 بملفين'};
@@ -454,16 +454,29 @@ function body(c,w,h,title){return `<rect data-drag="${c.id}" x="0" y="0" width="
   <text data-drag="${c.id}" x="8" y="15" class="lbl" style="font-size:11.5px;font-weight:700;fill:#0b3d91">${esc(c.id)}</text><text data-drag="${c.id}" x="${w-6}" y="14" text-anchor="end" class="lbl" style="font-size:8.5px;fill:#454f58">${title}</text>`;}
 function drawComp(c){const D=DEF[c.t],s=c.s,id=c.id;let o='';
   switch(c.t){
-  case'supply':{const on=S.air;/* at the top left of the board: the distributor P1-P8 along its bottom edge, the hoses leave downward */
-    o+=`<rect x="0" y="0" width="${D.w}" height="${D.h}" rx="9" fill="#cfd5da" stroke="#6d777f" stroke-width="1.6"/>
-    <rect x="6" y="182" width="${D.w-12}" height="30" rx="6" fill="#4b5760" stroke="#2c343a"/>${T(D.w/2,201,'موزع الهواء P1 - P8',10,'#fff')}
-    <g transform="translate(40 92)"><circle r="30" fill="#fff" stroke="#1b2530" stroke-width="2"/><path d="M0 -20l17 29h-34z" fill="none" stroke="#1b2530" stroke-width="2"/>${T(0,48,'الضاغط',10)}</g>
-    <path d="M70 92H104M162 92H196M280 92H330V182" stroke="${on?'#1f6fe5':'#8aa'}" stroke-width="4" fill="none"/>
-    <g transform="translate(104 30)"><rect width="58" height="96" rx="6" fill="#eef1f3" stroke="#555"/>${T(29,14,'FRL',10)}<path d="M29 22v18M20 40h18l-9 12z" fill="none" stroke="#333" stroke-width="1.4"/>
-      <circle cx="29" cy="70" r="15" fill="#fff" stroke="#333" stroke-width="1.6"/><line x1="29" y1="70" x2="${(29+11*Math.sin((-120+240*S.bar/10)*Math.PI/180)).toFixed(1)}" y2="${(70-11*Math.cos((-120+240*S.bar/10)*Math.PI/180)).toFixed(1)}" stroke="#c0392b" stroke-width="2"/>${T(29,93,S.bar.toFixed(1)+' bar',9)}</g>
-    <g class="act" data-act="bar:-"><title>خفض الضغط</title><circle cx="116" cy="148" r="10" fill="#39424b"/>${T(116,153,'−',14,'#fff')}</g><g class="act" data-act="bar:+"><title>رفع الضغط</title><circle cx="150" cy="148" r="10" fill="#39424b"/>${T(150,153,'+',14,'#fff')}</g>
-    <g class="act" data-act="air"><title>صمام الإغلاق: فتح/إغلاق الهواء</title><rect x="196" y="40" width="84" height="88" rx="8" fill="${on?'#d8f5e1':'#f5d8d8'}" stroke="${on?'#1a8a42':'#c42b22'}" stroke-width="2"/>
-      ${T(238,58,'صمام الإغلاق',9.5)}<rect x="214" y="68" width="48" height="26" rx="13" fill="${on?'#1a8a42':'#c42b22'}"/><circle cx="${on?249:227}" cy="81" r="10" fill="#fff"/>${T(238,114,on?'الهواء مفتوح':'الهواء مغلق',10,on?'#1a8a42':'#c42b22')}</g>`;return o;}
+  case'supply':{const on=S.air,ang=(-120+240*S.bar/10)*Math.PI/180;
+    /* as in the workshop: the Festech air service unit (filter-regulator with its gauge, lubricator, ball valve) and, by a hose loop, the distributor with 8 push-in outlets */
+    const bowl=(x,y,w,h,oil)=>`<path d="M${x} ${y}h${w}v${h-14}q0 14 -${w/2} 14q-${w/2} 0 -${w/2} -14z" fill="url(#gBowl)" stroke="#7d868d" stroke-width="1.4"/><rect x="${x+w/2-5}" y="${y+10}" width="10" height="${h-34}" rx="3" fill="${oil?'#e7c25a':'#dfe9f2'}" opacity=".75" stroke="#99a"/><rect x="${x+w/2-4}" y="${y+h}" width="8" height="10" rx="2" fill="#9aa3aa" stroke="#666"/>`;
+    o+=`<defs><linearGradient id="gBowl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b9c2c9"/><stop offset=".35" stop-color="#f5f7f8"/><stop offset="1" stop-color="#9aa3aa"/></linearGradient>
+      <linearGradient id="gAlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3e7ea"/><stop offset="1" stop-color="#aeb6bc"/></linearGradient><linearGradient id="gHose" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1f8fe0"/><stop offset=".5" stop-color="#6cc3ff"/><stop offset="1" stop-color="#1f8fe0"/></linearGradient></defs>
+      <rect data-drag="${id}" x="0" y="0" width="${D.w}" height="${D.h}" fill="transparent"/>
+      <path d="M8 ${D.h}V120q0 -24 22 -24h14" fill="none" stroke="#0f5ea8" stroke-width="9"/><path d="M8 ${D.h}V120q0 -24 22 -24h14" fill="none" stroke="${on?'#43a8f5':'#8fbfe6'}" stroke-width="6"/>
+      <g data-drag="${id}"><rect x="62" y="144" width="132" height="60" rx="5" fill="url(#gAlu)" stroke="#7d868d" stroke-width="1.5"/>${T(110,184,'AIR SERVICE UNIT',8,'#333',700)}${T(168,170,'FESTECH',8.5,'#222',800)}${T(98,198,'PN. 12101',7,'#555',600)}
+      <rect x="150" y="176" width="34" height="16" rx="2" fill="none" stroke="#333"/><circle cx="167" cy="184" r="5" fill="none" stroke="#333"/>
+      <rect x="44" y="88" width="30" height="16" rx="5" fill="#2a2f35"/><rect x="72" y="42" width="58" height="44" rx="6" fill="url(#gAlu)" stroke="#7d868d" stroke-width="1.4"/>
+      <rect x="86" y="6" width="30" height="40" rx="6" fill="url(#gBowl)" stroke="#7d868d" stroke-width="1.4"/><rect x="132" y="48" width="56" height="40" rx="6" fill="url(#gAlu)" stroke="#7d868d" stroke-width="1.4"/>
+      <path d="M150 48v-12h20v12" fill="#e8ecef" stroke="#7d868d"/><rect x="154" y="28" width="12" height="10" rx="3" fill="#cbb46a" stroke="#887"/>
+      ${bowl(78,86,46,62,0)}${bowl(136,88,46,60,1)}</g>
+      <g transform="translate(58 66)"><circle r="34" fill="#2a2f35"/><circle r="30" fill="#f6f1e1" stroke="#555"/>${[0,2,4,6,8,10].map(v=>{const a=(-120+24*v)*Math.PI/180;return `<line x1="${(26*Math.sin(a)).toFixed(1)}" y1="${(-26*Math.cos(a)).toFixed(1)}" x2="${(21*Math.sin(a)).toFixed(1)}" y2="${(-21*Math.cos(a)).toFixed(1)}" stroke="#333" stroke-width="1.4"/>`+T((15*Math.sin(a)).toFixed(1),(-15*Math.cos(a)+3).toFixed(1),v,7,'#333',700);}).join('')}
+        <path d="M-12 18a20 20 0 0 1 24 0" fill="none" stroke="#c0392b" stroke-width="2"/><line x1="0" y1="0" x2="${(24*Math.sin(ang)).toFixed(1)}" y2="${(-24*Math.cos(ang)).toFixed(1)}" stroke="#1b1b1b" stroke-width="2.6" stroke-linecap="round"/><circle r="3.5" fill="#1b1b1b"/>${T(0,24,'bar',7,'#555')}</g>
+      ${T(58,116,S.bar.toFixed(1)+' bar',10,'#0b3d91',800)}
+      <g class="act" data-act="bar:-"><title>خفض الضغط (منظم الضغط)</title><circle cx="78" cy="20" r="11" fill="#39424b" stroke="#fff"/>${T(78,25,'−',14,'#fff')}</g><g class="act" data-act="bar:+"><title>رفع الضغط (منظم الضغط)</title><circle cx="124" cy="20" r="11" fill="#39424b" stroke="#fff"/>${T(124,25,'+',14,'#fff')}</g>
+      <path d="M188 66h14q8 0 8 8v18" fill="none" stroke="#9aa3aa" stroke-width="12" stroke-linecap="round"/><path d="M188 66h14q8 0 8 8v18" fill="none" stroke="#dfe4e8" stroke-width="7"/>
+      <g class="act" data-act="air"><title>صمام الإغلاق (الكرة): فتح/إغلاق الهواء</title><rect x="198" y="90" width="24" height="40" rx="4" fill="#1d2126"/>
+        <rect x="${on?204:186}" y="${on?84:104}" width="${on?12:36}" height="${on?36:12}" rx="5" fill="#1e63d6" stroke="#0c3b8a"/>${T(236,112,on?'مفتوح':'مغلق',10,on?'#1a8a42':'#c42b22',800,'start')}</g>
+      <path d="M210 130V196q0 16 14 16q10 0 10 -12V172" fill="none" stroke="#0f5ea8" stroke-width="9" stroke-linejoin="round"/><path d="M210 130V196q0 16 14 16q10 0 10 -12V172" fill="none" stroke="${on?'url(#gHose)':'#8fbfe6'}" stroke-width="6" stroke-linejoin="round"/>
+      <g data-drag="${id}"><rect x="232" y="136" width="132" height="74" rx="4" fill="url(#gAlu)" stroke="#7d868d" stroke-width="1.5"/>${T(250,148,'⊸◇',9,'#333')}${T(296,148,'DISTRIBUTOR',7.5,'#333',700)}${T(356,148,'PN. 12201',6.5,'#555',600,'end')}
+        <path d="M244 178h112" stroke="#555" stroke-width="1"/><rect x="226" y="164" width="14" height="14" rx="3" fill="#1d2126"/></g>`;return o;}
   case'cyl1':case'cyl2':{const x=s.x||0,dx=(x*150).toFixed(1),two=c.t==='cyl2';o+=body(c,D.w,D.h,two?'مزدوجة الفعل':'مفردة الفعل');
     o+=`<rect x="20" y="30" width="210" height="44" rx="5" fill="url(#gBar)" stroke="#555"/><rect x="14" y="26" width="14" height="52" rx="3" fill="#6b757d"/><rect x="224" y="26" width="14" height="52" rx="3" fill="#6b757d"/>
       <g id="rod-${id}" transform="translate(${dx} 0)"><rect x="${40}" y="33" width="10" height="38" fill="#3b4650"/><rect x="50" y="46" width="190" height="12" fill="url(#gRod)" stroke="#777"/><rect x="236" y="40" width="16" height="24" rx="3" fill="#39424b"/><circle cx="244" cy="52" r="4" fill="#ffcc00"/></g>
