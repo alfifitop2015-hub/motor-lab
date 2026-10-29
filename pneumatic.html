@@ -206,12 +206,16 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 </div>
 
 <div class="cpop" id="pPop" role="group" aria-label="المكونات"><button class="cpx" id="pPopX" type="button" aria-label="إغلاق قائمة المكونات" title="إغلاق">✕</button><div class="cprow" id="dLib"></div><div class="cpn" id="ppN">اختر العناصر التي تحتاجها، ثم اضغط ✕</div></div>
+<div class="cpop" id="delPop" role="group" aria-label="حذف"><div class="cprow" style="justify-content:center">
+  <button class="db" id="dClrT" title="حذف كل الخراطيم وتبقى العناصر (يمكن التراجع)"><span class="ic">⌫</span>حذف الخراطيم</button>
+  <button class="db" id="dClrW" title="حذف كل الأسلاك الكهربائية (يمكن التراجع)"><span class="ic">⌁</span>حذف الأسلاك</button>
+  <button class="db" id="dClrC" title="حذف كل العناصر مع توصيلاتها، ويبقى مصدر الهواء والكمبرسر (يمكن التراجع)"><span class="ic">🗑</span>حذف العناصر</button></div><div class="cpn">لحذف شيء واحد اضغطه ثم «حذف» · ↶ للتراجع</div></div>
 <div class="dock" id="dock" aria-label="أدوات اللوحة">
   <div class="dstat" id="dstat"></div>
   <div class="drow">
     <button class="db" id="dMin"><span class="ic">▾</span>الأدوات</button>
     <button class="db" id="dAir"><span class="ic">💨</span>الهواء</button>
-    <button class="db" id="dDel" disabled><span class="ic">🗑</span>حذف الخرطوم</button>
+    <button class="db" id="dDel" aria-haspopup="true" aria-expanded="false" aria-controls="delPop" title="حذف المحدد، أو حذف الكل"><span class="ic">🗑</span>حذف ▾</button>
     <button class="db" id="dUndo"><span class="ic">↶</span>تراجع</button>
     <button class="db" id="dSnd"><span class="ic">🔇</span>الصوت</button>
     <span class="dsep full"></span>
@@ -665,7 +669,7 @@ function renderTop(){let h='';if(S.stu)h+=`<div class="msg info"><span>📥 دا
   let d=`<span class="c ${S.air?'ok':'bad'}">${S.air?'الهواء مفتوح':'الهواء مغلق'} · ${S.bar.toFixed(1)} bar</span>`;
   S.comps.filter(c=>/^cyl/.test(c.t)).forEach(c=>d+=`<span class="c ${c.s.x>=.985?'ok':''}">${esc(c.id)}: ${c.s.x>=.985?'خارجة +':c.s.x<=.015?'داخلة −':'تتحرك'}</span>`);
   d=pnPracStat()+d;if(S.last)d+=`<span class="c">${esc(S.last)}</span>`;$('dstat').innerHTML=d;
-  $('dAir').classList.toggle('on',S.air);$('dDel').disabled=S.sel==null&&S.selW==null;$('dDel').classList.toggle('hl',S.sel!=null||S.selW!=null);
+  $('dAir').classList.toggle('on',S.air);{const c=S.selC&&comp(S.selC),any=S.sel!=null||S.selW!=null||(c&&c.t!=='supply'&&c.t!=='compr');$('dDel').classList.toggle('hl',!!any);$('dDel').innerHTML=`<span class="ic">🗑</span>${S.sel!=null?'حذف الخرطوم':S.selW!=null?'حذف السلك':any?'حذف العنصر':'حذف ▾'}`;}
   $('hint').textContent=S.pending?'اختر المنفذ الثاني لتوصيله بـ '+S.pending+' (اضغط نفس المنفذ للإلغاء)':S.sel!=null?'الخرطوم محدد: اسحبه أو اسحب نقاطه لتغيير مساره، و«+» لإضافة انحناءة، و↺ للمسار التلقائي.':'اسحب العناصر من إطارها، واضغط منفذًا ثم منفذًا آخر لتركيب خرطوم. اضغط الضواغط مع الاستمرار لتشغيلها.';
   renderInsp();}
 const say=m=>{S.last=m;};
@@ -686,7 +690,7 @@ function renderInsp(){const el=$('insp'),c=S.selC&&comp(S.selC);if(!c){el.classL
   el.innerHTML=h;el.dataset.k=key;el.classList.add('open');}
 $('insp').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;const a=b.dataset.i,c=comp(S.selC);
   if(a==='close'){S.selC=null;return render();}
-  if(a==='del'&&c){snap();S.comps=S.comps.filter(q=>q!==c);S.tubes=S.tubes.filter(t=>!t.a.startsWith(c.id+'.')&&!t.b.startsWith(c.id+'.'));S.ew=S.ew.filter(t=>!t.a.startsWith(c.id+'.')&&!t.b.startsWith(c.id+'.'));S.comps.forEach(q=>{if((q.t==='v32rol'||q.t==='lse')&&q.o.cyl===c.id)q.o.cyl='';});S.selC=null;say('حُذف '+c.id);update();}
+  if(a==='del'&&c)delComp(c);
   if(a==='help'&&c)openHelp('parts',c.t);});
 $('insp').addEventListener('change',e=>{const r=e.target.closest('[data-r]'),c=comp(S.selC);if(!r||!c)return;const k=r.dataset.r;
   if(k==='id'){const v=r.value.trim().replace(/[^A-Za-z0-9]/g,'').slice(0,6);if(!v||comp(v)&&v!==c.id){r.value=c.id;return;}snap();const old=c.id;c.id=v;
@@ -805,7 +809,18 @@ dParts.onclick=e=>{e.stopPropagation();const o=!pPop.classList.contains('open');
 pPop.querySelectorAll('[data-add]').forEach(b=>{b.onmouseenter=b.onfocus=()=>{$('ppN').textContent=b.title;};b.onmouseleave=b.onblur=()=>{$('ppN').textContent=ppMsg();};});
 document.addEventListener('pointerdown',e=>{if(pPop.classList.contains('open')&&!pPop.contains(e.target)&&!dParts.contains(e.target))partsPop(false);});
 pPop.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();partsPop(false);dParts.focus();}});
-$('dAir').onclick=()=>act('air');$('dDel').onclick=delTube;
+$('dAir').onclick=()=>act('air');
+function delComp(c){if(!c||c.t==='supply'||c.t==='compr')return;snap();const pre=c.id+'.';S.comps=S.comps.filter(q=>q!==c);S.tubes=S.tubes.filter(t=>!t.a.startsWith(pre)&&!t.b.startsWith(pre));S.ew=S.ew.filter(t=>!t.a.startsWith(pre)&&!t.b.startsWith(pre));
+  S.comps.forEach(q=>{if((q.t==='v32rol'||q.t==='lse')&&q.o.cyl===c.id)q.o.cyl='';});S.selC=null;say('حُذف '+c.id);update();}
+{const P=$('delPop'),B=$('dDel');const show=o=>{P.classList.toggle('open',o);B.setAttribute('aria-expanded',o?'true':'false');if(o)partsPop(false);};
+  B.onclick=e=>{e.stopPropagation();if(S.sel!=null||S.selW!=null){show(false);return delTube();}const c=S.selC&&comp(S.selC);if(c&&c.t!=='supply'&&c.t!=='compr'){show(false);return delComp(c);}show(!P.classList.contains('open'));};
+  const fixed=c=>c.t==='supply'||c.t==='compr';
+  $('dClrT').onclick=()=>{show(false);if(!S.tubes.length){say('لا توجد خراطيم');return render();}snap();S.tubes=[];S.sel=null;say('حُذفت كل الخراطيم (يمكن التراجع)');update();};
+  $('dClrW').onclick=()=>{show(false);if(!S.ew.length){say('لا توجد أسلاك');return render();}snap();S.ew=[];S.selW=null;say('حُذفت كل الأسلاك (يمكن التراجع)');update();};
+  $('dClrC').onclick=()=>{show(false);if(!S.comps.some(c=>!fixed(c))){say('لا توجد عناصر');return render();}snap();const keep=S.comps.filter(fixed),ids=keep.map(c=>c.id+'.');S.comps=keep;
+    S.tubes=S.tubes.filter(t=>ids.some(i=>t.a.startsWith(i))&&ids.some(i=>t.b.startsWith(i)));S.ew=[];S.sel=null;S.selW=null;S.selC=null;say('حُذفت كل العناصر (يمكن التراجع)');update();};
+  document.addEventListener('pointerdown',e=>{if(P.classList.contains('open')&&!P.contains(e.target)&&!B.contains(e.target))show(false);});
+  P.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();show(false);B.focus();}});}
 $('dUndo').onclick=()=>{if(!S.hist.length)return;applyObj(JSON.parse(S.hist.pop()));update();};
 $('dMin').onclick=()=>{document.body.classList.toggle('dmin');setTimeout(measureDock,60);};
 const fitZ=()=>Math.max(.25,Math.min(1.6,(wrap.clientWidth-2)/W));
