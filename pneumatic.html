@@ -170,13 +170,13 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
 .modal .box{max-height:calc((100vh - 32px) / var(--ui));overflow:auto}
 .appbox{max-height:calc(94vh / var(--ui))}
 /* results: a red ✔ on those the trainer has looked at, «جديد» on the others */
-.rseen{flex:none;align-self:center;min-width:46px;height:30px;white-space:nowrap;border-radius:999px;border:2px solid #1f8f4e;background:#e6f6ec;color:#16703a;font:700 .78rem/1 inherit;cursor:pointer;padding:0 8px}
-.rseen.on{border-color:#d62b22;background:transparent;color:#d62b22}
-.rgdone{border:1.5px solid #d62b22;color:#d62b22;border-radius:999px;padding:0 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
+.rseen{flex:none;align-self:center;min-width:46px;height:30px;white-space:nowrap;border-radius:999px;border:2px solid #d62b22;background:#fdecea;color:#c0221b;font:700 .78rem/1 inherit;cursor:pointer;padding:0 8px}
+.rseen.on{border-color:#1f8f4e;background:#e6f6ec;color:#16703a}
+.rgdone{border:1.5px solid #1f8f4e;color:#16703a;border-radius:999px;padding:0 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
 .rrow:has(>.rseen){grid-template-columns:28px auto 56px 1fr}
-.rrow.rnew{border-inline-start:4px solid #1fa35a;background:rgba(31,163,90,.07)}
-.rgnew{background:#1fa35a;color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
-#rNew.on{background:#1fa35a;border-color:#1fa35a;color:#fff}
+.rrow.rnew{border-inline-start:4px solid #d62b22;background:rgba(214,43,34,.05)}
+.rgnew{background:#d62b22;color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
+#rNew.on{background:#d62b22;border-color:#d62b22;color:#fff}
 </style>
 </head>
 <body>
@@ -683,21 +683,20 @@ $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const b=$('sClo
   catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}okMsg(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set()};try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'});}catch(_){return '';}};
-/* results the trainer has looked at get a red ✔, the others are «جديد». Kept on this device; the first time, everything already sent counts as seen */
-const SEENK='pnSeen';let SEEN=new Set(),ONLYNEW=false;try{SEEN=new Set(JSON.parse(localStorage.getItem(SEENK)||'[]'));}catch(_){}
+/* «لم يُرصد» (red) until the trainer marks a result as recorded in their own grade sheet, then «✔ رُصد» (green).
+   The marks are kept in the results sheet with the updated Google code, so every device of the trainer shows the same; until then on this device */
+const SEENK='pnRasd';let SEEN=new Set(),ONLYNEW=false;try{SEEN=new Set(JSON.parse(localStorage.getItem(SEENK)||'[]'));}catch(_){}
 const seenSave=()=>{try{localStorage.setItem(SEENK,JSON.stringify([...SEEN].slice(-4000)));}catch(_){}};
-function seenInit(){let had=null;try{had=localStorage.getItem(SEENK);}catch(_){}if(had==null&&RS.rows.length){RS.rows.forEach(r=>SEEN.add(r.uid));seenSave();}}
+function seenInit(){}
 const seenMark=(u,on)=>{if(on===false)SEEN.delete(u);else SEEN.add(u);seenSave();seenPush([u],on!==false);};
-/* with the updated Google code the marks live in the results sheet, so every device of the trainer sees the same ✔ */
 let SEENSRV=false,seenRows=null;
 const seenKey=()=>{const i=document.getElementById('rKey');let k=i&&i.value.trim();if(!k)try{k=localStorage.getItem('wsKey')||'';}catch(_){}return k||'';};
-function seenPush(uids,on){if(!SEENSRV||!uids.length)return;cloud({action:'seen',key:seenKey(),uids,on}).catch(()=>{});}
-function seenSync(){SEENSRV=RS.rows.length>0&&RS.rows.every(r=>'seen' in r);if(!SEENSRV)return false;
-  if(!RS.rows.some(r=>r.seen)){let had=null;try{had=localStorage.getItem(SEENK);}catch(_){}
-    /* the first time the sheet carries marks: this device's marks are sent, or everything already sent counts as seen */
-    const up=RS.rows.filter(r=>had==null||SEEN.has(r.uid)).map(r=>r.uid);up.forEach(u=>{const r=RS.rows.find(x=>x.uid===u);if(r)r.seen=true;});seenPush(up,true);}
-  SEEN=new Set(RS.rows.filter(r=>r.seen).map(r=>r.uid));seenSave();return true;}
-const seenBtn=r=>SEEN.has(r.uid)?`<button class="rseen on" data-rseen="${esc(r.uid)}" title="رُصدت (اضغط لإلغاء الرصد)" aria-label="رُصد">✔ رُصد</button>`:`<button class="rseen" data-rseen="${esc(r.uid)}" title="لم تُرصد بعد: اضغط لرصدها" aria-label="لم يُرصد">لم يُرصد</button>`;
+function seenPush(uids,on){if(!SEENSRV||!uids.length)return;cloud({action:'rasd',key:seenKey(),uids,on}).catch(()=>{});}
+function seenSync(){SEENSRV=RS.rows.length>0&&RS.rows.every(r=>'rasd' in r);if(!SEENSRV)return false;
+  /* the first time the sheet carries marks, the ones made on this device are sent */
+  if(!RS.rows.some(r=>r.rasd)){const up=RS.rows.filter(r=>SEEN.has(r.uid)).map(r=>r.uid);up.forEach(u=>{const r=RS.rows.find(x=>x.uid===u);if(r)r.rasd=true;});seenPush(up,true);}
+  SEEN=new Set(RS.rows.filter(r=>r.rasd).map(r=>r.uid));seenSave();return true;}
+const seenBtn=r=>SEEN.has(r.uid)?`<button class="rseen on" data-rseen="${esc(r.uid)}" title="رُصدت في كشف الدرجات (اضغط لإلغاء الرصد)" aria-label="رُصد">✔ رُصد</button>`:`<button class="rseen" data-rseen="${esc(r.uid)}" title="لم تُرصد بعد: اضغط بعد رصد درجتها في الكشف" aria-label="لم يُرصد">لم يُرصد</button>`;
 function seenBar(){const n=RS.rows.filter(r=>!SEEN.has(r.uid)).length,y=RS.rows.length-n,b=$('rNew'),a=$('rSeenAll');if(!b)return;b.classList.toggle('on',ONLYNEW);
   b.textContent=n+' لم يُرصد'+(ONLYNEW?' ✕':'');b.title=ONLYNEW?'عرض الكل':'عرض التي لم تُرصد فقط';a.textContent=y+' رُصد · ✔ رصد الكل';a.disabled=!n;}
 function rRender(){if(RS.rows!==seenRows){seenRows=RS.rows;if(!seenSync())seenInit();}else if(!SEENSRV)seenInit();seenBar();const q=$('rFind').value.trim(),L=RS.rows.filter(r=>(!ONLYNEW||!SEEN.has(r.uid))&&(!q||(r.n+' '+r.id).includes(q)));$('rDelSel').disabled=!RS.sel.size;
@@ -727,9 +726,8 @@ $('rLoad').onclick=rLoad;$('rFind').oninput=rRender;
 $('rDelSel').onclick=()=>arm($('rDelSel'),()=>rDelete([...RS.sel]));
 $('rList').addEventListener('change',e=>{const c=e.target.closest('[data-rsel]');if(c){c.checked?RS.sel.add(c.dataset.rsel):RS.sel.delete(c.dataset.rsel);rRender();}});
 $('rNew').onclick=()=>{ONLYNEW=!ONLYNEW;rRender();};
-$('rSeenAll').onclick=()=>{const up=RS.rows.filter(r=>!SEEN.has(r.uid)).map(r=>r.uid);RS.rows.forEach(r=>SEEN.add(r.uid));seenSave();seenPush(up,true);ONLYNEW=false;rRender();};
-$('rList').addEventListener('click',async e=>{{const sb=e.target.closest('[data-rseen]');if(sb){seenMark(sb.dataset.rseen,!SEEN.has(sb.dataset.rseen));rRender();return;}
-  const sx=e.target.closest('[data-ropen],[data-rimg]');if(sx){seenMark(sx.dataset.ropen||sx.dataset.rimg);setTimeout(rRender,60);}}
+$('rSeenAll').onclick=()=>{if(!confirm('رصد كل النتائج المعروضة؟'))return;const up=RS.rows.filter(r=>!SEEN.has(r.uid)).map(r=>r.uid);RS.rows.forEach(r=>SEEN.add(r.uid));seenSave();seenPush(up,true);ONLYNEW=false;rRender();};
+$('rList').addEventListener('click',async e=>{{const sb=e.target.closest('[data-rseen]');if(sb){seenMark(sb.dataset.rseen,!SEEN.has(sb.dataset.rseen));rRender();return;}}
   const im=e.target.closest('[data-rimg]'),o=e.target.closest('[data-ropen]'),d=e.target.closest('[data-rdel]');
   if(d)return arm(d,()=>rDelete([d.dataset.rdel]));
   if(im){const r=RS.rows.find(x=>x.uid===im.dataset.rimg);$('imgBig').src='data:image/jpeg;base64,'+r.th;$('imgT').textContent=r.n;$('imgModal').classList.add('open');

@@ -79,7 +79,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
   // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
-  const write = ['submit', 'del', 'setScores', 'rate', 'seen'].indexOf(d.action) >= 0;
+  const write = ['submit', 'del', 'setScores', 'rate', 'rasd'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
   if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
@@ -132,7 +132,7 @@ function doPost(e) {
       return out_({ ok: true, n: v.length, rows: v.map(r => ({
         uid: String(r[0]), t: r[1] instanceof Date ? r[1].getTime() : r[1],
         n: String(r[2]), id: String(r[3]), ex: String(r[4]), s: r[5], code: String(r[6]),
-        th: String(r[7] || ''), fid: String(r[8] || ''), seen: r[9] === true || String(r[9]) === '1'
+        th: String(r[7] || ''), fid: String(r[8] || ''), rasd: r[10] === true || String(r[10]) === '1'
       })) });
     }
 
@@ -156,14 +156,14 @@ function doPost(e) {
       return out_({ ok: true });
     }
 
-    // علامة اطّلاع المدرب على النتائج (✔): العمود العاشر، فتظهر نفسها على كل أجهزة المدرب
-    if (d.action === 'seen') {
+    // علامة «رُصد» (رصد المدرب الدرجة في كشفه): العمود الحادي عشر، فتظهر نفسها على كل أجهزة المدرب
+    if (d.action === 'rasd') {
       const ids = new Set((d.uids || []).map(String)), on = d.on !== false;
       const v = s.getDataRange().getValues();
-      if (v.length && String(v[0][9] || '') === '') s.getRange(1, 10).setValue('اطّلع المدرب');
+      if (v.length && String(v[0][10] || '') === '') s.getRange(1, 11).setValue('رُصد');
       let n = 0;
       for (let i = 1; i < v.length; i++) {
-        if (ids.has(String(v[i][0]))) { s.getRange(i + 1, 10).setValue(on ? 1 : ''); n++; }
+        if (ids.has(String(v[i][0]))) { s.getRange(i + 1, 11).setValue(on ? 1 : ''); n++; }
       }
       return out_({ ok: true, n: n });
     }
