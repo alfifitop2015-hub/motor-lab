@@ -375,7 +375,7 @@ function pressures(N){const R=k=>N.uf.find(k),src=R('SRC'),fill=new Map(),vent=n
   const spread=(starts,map,rev)=>{const q=[];starts.forEach(r=>{if(!map.has(r)||map.get(r)<1){map.set(r,1);q.push(r);}});
     while(q.length){const r=q.shift(),v=map.get(r);for(const [n,w] of adj.get(r)||[]){let ew=w;if(rev){const back=(adj.get(n)||[]).find(e=>e[0]===r);ew=back?back[1]:1;}const nv=Math.min(v,ew);if(nv>(map.get(n)||0)){map.set(n,nv);q.push(n);}}}};
   spread([src],fill,false);spread(N.vents.map(R),vent,true);
-  return{R,fill,vent,src};}
+  return{R,fill,vent,src,adj};}
 const isP=k=>!!S.P&&S.P.fill.has(S.P.R(k));
 const fillF=k=>S.P?(S.P.fill.get(S.P.R(k))||0):0;
 function ventF(k){if(!tubesAt(k))return 1;return S.P?(S.P.vent.get(S.P.R(k))||0):0;}
@@ -424,7 +424,7 @@ function solve(){let changed=false;
   S.comps.forEach(c=>{Object.keys(DEF[c.t].ports).forEach(p=>{const k=c.id+'.'+p;if(['2','4'].includes(p)&&!/^cyl/.test(c.t)&&c.t!=='fcv'&&!tubesAt(k)&&S.P.fill.has(S.P.R(k)))W2.push(`المنفذ ${p} في ${c.id} عليه ضغط وليس موصولًا: الهواء يتسرب منه.`);});});
   const srcR=S.P.src;if(S.N.vents.some(v=>S.P.R(v)===srcR))W2.push('قصر هوائي: خط الضغط موصول مباشرة بمنفذ عادم، والهواء يتسرب باستمرار.');
   if(S.E&&S.E.short)W2.push('⚡ قصر كهربائي: +24V موصول مباشرة بـ 0V، فانقطع التيار عن الدائرة. راجع الأسلاك.');
-  S.warn=W2;return changed;}
+  S.warn=W2;exPuff();return changed;}
 
 /* ---------- time: cylinders and timers ---------- */
 function cylSpeed(c){if(!S.air||S.bar<1.5)return 0;const base=Math.min(1.3,Math.max(.3,S.bar/6))/1.3;const k=p=>c.id+'.'+p;
@@ -437,8 +437,29 @@ function tick(){const now=performance.now(),dt=Math.min(.1,(now-lastT)/1000)*(S.
     if(c.t==='tim'){const pil=isP(c.id+'.12');if(pil){c.s.acc+=dt;if(!c.s.on&&c.s.acc>=c.o.t){c.s.on=true;disc=true;}}else if(c.s.acc||c.s.on){c.s.acc=0;if(c.s.on){c.s.on=false;disc=true;}}}
     if(/^cyl/.test(c.t)){const v=cylSpeed(c);if(v){const nx=Math.min(1,Math.max(0,c.s.x+v*dt));if(nx!==c.s.x){const b0=c.s.x<=.015||c.s.x>=.985;c.s.x=nx;mov=true;const b1=nx<=.015||nx>=.985;if(b0!==b1)disc=true;}}}});
   if(disc){const ch=solve();if(ch)clickSnd();render();}else partial();
-  hiss(mov);}
+  hiss(mov||puffNow().length>0);}
 setInterval(tick,40);
+
+/* ---------- air leaving the exhausts (3/5) ----------
+   while a cylinder moves, its outgoing chamber blows off through the vent it is piped to; a line that loses its
+   pressure gives a short puff; a vent joined straight to the supply blows all the time */
+const pufT=new Map();let prevP=new Set();
+function pReach(r0){const P=S.P,seen=new Set([r0]),q=[r0];while(q.length){const r=q.shift();for(const [n] of P.adj.get(r)||[])if(!seen.has(n)){seen.add(n);q.push(n);}}return seen;}
+const pVents=()=>S.N?S.N.vents.filter(k=>{const c=comp(k.split('.')[0]);return c&&c.t!=='supply';}):[];
+function exPuff(){if(!S.P)return;const now=performance.now(),cur=new Set();S.comps.forEach(c=>Object.keys(DEF[c.t].ports).forEach(p=>{const k=c.id+'.'+p;if(isP(k))cur.add(k);}));
+  const lost=[...prevP].filter(k=>!cur.has(k)&&portXY(k));prevP=cur;if(!lost.length)return;
+  pVents().forEach(v=>{const r=pReach(S.P.R(v));if(lost.some(k=>r.has(S.P.R(k))))pufT.set(v,now+750);});}
+function puffNow(){if(!S.P||!S.N)return [];const now=performance.now(),out=new Set(),vs=pVents();
+  S.comps.forEach(c=>{if(!/^cyl/.test(c.t))return;const v=cylSpeed(c);if(!v||(v>0&&c.s.x>=1)||(v<0&&c.s.x<=0))return;const port=c.t==='cyl2'?(v>0?'B':'A'):(v<0?'1':null);if(!port)return;
+    const r=pReach(S.P.R(c.id+'.'+port));vs.forEach(k=>{if(r.has(S.P.R(k)))out.add(k);});});
+  vs.forEach(k=>{if(S.P.R(k)===S.P.src||(pufT.get(k)||0)>now)out.add(k);});return [...out].sort();}
+function puffSVG(L){return L.map(k=>{const P=portXY(k);if(!P)return '';const [dx,dy]=DV[P.s],px=-dy,py=dx,f=v=>v.toFixed(1);let o='';
+  [[0,0],[-1,.15],[1,.3],[-.5,.45],[.6,.6],[0,.75]].forEach(([sd,b])=>{const x0=P.x+dx*10,y0=P.y+dy*10,x1=P.x+dx*70+px*sd*26,y1=P.y+dy*70+py*sd*26,a=`dur=".9s" begin="${b}s" repeatCount="indefinite"`;
+    o+=`<circle cx="${f(x0)}" cy="${f(y0)}" r="3" fill="#f4fbff" stroke="#8fb0c8" stroke-width="1" opacity="0"><animate attributeName="cx" values="${f(x0)};${f(x1)}" ${a}/><animate attributeName="cy" values="${f(y0)};${f(y1)}" ${a}/><animate attributeName="r" values="3;17" ${a}/><animate attributeName="opacity" values="1;0" ${a}/></circle>`;});
+  const t=[P.x+dx*46,P.y+dy*46],b=[P.x+dx*32,P.y+dy*32];
+  o+=`<path d="M${f(P.x+dx*14)} ${f(P.y+dy*14)}L${f(b[0])} ${f(b[1])}M${f(b[0]+px*8)} ${f(b[1]+py*8)}L${f(t[0])} ${f(t[1])}L${f(b[0]-px*8)} ${f(b[1]-py*8)}" fill="none" stroke="#2f6f9e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><animate attributeName="opacity" values="1;.25;1" dur=".6s" repeatCount="indefinite"/></path>`;
+  return `<g pointer-events="none">${o}</g>`;}).join('');}
+function puffUpd(){const g=$('puffs');if(!g)return;const L=puffNow(),key=L.join();if(g.dataset.k!==key){g.dataset.k=key;g.innerHTML=puffSVG(L);}}
 
 /* ---------- drawing ---------- */
 const T=(x,y,s,sz,fill,wt,anc)=>`<text x="${x}" y="${y}" class="lbl" text-anchor="${anc||'middle'}" style="font-size:${sz||11}px;fill:${fill||'#1c2126'};font-weight:${wt||700}">${s}</text>`;
@@ -652,6 +673,7 @@ function render(){let o=bg()+legend()+'<!--feed-->';
   S.comps.forEach(c=>{Object.entries(DEF[c.t].ports).forEach(([p,d])=>{const k=c.id+'.'+p,x=c.x+d[0],y=c.y+d[1],pr=isP(k),pend=S.pending===k,exh=['3','5'].includes(p)&&c.t!=='supply',rc=PCOL[pRole(c,p)];
     const lx=d[2]==='l'?x-12:d[2]==='r'?x+12:x+10,ly=d[2]==='u'?y-9:d[2]==='d'?y+14:y-10,lab=PLBL[p]!=null?PLBL[p]:p;
     o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="13" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="7.5" fill="${pend?'#fff1c2':pr?'#1f6fe5':'#e8edf1'}" stroke="${pend?'#ff7a00':rc}" stroke-width="${pend?4:3.2}"/><circle cx="${x}" cy="${y}" r="3" fill="${exh?'#777':'#2a3440'}"/>${lab?T(lx,ly,lab,9.5,'#0b1d33',700):''}</g>`;});});
+  {const L=puffNow();o+=`<g id="puffs" data-k="${L.join()}">${puffSVG(L)}</g>`;}
   o+=eSockets()+`<g id="ewires">${ewSVG()}</g>`;o+=pnHL();o+=errSVG();o+=`<g id="thandles">${handlesSVG()}</g>`;
   svg.innerHTML=o;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.style.width=(W*S.zoom)+'px';renderTop();save();}
 function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.sel);if(!t)return '';const P=tubePts(t);if(!P)return '';let o='';
@@ -665,7 +687,7 @@ function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.
 function partial(){S.comps.forEach(c=>{if(/^cyl/.test(c.t)){const g=$('rod-'+c.id);if(g)g.setAttribute('transform',`translate(${(c.s.x*150).toFixed(1)} 0)`);}
   if(c.t==='tim'){const a=$('tarc-'+c.id);if(a){const C=2*Math.PI*14,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
   S.comps.forEach(c=>{if(c.t==='timer'){const a=$('etarc-'+c.id);if(a){const C=2*Math.PI*16,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
-  const tg=$('tubes');if(tg){const want=mov;if(want!==tg.dataset.mov){tg.dataset.mov=want;tg.innerHTML=tubesSVG();}}}
+  puffUpd();const tg=$('tubes');if(tg){const want=mov;if(want!==tg.dataset.mov){tg.dataset.mov=want;tg.innerHTML=tubesSVG();}}}
 function renderTop(){let h='';if(S.stu)h+=`<div class="msg info"><span>📥 دائرة المتدرب: <b>${esc(S.stu.n)}</b> · الرقم: <b dir="ltr">${esc(S.stu.id)}</b></span><button class="btn" data-stux style="margin-inline-start:auto" title="إغلاق تجربة المتدرب وتفريغ اللوحة">✕ إنهاء تجربة المتدرب</button></div>`;
   S.warn.forEach(w=>h+=`<div class="msg ${/قصر|يتسرب/.test(w)?'err':'wn'}">${esc(w)}</div>`);$('status').innerHTML=h;
   let d=`<span class="c ${S.air?'ok':'bad'}">${S.air?'الهواء مفتوح':'الهواء مغلق'} · ${S.bar.toFixed(1)} bar</span>`;
