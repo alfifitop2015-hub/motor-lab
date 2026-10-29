@@ -251,8 +251,10 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 .modal .box{max-height:calc((100vh - 32px) / var(--ui));overflow:auto}
 .appbox{max-height:calc(94vh / var(--ui))}
 /* results: a red ✔ on those the trainer has looked at, «جديد» on the others */
-.rseen{flex:none;align-self:center;min-width:46px;height:30px;border-radius:999px;border:2px solid #1f8f4e;background:#e6f6ec;color:#16703a;font:700 .78rem/1 inherit;cursor:pointer;padding:0 8px}
-.rseen.on{border-color:#d62b22;background:transparent;color:#d62b22;font-size:1.15rem;min-width:34px;padding:0}
+.rseen{flex:none;align-self:center;min-width:46px;height:30px;white-space:nowrap;border-radius:999px;border:2px solid #1f8f4e;background:#e6f6ec;color:#16703a;font:700 .78rem/1 inherit;cursor:pointer;padding:0 8px}
+.rseen.on{border-color:#d62b22;background:transparent;color:#d62b22}
+.rgdone{border:1.5px solid #d62b22;color:#d62b22;border-radius:999px;padding:0 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
+.rrow:has(>.rseen){grid-template-columns:28px auto 1fr}
 .rrow.rnew{border-inline-start:4px solid #1fa35a;background:rgba(31,163,90,.07)}
 .rgnew{background:#1fa35a;color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
 #rNew.on{background:#1fa35a;border-color:#1fa35a;color:#fff}
@@ -395,7 +397,7 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 <div class="modal" id="resModal" role="dialog" aria-modal="true" aria-labelledby="rT"><div class="box appbox" style="max-width:640px">
   <div class="ah"><h2 id="rT">📋 نتائج المتدربين (اكتشاف الأعطال)</h2><button class="btn" id="rClose">إغلاق</button></div>
   <div class="fld"><label>كلمة سر المدرب (التي وضعتها في كود Google)<input id="rKey" type="password" autocomplete="off"></label></div>
-  <div class="rtools"><button id="rLoad">↻ تحديث</button><button id="rNew" title="عرض النتائج التي لم تطّلع عليها فقط">🆕 الجديد فقط</button><button id="rSeenAll" title="تعليم كل النتائج بعلامة الاطّلاع">✔ تعليم الكل</button><input id="rFind" placeholder="بحث بالاسم أو الرقم"><button class="danger" id="rDelSel" disabled>🗑 حذف المحدد</button></div>
+  <div class="rtools"><button id="rLoad">↻ تحديث</button><button id="rNew" title="عرض التي لم تُرصد فقط">لم يُرصد</button><button id="rSeenAll" title="رصد كل النتائج">✔ رصد الكل</button><input id="rFind" placeholder="بحث بالاسم أو الرقم"><button class="danger" id="rDelSel" disabled>🗑 حذف المحدد</button></div>
   <p id="rMsg" style="font-size:.9rem;min-height:1.3em"></p><div id="rList"></div></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
@@ -1195,11 +1197,12 @@ function seenSync(){SEENSRV=RS.rows.length>0&&RS.rows.every(r=>'seen' in r);if(!
     /* the first time the sheet carries marks: this device's marks are sent, or everything already sent counts as seen */
     const up=RS.rows.filter(r=>had==null||SEEN.has(r.uid)).map(r=>r.uid);up.forEach(u=>{const r=RS.rows.find(x=>x.uid===u);if(r)r.seen=true;});seenPush(up,true);}
   SEEN=new Set(RS.rows.filter(r=>r.seen).map(r=>r.uid));seenSave();return true;}
-const seenBtn=r=>SEEN.has(r.uid)?`<button class="rseen on" data-rseen="${esc(r.uid)}" title="اطّلعت عليها (اضغط لإعادتها جديدة)" aria-label="مُطّلع عليها">✔</button>`:`<button class="rseen" data-rseen="${esc(r.uid)}" title="جديدة: اضغط لتعليمها بعلامة الاطّلاع" aria-label="جديدة">جديد</button>`;
-function seenBar(){const n=RS.rows.filter(r=>!SEEN.has(r.uid)).length,b=$('rNew'),a=$('rSeenAll');if(!b)return;b.classList.toggle('on',ONLYNEW);b.textContent='🆕 الجديد فقط'+(n?' ('+n+')':'');a.disabled=!n;}
+const seenBtn=r=>SEEN.has(r.uid)?`<button class="rseen on" data-rseen="${esc(r.uid)}" title="رُصدت (اضغط لإلغاء الرصد)" aria-label="رُصد">✔ رُصد</button>`:`<button class="rseen" data-rseen="${esc(r.uid)}" title="لم تُرصد بعد: اضغط لرصدها" aria-label="لم يُرصد">لم يُرصد</button>`;
+function seenBar(){const n=RS.rows.filter(r=>!SEEN.has(r.uid)).length,y=RS.rows.length-n,b=$('rNew'),a=$('rSeenAll');if(!b)return;b.classList.toggle('on',ONLYNEW);
+  b.textContent=n+' لم يُرصد'+(ONLYNEW?' ✕':'');b.title=ONLYNEW?'عرض الكل':'عرض التي لم تُرصد فقط';a.textContent=y+' رُصد · ✔ رصد الكل';a.disabled=!n;}
 function rRender(){if(RS.rows!==seenRows){seenRows=RS.rows;if(!seenSync())seenInit();}else if(!SEENSRV)seenInit();seenBar();const q=$('rFind').value.trim(),L=RS.rows.filter(r=>(!ONLYNEW||!SEEN.has(r.uid))&&(!q||(r.n+' '+r.id).includes(q)));$('rDelSel').disabled=!RS.sel.size;
   $('rList').innerHTML=L.length?L.map(r=>`<div class="rrow${SEEN.has(r.uid)?'':' rnew'}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${seenBtn(r)}
-    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span> ${r.g!=null?`<span style="color:var(--accent)">· ${r.g}/20</span>`:''}</div><div class="rs">${fmtT(r.t)}</div><div class="ra"><button data-ropen="${esc(r.uid)}">👁 عرض النتيجة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${ONLYNEW&&RS.rows.length?'لا توجد نتائج جديدة: اطّلعت على الكل ✔':RS.rows.length?'لا نتائج مطابقة.':'لا توجد نتائج مرسلة.'}</p>`;}
+    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span> ${r.g!=null?`<span style="color:var(--accent)">· ${r.g}/20</span>`:''}</div><div class="rs">${fmtT(r.t)}</div><div class="ra"><button data-ropen="${esc(r.uid)}">👁 عرض النتيجة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${ONLYNEW&&RS.rows.length?'لا توجد نتائج لم تُرصد: رُصد الكل ✔':RS.rows.length?'لا نتائج مطابقة.':'لا توجد نتائج مرسلة.'}</p>`;}
 /* the results list: Google sometimes answers with an empty sheet for a moment (a slow or busy spreadsheet); when the last load had
    results, an empty answer is asked again twice before it is believed, and the count of the last good load is kept on this device */
 async function cloudList(key){const LK='wsRowsN';let last=0;try{last=+localStorage.getItem(LK)||0;}catch(_){}
