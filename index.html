@@ -280,6 +280,7 @@ body.fs .wrap{position:fixed;left:0;right:0;top:0;bottom:var(--dockh,120px);over
 .dsw svg{display:block;width:100%;height:100%;pointer-events:none}
 .dsw.cur{background:rgba(255,179,0,.18);box-shadow:0 0 0 2.5px #ffb300}
 #cPop .cpn{display:none}
+.db svg.mmic{width:19px!important;height:29px!important;display:block;margin:0 auto 1px}
 .cspool{display:block;width:18px;height:27px;margin:0 auto 1px}.db .cspool svg,.cspool svg{display:block;width:18px!important;height:27px!important}
 .cdot{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.6)}
 .cpop{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,120px) + 8px);max-width:calc(100vw - 16px);box-sizing:border-box;background:rgba(11,19,30,.97);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:8px 10px;direction:rtl;display:none}
@@ -597,7 +598,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
     <button class="db full" id="dCol" aria-haspopup="true" aria-expanded="false" aria-controls="cPop" title="اختيار لون السلك"><span class="ic"><i class="cspool" id="dColDot"></i></span>الأسلاك ▾</button>
     <span class="dsep full"></span>
     <button class="db full" id="dParts" aria-haspopup="true" aria-expanded="false" aria-controls="pPop" title="المكونات: كونتاكتور، مؤقت، أوفرلود، نقاط مساعدة، ضواغط ولمبات"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="1" width="32" height="42" rx="4" fill="#dcdcd6"/><rect x="4" y="12" width="20" height="20" rx="2" fill="#8d9398"/><rect x="8" y="20" width="12" height="5" rx="1" fill="#2fbf5b"/></svg>المكونات ▾<span class="cnt" id="dPartsN"></span></button>
-    <button class="db full" id="dMM" title="ملتميتر للقياس"><span class="ic">📟</span>ملتميتر</button>
+    <button class="db full" id="dMM" title="ملتميتر للقياس"><span class="ic"><svg class="mmic" viewBox="0 0 26 40" aria-hidden="true"><rect x="0.5" y="0.5" width="25" height="39" rx="5" fill="#d8262b" stroke="#7d1116"/><rect x="2.5" y="2.5" width="21" height="35" rx="3" fill="#2a2c2f"/><rect x="4.5" y="4.5" width="17" height="9" rx="1.2" fill="#bfcbb8"/><path d="M9 7.2h2.2M8.6 7.6v2.2M11.6 7.6v2.2M9 10.2h2.2M13.6 7.2h2.2M13.2 7.6v2.2M16.2 7.6v2.2M13.6 10.2h2.2" stroke="#1e2619" stroke-width=".9" stroke-linecap="round"/><rect x="5" y="15.2" width="4.5" height="2" rx=".6" fill="#f2a20c"/><rect x="16.5" y="15.2" width="4.5" height="2" rx=".6" fill="#3f78d8"/><circle cx="13" cy="25" r="6.3" fill="#151618" stroke="#4a4d52" stroke-width=".8"/><rect x="11.6" y="19" width="2.8" height="12" rx="1.3" fill="#34373b" transform="rotate(35 13 25)"/><path d="M13 19.4l-1.2 2.4h2.4z" fill="#e8ecef" transform="rotate(35 13 25)"/><circle cx="7" cy="34.5" r="1.8" fill="#0e0f10" stroke="#d8322b" stroke-width=".7"/><circle cx="13" cy="34.5" r="1.8" fill="#0e0f10" stroke="#888" stroke-width=".7"/><circle cx="19" cy="34.5" r="1.8" fill="#0e0f10" stroke="#d8322b" stroke-width=".7"/></svg></span>ملتميتر</button>
     <span class="dsep full"></span>
     <label class="db full trainer-only dpre" title="التمارين الجاهزة: تحميل توصيل تمرين كامل على اللوحة"><span class="ic">📋</span>التمارين<select id="dPreset" aria-label="التمارين">
         <option value="">اختر التمرين…</option>
