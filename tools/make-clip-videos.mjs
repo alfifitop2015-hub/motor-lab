@@ -151,7 +151,8 @@ try {
       await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 1000);
       /* في الفيديو: نافذة الشرح أعلى الصورة بعرضها كاملًا، واللوحة كاملة تحتها، دون أزرار المحاكي */
       await page.addStyleTag({content: `
-        body>*:not(#wrap):not(#wcBar){display:none!important}
+        body>*:not(#wrap):not(#wcBar):not(#plcModal){display:none!important}
+        #plcModal .plcpal,#plcModal .plckeys,#plcModal #plcTm,#plcModal .trainer-only,#plcModal details,#plcModal #plcClose,#plcModal #plcClear{display:none!important}
         .wtop,#wcBar .wcctl,#wcBar .wci,#wcBar #wcX,#wcBar .wcgrip{display:none!important}
         html,body{margin:0!important;padding:0!important;overflow:hidden!important;background:var(--bg,#0f1724)}
         #wcBar{position:fixed!important;left:0!important;top:0!important;width:${W}px!important;max-width:none!important;box-sizing:border-box;border-radius:0!important;border-width:0 0 1px!important;box-shadow:none!important;padding:8px 14px 10px!important}
@@ -178,7 +179,9 @@ try {
         (X.DEMO[c.ex] || []).forEach(([, tx]) => { cap.innerHTML = '<span class="wcg">▶ تجربة التشغيل (ببرنامج easy النموذجي)</span><br>' + tx + '<span class="wcres">النتيجة: يعمل K1 و K2 · المحرك يعمل للأمام · مضاءة: H1 و H2</span>'; h = Math.max(h, hb()); });
         b.classList.remove('demo'); c.i = 0; X.said.length = 0; X.wcShow(); return Math.ceil(h); /* نُبقي شرح الخطوة الأولى ليُنطق */
       }, info.n);
-      await page.addStyleTag({content: `#wcBar{height:${barH}px!important}#wrap{padding-top:${barH}px!important}`});
+      /* in the easy exercises the clip opens the device window: in the video it sits right under the clip window, over the board */
+      await page.addStyleTag({content: `#wcBar{height:${barH}px!important}#wrap{padding-top:${barH}px!important}
+        body.wcplc #plcModal{align-items:flex-start!important;padding:${barH + 12}px 16px 0!important;background:rgba(0,0,0,.35)!important}body.wcplc #plcModal .box{max-height:none!important}`});
       const H = (Math.ceil(await page.evaluate(() => document.getElementById('svg').getBoundingClientRect().bottom)) + 1) & ~1;
       await page.setViewportSize({width: W, height: H});
       const clip = {x: 0, y: 0, width: W, height: H};
