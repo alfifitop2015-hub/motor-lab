@@ -107,7 +107,10 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .rth.none{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.7rem;background:var(--chip)}
 .tube{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#ewires path{stroke-linejoin:round}
 .thit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer;pointer-events:stroke}
-.flow{fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:6 8;stroke-linecap:round;pointer-events:none;animation:fl .7s linear infinite;opacity:.85}
+.flow{fill:none;stroke:#1789d4;stroke-width:3.6;stroke-dasharray:.1 11;stroke-linecap:round;pointer-events:none;animation:fl2 .7s linear infinite}
+.flow.rev{animation-direction:reverse}
+.flow.ex{stroke:#8d9aa5;stroke-width:3}
+@keyframes fl2{to{stroke-dashoffset:-11.1}}
 @keyframes fl{to{stroke-dashoffset:-14}}.vfl{stroke:#fff;stroke-width:2;stroke-dasharray:3 5;stroke-linecap:round;animation:fl .55s linear infinite;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.flow{animation:none}}
 .port{cursor:crosshair}.port:hover .pr{stroke:#ff8a00;stroke-width:3}
@@ -435,7 +438,7 @@ function tick(){const now=performance.now(),dt=Math.min(.1,(now-lastT)/1000)*(S.
   if(S.cl&&S.cl.til&&S.cl.til()){hiss(false);return;}
   S.comps.forEach(c=>{if(c.t==='timer'&&c.s.en&&!c.s.out){c.s.acc=(c.s.acc||0)+dt;if(c.s.acc>=c.o.t){c.s.out=true;disc=true;}}
     if(c.t==='tim'){const pil=isP(c.id+'.12');if(pil){c.s.acc+=dt;if(!c.s.on&&c.s.acc>=c.o.t){c.s.on=true;disc=true;}}else if(c.s.acc||c.s.on){c.s.acc=0;if(c.s.on){c.s.on=false;disc=true;}}}
-    if(/^cyl/.test(c.t)){const v=cylSpeed(c);if(v){const nx=Math.min(1,Math.max(0,c.s.x+v*dt));if(nx!==c.s.x){const b0=c.s.x<=.015||c.s.x>=.985;c.s.x=nx;mov=true;const b1=nx<=.015||nx>=.985;if(b0!==b1)disc=true;}}}});
+    if(/^cyl/.test(c.t)){const v=cylSpeed(c);c.s.v=0;if(v){const nx=Math.min(1,Math.max(0,c.s.x+v*dt));if(nx!==c.s.x){c.s.v=v;const b0=c.s.x<=.015||c.s.x>=.985;c.s.x=nx;mov=true;const b1=nx<=.015||nx>=.985;if(b0!==b1)disc=true;}}}});
   if(disc){const ch=solve();if(ch)clickSnd();render();}else partial();
   hiss(mov||puffNow().length>0);}
 setInterval(tick,40);
@@ -677,8 +680,31 @@ function tubePath(t){const A=portXY(t.a),B=portXY(t.b);if(!A||!B)return '';
   for(let k=0;k<P.length-1;k++){const p0=P[Math.max(0,k-1)],p1=P[k],p2=P[k+1],p3=P[Math.min(P.length-1,k+2)];
     d+=`C${f(p1[0]+(p2[0]-p0[0])/6)} ${f(p1[1]+(p2[1]-p0[1])/6)} ${f(p2[0]-(p3[0]-p1[0])/6)} ${f(p2[1]-(p3[1]-p1[1])/6)} ${f(p2[0])} ${f(p2[1])}`;}
   return d;}
-function tubesSVG(){return S.tubes.map(t=>{const d=tubePath(t);if(!d)return '';const p=isP(t.a)||isP(t.b),sel=S.sel===t.id;
-  return `<path d="${d}" class="tube" stroke="${sel?'#ffb300':'#0d2a4f'}" stroke-width="${sel?9:7}"/><path d="${d}" class="tube" stroke="${p?'#1f6fe5':'#8fb9ea'}" stroke-width="5"/>${p&&mov?`<path d="${d}" class="flow"/>`:''}<path d="${d}" class="thit" data-tube="${t.id}"/>`;}).join('');}
+/* transparent tubes: white body, sky core under pressure, dots running with the air while a cylinder moves
+   (blue = supply side toward the cylinder, grey = exhaust side toward vent 3/5) */
+function bfsD(adj,starts){const d=new Map(),q=[];starts.forEach(k=>{if(!d.has(k)){d.set(k,0);q.push(k);}});while(q.length){const k=q.shift();for(const n of adj.get(k)||[])if(!d.has(n)){d.set(n,d.get(k)+1);q.push(n);}}return d;}
+function flowState(){const press=new Map(),exh=new Map();if(!S.P)return{press,exh,key:''};const R=S.P.R,add=(m,k,v)=>{const r=R(k);m.set(r,Math.max(m.get(r)||0,Math.abs(v)));};
+  S.comps.forEach(c=>{const v=(c.s&&c.s.v)||0;if(!v||!/^cyl/.test(c.t))return;const k=p=>c.id+'.'+p;if(c.t==='cyl2'){if(v>0){add(press,k('A'),v);add(exh,k('B'),v);}else{add(press,k('B'),v);add(exh,k('A'),v);}}else{if(v>0)add(press,k('1'),v);else add(exh,k('1'),v);}});
+  const key=[...press].map(e=>'p'+e[0]+':'+e[1].toFixed(1)).concat([...exh].map(e=>'e'+e[0]+':'+e[1].toFixed(1))).sort().join('|');return{press,exh,key};}
+function flowDist(){const adj=new Map(),e=(a,b)=>{if(!adj.has(a))adj.set(a,[]);if(!adj.has(b))adj.set(b,[]);adj.get(a).push(b);adj.get(b).push(a);};
+  S.tubes.forEach(t=>e(t.a,t.b));S.comps.forEach(c=>{const k=p=>c.id+'.'+p,u=(a,b)=>e(k(a),k(b)),s=c.s||{};switch(c.t){
+    case'supply':if(S.air&&cmpOn())for(let i=1;i<=8;i++)e('SRC',k('P'+i));break;
+    case'v32nc':case'v32sel':case'v32rol':case'v32pil':case'tim':case'v32sol':if(s.on)u('1','2');else u('2','3');break;
+    case'v32no':if(s.on)u('2','3');else u('1','2');break;
+    case'v52man':case'v52ps':case'v52pp':case'v52sol':case'v52dsol':if(s.pos==='a'){u('1','4');u('2','3');}else{u('1','2');u('4','5');}break;
+    case'or':case'and':u('2',(s.link||'X'));break;case'tee':u('a','b');u('a','c');u('a','d');break;case'fcv':u('1','2');break;}});
+  return{src:bfsD(adj,['SRC']),vent:bfsD(adj,(S.N?S.N.vents:[]))};}
+let FK='';
+function tubesSVG(){const F=flowState();FK=F.key;const fl=F.press.size||F.exh.size,D=fl?flowDist():null,BIG=1e9;
+  return S.tubes.map(t=>{const d=tubePath(t);if(!d)return '';const p=isP(t.a)||isP(t.b),sel=S.sel===t.id,r=S.P?S.P.R(t.a):null;
+  let o=`<path d="${d}" class="tube" stroke="${sel?'#ffb300':'#8d9da9'}" stroke-width="${sel?10:8}"/><path d="${d}" class="tube" stroke="#f4f8fb" stroke-opacity=".93" stroke-width="6"/>`;
+  if(p)o+=`<path d="${d}" class="tube" stroke="#a9dcf7" stroke-width="3.6"/>`;
+  o+=`<path d="${d}" class="tube" stroke="#fff" stroke-opacity=".95" stroke-width="1.2" transform="translate(-1.2 -1.2)"/>`;
+  if(fl&&r!=null){let sp=0,cls='',rev=false;
+    if(p&&F.press.has(r)){sp=F.press.get(r);const a=D.src.has(t.a)?D.src.get(t.a):BIG,b=D.src.has(t.b)?D.src.get(t.b):BIG;rev=a>b;}
+    else if(!p&&F.exh.has(r)){sp=F.exh.get(r);cls=' ex';const a=D.vent.has(t.a)?D.vent.get(t.a):BIG,b=D.vent.has(t.b)?D.vent.get(t.b):BIG;rev=a<b;}
+    if(sp)o+=`<path d="${d}" class="flow${cls}${rev?' rev':''}" style="animation-duration:${(.32/Math.max(.12,Math.min(1.3,sp))).toFixed(2)}s"/>`;}
+  return o+`<path d="${d}" class="thit" data-tube="${t.id}"/>`;}).join('');}
 function bg(){let o=`<defs><linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#b9c1c8"/><stop offset="1" stop-color="#8a939b"/></linearGradient>
   <linearGradient id="gTank" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2463b"/><stop offset=".45" stop-color="#b3241d"/><stop offset="1" stop-color="#6d1414"/></linearGradient>
   <linearGradient id="gRod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9ced3"/><stop offset="1" stop-color="#8d949a"/></linearGradient>
@@ -690,11 +716,11 @@ function render(){S.puffL=puffNow();pKey=mov+'|'+S.puffL.join();let o=bg()+legen
   S.comps.forEach(c=>{o+=`<g transform="translate(${c.x} ${c.y})" filter="url(#ds)">${drawComp(c)}</g>`;if(S.selC===c.id){const D=DEF[c.t];o+=`<rect x="${c.x-5}" y="${c.y-15}" width="${D.w+10}" height="${D.h+20}" rx="10" fill="none" stroke="#ffb300" stroke-width="3" stroke-dasharray="9 6" pointer-events="none"/>`;}});
   {const cp=S.comps.find(c=>c.t==='compr'),su=S.comps.find(c=>c.t==='supply');if(cp&&su){const A={x:cp.x+250,y:cp.y+22},B={x:su.x+44,y:su.y+96},run=cmpOn();
     const rq=routes(),fp=rq&&rq.get('feed'),d=fp?rPath(fp):`M${A.x} ${A.y}C${A.x} ${A.y-120} ${B.x-70} ${B.y+60} ${B.x-30} ${B.y}L${B.x} ${B.y}`;
-    o=o.replace('<!--feed-->',`<path d="${d}" fill="none" stroke="#0f5ea8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/><path d="${d}" fill="none" stroke-linejoin="round" stroke="${run?'#43a8f5':'#8fbfe6'}" stroke-width="6" stroke-linecap="round" pointer-events="none"/>`);}}
+    o=o.replace('<!--feed-->',`<path d="${d}" fill="none" stroke="#8d9da9" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/><path d="${d}" fill="none" stroke-linejoin="round" stroke="#f4f8fb" stroke-opacity=".93" stroke-width="8" stroke-linecap="round" pointer-events="none"/>${run?`<path d="${d}" fill="none" stroke-linejoin="round" stroke="#a9dcf7" stroke-width="4.5" stroke-linecap="round" pointer-events="none"/>`:''}`);}}
   o+=`<g id="tubes">${tubesSVG()}</g>`;
   S.comps.forEach(c=>{Object.entries(DEF[c.t].ports).forEach(([p,d])=>{const k=c.id+'.'+p,x=c.x+d[0],y=c.y+d[1],pr=isP(k),pend=S.pending===k,exh=['3','5'].includes(p)&&c.t!=='supply',rc=PCOL[pRole(c,p)];
     const lx=d[2]==='l'?x-12:d[2]==='r'?x+12:x+10,ly=d[2]==='u'?y-9:d[2]==='d'?y+14:y-10,lab=PLBL[p]!=null?PLBL[p]:p;
-    o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="13" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="7.5" fill="${pend?'#fff1c2':pr?'#1f6fe5':'#e8edf1'}" stroke="${pend?'#ff7a00':rc}" stroke-width="${pend?4:3.2}"/><circle cx="${x}" cy="${y}" r="3" fill="${exh?'#777':'#2a3440'}"/>${lab?T(lx,ly,lab,9.5,'#0b1d33',700):''}</g>`;});});
+    o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="13" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="7.5" fill="${pend?'#fff1c2':pr?'#3aa6e6':'#e8edf1'}" stroke="${pend?'#ff7a00':rc}" stroke-width="${pend?4:3.2}"/><circle cx="${x}" cy="${y}" r="3" fill="${exh?'#777':'#2a3440'}"/>${lab?T(lx,ly,lab,9.5,'#0b1d33',700):''}</g>`;});});
   {const L=puffNow();o+=`<g id="puffs" data-k="${L.join()}">${puffSVG(L)}</g>`;}
   o+=eSockets()+`<g id="ewires">${ewSVG()}</g>`;o+=pnHL();o+=errSVG();o+=`<g id="thandles">${handlesSVG()}</g>`;
   svg.innerHTML=o;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.style.width=(W*S.zoom)+'px';renderTop();save();}
@@ -712,7 +738,7 @@ function partial(){{const k=mov+'|'+puffNow().join();if(k!==pKey){pKey=k;render(
     const d=c.s.x*150,st=(i,x,w)=>{const e=$(i+c.id);if(e){e.setAttribute('x',x.toFixed(1));e.setAttribute('width',Math.max(0,w).toFixed(1));}};st('ach-',28,12+d);st('ach2-',28,12+d);st('arh-',50+d,174-d);st('arh2-',50+d,174-d);}
   if(c.t==='tim'){const a=$('tarc-'+c.id);if(a){const C=2*Math.PI*14,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
   S.comps.forEach(c=>{if(c.t==='timer'){const a=$('etarc-'+c.id);if(a){const C=2*Math.PI*16,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
-  puffUpd();const tg=$('tubes');if(tg){const want=mov;if(want!==tg.dataset.mov){tg.dataset.mov=want;tg.innerHTML=tubesSVG();}}}
+  puffUpd();const tg=$('tubes');if(tg&&flowState().key!==FK)tg.innerHTML=tubesSVG();}
 function renderTop(){let h='';if(S.stu)h+=`<div class="msg info"><span>📥 دائرة المتدرب: <b>${esc(S.stu.n)}</b> · الرقم: <b dir="ltr">${esc(S.stu.id)}</b></span><button class="btn" data-stux style="margin-inline-start:auto" title="إغلاق تجربة المتدرب وتفريغ اللوحة">✕ إنهاء تجربة المتدرب</button></div>`;
   S.warn.forEach(w=>h+=`<div class="msg ${/قصر|يتسرب/.test(w)?'err':'wn'}">${esc(w)}</div>`);$('status').innerHTML=h;
   let d=`<span class="c ${S.air?'ok':'bad'}">${S.air?'الهواء مفتوح':'الهواء مغلق'} · ${S.bar.toFixed(1)} bar</span>`;
@@ -1165,7 +1191,7 @@ function exRender(){document.querySelectorAll('[data-ex]').forEach(b=>b.setAttri
   else B.innerHTML=`<h3>ترقيم المنافذ (ISO 5599)</h3><ul><li><b>1</b>: دخول الهواء المضغوط.</li><li><b>2 و4</b>: منافذ الخرج إلى الأسطوانات أو الإشارات.</li><li><b>3 و5</b>: العادم (خروج الهواء للجو، عادة عبر كاتم صوت).</li><li><b>12 و14</b>: منافذ الإشارات الهوائية: 14 تصل 1 بـ 4، و12 تصل 1 بـ 2.</li></ul>
     <h3>تسمية العناصر</h3><ul><li><b>1A، 2A</b>: الأسطوانات (المشغلات).</li><li><b>1V1، 1V2</b>: الصمامات الخاصة بالأسطوانة 1.</li><li><b>1S1، 1S2</b>: عناصر الإشارة (ضواغط، بكرات نهاية المشوار).</li><li><b>0Z</b>: وحدة الإمداد بالهواء.</li></ul>
     <h3>قراءة رمز الصمام</h3><ul><li>عدد المربعات = عدد الأوضاع. «5/2» = 5 منافذ ووضعان.</li><li>الأسهم مسار الهواء، والرمز ⊥ منفذ مغلق.</li><li>المربع المظلل في المحاكي هو الوضع الحالي.</li></ul>
-    <h3>في المحاكي</h3><ul><li>الخرطوم الأزرق الغامق عليه ضغط، والفاتح بلا ضغط.</li><li>اسحب العنصر من إطاره، واضغطه لفتح إعداداته.</li><li>اضغط منفذًا ثم منفذًا آخر لتركيب خرطوم، واضغط الخرطوم لحذفه.</li><li>قاعدة أمان: أغلق الهواء قبل تعديل الخراطيم.</li></ul>`;}
+    <h3>في المحاكي</h3><ul><li>الخراطيم بيضاء شفافة مثل الواقع. الخرطوم الذي عليه ضغط يظهر بداخله لون سماوي، وأثناء حركة الأسطوانة تجري فيه نقاط زرقاء باتجاه سريان الهواء.</li><li>النقاط الرمادية هي هواء العادم وهو يخرج من الأسطوانة إلى منفذ العادم 3 أو 5. سرعة النقاط تتبع سرعة الأسطوانة، فتبطؤ مع خفض الضغط أو تضييق الخانق.</li><li>اسحب العنصر من إطاره، واضغطه لفتح إعداداته.</li><li>اضغط منفذًا ثم منفذًا آخر لتركيب خرطوم، واضغط الخرطوم لحذفه.</li><li>قاعدة أمان: أغلق الهواء قبل تعديل الخراطيم.</li></ul>`;}
 function openHelp(tab,hl){EXS.tab=tab;EXS.hl=hl||null;exM.classList.add('open');exRender();}
 $('bHelp').onclick=()=>openHelp('now');$('exClose').onclick=()=>exM.classList.remove('open');exM.addEventListener('click',e=>{if(e.target===exM)exM.classList.remove('open');});
 document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{EXS.tab=b.dataset.ex;EXS.hl=null;exRender();});
