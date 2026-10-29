@@ -3672,12 +3672,23 @@ function wcDemoAct(c,a,cb){const tok=c.tok,ok=()=>S.clip===c&&c.tok===tok,later=
     const poll=()=>{if(!ok())return;if((a==='w'?sig()!==s0:S.motor.state!=='run')||Date.now()-t0>lim)later(cb,900);else later(poll,200);};later(poll,300);}
   else if(a==='t1'){ofType('ol').forEach(f=>{const o=S.ol[f];if(o.m1||(!TWO_M.has(c.ex)&&o.m2))o.trip=true;});update();later(cb,1500);}
   else if(a==='ok'){ofType('ol').forEach(f=>Object.assign(S.ol[f],{trip:false,heat:0}));update();later(cb,1200);}
-  else if(a.startsWith('px:')){const [rs,cell]=a.slice(3).split('|'),rows=rs.split(',').filter(x=>x!=='').map(Number),[cr,cc]=(cell||'-1,-1').split(',').map(Number);
-    document.body.classList.add('wcplc');PXHL=rows;PE.r=cr;PE.c=cc;if(!plM.classList.contains('open'))openPLC();else plcRender();
-    requestAnimationFrame(()=>{const el=$('plcGrid').children[rows[0]];if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'});});
+  else if(a.startsWith('pxb:')){const o=JSON.parse(a.slice(4)),P=S.plc,ex=c.ex;document.body.classList.add('wcplc');
+    if(o.o==='close'){pxClose();PM={s:'st',i:0};update();return later(cb,600);}
+    if(o.o==='open'){P.run=false;PM={s:'mn',i:0};PXHL=null;PE.r=-1;PE.c=-1;}
+    if(o.o==='stop'){P.run=false;P.q=[false,false,false,false,false];PM={s:'mn',i:1};}
+    if(o.o==='clear'){P.prog=[];P.tm={};PM={s:'cf',i:0};PXHL=null;PE.r=0;PE.c=0;}
+    if(o.o==='how'){PM={s:'pg',i:0};PE.r=0;PE.c=0;}
+    if(o.o==='hl'){PXHL=o.rows;PE.r=o.r;PE.c=o.c;}
+    if(o.o==='set'){PXHL=o.rows;PE.r=o.r;PE.c=o.c;const l=plcLine(o.r);
+      if(o.k==='c')l.c[o.b]=JSON.parse(JSON.stringify(o.v));
+      else if(o.k==='coil'){l.coil={...o.v};if(o.tm)P.tm[+o.v.op.slice(1)]={...o.tm};}
+      else if(o.k==='j'){for(let q=o.from;q<o.to;q++){plcLine(q).j[o.b]=true;}plcLine(o.to);}}
+    if(o.o==='save'){PXHL=null;PE.r=-1;PE.c=-1;PM={s:'mn',i:0};const T0=PPROG[ex];if(T0){P.prog=JSON.parse(JSON.stringify(T0.prog));P.tm=JSON.parse(JSON.stringify(T0.tm||{}));}}
+    if(o.o==='run'){P.run=true;P.m={};P.ts={};P.prev={};P.q=[false,false,false,false,false];PM={s:'mn',i:1};}
+    if(!plM.classList.contains('open'))openPLC();update();plcRender();
+    requestAnimationFrame(()=>{const el=PXHL&&$('plcGrid').children[PXHL[0]];if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'});});
     /* without sound the step waits long enough to be read */
-    later(cb,WCSND?700:Math.min(15000,800+(c.curTx||'').length*55)/(c.spd||1));}
-  else if(a==='pxe'){pxClose();update();later(cb,600);}
+    later(cb,WCSND?700:Math.min(16000,800+(c.curTx||'').length*55)/(c.spd||1));}
   else cb();}
 function wcShow(){const c=S.clip,n=c.steps.length,i=c.i,w=wcCur(c),ND=wcND(c),E=wcEnd(c),dm=!c.mini&&i>n&&i<E?i-n-1:-1;
   if(c.mini)update();
@@ -4091,45 +4102,59 @@ const PPROG={
 /* the clip of an easy exercise opens the device after the wiring and reads its ladder program rung by rung:
    what each input and output is wired to, every contact of the rung (series = and, a branch below = or) and the coil */
 var PXHL=null;const pxSec=t=>t>=3&&t<=10&&t===Math.round(t)?t+' ثوانٍ':t+' ثانية';
-function pxClose(){if(PXHL){PE.r=0;PE.c=0;}PXHL=null;document.body.classList.remove('wcplc');if(plM.classList.contains('open')){plM.classList.remove('open');}}
+function pxClose(){if(PXHL||PE.r<0||PE.c<0){PE.r=0;PE.c=0;}PXHL=null;document.body.classList.remove('wcplc');if(plM.classList.contains('open')){plM.classList.remove('open');}}
 function pxIO(ex){const W=PRESETS[ex]||[],I={},Q={};
   W.forEach(([a,b])=>{[[a,b],[b,a]].forEach(([x,y])=>{const mi=/^XP\.I(\d)$/.exec(y),mx=/^X1\.(\d+)$/.exec(x);
       if(mi&&mx){const bt=BTNX.find(r=>r[1]===+mx[1]);if(bt)I[mi[1]]={dev:bt[2],t:bt[3]};}
       const mq=/^XP\.Q(\d)_2$/.exec(x),mk=/^(K\d)\.A1$/.exec(y);if(mq&&mk)Q[mq[1]]=mk[1];});});
   return{I,Q};}
-function pxSteps(ex){const P=PPROG[ex],{I,Q}=pxIO(ex),L=P.prog,out=[];
+function pxSteps(ex){const P=PPROG[ex],{I,Q}=pxIO(ex),L=P.prog,out=[],A=o=>'pxb:'+JSON.stringify(o);
   const btn=d=>d.dev.startsWith('SQ')?'نهاية المشوار '+d.dev:d.t==='NC'?'ضاغط الإيقاف '+d.dev:'ضاغط التشغيل '+d.dev;
   const ioTx=Object.keys(I).sort().map(n=>'I'+n+' من '+btn(I[n])+(I[n].t==='NC'?' (مغلق عادة، فالمدخل فعّال حتى نضغطه)':'')).join('، ');
   const qTx=Object.keys(Q).sort().map(n=>'Q'+n+' يشغّل الكونتاكتور '+Q[n]).join('، ');
-  out.push(['px:','بعد التوصيل نفتح جهاز easy لنرى البرنامج. الشاشة تعرض المخطط السلمي: الخط الأيسر هو المصدر، وكل سطر يُقرأ من اليسار إلى اليمين: التلامسات أولًا ثم الملف في آخر السطر. الخط الثخين يعني أن التيار يصل إليه.']);
-  out.push(['px:','المداخل: '+ioTx+'. والمخارج: '+qTx+'.']);
   const cDesc=(c,coil)=>{if(!c||c.op==='-')return null;const k=c.op[0],n=c.op.slice(1),inv=c.nc;
     if(k==='I'){const d=I[n];if(!d)return 'المدخل '+c.op+(inv?' مقلوبًا':'');
-      if(d.t==='NC')return inv?c.op+' مقلوبًا: يُغلق عند الضغط على '+d.dev:c.op+' ('+d.dev+'): مغلق ما دام '+d.dev+' غير مضغوط، ويفتح عند الضغط عليه فيوقف';
-      return inv?c.op+' مقلوبًا: يفتح عند الضغط على '+d.dev:c.op+' ('+d.dev+'): يُغلق عند الضغط على '+d.dev;}
-    if(k==='Q'){const kk=Q[n]?' (الكونتاكتور '+Q[n]+')':'';if(coil&&coil.op===c.op&&!inv)return 'تلامس من المخرج نفسه '+c.op+': يبقي السطر يعمل بعد ترك ضاغط التشغيل، وهو تلامس المسك';
-      return inv?c.op+' مقلوبًا: مغلق ما دام '+c.op+kk+' لا يعمل، فيمنع التشغيل معه (تعشيق)':'تلامس '+c.op+kk+': يُغلق عندما يعمل '+c.op;}
-    if(k==='M')return inv?'المرحل الداخلي '+c.op+' مقلوبًا: مغلق ما دام '+c.op+' لا يعمل':'المرحل الداخلي '+c.op+': يُغلق عندما يعمل ملف '+c.op;
-    if(k==='T'){const tm=P.tm&&P.tm[n];return inv?'تلامس المؤقت '+c.op+' مقلوبًا: يفتح بعد انتهاء الزمن':'تلامس المؤقت '+c.op+': يُغلق بعد انتهاء الزمن'+(tm?' ('+pxSec(tm.t)+')':'');}
-    return c.op;};
+      if(d.t==='NC')return inv?'يُغلق عند الضغط على '+d.dev:'مغلق ما دام '+d.dev+' غير مضغوط، ويفتح عند الضغط عليه فيوقف';
+      return inv?'يفتح عند الضغط على '+d.dev+'، فيمنع هذا السطر ما دام '+d.dev+' مضغوطًا':'يُغلق عند الضغط على '+d.dev;}
+    if(k==='Q'){const kk=Q[n]?' (الكونتاكتور '+Q[n]+')':'';if(coil&&coil.op===c.op&&!inv)return 'تلامس من المخرج نفسه: يبقي الملف يعمل بعد ترك ضاغط التشغيل، وهو تلامس المسك';
+      return inv?'مغلق ما دام '+c.op+kk+' لا يعمل، فيمنع التشغيل معه (تعشيق)':'يُغلق عندما يعمل '+c.op+kk;}
+    if(k==='M')return inv?'مرحل داخلي مقلوب: مغلق ما دام '+c.op+' لا يعمل':'مرحل داخلي: يُغلق عندما يعمل ملف '+c.op;
+    if(k==='T'){const tm=P.tm&&P.tm[n];return inv?'تلامس المؤقت مقلوبًا: يفتح بعد انتهاء الزمن':'تلامس المؤقت: يُغلق بعد انتهاء الزمن'+(tm?' ('+pxSec(tm.t)+')':'');}
+    return '';};
   const coilDesc=co=>{const n=co.op.slice(1);
     if(co.f==='T'){const tm=P.tm&&P.tm[n];return 'ملف المؤقت '+co.op+': يبدأ العد عندما يصله التيار'+(tm?'، والزمن '+pxSec(tm.t):'');}
-    const what=co.op[0]==='Q'?' فيعمل الكونتاكتور '+(Q[n]||co.op):co.op[0]==='M'?' (مرحل داخلي يُستعمل في سطر آخر)':'';
-    return (co.f==='S'?'ملف الضبط ':co.f==='R'?'ملف إعادة الضبط ':'الملف ')+co.op+what;};
+    return (co.f==='S'?'ملف الضبط ':co.f==='R'?'ملف إعادة الضبط ':'الملف ')+co.op+(co.op[0]==='Q'?' فيعمل الكونتاكتور '+(Q[n]||co.op):co.op[0]==='M'?' (مرحل داخلي يُستعمل في سطر آخر)':'');};
+  const nm=c=>(c.nc?'ليس ':'')+c.op,FN={C:'C تشغيل عادي',S:'S ضبط يبقى',R:'R إعادة ضبط',I:'I نبضي',T:'T تشغيل المؤقت'};
+  /* the device first: stopped, the old program cleared, the programming screen opened */
+  out.push([A({o:'open'}),'بعد التوصيل نكتب البرنامج بأنفسنا من البداية على جهاز easy. نضغط OK على الجهاز فتظهر القائمة الرئيسية: PROGRAMM و STOP ✓ RUN و PARAMETER و INFO و STELLE UHR.']);
+  out.push([A({o:'stop'}),'أولًا نوقف الجهاز: نقف على السطر STOP ✓ RUN ونضغط OK حتى تكون العلامة عند STOP. لا يمكن تعديل البرنامج والجهاز على RUN. (في المحاكي: الزر ■ STOP.)']);
+  out.push([A({o:'clear'}),'ثم نمسح أي برنامج قديم: PROGRAMM… ثم LOESCHE PROG ثم OK، ويسأل الجهاز للتأكيد فنضغط OK. (في المحاكي: زر «مسح البرنامج» مرتين.) الشاشة الآن فارغة.']);
+  out.push([A({o:'how'}),'نحدد المداخل والمخارج كما وصّلناها: '+ioTx+'. والمخارج: '+qTx+'.']);
+  out.push([A({o:'how'}),'ندخل شاشة البرنامج: PROGRAMM… ثم PROGRAMM ثم OK. كل سطر فيه ثلاث خانات للتلامسات، بينها نقاط وصل، وفي آخره خانة الملف. الخط الأيسر هو المصدر، ونكتب من اليسار إلى اليمين. نتحرك بالأسهم، وOK يُدخل عنصرًا، وALT يقلب التلامس أو يرسم خطًا، وDEL يحذف. (في المحاكي: نختار العنصر من الأزرار تحت الشاشة.)']);
+  /* then every rung, element by element */
   const used=new Set();
-  L.forEach((l,r)=>{if(!l||!l.coil||used.has(r))return;used.add(r);const rows=[r],br=[];
-    /* branch rows under this one joined to it at a junction: they are in parallel (or) */
+  L.forEach((l,r)=>{if(!l||!l.coil||used.has(r))return;used.add(r);const br=[];
     for(let r2=r+1;r2<L.length;r2++){const b2=L[r2];if(!b2||b2.coil)break;
-      const jb=[0,1,2].find(b=>{for(let q=r;q<r2;q++)if(!(L[q].j&&L[q].j[b]))return false;return true;});if(jb==null)break;
-      rows.push(r2);used.add(r2);br.push({r2,jb});}
-    const R=rows.join(',');
-    out.push(['px:'+R+'|'+r+',-1','السطر '+(r+1)+(rows.length>1?' (ومعه السطر '+rows.slice(1).map(x=>x+1).join(' و')+')':'')+': يشغّل '+coilDesc(l.coil).replace(/^ملف |^الملف /,'')+'. نقرؤه من اليسار تلامسًا تلامسًا.']);
-    l.c.forEach((c,b)=>{const d=cDesc(c,l.coil);if(d)out.push(['px:'+R+'|'+r+','+(2*b),(b?'ثم على التوالي معه: ':'أولًا ')+d+'.']);});
-    br.forEach(({r2,jb})=>{const b2=L[r2];b2.c.slice(0,jb+1).forEach((c,b)=>{const d=cDesc(c,l.coil);if(!d)return;
-      const with_=l.c.slice(0,jb+1).map(x=>x&&x.op!=='-'?x.op:null).filter(Boolean).join(' و');
-      out.push(['px:'+R+'|'+r2+','+(2*b),'وتحته في السطر '+(r2+1)+': '+d+'. هذا الفرع موصول على التوازي مع '+with_+'، فيكفي أن يُغلق أحدهما.']);});});
-    out.push(['px:'+R+'|'+r+',6','وفي آخر السطر '+coilDesc(l.coil)+'. يعمل عندما يصله التيار من خلال كل التلامسات المغلقة على مساره، فيظهر الخط ثخينًا حتى الملف.']);});
-  out.push(['pxe','هكذا يُكتب البرنامج على جهاز easy بدل أسلاك التحكم. نغلق الجهاز، وهو على RUN، ونجرّب التشغيل لنرى البرنامج يعمل.']);
+      const jb=[0,1,2].find(b=>{for(let q=r;q<r2;q++)if(!(L[q].j&&L[q].j[b]))return false;return true;});if(jb==null)break;used.add(r2);br.push({r2,jb});}
+    const rows=[r,...br.map(x=>x.r2)];
+    out.push([A({o:'hl',rows,r,c:0}),'السطر '+(r+1)+': نكتب فيه ما يشغّل '+coilDesc(l.coil).replace(/^ملف |^الملف /,'')+'.']);
+    l.c.forEach((c,b)=>{if(!c)return;
+      if(c.op==='-'){out.push([A({o:'set',rows,r,c:2*b,k:'c',b,v:c}),'الخانة '+(b+1)+' لا تحتاج تلامسًا: نضغط ALT فيرسم خطًا متصلًا يوصل التيار إلى الملف.']);return;}
+      out.push([A({o:'set',rows,r,c:2*b,k:'c',b,v:c}),'الخانة '+(b+1)+': OK ثم نختار '+c.op[0]+' والرقم '+c.op.slice(1)+' بالسهمين ▲▼ ثم OK'+(c.nc?'، ثم ALT ليصير تلامسًا مقلوبًا (مغلقًا عادة) فيظهر عليه خط':'')+'. التلامس '+c.op+': '+cDesc(c,l.coil)+'.']);});
+    out.push([A({o:'set',rows,r,c:6,k:'coil',v:l.coil,tm:l.coil.op[0]==='T'?(P.tm||{})[+l.coil.op.slice(1)]:null}),'خانة الملف في آخر السطر: OK ثم نختار الوظيفة '+(FN[l.coil.f]||l.coil.f)+' والملف '+l.coil.op+' ثم OK. هذا '+coilDesc(l.coil)+'.'+(l.coil.op[0]==='T'?' ونضبط زمنه في PARAMETER (في المحاكي: تحت البرنامج).':'')]);
+    br.forEach(({r2,jb})=>{const b2=L[r2];
+      b2.c.slice(0,jb+1).forEach((c,b)=>{if(!c||c.op==='-')return;
+        out.push([A({o:'set',rows,r:r2,c:2*b,k:'c',b,v:c}),'فرع تحته في السطر '+(r2+1)+'، الخانة '+(b+1)+': نكتب '+c.op+(c.nc?' مقلوبًا':'')+'. '+cDesc(c,l.coil)+'.']);});
+      const with_=l.c.slice(0,jb+1).filter(x=>x&&x.op!=='-').map(x=>x.op).join(' و'),bo=b2.c.slice(0,jb+1).filter(x=>x&&x.op!=='-').map(x=>x.op).join(' و');
+      out.push([A({o:'set',rows,r,c:2*jb+1,k:'j',b:jb,from:r,to:r2}),'نربط الفرع: نقف على نقطة الوصل بعد '+with_+' في السطر '+(r+1)+' ونضغط ALT فيُرسم خط نازل إلى السطر '+(r2+1)+'. صار '+bo+' على التوازي مع '+with_+': يكفي أن يُغلق أحدهما.']);});
+    /* the rung as a sentence: the parallel group first, then the rest in series */
+    let ex2=[];const jb0=br.length?Math.max(...br.map(x=>x.jb)):-1;
+    if(jb0>=0){const g=[l.c.slice(0,jb0+1).filter(x=>x&&x.op!=='-').map(nm).join(' و'),...br.map(({r2,jb})=>L[r2].c.slice(0,jb+1).filter(x=>x&&x.op!=='-').map(nm).join(' و'))];ex2.push('('+g.join(' أو ')+')');}
+    l.c.slice(jb0+1).forEach(c=>{if(c&&c.op!=='-')ex2.push(nm(c));});
+    out.push([A({o:'hl',rows,r,c:6}),'اكتمل السطر: '+l.coil.op+' يعمل عندما '+ex2.join(' و ')+'. التيار يمر من الخط الأيسر عبر التلامسات المغلقة حتى الملف.']);});
+  out.push([A({o:'save'}),'انتهى البرنامج. نضغط ESC للخروج من شاشة البرنامج، فيسأل الجهاز: SPEICHERN؟ أي هل نحفظ؟ فنضغط OK، فيُحفظ في ذاكرة الجهاز الدائمة ولا يضيع إذا انقطعت الكهرباء. (في المحاكي يُحفظ تلقائيًا مع اللوحة.)']);
+  out.push([A({o:'run'}),'للتشغيل: من القائمة الرئيسية نقف على STOP ✓ RUN ونضغط OK فتنتقل العلامة إلى RUN. الآن ينفّذ الجهاز البرنامج باستمرار، والخط الثخين يبين أين يصل التيار. (في المحاكي: الزر ▶ RUN.)']);
+  out.push([A({o:'close'}),'نغلق شاشة الجهاز وهو على RUN، ونجرّب التشغيل بالضواغط لنرى البرنامج يعمل.']);
   return out;}
 const PLCEX=[
  {n:'تشغيل/إيقاف مع تثبيت',p:[LN([K('I1'),K('I2'),WL],{f:'C',op:'Q1'},[true,false,false]),LN([K('Q1'),null,null])],tm:{},
