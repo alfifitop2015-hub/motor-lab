@@ -732,7 +732,10 @@ function serial(){return{v:1,app:'pn',air:S.air,bar:S.bar,comps:S.comps.map(c=>(
 function applyObj(o){if(!o||o.app!=='pn'||!Array.isArray(o.comps))throw 0;S.air=o.air!==false;S.bar=o.bar==null?6:+o.bar;
   S.comps=o.comps.filter(c=>DEF[c.t]).map(c=>{const n={id:c.id,t:c.t,x:c.x,y:c.y,o:{...(c.o||{})},s:{}};initState(n);return n;});
   if(!S.comps.some(c=>c.t==='supply'))S.comps.unshift({id:'0Z',t:'supply',x:20,y:20,o:{},s:{}});
-  S.tubes=[];(o.tubes||[]).forEach(([a,b,m])=>{if(portXY(a)&&portXY(b))S.tubes.push(Array.isArray(m)&&m.length?{id:S.nid++,a,b,m:m.map(q=>[+q[0],+q[1]])}:{id:S.nid++,a,b});});S.ew=[];(o.ew||[]).forEach(([a,b])=>{if(portXY(a)&&portXY(b))S.ew.push({id:S.nid++,a,b});});S.sel=null;S.selW=null;S.selC=null;S.pending=null;}
+  /* boards saved with the air supply at the bottom: it goes to the top left and everything else moves down below it */
+  const sup=S.comps.find(c=>c.t==='supply'),mig=sup&&sup.y>700;
+  if(mig){sup.x=20;sup.y=20;S.comps.forEach(c=>{if(c!==sup)c.y=Math.min(H-DEF[c.t].h,c.y+240);});}
+  S.tubes=[];(o.tubes||[]).forEach(([a,b,m])=>{if(portXY(a)&&portXY(b))S.tubes.push(Array.isArray(m)&&m.length?{id:S.nid++,a,b,m:m.map(q=>[+q[0],Math.min(H,+q[1]+(mig?240:0))])}:{id:S.nid++,a,b});});S.ew=[];(o.ew||[]).forEach(([a,b])=>{if(portXY(a)&&portXY(b))S.ew.push({id:S.nid++,a,b});});S.sel=null;S.selW=null;S.selC=null;S.pending=null;}
 function save(){if(S.cl)return;try{const o=serial();localStorage.setItem('pnSim.v1',JSON.stringify(o));pnwSave(o);}catch(_){}}
 /* the trainee's exercises: the latest version of the board of every exercise, kept on this device
    (not during a clip, while a trainee's circuit is opened, in trainer mode, or for a board with nothing but the air supply) */
