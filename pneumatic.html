@@ -108,7 +108,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .tube{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#ewires path{stroke-linejoin:round}
 .thit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer;pointer-events:stroke}
 .flow{fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:6 8;stroke-linecap:round;pointer-events:none;animation:fl .7s linear infinite;opacity:.85}
-@keyframes fl{to{stroke-dashoffset:-14}}
+@keyframes fl{to{stroke-dashoffset:-14}}.vfl{stroke:#fff;stroke-width:2;stroke-dasharray:3 5;stroke-linecap:round;animation:fl .55s linear infinite;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.flow{animation:none}}
 .port{cursor:crosshair}.port:hover .pr{stroke:#ff8a00;stroke-width:3}
 .act{cursor:pointer}[data-drag]{cursor:move;touch-action:none}[data-press]{cursor:pointer;touch-action:none}
@@ -465,7 +465,10 @@ function puffUpd(){const g=$('puffs');if(!g)return;const L=puffNow(),key=L.join(
 const T=(x,y,s,sz,fill,wt,anc)=>`<text x="${x}" y="${y}" class="lbl" text-anchor="${anc||'middle'}" style="font-size:${sz||11}px;fill:${fill||'#1c2126'};font-weight:${wt||700}">${s}</text>`;
 function arrowLine(x1,y1,x2,y2,col){const a=Math.atan2(y2-y1,x2-x1),h=5;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="1.6"/><path d="M${x2} ${y2}L${(x2-h*Math.cos(a-.45)).toFixed(1)} ${(y2-h*Math.sin(a-.45)).toFixed(1)}L${(x2-h*Math.cos(a+.45)).toFixed(1)} ${(y2-h*Math.sin(a+.45)).toFixed(1)}Z" fill="${col}"/>`;}
 function vbox(x,y,s,spec,slots,active){const col='#1b2530',sx=k=>x+s*slots[k];let o=`<rect x="${x}" y="${y}" width="${s}" height="${s}" fill="${active?'#cfe4ff':'#fff'}" stroke="${col}" stroke-width="1.6"/>`;
-  spec.f.forEach(([a,b])=>{const ya=a[0]==='t'?y:y+s,yb=b[0]==='t'?y:y+s;o+=arrowLine(sx(a),ya,sx(b),yb,col);});
+  spec.f.forEach(([a,b])=>{const ya=a[0]==='t'?y:y+s,yb=b[0]==='t'?y:y+s,st=active?vAir(a,b):null;
+    if(!st){o+=arrowLine(sx(a),ya,sx(b),yb,col);return;}const ac=st==='x'?'#6fb3ea':'#1f6fe5';
+    o+=`<line x1="${sx(a)}" y1="${ya}" x2="${sx(b)}" y2="${yb}" stroke="${ac}" stroke-width="5" stroke-linecap="round" opacity=".55"/>`+arrowLine(sx(a),ya,sx(b),yb,st==='x'?'#2f7fc0':'#0b4fb8');
+    if(st!=='p')o+=`<line x1="${sx(a)}" y1="${ya}" x2="${sx(b)}" y2="${yb}" class="vfl"/>`;});
   spec.b.forEach(k=>{const yy=k[0]==='t'?y:y+s,d=k[0]==='t'?1:-1;o+=`<line x1="${sx(k)}" y1="${yy}" x2="${sx(k)}" y2="${yy+d*8}" stroke="${col}" stroke-width="1.6"/><line x1="${sx(k)-5}" y1="${yy+d*8}" x2="${sx(k)+5}" y2="${yy+d*8}" stroke="${col}" stroke-width="1.6"/>`;});return o;}
 const SL3={t0:.3,b0:.3,b1:.7},SL5={t0:.3,t1:.7,b0:.2,b1:.5,b2:.8};
 const B3NC=[{f:[['b0','t0']],b:['b1']},{f:[['t0','b1']],b:['b0']}],B3NO=[{f:[['t0','b1']],b:['b0']},{f:[['b0','t0']],b:['b1']}];
@@ -482,7 +485,12 @@ function actSym(kind,x,y,side){const d=side==='l'?-1:1,col='#1b2530';let o=`<lin
   return o;}
 function body(c,w,h,title){return `<rect data-drag="${c.id}" x="0" y="0" width="${w}" height="${h}" rx="7" fill="#dfe3e6" stroke="#7d868d" stroke-width="1.5"/><rect data-drag="${c.id}" x="3" y="3" width="${w-6}" height="14" rx="5" fill="#fff" opacity=".45"/>
   <text data-drag="${c.id}" x="8" y="15" class="lbl" style="font-size:11.5px;font-weight:700;fill:#0b3d91">${esc(c.id)}</text><text data-drag="${c.id}" x="${w-6}" y="14" text-anchor="end" class="lbl" style="font-size:8.5px;fill:#454f58">${title}</text>`;}
-function drawComp(c){const D=DEF[c.t],s=c.s,id=c.id;let o='';
+/* air made visible inside the parts: a valve's live flow path turns blue (dashes run while air moves, pale blue while
+   it blows off to the exhaust); a cylinder's chamber fills blue under pressure, pale while it empties */
+let VA=null;const VSL={3:{t0:'2',b0:'1',b1:'3'},5:{t0:'4',t1:'2',b0:'5',b1:'1',b2:'3'}};
+function drawComp(c){const n=/^v52/.test(c.t)?5:/^v32|^tim$/.test(c.t)?3:0;VA=n?{id:c.id,m:VSL[n]}:null;try{return drawComp0(c);}finally{VA=null;}}
+function vAir(a,b){if(!VA)return null;const k=q=>VA.id+'.'+VA.m[q],ka=k(a),kb=k(b);if(fillF(ka)>0||fillF(kb)>0)return mov?'pm':'p';const L=S.puffL||[];return L.includes(ka)||L.includes(kb)?'x':null;}
+function drawComp0(c){const D=DEF[c.t],s=c.s,id=c.id;let o='';
   switch(c.t){
   case'compr':{const on=s.on!==false;/* a workshop air compressor: tank on wheels, motor and pump on top, pressure switch with its gauge, outlet valve */
     o+=`<rect data-drag="${id}" x="0" y="0" width="${D.w}" height="${D.h}" fill="transparent"/>
@@ -519,7 +527,12 @@ function drawComp(c){const D=DEF[c.t],s=c.s,id=c.id;let o='';
       <g data-drag="${id}"><rect x="232" y="136" width="132" height="74" rx="4" fill="url(#gAlu)" stroke="#7d868d" stroke-width="1.5"/>${T(250,148,'⊸◇',9,'#333')}${T(296,148,'DISTRIBUTOR',7.5,'#333',700)}${T(356,148,'PN. 12201',6.5,'#555',600,'end')}
         <path d="M244 178h112" stroke="#555" stroke-width="1"/><rect x="226" y="164" width="14" height="14" rx="3" fill="#1d2126"/></g>`;return o;}
   case'cyl1':case'cyl2':{const x=s.x||0,dx=(x*150).toFixed(1),two=c.t==='cyl2';o+=body(c,D.w,D.h,two?'مزدوجة الفعل':'مفردة الفعل');
-    o+=`<rect x="20" y="30" width="210" height="44" rx="5" fill="url(#gBar)" stroke="#555"/><rect x="14" y="26" width="14" height="52" rx="3" fill="#6b757d"/><rect x="224" y="26" width="14" height="52" rx="3" fill="#6b757d"/>
+    const ck=id+'.'+(two?'A':'1'),cF=fillF(ck)>0,rF=two&&fillF(id+'.B')>0,v=cylSpeed(c),mv=v&&!((v>0&&x>=1)||(v<0&&x<=0));
+    const cs=cF?(mv&&v>0?'aR':'aS'):(mv&&v<0?'aL':''),rs=rF?(mv&&v<0?'aL':'aS'):(two&&mv&&v>0?'aR':''),tint=(st,p)=>st?(p?'rgba(31,111,229,.62)':'rgba(111,179,234,.45)'):'none';
+    o+=`<rect x="20" y="30" width="210" height="44" rx="5" fill="url(#gBar)" stroke="#555"/>
+      <g pointer-events="none"><rect id="ach-${id}" x="28" y="32" width="${(12+x*150).toFixed(1)}" height="40" fill="${tint(cs,cF)}"/><rect id="ach2-${id}" x="28" y="32" width="${(12+x*150).toFixed(1)}" height="40" fill="${cs?`url(#${cs})`:'none'}"/>
+      <rect id="arh-${id}" x="${(50+x*150).toFixed(1)}" y="32" width="${(174-x*150).toFixed(1)}" height="40" fill="${tint(rs,rF)}"/><rect id="arh2-${id}" x="${(50+x*150).toFixed(1)}" y="32" width="${(174-x*150).toFixed(1)}" height="40" fill="${rs?`url(#${rs})`:'none'}"/></g>
+      <rect x="14" y="26" width="14" height="52" rx="3" fill="#6b757d"/><rect x="224" y="26" width="14" height="52" rx="3" fill="#6b757d"/>
       <g id="rod-${id}" transform="translate(${dx} 0)"><rect x="${40}" y="33" width="10" height="38" fill="#3b4650"/><rect x="50" y="46" width="190" height="12" fill="url(#gRod)" stroke="#777"/><rect x="236" y="40" width="16" height="24" rx="3" fill="#39424b"/><circle cx="244" cy="52" r="4" fill="#ffcc00"/></g>
       ${two?'':`<path d="M140 52l6 -12l6 24l6 -24l6 24l6 -24l6 24l6 -12" fill="none" stroke="#39424b" stroke-width="1.6" opacity=".6"/>`}
       <line x1="244" y1="86" x2="394" y2="86" stroke="#555" stroke-dasharray="3 3"/>${T(244,84,'−',11)}${T(394,84,'+',11)}`;
@@ -662,9 +675,10 @@ function bg(){let o=`<defs><linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1"
   <linearGradient id="gTank" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2463b"/><stop offset=".45" stop-color="#b3241d"/><stop offset="1" stop-color="#6d1414"/></linearGradient>
   <linearGradient id="gRod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9ced3"/><stop offset="1" stop-color="#8d949a"/></linearGradient>
   <pattern id="slots" width="1000" height="50" patternUnits="userSpaceOnUse"><rect width="1000" height="50" fill="#b7c0c7"/><rect y="21" width="1000" height="8" fill="#8f99a1"/><rect y="20" width="1000" height="1.5" fill="#dfe5e9"/></pattern>
+  ${[['aS',''],['aR','16 0'],['aL','-16 0']].map(([n,t])=>`<pattern id="${n}" width="16" height="10" patternUnits="userSpaceOnUse"><circle cx="4" cy="3" r="1.5" fill="#fff" opacity=".9"/><circle cx="12" cy="8" r="1.2" fill="#fff" opacity=".8"/>${t?`<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="${t}" dur=".5s" repeatCount="indefinite"/>`:''}</pattern>`).join('')}
   <filter id="ds" x="-10%" y="-10%" width="130%" height="135%"><feDropShadow dx="3" dy="5" stdDeviation="3" flood-color="#000" flood-opacity=".35"/></filter></defs>
   <rect width="${W}" height="${H}" fill="url(#slots)"/>`;return o;}
-function render(){let o=bg()+legend()+'<!--feed-->';
+function render(){S.puffL=puffNow();pKey=mov+'|'+S.puffL.join();let o=bg()+legend()+'<!--feed-->';
   S.comps.forEach(c=>{o+=`<g transform="translate(${c.x} ${c.y})" filter="url(#ds)">${drawComp(c)}</g>`;if(S.selC===c.id){const D=DEF[c.t];o+=`<rect x="${c.x-5}" y="${c.y-15}" width="${D.w+10}" height="${D.h+20}" rx="10" fill="none" stroke="#ffb300" stroke-width="3" stroke-dasharray="9 6" pointer-events="none"/>`;}});
   {const cp=S.comps.find(c=>c.t==='compr'),su=S.comps.find(c=>c.t==='supply');if(cp&&su){const A={x:cp.x+250,y:cp.y+22},B={x:su.x+44,y:su.y+96},run=cmpOn();
     const rq=routes(),fp=rq&&rq.get('feed'),d=fp?rPath(fp):`M${A.x} ${A.y}C${A.x} ${A.y-120} ${B.x-70} ${B.y+60} ${B.x-30} ${B.y}L${B.x} ${B.y}`;
@@ -684,7 +698,10 @@ function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.
   o+=`<g class="act" data-act="tdel"><rect x="${bx-72}" y="${by-14}" width="68" height="28" rx="14" fill="#d8322b" stroke="#fff" stroke-width="2"/>${T(bx-38,by+5,'🗑 حذف',12,'#fff')}</g>`;
   if(t.m&&t.m.length)o+=`<g class="act" data-act="tauto"><rect x="${bx+4}" y="${by-14}" width="76" height="28" rx="14" fill="#1f6fe5" stroke="#fff" stroke-width="2"/>${T(bx+42,by+5,'↺ تلقائي',12,'#fff')}</g>`;
   return o;}
-function partial(){S.comps.forEach(c=>{if(/^cyl/.test(c.t)){const g=$('rod-'+c.id);if(g)g.setAttribute('transform',`translate(${(c.s.x*150).toFixed(1)} 0)`);}
+let pKey='';
+function partial(){{const k=mov+'|'+puffNow().join();if(k!==pKey){pKey=k;render();return;}}
+  S.comps.forEach(c=>{if(/^cyl/.test(c.t)){const g=$('rod-'+c.id);if(g)g.setAttribute('transform',`translate(${(c.s.x*150).toFixed(1)} 0)`);
+    const d=c.s.x*150,st=(i,x,w)=>{const e=$(i+c.id);if(e){e.setAttribute('x',x.toFixed(1));e.setAttribute('width',Math.max(0,w).toFixed(1));}};st('ach-',28,12+d);st('ach2-',28,12+d);st('arh-',50+d,174-d);st('arh2-',50+d,174-d);}
   if(c.t==='tim'){const a=$('tarc-'+c.id);if(a){const C=2*Math.PI*14,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
   S.comps.forEach(c=>{if(c.t==='timer'){const a=$('etarc-'+c.id);if(a){const C=2*Math.PI*16,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
   puffUpd();const tg=$('tubes');if(tg){const want=mov;if(want!==tg.dataset.mov){tg.dataset.mov=want;tg.innerHTML=tubesSVG();}}}
