@@ -318,7 +318,7 @@ const DEF={
  counter:{n:'عداد كهربائي (عدّ تنازلي إلى قيمة)',pre:'KZ',w:180,h:190,e:{A1:[24,46],A2:[24,90],R1:[24,126],R2:[24,166],'12':[124,52],'14':[156,52],'11':[140,166]}},
  lamp:{n:'لمبة بيان 24V',pre:'H',w:90,h:120,e:{X1:[24,100],X2:[66,100]}},
  lse:{n:'مفتاح نهاية مشوار كهربائي',pre:'1B',w:120,h:96,e:{'1':[24,78],'2':[60,78],'4':[96,78]}},
- supply:{n:'وحدة الإمداد بالهواء',g:'Z',w:370,h:186,ports:Object.fromEntries([1,2,3,4,5,6,7,8].map(i=>['P'+i,[34+(i-1)*43,0,'u']]))}};
+ supply:{n:'وحدة الإمداد بالهواء',g:'Z',w:370,h:210,ports:Object.fromEntries([1,2,3,4,5,6,7,8].map(i=>['P'+i,[34+(i-1)*43,210,'d']]))}};
 Object.values(DEF).forEach(d=>{d.ports=d.ports||{};});
 const LIB=['cyl1','cyl2','v32nc','v32no','v32sel','v32rol','v32pil','v52man','v52ps','v52pp','or','and','fcv','tim','gauge','tee','psu','pbno','pbnc','swe','relay','timer','counter','lamp','lse','v32sol','v52sol','v52dsol'];
 const SHORT={cyl1:'أسطوانة مفردة',cyl2:'أسطوانة مزدوجة',v32nc:'3/2 مغلق',v32no:'3/2 مفتوح',v32sel:'3/2 اختيار',v32rol:'3/2 بكرة',v32pil:'3/2 هوائي',v52man:'5/2 يدوي',v52ps:'5/2 هوائي',v52pp:'5/2 ذاكرة',or:'OR اختيار',and:'AND مزدوج',fcv:'خانق',tim:'تأخير زمني',gauge:'مانومتر',tee:'موزع T',psu:'مصدر 24V',pbno:'ضاغط NO',pbnc:'ضاغط NC',swe:'مفتاح اختيار',relay:'مرحل K',timer:'مؤقت KT',counter:'عداد KZ',lamp:'لمبة H',lse:'نهاية مشوار ك',v32sol:'3/2 كهربائي',v52sol:'5/2 كهربائي',v52dsol:'5/2 بملفين'};
@@ -326,7 +326,7 @@ const PLBL={X:'1',Y:'1',A:'',B:'',a:'',b:'',c:'',d:''};
 
 /* ---------- state ---------- */
 const S={ew:[],epend:null,selW:null,comps:[],tubes:[],air:true,bar:6,zoom:1,sel:null,selC:null,pending:null,hist:[],pressed:new Set(),snd:false,stu:null,last:'',nid:1,warn:[],cl:null,prac:null};
-function blank(){S.comps=[{id:'0Z',t:'supply',x:20,y:1094,o:{},s:{}}];S.tubes=[];S.ew=[];}
+function blank(){S.comps=[{id:'0Z',t:'supply',x:20,y:20,o:{},s:{}}];S.tubes=[];S.ew=[];}
 blank();
 const comp=id=>S.comps.find(c=>c.id===id);
 function initState(c){const t=c.t;c.s=c.s||{};
@@ -454,15 +454,16 @@ function body(c,w,h,title){return `<rect data-drag="${c.id}" x="0" y="0" width="
   <text data-drag="${c.id}" x="8" y="15" class="lbl" style="font-size:11.5px;font-weight:700;fill:#0b3d91">${esc(c.id)}</text><text data-drag="${c.id}" x="${w-6}" y="14" text-anchor="end" class="lbl" style="font-size:8.5px;fill:#454f58">${title}</text>`;}
 function drawComp(c){const D=DEF[c.t],s=c.s,id=c.id;let o='';
   switch(c.t){
-  case'supply':{const on=S.air;o+=`<rect x="0" y="0" width="${D.w}" height="${D.h}" rx="9" fill="#cfd5da" stroke="#6d777f" stroke-width="1.6"/>
-    <rect x="6" y="-10" width="${D.w-12}" height="30" rx="6" fill="#4b5760" stroke="#2c343a"/>${T(D.w/2,16,'موزع الهواء P1 - P8',10,'#fff')}
-    <g transform="translate(40 108)"><circle r="30" fill="#fff" stroke="#1b2530" stroke-width="2"/><path d="M0 -20l17 29h-34z" fill="none" stroke="#1b2530" stroke-width="2"/>${T(0,48,'الضاغط',10)}</g>
-    <path d="M70 108H104M162 108H196M252 108H280V60H330V22" stroke="${on?'#1f6fe5':'#8aa'}" stroke-width="4" fill="none"/>
-    <g transform="translate(104 60)"><rect width="58" height="96" rx="6" fill="#eef1f3" stroke="#555"/>${T(29,14,'FRL',10)}<path d="M29 22v18M20 40h18l-9 12z" fill="none" stroke="#333" stroke-width="1.4"/>
+  case'supply':{const on=S.air;/* at the top left of the board: the distributor P1-P8 along its bottom edge, the hoses leave downward */
+    o+=`<rect x="0" y="0" width="${D.w}" height="${D.h}" rx="9" fill="#cfd5da" stroke="#6d777f" stroke-width="1.6"/>
+    <rect x="6" y="182" width="${D.w-12}" height="30" rx="6" fill="#4b5760" stroke="#2c343a"/>${T(D.w/2,201,'موزع الهواء P1 - P8',10,'#fff')}
+    <g transform="translate(40 92)"><circle r="30" fill="#fff" stroke="#1b2530" stroke-width="2"/><path d="M0 -20l17 29h-34z" fill="none" stroke="#1b2530" stroke-width="2"/>${T(0,48,'الضاغط',10)}</g>
+    <path d="M70 92H104M162 92H196M280 92H330V182" stroke="${on?'#1f6fe5':'#8aa'}" stroke-width="4" fill="none"/>
+    <g transform="translate(104 30)"><rect width="58" height="96" rx="6" fill="#eef1f3" stroke="#555"/>${T(29,14,'FRL',10)}<path d="M29 22v18M20 40h18l-9 12z" fill="none" stroke="#333" stroke-width="1.4"/>
       <circle cx="29" cy="70" r="15" fill="#fff" stroke="#333" stroke-width="1.6"/><line x1="29" y1="70" x2="${(29+11*Math.sin((-120+240*S.bar/10)*Math.PI/180)).toFixed(1)}" y2="${(70-11*Math.cos((-120+240*S.bar/10)*Math.PI/180)).toFixed(1)}" stroke="#c0392b" stroke-width="2"/>${T(29,93,S.bar.toFixed(1)+' bar',9)}</g>
-    <g class="act" data-act="bar:-"><title>خفض الضغط</title><circle cx="116" cy="172" r="10" fill="#39424b"/>${T(116,177,'−',14,'#fff')}</g><g class="act" data-act="bar:+"><title>رفع الضغط</title><circle cx="150" cy="172" r="10" fill="#39424b"/>${T(150,177,'+',14,'#fff')}</g>
-    <g class="act" data-act="air"><title>صمام الإغلاق: فتح/إغلاق الهواء</title><rect x="196" y="64" width="84" height="88" rx="8" fill="${on?'#d8f5e1':'#f5d8d8'}" stroke="${on?'#1a8a42':'#c42b22'}" stroke-width="2"/>
-      ${T(238,82,'صمام الإغلاق',9.5)}<rect x="214" y="92" width="48" height="26" rx="13" fill="${on?'#1a8a42':'#c42b22'}"/><circle cx="${on?249:227}" cy="105" r="10" fill="#fff"/>${T(238,138,on?'الهواء مفتوح':'الهواء مغلق',10,on?'#1a8a42':'#c42b22')}</g>`;return o;}
+    <g class="act" data-act="bar:-"><title>خفض الضغط</title><circle cx="116" cy="148" r="10" fill="#39424b"/>${T(116,153,'−',14,'#fff')}</g><g class="act" data-act="bar:+"><title>رفع الضغط</title><circle cx="150" cy="148" r="10" fill="#39424b"/>${T(150,153,'+',14,'#fff')}</g>
+    <g class="act" data-act="air"><title>صمام الإغلاق: فتح/إغلاق الهواء</title><rect x="196" y="40" width="84" height="88" rx="8" fill="${on?'#d8f5e1':'#f5d8d8'}" stroke="${on?'#1a8a42':'#c42b22'}" stroke-width="2"/>
+      ${T(238,58,'صمام الإغلاق',9.5)}<rect x="214" y="68" width="48" height="26" rx="13" fill="${on?'#1a8a42':'#c42b22'}"/><circle cx="${on?249:227}" cy="81" r="10" fill="#fff"/>${T(238,114,on?'الهواء مفتوح':'الهواء مغلق',10,on?'#1a8a42':'#c42b22')}</g>`;return o;}
   case'cyl1':case'cyl2':{const x=s.x||0,dx=(x*150).toFixed(1),two=c.t==='cyl2';o+=body(c,D.w,D.h,two?'مزدوجة الفعل':'مفردة الفعل');
     o+=`<rect x="20" y="30" width="210" height="44" rx="5" fill="url(#gBar)" stroke="#555"/><rect x="14" y="26" width="14" height="52" rx="3" fill="#6b757d"/><rect x="224" y="26" width="14" height="52" rx="3" fill="#6b757d"/>
       <g id="rod-${id}" transform="translate(${dx} 0)"><rect x="${40}" y="33" width="10" height="38" fill="#3b4650"/><rect x="50" y="46" width="190" height="12" fill="url(#gRod)" stroke="#777"/><rect x="236" y="40" width="16" height="24" rx="3" fill="#39424b"/><circle cx="244" cy="52" r="4" fill="#ffcc00"/></g>
@@ -730,7 +731,7 @@ $('dSnd').onclick=()=>{S.snd=!S.snd;if(S.snd)audio();$('dSnd').innerHTML=`<span 
 function serial(){return{v:1,app:'pn',air:S.air,bar:S.bar,comps:S.comps.map(c=>({id:c.id,t:c.t,x:c.x,y:c.y,o:c.o})),tubes:S.tubes.map(t=>t.m&&t.m.length?[t.a,t.b,t.m]:[t.a,t.b]),...(S.ew.length?{ew:S.ew.map(w=>[w.a,w.b])}:{})};}
 function applyObj(o){if(!o||o.app!=='pn'||!Array.isArray(o.comps))throw 0;S.air=o.air!==false;S.bar=o.bar==null?6:+o.bar;
   S.comps=o.comps.filter(c=>DEF[c.t]).map(c=>{const n={id:c.id,t:c.t,x:c.x,y:c.y,o:{...(c.o||{})},s:{}};initState(n);return n;});
-  if(!S.comps.some(c=>c.t==='supply'))S.comps.unshift({id:'0Z',t:'supply',x:20,y:1094,o:{},s:{}});
+  if(!S.comps.some(c=>c.t==='supply'))S.comps.unshift({id:'0Z',t:'supply',x:20,y:20,o:{},s:{}});
   S.tubes=[];(o.tubes||[]).forEach(([a,b,m])=>{if(portXY(a)&&portXY(b))S.tubes.push(Array.isArray(m)&&m.length?{id:S.nid++,a,b,m:m.map(q=>[+q[0],+q[1]])}:{id:S.nid++,a,b});});S.ew=[];(o.ew||[]).forEach(([a,b])=>{if(portXY(a)&&portXY(b))S.ew.push({id:S.nid++,a,b});});S.sel=null;S.selW=null;S.selC=null;S.pending=null;}
 function save(){if(S.cl)return;try{const o=serial();localStorage.setItem('pnSim.v1',JSON.stringify(o));pnwSave(o);}catch(_){}}
 /* the trainee's exercises: the latest version of the board of every exercise, kept on this device
@@ -912,9 +913,11 @@ const EX=[
   t:[['0Z.P1','1V1.1'],['0Z.P2','2V1.1'],['1V1.4','1A.A'],['1V1.2','1A.B'],['2V1.4','2A.A'],['2V1.2','2A.B']],
   w:[['G1.~+1','S1.~13'],['S1.~14','2B1.~1'],['2B1.~4','1V1.~A1'],['1V1.~A2','G1.~01'],['G1.~+2','1B2.~1'],['1B2.~4','2V1.~A1'],['2V1.~A2','G1.~02'],
    ['G1.~+3','2B2.~1'],['2B2.~4','1V1.~B1'],['1V1.~B2','G1.~03'],['G1.~+4','1B1.~1'],['1B1.~4','2V1.~B1'],['2V1.~B2','G1.~04']]}];
+/* the air supply is at the top left: every exercise's parts sit below it */
+EX.forEach(x=>x.c.forEach(c=>{c.y+=240;}));
 $('dPreset').innerHTML='<option value="">اختر التمرين…</option>'+EX.map((x,i)=>`<option value="${i}">${x.n}</option>`).join('');
 $('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';if(v==='')return;loadEx(+v);};
-function loadEx(i){const x=EX[i];snap();applyObj({app:'pn',air:true,bar:6,comps:[{id:'0Z',t:'supply',x:20,y:1094},...x.c],tubes:x.t,ew:x.w||[]});S.stu=null;say('حُمّل التمرين: '+x.n);update();}
+function loadEx(i){const x=EX[i];snap();applyObj({app:'pn',air:true,bar:6,comps:[{id:'0Z',t:'supply',x:20,y:20},...x.c],tubes:x.t,ew:x.w||[]});S.stu=null;say('حُمّل التمرين: '+x.n);update();}
 
 /* ---------- explanations ---------- */
 const PARTS=[
@@ -1148,7 +1151,7 @@ const PNDEMO=[
  [['air','نفتح الهواء. الأسطوانتان راجعتان، فمفتاحا النهاية 1B1 و2B1 مضغوطان.'],['pp:S1','ضغطة على S1 والتيار يمر عبر 2B1 (B راجعة): يعمل 1Y1 فتخرج A.','1A+'],['w','A عند + تغلق 1B2: يعمل 2Y1 فتخرج B.','2A+'],['w','B عند + تغلق 2B2: يعمل 1Y2 فترجع A.','1A-'],['w','A عند − تغلق 1B1: يعمل 2Y2 فترجع B، وتكتمل الدورة A+ B+ A− B−.','2A-']]];
 /* step events: 1A+ fully out, 1A- fully in, 1V2* the timer valve has switched */
 function pnTil(k){if(!k)return null;const m=/^(\w+)([+\-*])$/.exec(k);return ()=>{const c=comp(m[1]);if(!c)return true;return m[2]==='*'?!!(c.t==='timer'?c.s.out:c.s.on):m[2]==='+'?c.s.x>=.985:c.s.x<=.015;};}
-function pnRef(i){const x=EX[i];applyObj({app:'pn',air:false,bar:6,comps:[{id:'0Z',t:'supply',x:20,y:1094},...x.c],tubes:[]});S.pressed.clear();S.sel=null;S.selC=null;S.pending=null;}
+function pnRef(i){const x=EX[i];applyObj({app:'pn',air:false,bar:6,comps:[{id:'0Z',t:'supply',x:20,y:20},...x.c],tubes:[]});S.pressed.clear();S.sel=null;S.selC=null;S.pending=null;}
 function pnTubes(i,k){S.tubes=EX[i].t.slice(0,k).map(([a,b],j)=>({id:j+1,a,b}));S.nid=k+1;}
 function pnWires(i,k){S.ew=(EX[i].w||[]).slice(0,k).map(([a,b],j)=>({id:500+j,a,b}));}
 function pnClip(i){const x=EX[i];if(!x)return;if(S.cl)clClose(false);S.prac=null;const keep=JSON.stringify(serial()),D=PNDEMO[i]||[];
