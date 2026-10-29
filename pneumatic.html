@@ -105,7 +105,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .rtools button.danger,.rrow .ra button.danger{color:var(--warn)}
 .rth{width:56px;height:76px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line);background:#8e9aa4;cursor:zoom-in;display:block}
 .rth.none{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.7rem;background:var(--chip)}
-.tube{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+.tube{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}#ewires path{stroke-linejoin:round}
 .thit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer;pointer-events:stroke}
 .flow{fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:6 8;stroke-linecap:round;pointer-events:none;animation:fl .7s linear infinite;opacity:.85}
 @keyframes fl{to{stroke-dashoffset:-14}}
@@ -577,11 +577,11 @@ function eSockets(){let o='';S.comps.forEach(c=>{const E=DEF[c.t].e;if(!E)return
     const ring=c.t==='psu'?(n[0]==='+'?'#d8322b':'#1f5fbf'):/^(A2|B2|R2|X2)$/.test(n)?'#1f5fbf':'#1b1f23',live=eLive(k);
     o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="14" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="9" fill="${pend?'#fff1c2':'#c9ced3'}" stroke="${pend?'#ff7a00':ring}" stroke-width="${pend?4:4}"/><circle cx="${x}" cy="${y}" r="3.6" fill="${live?'#ffd000':'#2a3440'}"/>${c.t==='psu'||/^v[35]/.test(c.t)?'':T(x,y-13,n,8.5,'#0b1d33',700)}${/^v[35]/.test(c.t)?T(x+(dx>DEF[c.t].w/2?-14:14),y+4,n,8.5,'#0b1d33',700):''}</g>`;});});return o;}
 /* the leads: they hang between their plugs; blue when on 0V, red otherwise, with a yellow line while 24V is on them */
-function ewSVG(){return S.ew.map(w=>{const A=portXY(w.a),B=portXY(w.b);if(!A||!B)return '';const L=Math.hypot(A.x-B.x,A.y-B.y),sag=Math.min(170,26+L*.28);
-  const d=`M${A.x} ${A.y}C${A.x} ${A.y+sag} ${B.x} ${B.y+sag} ${B.x} ${B.y}`,blue=eZero(w.a)||eZero(w.b),col=blue?'#1f5fbf':'#d0342c',sel=S.selW===w.id,live=eLive(w.a);
+function ewSVG(){const RQ=routes();return S.ew.map(w=>{const A=portXY(w.a),B=portXY(w.b);if(!A||!B)return '';const L=Math.hypot(A.x-B.x,A.y-B.y),sag=Math.min(170,26+L*.28),RP=RQ&&RQ.get('w'+w.id);
+  const d=RP?rPath(RP):`M${A.x} ${A.y}C${A.x} ${A.y+sag} ${B.x} ${B.y+sag} ${B.x} ${B.y}`,blue=eZero(w.a)||eZero(w.b),col=blue?'#1f5fbf':'#d0342c',sel=S.selW===w.id,live=eLive(w.a);
   return `<path d="${d}" fill="none" stroke="${sel?'#ffb300':'rgba(0,0,0,.45)'}" stroke-width="${sel?9:6.5}" stroke-linecap="round" pointer-events="none"/><path d="${d}" fill="none" stroke="${col}" stroke-width="4.2" stroke-linecap="round" pointer-events="none"/>${live?`<path d="${d}" fill="none" stroke="#ffe25a" stroke-width="1.4" stroke-dasharray="5 7" pointer-events="none" opacity=".9"/>`:''}
     <circle cx="${A.x}" cy="${A.y}" r="6" fill="${col}" stroke="#111" pointer-events="none"/><circle cx="${B.x}" cy="${B.y}" r="6" fill="${col}" stroke="#111" pointer-events="none"/><path d="${d}" fill="none" stroke="transparent" stroke-width="14" data-ew="${w.id}" style="cursor:pointer;pointer-events:stroke"/>`+
-    (sel?(()=>{const mx=(A.x+B.x)/2,my=(A.y+B.y)/2+sag*.75;return `<g class="act" data-act="tdel"><rect x="${mx-34}" y="${my-14}" width="68" height="28" rx="14" fill="#d8322b" stroke="#fff" stroke-width="2"/>${T(mx,my+5,'🗑 حذف',12,'#fff')}</g>`;})():'');}).join('');}
+    (sel?(()=>{const M=RP&&RP[Math.floor(RP.length/2)],mx=M?M[0]:(A.x+B.x)/2,my=M?M[1]:(A.y+B.y)/2+sag*.75;return `<g class="act" data-act="tdel"><rect x="${mx-34}" y="${my-14}" width="68" height="28" rx="14" fill="#d8322b" stroke="#fff" stroke-width="2"/>${T(mx,my+5,'🗑 حذف',12,'#fff')}</g>`;})():'');}).join('');}
 const DV={u:[0,-1],d:[0,1],l:[-1,0],r:[1,0]};
 /* port rings: inlets (supply 1, pilots 12/14/X/Y, cylinder ports) red, outlets (2/4, distributor P) green, exhausts (3/5) grey */
 const PCOL={i:'#d8322b',o:'#16984a',x:'#7d868d',n:'#2a3440'};
@@ -593,7 +593,7 @@ function tubePts(t){const A=portXY(t.a),B=portXY(t.b);if(!A||!B)return null;cons
 /* tidy hoses: each hose without hand-set bends is routed square on a 10 px grid around the parts
    (A* with a cost per bend); hoses already laid make a cell dearer, so parallel runs keep apart */
 const RG=10,RC=W/RG+1,RR=H/RG+1,RDX=[0,1,0,-1],RDY=[-1,0,1,0];let RT={k:'',m:null};
-function rtKey(){return S.comps.map(c=>c.id+':'+c.x+','+c.y).join(';')+'|'+S.tubes.map(t=>t.id+t.a+t.b+(t.m&&t.m.length?'*':'')).join(';');}
+function rtKey(){return S.comps.map(c=>c.id+':'+c.x+','+c.y).join(';')+'|'+S.tubes.map(t=>t.id+t.a+t.b+(t.m&&t.m.length?'*':'')).join(';')+'|'+S.ew.map(w=>w.id+w.a+w.b).join(';');}
 function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)return RT.m;
   const N=RC*RR,blk=new Uint8Array(N),near=new Uint8Array(N),oH=new Uint8Array(N),oV=new Uint8Array(N),m=new Map();
   S.comps.forEach(c=>{const D=DEF[c.t];for(let gy=Math.max(0,Math.ceil((c.y-8)/RG));gy<=Math.min(RR-1,Math.floor((c.y+D.h+8)/RG));gy++)for(let gx=Math.max(0,Math.ceil((c.x-8)/RG));gx<=Math.min(RC-1,Math.floor((c.x+D.w+8)/RG));gx++)blk[gy*RC+gx]=1;});
@@ -606,6 +606,8 @@ function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)re
   const T2=S.tubes.filter(t=>!(t.m&&t.m.length)).map(t=>({t,a:end(t.a),b:end(t.b)})).filter(q=>q.a&&q.b)
     .sort((p,q)=>(Math.abs(p.a.gx-p.b.gx)+Math.abs(p.a.gy-p.b.gy))-(Math.abs(q.a.gx-q.b.gx)+Math.abs(q.a.gy-q.b.gy)));
   if(cp&&su)T2.unshift({t:{id:'feed'},a:end('',{x:cp.x+250,y:cp.y+22,s:'u'},cp),b:end('',{x:su.x+44,y:su.y+96,s:'l'},su)});
+  const len=q=>Math.abs(q.a.gx-q.b.gx)+Math.abs(q.a.gy-q.b.gy);
+  T2.push(...S.ew.map(w=>({t:{id:'w'+w.id},a:end(w.a),b:end(w.b)})).filter(q=>q.a&&q.b).sort((p,q)=>len(p)-len(q)));
   T2.forEach(({t,a,b})=>{const c=rAstar(a,b,blk,near,oH,oV);if(!c)return;
     for(let i=0;i<c.length-1;i++){const h=c[i]%RC!==c[i+1]%RC;(h?oH:oV)[c[i]]=1;(h?oH:oV)[c[i+1]]=1;}
     let P=c.map(i=>[(i%RC)*RG,((i/RC)|0)*RG]);
