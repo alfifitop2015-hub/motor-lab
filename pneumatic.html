@@ -105,7 +105,7 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 .rtools button.danger,.rrow .ra button.danger{color:var(--warn)}
 .rth{width:56px;height:76px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line);background:#8e9aa4;cursor:zoom-in;display:block}
 .rth.none{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.7rem;background:var(--chip)}
-.tube{fill:none;stroke-linecap:round;pointer-events:none}
+.tube{fill:none;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 .thit{fill:none;stroke:transparent;stroke-width:16;cursor:pointer;pointer-events:stroke}
 .flow{fill:none;stroke:#fff;stroke-width:1.6;stroke-dasharray:6 8;stroke-linecap:round;pointer-events:none;animation:fl .7s linear infinite;opacity:.85}
 @keyframes fl{to{stroke-dashoffset:-14}}
@@ -195,6 +195,8 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
         <button class="mi trainer-only cloud-only" id="bResults">📋 نتائج المتدربين</button>
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <button class="mi trainer-only" id="bShare">⇪ مشاركة الدائرة</button>
+        <button class="mi" id="bArr">🧹 ترتيب العناصر والخراطيم</button>
+        <button class="mi" id="bAuto"></button>
         <button class="mi" id="bClearAll">⌫ مسح اللوحة</button>
         <button class="mi" id="bInstall" style="display:none">📲 تثبيت التطبيق</button><button class="mi" id="bTrainer">🔒 وضع المدرب</button>
       </div>
@@ -577,10 +579,52 @@ function ewSVG(){return S.ew.map(w=>{const A=portXY(w.a),B=portXY(w.b);if(!A||!B
     <circle cx="${A.x}" cy="${A.y}" r="6" fill="${col}" stroke="#111" pointer-events="none"/><circle cx="${B.x}" cy="${B.y}" r="6" fill="${col}" stroke="#111" pointer-events="none"/><path d="${d}" fill="none" stroke="transparent" stroke-width="14" data-ew="${w.id}" style="cursor:pointer;pointer-events:stroke"/>`+
     (sel?(()=>{const mx=(A.x+B.x)/2,my=(A.y+B.y)/2+sag*.75;return `<g class="act" data-act="tdel"><rect x="${mx-34}" y="${my-14}" width="68" height="28" rx="14" fill="#d8322b" stroke="#fff" stroke-width="2"/>${T(mx,my+5,'🗑 حذف',12,'#fff')}</g>`;})():'');}).join('');}
 const DV={u:[0,-1],d:[0,1],l:[-1,0],r:[1,0]};
+/* port rings: inlets (supply 1, pilots 12/14/X/Y, cylinder ports) red, outlets (2/4, distributor P) green, exhausts (3/5) grey */
+const PCOL={i:'#d8322b',o:'#16984a',x:'#7d868d',n:'#2a3440'};
+const pRole=(c,p)=>c.t==='supply'?'o':c.t==='tee'?'n':/^[35]$/.test(p)?'x':/^[24]$/.test(p)?'o':'i';
+function legend(){const it=[['i','مدخل'],['o','مخرج'],['x','عادم']];let o=`<g pointer-events="none"><rect x="${W-232}" y="2" width="226" height="22" rx="11" fill="#fff" opacity=".85"/>`;
+  it.forEach(([k,n],i)=>{const x=W-20-i*74;o+=`<circle cx="${x}" cy="13" r="6" fill="#e8edf1" stroke="${PCOL[k]}" stroke-width="3.2"/>`+T(x-12,17,n,11,'#0b1d33',700,'end');});return o+'</g>';}
 function tubePts(t){const A=portXY(t.a),B=portXY(t.b);if(!A||!B)return null;const [ax,ay]=DV[A.s],[bx,by]=DV[B.s];
   return [[A.x,A.y],[A.x+ax*28,A.y+ay*28],...(t.m||[]),[B.x+bx*28,B.y+by*28],[B.x,B.y]];}
+/* tidy hoses: each hose without hand-set bends is routed square on a 10 px grid around the parts
+   (A* with a cost per bend); hoses already laid make a cell dearer, so parallel runs keep apart */
+const RG=10,RC=W/RG+1,RR=H/RG+1,RDX=[0,1,0,-1],RDY=[-1,0,1,0];let RT={k:'',m:null};
+function rtKey(){return S.comps.map(c=>c.id+':'+c.x+','+c.y).join(';')+'|'+S.tubes.map(t=>t.id+t.a+t.b+(t.m&&t.m.length?'*':'')).join(';');}
+function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)return RT.m;
+  const N=RC*RR,blk=new Uint8Array(N),near=new Uint8Array(N),oH=new Uint8Array(N),oV=new Uint8Array(N),m=new Map();
+  S.comps.forEach(c=>{const D=DEF[c.t];for(let gy=Math.max(0,Math.ceil((c.y-8)/RG));gy<=Math.min(RR-1,Math.floor((c.y+D.h+8)/RG));gy++)for(let gx=Math.max(0,Math.ceil((c.x-8)/RG));gx<=Math.min(RC-1,Math.floor((c.x+D.w+8)/RG));gx++)blk[gy*RC+gx]=1;});
+  for(let i=0;i<N;i++)if(!blk[i]){const x=i%RC;if((x>0&&blk[i-1])||(x<RC-1&&blk[i+1])||(i>=RC&&blk[i-RC])||(i<N-RC&&blk[i+RC]))near[i]=1;}
+  const end=(k,P0,c0)=>{const P=P0||portXY(k),c=c0||comp(k.split('.')[0]);if(!P||!c)return null;const [dx,dy]=DV[P.s],D=DEF[c.t],own=(gx,gy)=>gx*RG>=c.x-8&&gx*RG<=c.x+D.w+8&&gy*RG>=c.y-8&&gy*RG<=c.y+D.h+8;let gx=Math.round(P.x/RG),gy=Math.round(P.y/RG);
+    if(dy)gy=dy>0?Math.ceil((P.y+6)/RG):Math.floor((P.y-6)/RG);else gx=dx>0?Math.ceil((P.x+6)/RG):Math.floor((P.x-6)/RG);
+    for(let n=0;n<40&&gx>0&&gy>0&&gx<RC-1&&gy<RR-1&&own(gx,gy);n++){gx+=dx;gy+=dy;}
+    return{P,dx,dy,gx:Math.max(0,Math.min(RC-1,gx)),gy:Math.max(0,Math.min(RR-1,gy)),d:dy<0?0:dx>0?1:dy>0?2:3};};
+  const cp=S.comps.find(c=>c.t==='compr'),su=S.comps.find(c=>c.t==='supply');
+  const T2=S.tubes.filter(t=>!(t.m&&t.m.length)).map(t=>({t,a:end(t.a),b:end(t.b)})).filter(q=>q.a&&q.b)
+    .sort((p,q)=>(Math.abs(p.a.gx-p.b.gx)+Math.abs(p.a.gy-p.b.gy))-(Math.abs(q.a.gx-q.b.gx)+Math.abs(q.a.gy-q.b.gy)));
+  if(cp&&su)T2.unshift({t:{id:'feed'},a:end('',{x:cp.x+250,y:cp.y+22,s:'u'},cp),b:end('',{x:su.x+44,y:su.y+96,s:'l'},su)});
+  T2.forEach(({t,a,b})=>{const c=rAstar(a,b,blk,near,oH,oV);if(!c)return;
+    for(let i=0;i<c.length-1;i++){const h=c[i]%RC!==c[i+1]%RC;(h?oH:oV)[c[i]]=1;(h?oH:oV)[c[i+1]]=1;}
+    let P=c.map(i=>[(i%RC)*RG,((i/RC)|0)*RG]);
+    const lead=(e,arr)=>{const k=e.dy?0:1,v=e.dy?e.P.x:e.P.y,g=arr[0][k];for(let i=0;i<arr.length&&arr[i][k]===g;i++)arr[i][k]=v;};
+    lead(a,P);P.reverse();lead(b,P);P.reverse();P=[[a.P.x,a.P.y],...P,[b.P.x,b.P.y]];
+    const Q=[P[0]];for(let i=1;i<P.length-1;i++){const p0=Q[Q.length-1],p1=P[i],p2=P[i+1];if((p0[0]===p1[0]&&p1[0]===p2[0])||(p0[1]===p1[1]&&p1[1]===p2[1]))continue;Q.push(p1);}Q.push(P[P.length-1]);m.set(t.id,Q);});
+  RT={k:key,m};return m;}
+function rAstar(a,b,blk,near,oH,oV){const N=RC*RR,g=new Float32Array(N*4).fill(1e9),fr=new Int32Array(N*4).fill(-1),gc=b.gy*RC+b.gx,rd=(b.d+2)%4;
+  const hf=[],hs=[],push=(f,st)=>{let i=hf.length;hf.push(f);hs.push(st);while(i){const pi=(i-1)>>1;if(hf[pi]<=f)break;hf[i]=hf[pi];hs[i]=hs[pi];i=pi;}hf[i]=f;hs[i]=st;},
+    pop=()=>{const st=hs[0],lf=hf.pop(),ls=hs.pop();if(hf.length){let i=0;for(;;){let c=2*i+1;if(c>=hf.length)break;if(c+1<hf.length&&hf[c+1]<hf[c])c++;if(hf[c]>=lf)break;hf[i]=hf[c];hs[i]=hs[c];i=c;}hf[i]=lf;hs[i]=ls;}return st;};
+  const s0=(a.gy*RC+a.gx)*4+a.d;g[s0]=0;push(0,s0);let n=0,goal=-1;
+  while(hf.length&&n++<90000){const st=pop(),ci=st>>2,d=st&3,gx=ci%RC,gy=(ci/RC)|0,g0=g[st];if(ci===gc){goal=st;break;}
+    for(let nd=0;nd<4;nd++){if(nd===((d+2)&3))continue;const nx=gx+RDX[nd],ny=gy+RDY[nd];if(nx<0||ny<0||nx>=RC||ny>=RR)continue;const ni=ny*RC+nx;
+      let cost=1+(blk[ni]&&ni!==gc?30:0)+(nd!==d?6:0)+(near[ni]?.6:0)+((nd&1)?(oH[ni]?14:0)+(oV[ni]?1.5:0):(oV[ni]?14:0)+(oH[ni]?1.5:0));
+      if(ni===gc)cost+=nd===rd?0:nd===b.d?40:6;const ns=ni*4+nd,ng=g0+cost;
+      if(ng<g[ns]){g[ns]=ng;fr[ns]=st;push(ng+Math.abs(nx-b.gx)+Math.abs(ny-b.gy),ns);}}}
+  if(goal<0)return null;const c=[];for(let st=goal;st>=0;st=fr[st])c.push(st>>2);return c.reverse();}
+function rPath(P){const f=v=>+v.toFixed(1);let d=`M${P[0][0]} ${P[0][1]}`;
+  for(let i=1;i<P.length-1;i++){const [x0,y0]=P[i-1],[x1,y1]=P[i],[x2,y2]=P[i+1],l1=Math.hypot(x1-x0,y1-y0),l2=Math.hypot(x2-x1,y2-y1),r=Math.min(12,l1/2,l2/2);
+    d+=`L${f(x1-(x1-x0)/l1*r)} ${f(y1-(y1-y0)/l1*r)}Q${x1} ${y1} ${f(x1+(x2-x1)/l2*r)} ${f(y1+(y2-y1)/l2*r)}`;}
+  const L=P[P.length-1];return d+`L${L[0]} ${L[1]}`;}
 function tubePath(t){const A=portXY(t.a),B=portXY(t.b);if(!A||!B)return '';
-  if(!t.m||!t.m.length){const L=Math.max(40,Math.min(160,Math.hypot(A.x-B.x,A.y-B.y)*.4)),[ax,ay]=DV[A.s],[bx,by]=DV[B.s];return `M${A.x} ${A.y}C${A.x+ax*L} ${A.y+ay*L} ${B.x+bx*L} ${B.y+by*L} ${B.x} ${B.y}`;}
+  if(!t.m||!t.m.length){{const q=routes(),P=q&&q.get(t.id);if(P)return rPath(P);}const L=Math.max(40,Math.min(160,Math.hypot(A.x-B.x,A.y-B.y)*.4)),[ax,ay]=DV[A.s],[bx,by]=DV[B.s];return `M${A.x} ${A.y}C${A.x+ax*L} ${A.y+ay*L} ${B.x+bx*L} ${B.y+by*L} ${B.x} ${B.y}`;}
   const P=tubePts(t),f=v=>v.toFixed(1);let d=`M${P[0][0]} ${P[0][1]}`;
   for(let k=0;k<P.length-1;k++){const p0=P[Math.max(0,k-1)],p1=P[k],p2=P[k+1],p3=P[Math.min(P.length-1,k+2)];
     d+=`C${f(p1[0]+(p2[0]-p0[0])/6)} ${f(p1[1]+(p2[1]-p0[1])/6)} ${f(p2[0]-(p3[0]-p1[0])/6)} ${f(p2[1]-(p3[1]-p1[1])/6)} ${f(p2[0])} ${f(p2[1])}`;}
@@ -593,15 +637,15 @@ function bg(){let o=`<defs><linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1"
   <pattern id="slots" width="1000" height="50" patternUnits="userSpaceOnUse"><rect width="1000" height="50" fill="#b7c0c7"/><rect y="21" width="1000" height="8" fill="#8f99a1"/><rect y="20" width="1000" height="1.5" fill="#dfe5e9"/></pattern>
   <filter id="ds" x="-10%" y="-10%" width="130%" height="135%"><feDropShadow dx="3" dy="5" stdDeviation="3" flood-color="#000" flood-opacity=".35"/></filter></defs>
   <rect width="${W}" height="${H}" fill="url(#slots)"/>`;return o;}
-function render(){let o=bg()+'<!--feed-->';
+function render(){let o=bg()+legend()+'<!--feed-->';
   S.comps.forEach(c=>{o+=`<g transform="translate(${c.x} ${c.y})" filter="url(#ds)">${drawComp(c)}</g>`;if(S.selC===c.id){const D=DEF[c.t];o+=`<rect x="${c.x-5}" y="${c.y-15}" width="${D.w+10}" height="${D.h+20}" rx="10" fill="none" stroke="#ffb300" stroke-width="3" stroke-dasharray="9 6" pointer-events="none"/>`;}});
   {const cp=S.comps.find(c=>c.t==='compr'),su=S.comps.find(c=>c.t==='supply');if(cp&&su){const A={x:cp.x+250,y:cp.y+22},B={x:su.x+44,y:su.y+96},run=cmpOn();
-    const d=`M${A.x} ${A.y}C${A.x} ${A.y-120} ${B.x-70} ${B.y+60} ${B.x-30} ${B.y}L${B.x} ${B.y}`;
-    o=o.replace('<!--feed-->',`<path d="${d}" fill="none" stroke="#0f5ea8" stroke-width="9" stroke-linecap="round" pointer-events="none"/><path d="${d}" fill="none" stroke="${run?'#43a8f5':'#8fbfe6'}" stroke-width="6" stroke-linecap="round" pointer-events="none"/>`);}}
+    const rq=routes(),fp=rq&&rq.get('feed'),d=fp?rPath(fp):`M${A.x} ${A.y}C${A.x} ${A.y-120} ${B.x-70} ${B.y+60} ${B.x-30} ${B.y}L${B.x} ${B.y}`;
+    o=o.replace('<!--feed-->',`<path d="${d}" fill="none" stroke="#0f5ea8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/><path d="${d}" fill="none" stroke-linejoin="round" stroke="${run?'#43a8f5':'#8fbfe6'}" stroke-width="6" stroke-linecap="round" pointer-events="none"/>`);}}
   o+=`<g id="tubes">${tubesSVG()}</g>`;
-  S.comps.forEach(c=>{Object.entries(DEF[c.t].ports).forEach(([p,d])=>{const k=c.id+'.'+p,x=c.x+d[0],y=c.y+d[1],pr=isP(k),pend=S.pending===k,exh=['3','5'].includes(p)&&c.t!=='supply';
+  S.comps.forEach(c=>{Object.entries(DEF[c.t].ports).forEach(([p,d])=>{const k=c.id+'.'+p,x=c.x+d[0],y=c.y+d[1],pr=isP(k),pend=S.pending===k,exh=['3','5'].includes(p)&&c.t!=='supply',rc=PCOL[pRole(c,p)];
     const lx=d[2]==='l'?x-12:d[2]==='r'?x+12:x+10,ly=d[2]==='u'?y-9:d[2]==='d'?y+14:y-10,lab=PLBL[p]!=null?PLBL[p]:p;
-    o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="13" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="7.5" fill="${pend?'#fff1c2':pr?'#1f6fe5':'#e8edf1'}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><circle cx="${x}" cy="${y}" r="3" fill="${exh?'#777':'#2a3440'}"/>${lab?T(lx,ly,lab,9.5,'#0b1d33',700):''}</g>`;});});
+    o+=`<g class="port" data-port="${k}"><circle cx="${x}" cy="${y}" r="13" fill="transparent"/><circle class="pr" cx="${x}" cy="${y}" r="7.5" fill="${pend?'#fff1c2':pr?'#1f6fe5':'#e8edf1'}" stroke="${pend?'#ff7a00':rc}" stroke-width="${pend?4:3.2}"/><circle cx="${x}" cy="${y}" r="3" fill="${exh?'#777':'#2a3440'}"/>${lab?T(lx,ly,lab,9.5,'#0b1d33',700):''}</g>`;});});
   o+=eSockets()+`<g id="ewires">${ewSVG()}</g>`;o+=pnHL();o+=errSVG();o+=`<g id="thandles">${handlesSVG()}</g>`;
   svg.innerHTML=o;svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.style.width=(W*S.zoom)+'px';renderTop();save();}
 function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.sel);if(!t)return '';const P=tubePts(t);if(!P)return '';let o='';
@@ -673,9 +717,9 @@ svg.addEventListener('pointerup',endT,true);svg.addEventListener('pointercancel'
 svg.addEventListener('pointerdown',e=>{const pb=e.target.closest('[data-press]');if(pb){e.preventDefault();S.pressed.add(pb.dataset.press);clickSnd();update();return;}
   const g=e.target.closest('[data-drag]');if(!g||e.target.closest('[data-act],[data-port]'))return;e.preventDefault();const c=comp(g.dataset.drag);if(!c)return;
   const p=svgPt(e);drag={c,p0:p,x:c.x,y:c.y,moved:false};try{svg.setPointerCapture(e.pointerId);}catch(_){}});
-svg.addEventListener('pointermove',e=>{if(!drag)return;const p=svgPt(e),dx=p.x-drag.p0.x,dy=p.y-drag.p0.y;if(!drag.moved&&Math.hypot(dx,dy)<4)return;if(!drag.moved){drag.moved=true;snap();}
+svg.addEventListener('pointermove',e=>{if(!drag)return;const p=svgPt(e),dx=p.x-drag.p0.x,dy=p.y-drag.p0.y;if(!drag.moved&&Math.hypot(dx,dy)<4)return;if(!drag.moved){drag.moved=true;S.drg=true;snap();}
   const D=DEF[drag.c.t];drag.c.x=Math.round(Math.max(0,Math.min(W-D.w,drag.x+dx)));drag.c.y=Math.round(Math.max(14,Math.min(H-D.h,drag.y+dy)));if(!raf)raf=requestAnimationFrame(()=>{raf=0;render();});});
-function endDrag(){if(!drag)return;const d=drag;drag=null;if(!d.moved){S.selC=d.c.id;S.sel=null;S.pending=null;}render();}
+function endDrag(){if(!drag)return;const d=drag;drag=null;S.drg=false;if(!d.moved){S.selC=d.c.id;S.sel=null;S.pending=null;}render();}
 svg.addEventListener('pointerup',endDrag);svg.addEventListener('pointercancel',endDrag);
 /* keep the board still while a component or hose is dragged: on touch screens (iPad/iPhone Safari ignores
    touch-action on SVG parts) the finger would otherwise also scroll or pan the board under the part */
@@ -694,13 +738,40 @@ svg.addEventListener('click',e=>{if(S.justT)return;if(e.target.closest('[data-wp
   const tb=e.target.closest('[data-tube]');if(tb){S.sel=+tb.dataset.tube;S.selW=null;S.selC=null;S.pending=null;return render();}
   if(e.target.closest('[data-drag],[data-press]'))return;
   if(S.pending||S.sel!=null||S.selC||S.selW!=null){S.pending=null;S.sel=null;S.selC=null;S.selW=null;render();}});
+/* tidy the parts into the usual schematic rows: cylinders, their flow controls, the power valves,
+   logic valves, signal valves, then the 24V parts; each part sits under what it is piped or wired to */
+function arrangePos(){const fix=S.comps.filter(c=>c.t==='supply'||c.t==='compr'),L=S.comps.filter(c=>!fix.includes(c));if(!L.length)return null;
+  const links=[...S.tubes,...S.ew],cid=k=>k.split('.')[0],pn=k=>k.slice(k.indexOf('.')+1),off=k=>{const P=portXY(k),c=comp(cid(k));return P&&c?P.x-c.x:0;};
+  const isCyl=c=>/^cyl/.test(c.t),nbrs=(c,ps)=>links.filter(t=>cid(t.a)===c.id&&(!ps||ps.includes(pn(t.a)))).map(t=>comp(cid(t.b))).concat(links.filter(t=>cid(t.b)===c.id&&(!ps||ps.includes(pn(t.b)))).map(t=>comp(cid(t.a)))).filter(Boolean);
+  const toCyl=c=>nbrs(c).some(isCyl),drives=c=>nbrs(c,['2','4']).some(q=>isCyl(q)||(q.t==='fcv'&&toCyl(q)));
+  const role=c=>{const g=DEF[c.t].g;if(isCyl(c))return 0;if((c.t==='fcv'||c.t==='gauge')&&toCyl(c))return 1;if(!g)return 5;if((g==='V'||g==='S')&&drives(c))return 2;return g==='S'?4:3;};
+  const rows=[[],[],[],[],[],[]];L.forEach(c=>rows[role(c)].push(c));const pos=new Map(),GX=36;
+  const want=c=>{const v=[];links.forEach(t=>{[[t.a,t.b],[t.b,t.a]].forEach(([m,o])=>{if(cid(m)!==c.id)return;const q=pos.get(cid(o));if(q)v.push(q.x+off(o)-off(m));});});return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const out=[];rows.forEach(r=>{if(!r.length)return;const it=r.map(c=>{const w=want(c);return{c,w:DEF[c.t].w,x:w==null?c.x:w};}).sort((a,b)=>(a.x+a.w/2)-(b.x+b.w/2));
+    let ch=[],sw=0;const flush=()=>{if(!ch.length)return;let px=-1e9;ch.forEach(q=>{q.x=Math.max(10,q.x,px+GX);px=q.x+q.w;});
+      let lim=W-10;for(let i=ch.length-1;i>=0;i--){const q=ch[i];if(q.x+q.w>lim)q.x=lim-q.w;lim=q.x-GX;}ch.forEach(q=>q.x=Math.max(10,Math.round(q.x)));
+      ch.forEach(q=>pos.set(q.c.id,{x:q.x}));out.push(ch);ch=[];sw=0;};
+    it.forEach(q=>{if(ch.length&&sw+GX+q.w>W-20)flush();sw+=(ch.length?GX:0)+q.w;ch.push(q);});flush();});
+  const su=fix.find(c=>c.t==='supply'),cp=fix.find(c=>c.t==='compr');let y0=su&&su.y<H/2?su.y+DEF.supply.h+40:30,y1=cp&&cp.y>H/2?cp.y-20:H-10;
+  const hs=out.map(ch=>Math.max(...ch.map(q=>DEF[q.c.t].h))),sh=hs.reduce((a,b)=>a+b,0);if(y1-y0-sh<30*(out.length-1))y1=H-10;
+  const gap=Math.max(28,Math.min(110,(y1-y0-sh)/Math.max(1,out.length-1)));let y=y0;
+  out.forEach((ch,i)=>{ch.forEach(q=>{let x=q.x;fix.forEach(f=>{const D=DEF[f.t];if(y<f.y+D.h+20&&y+hs[i]>f.y-20&&x<f.x+D.w+20&&x+q.w>f.x-20)x=f.x+D.w+30;});q.y=Math.round(Math.min(H-DEF[q.c.t].h,y));q.x=Math.min(W-q.w,x);});
+    for(let k=1;k<ch.length;k++)if(ch[k].x<ch[k-1].x+ch[k-1].w+GX)ch[k].x=Math.min(W-ch[k].w,ch[k-1].x+ch[k-1].w+GX);y+=hs[i]+gap;});
+  const res=new Map();out.flat().forEach(q=>res.set(q.c.id,{x:q.x,y:q.y}));return res;}
+function arrange(quiet){const P=arrangePos();if(!P)return;const from=new Map(S.comps.map(c=>[c.id,{x:c.x,y:c.y}]));
+  if(![...P].some(([id,p])=>{const f=from.get(id);return f&&(f.x!==p.x||f.y!==p.y);})){if(!quiet)say('العناصر مرتبة');return;}
+  const t0=performance.now(),dur=420;S.arr=true;const step=()=>{const k=Math.min(1,(performance.now()-t0)/dur),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    S.comps.forEach(c=>{const p=P.get(c.id),f=from.get(c.id);if(p&&f){c.x=Math.round(f.x+(p.x-f.x)*e);c.y=Math.round(f.y+(p.y-f.y)*e);}});
+    if(k<1){render();requestAnimationFrame(step);}else{S.arr=false;render();}};requestAnimationFrame(step);if(!quiet)say('رُتّبت العناصر والخراطيم');}
+const autoArr=()=>{try{return localStorage.getItem('pnAuto')!=='0';}catch(_){return true;}};
+function autoArrange(){if(!S.cl&&autoArr())arrange(true);}
 function portClick(k){const el=k.includes('.~');
   if(el||(S.pending&&S.pending.includes('.~'))){
     if(!S.pending||(S.pending.includes('.~'))!==el){S.pending=k;S.sel=null;S.selW=null;if(!el)return update();if(S.pending!==k)say('لا يُوصل سلك كهربائي بمنفذ هواء');return update();}
     if(S.pending===k){S.pending=null;return update();}
-    const a=S.pending;S.pending=null;if(!S.ew.some(w=>(w.a===a&&w.b===k)||(w.a===k&&w.b===a))){snap();S.ew.push({id:S.nid++,a,b:k});say('سلك '+a.replace('.~','.')+' ⟷ '+k.replace('.~','.'));}return update();}
+    const a=S.pending;S.pending=null;if(!S.ew.some(w=>(w.a===a&&w.b===k)||(w.a===k&&w.b===a))){snap();S.ew.push({id:S.nid++,a,b:k});say('سلك '+a.replace('.~','.')+' ⟷ '+k.replace('.~','.'));update();autoArrange();return;}return update();}
   if(!S.pending){S.pending=k;S.sel=null;}else if(S.pending===k)S.pending=null;
-  else{const a=S.pending;S.pending=null;if(!S.tubes.some(t=>(t.a===a&&t.b===k)||(t.a===k&&t.b===a))){snap();S.tubes.push({id:S.nid++,a,b:k});say('خرطوم '+a+' ⟷ '+k);}}update();}
+  else{const a=S.pending;S.pending=null;if(!S.tubes.some(t=>(t.a===a&&t.b===k)||(t.a===k&&t.b===a))){snap();S.tubes.push({id:S.nid++,a,b:k});say('خرطوم '+a+' ⟷ '+k);update();autoArrange();return;}}update();}
 function act(a){const [k,id,sg]=a.split(':');if(k==='err')return errSay(id);
   if(k==='air'){S.air=!S.air;say(S.air?'فُتح الهواء':'أُغلق الهواء');clickSnd();}
   else if(k==='bar'){S.bar=Math.max(0,Math.min(8,S.bar+(id==='+'?.5:-.5)));say('الضغط '+S.bar+' bar');}
@@ -739,6 +810,9 @@ $('dUndo').onclick=()=>{if(!S.hist.length)return;applyObj(JSON.parse(S.hist.pop(
 $('dMin').onclick=()=>{document.body.classList.toggle('dmin');setTimeout(measureDock,60);};
 const fitZ=()=>Math.max(.25,Math.min(1.6,(wrap.clientWidth-2)/W));
 $('dFit').onclick=()=>{S.zoom=fitZ();render();};$('dZi').onclick=()=>{S.zoom=Math.min(3,S.zoom*1.2);render();};$('dZo').onclick=()=>{S.zoom=Math.max(.25,S.zoom/1.2);render();};
+$('bArr').onclick=()=>{$('bArr').closest('details').open=false;snap();arrange();};
+const autoLbl=()=>{$('bAuto').textContent=(autoArr()?'☑':'☐')+' ترتيب تلقائي أثناء التوصيل';};autoLbl();
+$('bAuto').onclick=()=>{try{localStorage.setItem('pnAuto',autoArr()?'0':'1');}catch(_){}autoLbl();say(autoArr()?'الترتيب التلقائي يعمل':'أُوقف الترتيب التلقائي');};
 $('bClearAll').onclick=()=>{snap();blank();S.selC=null;S.sel=null;say('مُسحت اللوحة (يمكن التراجع)');update();};
 $('status').addEventListener('click',e=>{if(e.target.closest('[data-stux]')){stuEnd();}});
 /* «إنهاء تجربة المتدرب»: the result opened from the list is closed and the board is emptied: no parts, no wires, no marks, no exercise picked */
