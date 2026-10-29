@@ -1155,7 +1155,8 @@ function pnClip(i){const x=EX[i];if(!x)return;if(S.cl)clClose(false);S.prac=null
   pnRef(i);const parts=S.comps.filter(c=>c.t!=='supply'),steps=[],N=x.t.length;
   const hlC=id=>{S.cl.hl={c:[id]};};
   steps.push({k:'الفكرة',tx:(EXPL[i]||{}).idea||x.n,go(){pnRef(i);S.cl.hl={c:parts.map(c=>c.id)};update();}});
-  parts.forEach(c=>steps.push({k:'العناصر',tx:pnPart(c),go(){pnRef(i);hlC(c.id);update();}}));
+  /* «العناصر» once, on the first part only */
+  parts.forEach((c,j)=>steps.push({k:j?'':'العناصر',tx:pnPart(c),go(){pnRef(i);hlC(c.id);update();}}));
   x.t.forEach(([a,b],j)=>steps.push({k:'التوصيل '+(j+1)+' من '+N,tx:'من '+pnPort(a)+'، إلى '+pnPort(b)+'.',go(){pnRef(i);pnTubes(i,j+1);S.cl.hl={t:j+1,p:[a,b]};update();}}));
   /* electro-pneumatics: then the 24V wires, one by one, from +24V through the contacts to the coils and back to 0V */
   const XW=x.w||[],NW=XW.length;
