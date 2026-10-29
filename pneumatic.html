@@ -128,7 +128,10 @@ body.cloud #sShare{background:var(--panel);color:var(--ink);border-color:var(--l
 #clTx{margin:0 0 8px;font-size:.92rem;line-height:1.65;min-height:3.3em}.clk{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;padding:0 7px;font-size:.78rem;margin-inline-end:4px}
 #clLoop.on{background:#1d6b3a;border-color:#4cd07d;color:#fff}
 .clc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.clc button:disabled{opacity:.4}.clc #clGo{margin-inline-start:auto;background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
-body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none}
+body.clip .dock,body.clip .clrow,body.clip .xrtab{display:none}
+.xrtab{position:fixed;right:0;bottom:calc(var(--dockh,120px) + 14px);z-index:30;writing-mode:vertical-rl;background:#0b3d91;color:#fff;border:0;border-radius:10px 0 0 10px;padding:12px 7px;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;gap:6px;align-items:center;zoom:var(--ui)}
+.xrtab.on{background:#ffb300;color:#1b1b1b}
+@media (max-width:760px){.xrtab{padding:8px 5px;font-size:.72rem;gap:4px}}body.clip #svg{pointer-events:none}
 .clbox{fill:rgba(255,179,0,.12);stroke:#ffb300;stroke-width:4;stroke-dasharray:10 6;animation:clp .9s ease-in-out infinite alternate}
 .clhl{fill:none;stroke:#ffb300;stroke-width:14;stroke-linecap:round;opacity:.5;animation:clp .9s ease-in-out infinite alternate}
 .clpt{fill:none;stroke:#ff3b30;stroke-width:4;animation:clp .7s ease-in-out infinite alternate}
@@ -230,6 +233,7 @@ body.clip .dock,body.clip .clrow{display:none}body.clip #svg{pointer-events:none
     <button class="db full" id="dZi"><span class="ic">+</span>تكبير</button>
   </div>
 </div>
+<button id="xrTab" class="xrtab" type="button" title="X-Ray: إظهار الأجزاء الداخلية للقطع على اللوحة نفسها"><svg viewBox="0 0 26 30" width="22" height="26" aria-hidden="true"><rect x="1.5" y="1.5" width="23" height="27" rx="3.5" fill="rgba(160,215,255,.18)" stroke="#bfe3ff" stroke-width="1.6" stroke-dasharray="3 2"/><rect x="4" y="12" width="18" height="7" rx="1.5" fill="none" stroke="#e6e9ec" stroke-width="1.4"/><rect x="8" y="12" width="3" height="7" fill="#e6e9ec"/><rect x="15" y="12" width="3" height="7" fill="#e6e9ec"/><path d="M9 4v8M17 19v7" stroke="#4fb3ff" stroke-width="2.4"/></svg>X-Ray</button>
 <div class="insp" id="insp" role="dialog" aria-label="إعدادات العنصر"></div>
 <div class="clbar" id="clBar" hidden role="region" aria-label="مقطع الشرح">
   <div class="clh"><b id="clT"></b><span id="clN"></span><button id="clX" title="إغلاق المقطع والرجوع إلى لوحتك" aria-label="إغلاق المقطع">✕</button></div>
@@ -682,6 +686,107 @@ function tubePath(t){const A=portXY(t.a),B=portXY(t.b);if(!A||!B)return '';
   for(let k=0;k<P.length-1;k++){const p0=P[Math.max(0,k-1)],p1=P[k],p2=P[k+1],p3=P[Math.min(P.length-1,k+2)];
     d+=`C${f(p1[0]+(p2[0]-p0[0])/6)} ${f(p1[1]+(p2[1]-p0[1])/6)} ${f(p2[0]-(p3[0]-p1[0])/6)} ${f(p2[1]-(p3[1]-p1[1])/6)} ${f(p2[0])} ${f(p2[1])}`;}
   return d;}
+/* ================= X-Ray: the inside of each pneumatic part, drawn in place on the board =================
+   valves show their spool and lands sliding in the bore, cylinders their piston, seals and chambers, OR/AND their
+   ball/shuttle, the flow control its needle and check ball; passages fill blue under pressure, grey while exhausting */
+const XRC={bg:'rgba(6,16,32,.93)',ln:'#7fe3ff',mt:'#dcebf3',ms:'#5d7a8c',p:'#2f9cf0',x:'#9fb0bd',e:'#173049',co:'#ff9f43'};
+let XRON=(()=>{try{return localStorage.getItem('pnXr')==='1';}catch(_){return false;}})(),XFS=null;
+function xEx(k){if(!S.P)return false;const r=S.P.R(k);return !!(XFS&&XFS.exh.has(r))||(S.puffL||[]).includes(k);}
+function xA(k){return isP(k)?'p':xEx(k)?'x':'e';}
+const xCol=a=>a==='p'?XRC.p:a==='x'?XRC.x:XRC.e,xBest=as=>as.includes('p')?'p':as.includes('x')?'x':'e';
+const xBg=(x0,y0,x1,y1)=>`<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" rx="6" fill="${XRC.bg}" stroke="${XRC.ln}" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+function xChan(d,a){return `<path d="${d}" fill="none" stroke="${XRC.ln}" stroke-width="9" stroke-linejoin="round" opacity=".85"/><path d="${d}" fill="none" stroke="${xCol(a)}" stroke-width="6" stroke-linejoin="round"/>`;}
+function xSpring(xa,xb,cy,h){if(xb-xa<3)return '';const n=7,st=(xb-xa)/n;let d=`M${xa.toFixed(1)} ${cy}`;for(let i=0;i<n;i++)d+=`L${(xa+st*(i+.5)).toFixed(1)} ${cy+(i%2?h:-h)}`;d+=`L${xb.toFixed(1)} ${cy}`;
+  return `<path d="${d}" fill="none" stroke="#ffd34d" stroke-width="1.6" stroke-linejoin="round"/>`;}
+/* a spool valve: bore x0..x1 on cy, openings [port,side t/b,x on bore], lands at x; channels run from the real ports */
+function xSpool(c,x0,x1,cy,ops,lands,sp){const id=c.id,k=p=>id+'.'+p,D=DEF[c.t],hb=9;let o='';
+  const L=lands.slice().sort((a,b)=>a-b),cuts=[x0,...L.flatMap(x=>[x-4,x+4]),x1];
+  ops.forEach(([p,sd,bx])=>{const P=D.ports[p],jy=sd==='t'?18:D.h-20;o+=xChan(`M${P[0]} ${P[1]}V${jy}H${bx}V${sd==='t'?cy-hb:cy+hb}`,xA(k(p)));});
+  o+=`<rect x="${x0}" y="${cy-hb-2}" width="${x1-x0}" height="${2*hb+4}" rx="3" fill="#0b1a2c" stroke="${XRC.ln}" stroke-width="1.4"/>`;
+  for(let i=0;i<cuts.length;i+=2){const a=cuts[i],b=cuts[i+1];if(b<=a)continue;const inside=ops.filter(q=>q[2]>a&&q[2]<b).map(q=>xA(k(q[0])));
+    o+=`<rect x="${a}" y="${cy-hb}" width="${b-a}" height="${2*hb}" fill="${xCol(xBest(inside))}" opacity=".95"/>`;}
+  o+=`<rect x="${Math.min(...L)-4}" y="${cy-2.5}" width="${Math.max(...L)-Math.min(...L)+8}" height="5" fill="${XRC.mt}"/>`;
+  if(sp&&sp.l)o+=xSpring(x0+1,L[0]-4,cy,hb-2);if(sp&&sp.r)o+=xSpring(L[L.length-1]+4,x1-1,cy,hb-2);
+  L.forEach(x=>{o+=`<rect x="${x-4}" y="${cy-hb}" width="8" height="${2*hb}" rx="1.5" fill="${XRC.mt}" stroke="${XRC.ms}"/><rect x="${x-1.2}" y="${cy-hb}" width="2.4" height="${2*hb}" fill="#22303c"/>`;});
+  return o;}
+/* devices that push the spool: pilot chamber with its piston, solenoid, roller, push rod, lever */
+function xPilot(xa,xb,cy,k,pistonX,side){const a=xA(k),hb=9,w=xb-xa;let o=`<rect x="${xa}" y="${cy-hb-2}" width="${w}" height="${2*hb+4}" rx="3" fill="#0b1a2c" stroke="${XRC.ln}" stroke-width="1.4"/>`;
+  const px=Math.max(xa+2,Math.min(xb-8,pistonX));
+  o+=side==='l'?`<rect x="${xa+1}" y="${cy-hb}" width="${Math.max(0,px-xa-1)}" height="${2*hb}" fill="${xCol(a)}"/>`:`<rect x="${px+6}" y="${cy-hb}" width="${Math.max(0,xb-px-7)}" height="${2*hb}" fill="${xCol(a)}"/>`;
+  o+=`<rect x="${px}" y="${cy-hb}" width="6" height="${2*hb}" rx="1.5" fill="${XRC.mt}" stroke="${XRC.ms}"/>`;
+  o+=side==='l'?xChan(`M0 46H${xa+1}`,a):xChan(`M${xb-1} 46H${xb+12}`,a);return o;}
+function xCoil(xa,xb,cy,on){const w=xb-xa;let o=`<rect x="${xa}" y="${cy-16}" width="${w}" height="32" rx="3" fill="#1b2a38" stroke="${XRC.ln}" stroke-width="1.2"/>`;
+  for(let x=xa+3;x<xb-3;x+=4)o+=`<rect x="${x}" y="${cy-14}" width="2.4" height="28" rx="1" fill="${on?XRC.co:'#8a6a4a'}" opacity="${on?1:.6}"/>`;
+  o+=`<rect x="${xa+4+(on?6:0)}" y="${cy-4}" width="${w-10}" height="8" rx="2" fill="${XRC.mt}" stroke="${XRC.ms}"/>`;
+  return o+(on?`<rect x="${xa}" y="${cy-16}" width="${w}" height="32" rx="3" fill="none" stroke="${XRC.co}" stroke-width="2"/>`:'');}
+function xValve(c){const t=c.t,s=c.s,id=c.id,k=p=>id+'.'+p,D=DEF[t],cy=52;let o='';
+  if(/^v52/.test(t)){const sol=t==='v52sol'||t==='v52dsol',b0=sol?90:50,a=s.pos==='a',x0=b0-16,x1=b0+96,rel=a?[10,50,90]:[-10,30,70],L=rel.map(r=>b0+r);
+    const ops=[['5','b',b0],['4','t',b0+20],['1','b',b0+40],['2','t',b0+60],['3','b',b0+80]];
+    let bl=x0-4,br=x1+4,dev='';
+    if(t==='v52man'){bl=x0-2;dev+=`<rect x="${x0-2}" y="${cy-2.5}" width="${L[0]-x0}" height="5" fill="${XRC.mt}"/>`;}
+    if(t==='v52ps'||t==='v52pp'){bl=2;dev+=xPilot(4,x0-2,cy,k('14'),a?x0-9:x0-17,'l');}
+    if(t==='v52pp'){br=D.w-2;dev+=xPilot(x1+2,D.w-4,cy,k('12'),a?x1+11:x1+3,'r');}
+    if(sol){bl=36;dev+=xCoil(38,x0-2,cy,t==='v52dsol'?!!s.ya:a);}
+    if(t==='v52dsol'){br=D.w-36;dev+=xCoil(x1+2,D.w-38,cy,!!s.yb);}
+    let rod='';const rd=(xa,xb)=>xb>xa?`<rect x="${xa}" y="${cy-2.5}" width="${xb-xa}" height="5" fill="${XRC.mt}"/>`:'';
+    if(t==='v52ps'||t==='v52pp')rod+=rd((a?x0-9:x0-17)+6,L[0]-4);if(sol)rod+=rd(x0-2,L[0]-4);
+    if(t==='v52pp')rod+=rd(L[2]+4,a?x1+11:x1+3);if(t==='v52dsol')rod+=rd(L[2]+4,x1+2);
+    o+=xBg(bl,19,br,D.h-2)+dev+xSpool(c,x0,x1,cy,ops,L,{r:t==='v52ps'||t==='v52sol'})+rod;return o;}
+  const rA=t==='v32nc'||t==='v32no'||t==='v32sel',sol=t==='v32sol',b0=rA?26:sol?80:40,c12=t==='v32no'?!s.on:!!s.on;
+  const rel=c12?(rA?[-10,30]:[30,70]):[10,50],L=rel.map(r=>b0+r),x0=rA?b0-18:b0-14,x1=rA?b0+56:b0+80;
+  const ops=[['1','b',b0],['2','t',b0+20],['3','b',b0+40]];let bl=x0-4,br=x1+4,dev='';
+  if(rA)br=x1+2;
+  if(t==='v32pil'||t==='tim'){bl=2;dev+=xPilot(4,x0-2,cy,k('12'),s.on?x0-9:x0-17,'l');}
+  if(t==='tim'){const f=Math.min(1,(s.acc||0)/Math.max(.1,c.o.t)),th=30,fh=th*f;bl=2;
+    dev+=`<rect x="6" y="70" width="18" height="${th}" rx="3" fill="#0b1a2c" stroke="${XRC.ln}" stroke-width="1.2"/><rect x="7" y="${70+th-fh}" width="16" height="${fh}" fill="${XRC.p}"/>`+
+      `<path d="M15 70V${cy+10}" stroke="${XRC.ln}" stroke-width="2"/>`+T(15,108,Math.round(f*100)+'%',8,'#bfe3ff',700);}
+  if(t==='v32rol'){const rx=x0-12+(s.on?6:0);dev+=`<circle cx="${rx-6}" cy="${cy}" r="7" fill="${XRC.mt}" stroke="${XRC.ms}" stroke-width="1.5"/><circle cx="${rx-6}" cy="${cy}" r="2" fill="${XRC.ms}"/>`;bl=2;}
+  if(sol){bl=36;dev+=xCoil(38,x0-2,cy,!!s.on);}
+  let rod='';const rd=(xa,xb)=>xb>xa?`<rect x="${xa}" y="${cy-2.5}" width="${xb-xa}" height="5" fill="${XRC.mt}"/>`:'';
+  if(rA)rod+=rd(L[1]+4,D.w-44);if(t==='v32rol')rod+=rd(x0-12+(s.on?6:0),L[0]-4);
+  if(t==='v32pil'||t==='tim')rod+=rd((s.on?x0-9:x0-17)+6,L[0]-4);if(sol)rod+=rd(x0-2,L[0]-4);
+  o+=xBg(bl,19,br,D.h-2)+dev+xSpool(c,x0,x1,cy,ops,L,{l:rA,r:!rA})+rod;return o;}
+function xCyl(c){const id=c.id,k=p=>id+'.'+p,two=c.t==='cyl2',x=c.s.x||0,d=x*150,v=c.s.v||0;
+  const ka=k(two?'A':'1'),aA=xA(ka),aB=two?xA(k('B')):'e',pat=(a,dir)=>a==='e'||!v?'':`url(#${dir})`;
+  const cpat=pat(aA,v>0?'aR':'aL'),rpat=two?pat(aB,v<0?'aL':'aR'):'';
+  let o=xBg(12,22,240,90)+`<rect x="20" y="30" width="210" height="44" rx="4" fill="#0b1a2c" stroke="${XRC.ln}" stroke-width="1.6"/>`;
+  o+=`<rect id="xrc-${id}" x="28" y="32" width="${(12+d).toFixed(1)}" height="40" fill="${xCol(aA)}"/><rect id="xrc2-${id}" x="28" y="32" width="${(12+d).toFixed(1)}" height="40" fill="${cpat||'none'}"/>`;
+  o+=`<rect id="xrr-${id}" x="${(50+d).toFixed(1)}" y="32" width="${(174-d).toFixed(1)}" height="40" fill="${xCol(aB)}"/><rect id="xrr2-${id}" x="${(50+d).toFixed(1)}" y="32" width="${(174-d).toFixed(1)}" height="40" fill="${rpat||'none'}"/>`;
+  o+=`<rect x="20" y="30" width="8" height="44" fill="${XRC.ms}"/><rect x="224" y="30" width="8" height="16" fill="${XRC.ms}"/><rect x="224" y="58" width="8" height="16" fill="${XRC.ms}"/><rect x="226" y="44" width="3" height="16" fill="#22303c"/>`;
+  if(!two)o+=`<path id="xrs-${id}" d="${xSprD(50+d,222)}" fill="none" stroke="#ffd34d" stroke-width="1.8" stroke-linejoin="round"/>`;
+  o+=`<g id="xrp-${id}" transform="translate(${d.toFixed(1)} 0)"><rect x="40" y="32" width="10" height="40" rx="1.5" fill="${XRC.mt}" stroke="${XRC.ms}"/><rect x="40" y="35" width="10" height="3" fill="#22303c"/><rect x="40" y="66" width="10" height="3" fill="#22303c"/><rect x="50" y="46" width="190" height="12" fill="${XRC.mt}" stroke="${XRC.ms}" stroke-width=".8"/></g>`;
+  o+=xChan(`M46 96V84H33V74`,aA);if(two)o+=xChan(`M214 96V74`,aB);else o+=`<path d="M214 30V24" stroke="${XRC.ln}" stroke-width="3"/>`;
+  return o;}
+function xSprD(xa,xb){const n=9,st=(xb-xa)/n,cy=52;let d=`M${xa.toFixed(1)} ${cy}`;for(let i=0;i<n;i++)d+=`L${(xa+st*(i+.5)).toFixed(1)} ${cy+(i%2?14:-14)}`;return d+`L${xb} ${cy}`;}
+function xLogic(c){const id=c.id,k=p=>id+'.'+p,cy=56,aX=xA(k('X')),aY=xA(k('Y')),a2=xA(k('2'));let o=xBg(4,19,106,82);
+  o+=xChan('M55 0V46',a2)+xChan('M0 56H10',aX)+xChan('M100 56H110',aY);
+  o+=`<rect x="10" y="${cy-9}" width="90" height="18" rx="3" fill="#0b1a2c" stroke="${XRC.ln}" stroke-width="1.4"/>`;
+  if(c.t==='or'){const px=isP(k('X')),py=isP(k('Y')),bx=px&&!py?82:py&&!px?28:px&&py?82:55;
+    o+=`<rect x="11" y="${cy-8}" width="${bx-11}" height="16" fill="${xCol(aX)}"/><rect x="${bx}" y="${cy-8}" width="${99-bx}" height="16" fill="${xCol(aY)}"/><rect x="50" y="${cy-8}" width="10" height="16" fill="${xCol(a2)}"/>`;
+    o+=`<path d="M20 ${cy-9}v18M90 ${cy-9}v18" stroke="${XRC.ms}" stroke-width="3"/><circle cx="${bx}" cy="${cy}" r="8" fill="${XRC.mt}" stroke="${XRC.ms}" stroke-width="1.5"/>`;}
+  else{const px=isP(k('X')),py=isP(k('Y')),sx=px&&!py?14:py&&!px?-14:0;
+    o+=`<rect x="11" y="${cy-8}" width="44" height="16" fill="${xCol(aX)}"/><rect x="55" y="${cy-8}" width="44" height="16" fill="${xCol(aY)}"/><rect x="48" y="${cy-8}" width="14" height="16" fill="${xCol(a2)}"/>`;
+    o+=`<g transform="translate(${sx} 0)"><rect x="30" y="${cy-8}" width="8" height="16" rx="1.5" fill="${XRC.mt}" stroke="${XRC.ms}"/><rect x="72" y="${cy-8}" width="8" height="16" rx="1.5" fill="${XRC.mt}" stroke="${XRC.ms}"/><rect x="38" y="${cy-2}" width="34" height="4" fill="${XRC.mt}"/></g>`;}
+  return o;}
+function xFcv(c){const id=c.id,k=p=>id+'.'+p,a1=xA(k('1')),a2=xA(k('2')),f=(c.o.f||0)/100,lift=isP(k('1'))&&!isP(k('2'))||(isP(k('1'))&&mov);let o=xBg(14,19,86,98);
+  o+=xChan('M50 0V24H28V60',a2)+xChan('M50 24H72V52',a2)+xChan('M50 124V98H28V64',a1)+xChan('M50 98H72V72',a1);
+  const nd=4+10*(1-f);o+=`<path d="M16 ${62-6}L${16+nd+8} 62L16 ${62+6}Z" fill="${XRC.mt}" stroke="${XRC.ms}"/>`;
+  o+=`<path d="M66 70h12" stroke="${XRC.ms}" stroke-width="3"/><circle cx="72" cy="${lift?56:64}" r="6" fill="${XRC.mt}" stroke="${XRC.ms}" stroke-width="1.5"/>`;
+  o+=`<rect x="34" y="103" width="32" height="15" rx="4" fill="#dfe3e6"/>`+T(50,114,c.o.f+'%',11);
+  return o;}
+function xGauge(c){const k=c.id+'.1',a=xA(k),p=isP(k)?S.bar:0,u=Math.min(1,p/10);
+  const r=18,a0=40,a1=320-40*u,P=g=>[(42+r*Math.sin(g*Math.PI/180)).toFixed(1),(56+r*Math.cos(g*Math.PI/180)).toFixed(1)],[x0,y0]=P(a0),[x1,y1]=P(a1);
+  return xChan('M42 100V80',a)+`<path d="M42 80V${y0}L${x0} ${y0}A${r} ${r} 0 1 1 ${x1} ${y1}" fill="none" stroke="${XRC.ln}" stroke-width="7" opacity=".85"/><path d="M42 80V${y0}L${x0} ${y0}A${r} ${r} 0 1 1 ${x1} ${y1}" fill="none" stroke="${xCol(a)}" stroke-width="4"/>`;}
+function xTee(c){const a=xA(c.id+'.a');return xChan('M18 40V20H82V40M50 40V0',a);}
+function xrComp(c){if(!XRON)return '';try{switch(c.t){
+  case'cyl1':case'cyl2':return xCyl(c);
+  case'v32nc':case'v32no':case'v32sel':case'v32rol':case'v32pil':case'tim':case'v32sol':case'v52man':case'v52ps':case'v52pp':case'v52sol':case'v52dsol':return xValve(c);
+  case'or':case'and':return xLogic(c);case'fcv':return xFcv(c);case'gauge':return xGauge(c);case'tee':return xTee(c);}}catch(e){console.warn(e);}return '';}
+function xrPartial(c){if(!XRON||!/^cyl/.test(c.t))return;const d=(c.s.x||0)*150,id=c.id,g=$('xrp-'+id);if(g)g.setAttribute('transform',`translate(${d.toFixed(1)} 0)`);
+  [['xrc-',28,12+d],['xrc2-',28,12+d],['xrr-',50+d,174-d],['xrr2-',50+d,174-d]].forEach(([p,x,w])=>{const e=$(p+id);if(e){e.setAttribute('x',x.toFixed(1));e.setAttribute('width',Math.max(0,w).toFixed(1));}});
+  const sp=$('xrs-'+id);if(sp)sp.setAttribute('d',xSprD(50+d,222));}
+function xrToggle(){XRON=!XRON;try{localStorage.setItem('pnXr',XRON?'1':'0');}catch(_){}
+  say(XRON?'وضع X-Ray: تظهر الأجزاء الداخلية لكل قطعة في مكانها. شغّل الدائرة لترى حركة البكرة داخل الصمامات والمكبس داخل الأسطوانة ومسار الهواء.':'أُغلق وضع X-Ray');render();}
 /* transparent tubes: white body, sky core under pressure, dots running with the air while a cylinder moves
    (blue = supply side toward the cylinder, grey = exhaust side toward vent 3/5) */
 function bfsD(adj,starts){const d=new Map(),q=[];starts.forEach(k=>{if(!d.has(k)){d.set(k,0);q.push(k);}});while(q.length){const k=q.shift();for(const n of adj.get(k)||[])if(!d.has(n)){d.set(n,d.get(k)+1);q.push(n);}}return d;}
@@ -714,8 +819,8 @@ function bg(){let o=`<defs><linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1"
   ${[['aS',''],['aR','16 0'],['aL','-16 0']].map(([n,t])=>`<pattern id="${n}" width="16" height="10" patternUnits="userSpaceOnUse"><circle cx="4" cy="3" r="1.5" fill="#fff" opacity=".9"/><circle cx="12" cy="8" r="1.2" fill="#fff" opacity=".8"/>${t?`<animateTransform attributeName="patternTransform" type="translate" from="0 0" to="${t}" dur=".5s" repeatCount="indefinite"/>`:''}</pattern>`).join('')}
   <filter id="ds" x="-10%" y="-10%" width="130%" height="135%"><feDropShadow dx="3" dy="5" stdDeviation="3" flood-color="#000" flood-opacity=".35"/></filter></defs>
   <rect width="${W}" height="${H}" fill="url(#slots)"/>`;return o;}
-function render(){S.puffL=puffNow();pKey=mov+'|'+S.puffL.join();let o=bg()+legend()+'<!--feed-->';
-  S.comps.forEach(c=>{o+=`<g transform="translate(${c.x} ${c.y})" filter="url(#ds)">${drawComp(c)}</g>`;if(S.selC===c.id){const D=DEF[c.t];o+=`<rect x="${c.x-5}" y="${c.y-15}" width="${D.w+10}" height="${D.h+20}" rx="10" fill="none" stroke="#ffb300" stroke-width="3" stroke-dasharray="9 6" pointer-events="none"/>`;}});
+function render(){S.puffL=puffNow();pKey=mov+'|'+S.puffL.join();XFS=flowState();let o=bg()+legend()+'<!--feed-->';{const xb=$('xrTab');if(xb)xb.classList.toggle('on',XRON);}
+  S.comps.forEach(c=>{o+=`<g transform="translate(${c.x} ${c.y})" filter="url(#ds)">${drawComp(c)}</g>`;if(XRON){const xo=xrComp(c);if(xo)o+=`<g transform="translate(${c.x} ${c.y})" pointer-events="none">${xo}</g>`;}if(S.selC===c.id){const D=DEF[c.t];o+=`<rect x="${c.x-5}" y="${c.y-15}" width="${D.w+10}" height="${D.h+20}" rx="10" fill="none" stroke="#ffb300" stroke-width="3" stroke-dasharray="9 6" pointer-events="none"/>`;}});
   {const cp=S.comps.find(c=>c.t==='compr'),su=S.comps.find(c=>c.t==='supply');if(cp&&su){const A={x:cp.x+250,y:cp.y+22},B={x:su.x+44,y:su.y+96},run=cmpOn();
     const rq=routes(),fp=rq&&rq.get('feed'),d=fp?rPath(fp):`M${A.x} ${A.y}C${A.x} ${A.y-120} ${B.x-70} ${B.y+60} ${B.x-30} ${B.y}L${B.x} ${B.y}`;
     o=o.replace('<!--feed-->',`<path d="${d}" fill="none" stroke="#0f5ea8" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/><path d="${d}" fill="none" stroke-linejoin="round" stroke="${run?'#43a8f5':'#8fbfe6'}" stroke-width="6" stroke-linecap="round" pointer-events="none"/>`);}}
@@ -737,7 +842,7 @@ function handlesSVG(){if(S.sel==null)return '';const t=S.tubes.find(t=>t.id===S.
 let pKey='';
 function partial(){{const k=mov+'|'+puffNow().join();if(k!==pKey){pKey=k;render();return;}}
   S.comps.forEach(c=>{if(/^cyl/.test(c.t)){const g=$('rod-'+c.id);if(g)g.setAttribute('transform',`translate(${(c.s.x*150).toFixed(1)} 0)`);
-    const d=c.s.x*150,st=(i,x,w)=>{const e=$(i+c.id);if(e){e.setAttribute('x',x.toFixed(1));e.setAttribute('width',Math.max(0,w).toFixed(1));}};st('ach-',28,12+d);st('ach2-',28,12+d);st('arh-',50+d,174-d);st('arh2-',50+d,174-d);}
+    const d=c.s.x*150,st=(i,x,w)=>{const e=$(i+c.id);if(e){e.setAttribute('x',x.toFixed(1));e.setAttribute('width',Math.max(0,w).toFixed(1));}};st('ach-',28,12+d);st('ach2-',28,12+d);st('arh-',50+d,174-d);st('arh2-',50+d,174-d);xrPartial(c);}
   if(c.t==='tim'){const a=$('tarc-'+c.id);if(a){const C=2*Math.PI*14,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
   S.comps.forEach(c=>{if(c.t==='timer'){const a=$('etarc-'+c.id);if(a){const C=2*Math.PI*16,f=Math.min(1,(c.s.acc||0)/Math.max(.1,c.o.t));a.setAttribute('stroke-dasharray',(f*C).toFixed(1)+' '+C.toFixed(1));}}});
   puffUpd();const tg=$('tubes');if(tg&&flowState().key!==FK)tg.innerHTML=tubesSVG();}
@@ -1193,7 +1298,7 @@ function exRender(){document.querySelectorAll('[data-ex]').forEach(b=>b.setAttri
   else B.innerHTML=`<h3>ترقيم المنافذ (ISO 5599)</h3><ul><li><b>1</b>: دخول الهواء المضغوط.</li><li><b>2 و4</b>: منافذ الخرج إلى الأسطوانات أو الإشارات.</li><li><b>3 و5</b>: العادم (خروج الهواء للجو، عادة عبر كاتم صوت).</li><li><b>12 و14</b>: منافذ الإشارات الهوائية: 14 تصل 1 بـ 4، و12 تصل 1 بـ 2.</li></ul>
     <h3>تسمية العناصر</h3><ul><li><b>1A، 2A</b>: الأسطوانات (المشغلات).</li><li><b>1V1، 1V2</b>: الصمامات الخاصة بالأسطوانة 1.</li><li><b>1S1، 1S2</b>: عناصر الإشارة (ضواغط، بكرات نهاية المشوار).</li><li><b>0Z</b>: وحدة الإمداد بالهواء.</li></ul>
     <h3>قراءة رمز الصمام</h3><ul><li>عدد المربعات = عدد الأوضاع. «5/2» = 5 منافذ ووضعان.</li><li>الأسهم مسار الهواء، والرمز ⊥ منفذ مغلق.</li><li>المربع المظلل في المحاكي هو الوضع الحالي.</li></ul>
-    <h3>في المحاكي</h3><ul><li>الخراطيم شفافة بلون مائي مثل الواقع. الخرطوم الذي عليه ضغط يظهر بداخله لون سماوي، وأثناء حركة الأسطوانة تجري فيه نقاط زرقاء باتجاه سريان الهواء.</li><li>النقاط الرمادية هي هواء العادم وهو يخرج من الأسطوانة إلى منفذ العادم 3 أو 5. سرعة النقاط تتبع سرعة الأسطوانة، فتبطؤ مع خفض الضغط أو تضييق الخانق.</li><li>اسحب العنصر من إطاره، واضغطه لفتح إعداداته.</li><li>اضغط منفذًا ثم منفذًا آخر لتركيب خرطوم، واضغط الخرطوم لحذفه.</li><li>قاعدة أمان: أغلق الهواء قبل تعديل الخراطيم.</li></ul>`;}
+    <h3>في المحاكي</h3><ul><li>زر <b>X-Ray</b> على جانب الشاشة يُظهر داخل كل قطعة في مكانها: البكرة وحلقاتها داخل الصمام، والنابض، والمكبس الهوائي أو الملف الكهربائي الذي يدفعها، والمكبس والموانع داخل الأسطوانة، والكرة في صمام OR، والإبرة وكرة عدم الرجوع في الخانق، وخزان صمام التأخير وهو يمتلئ. الممرات الزرقاء فيها ضغط، والرمادية هواء خارج إلى العادم.</li><li>الخراطيم شفافة بلون مائي مثل الواقع. الخرطوم الذي عليه ضغط يظهر بداخله لون سماوي، وأثناء حركة الأسطوانة تجري فيه نقاط زرقاء باتجاه سريان الهواء.</li><li>النقاط الرمادية هي هواء العادم وهو يخرج من الأسطوانة إلى منفذ العادم 3 أو 5. سرعة النقاط تتبع سرعة الأسطوانة، فتبطؤ مع خفض الضغط أو تضييق الخانق.</li><li>اسحب العنصر من إطاره، واضغطه لفتح إعداداته.</li><li>اضغط منفذًا ثم منفذًا آخر لتركيب خرطوم، واضغط الخرطوم لحذفه.</li><li>قاعدة أمان: أغلق الهواء قبل تعديل الخراطيم.</li></ul>`;}
 function openHelp(tab,hl){EXS.tab=tab;EXS.hl=hl||null;exM.classList.add('open');exRender();}
 $('bHelp').onclick=()=>openHelp('now');$('exClose').onclick=()=>exM.classList.remove('open');exM.addEventListener('click',e=>{if(e.target===exM)exM.classList.remove('open');});
 document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{EXS.tab=b.dataset.ex;EXS.hl=null;exRender();});
@@ -1523,6 +1628,7 @@ $('dstat').addEventListener('click',e=>{if(e.target.closest('[data-prx]')){S.pra
 clInit();
 S.zoom=fitZ();update();measureDock();
 window.addEventListener('resize',()=>{measureDock();});
+$('xrTab').onclick=xrToggle;
 })();
 </script>
 <style>#ptr{position:fixed;top:-46px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:#fff;color:#0b3d91;box-shadow:0 3px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;z-index:9999;opacity:0;transition:opacity .15s,background .15s;pointer-events:none}#ptr.on{opacity:1}#ptr.go{background:#0b3d91;color:#fff}</style>
