@@ -1415,12 +1415,12 @@ function ftClip(){if(S.zero){say('المقبض على 0 — اختر رقم ال
   const c=C(),I=INFO[S.cid]||{n:S.cid,d:'',seq:[]},has=d=>c.E.some(e=>e.dev===d),hasT=c.E.some(e=>e.k==='tcoil'),keep=JSON.stringify({F:[...S.F],ex:S.ex,q:S.q,mm:S.mm,mode:S.mode,view:S.view,diag:S.diag}),steps=[];
   const view0=S.view;S.view=true;setDiag(false);
   /* a section's steps run forward; stepping back into one starts it again from its first step */
-  const sec=(k,F,L)=>{const j0=steps.length;L.forEach((o,q)=>steps.push({k,ms:o.ms||600,til:o.til||null,tx:'',go(fwd){const cl=S.cl;
+  const sec=(k,F,L)=>{const j0=steps.length;L.forEach((o,q)=>steps.push({k:q?'':k,ms:o.ms||600,til:o.til||null,tx:'',go(fwd){const cl=S.cl;
       if(!q||!fwd||cl.dj!==j0+q-1){ftReset(F);for(let r=0;r<q;r++){L[r].a&&L[r].a();L[r].ff&&L[r].ff();solve();}}
       cl.dj=j0+q;cl.hold=!!o.hold;o.a&&o.a();solve();this.tx=o.t();ftFoc(o.f?o.f():null);update();}}));};
   const plain=(k,t,f)=>steps.push({k,tx:t,ms:400,go(){S.cl.dj=-9;ftReset([]);ftFoc(f);update();}});
   plain('الفكرة',S.cid+' — '+I.n+'. '+I.d,['#svg']);
-  (I.seq||[]).forEach((t,i)=>plain('تسلسل العمل '+(i+1)+' من '+I.seq.length,t,['#svg']));
+  (I.seq||[]).forEach((t,i)=>plain(i?'':'تسلسل العمل',t,['#svg']));
   /* operating the kit */
   const ops=[];
   ops.push({hold:1,a(){S.q={Q1:true,Q2:true};},t:()=>'نشغّل المفتاح الرئيسي Q1 ومفتاح التحكم Q2: '+ftObs()+'.',f:()=>[ftKc('#cQ1'),ftKc('#cQ2')]});

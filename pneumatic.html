@@ -1163,7 +1163,7 @@ function pnClip(i){const x=EX[i];if(!x)return;if(S.cl)clClose(false);S.prac=null
   XW.forEach(([a,b],j)=>steps.push({k:j?'':'توصيل الأسلاك',tx:'من '+pnPort(a)+'، إلى '+pnPort(b)+'.',go(){pnRef(i);pnTubes(i,N);pnWires(i,j+1);S.cl.hl={w:j+1,p:[a,b]};update();}}));
   /* the demo runs forward from the wired circuit; stepping back into it starts it again from its first step */
   const d0=steps.length;
-  D.forEach(([a,tx,til,ms],j)=>steps.push({k:'التشغيل',tx,ms:ms||500,til:pnTil(til),go(fwd){const c=S.cl;
+  D.forEach(([a,tx,til,ms],j)=>steps.push({k:j?'':'التشغيل',tx,ms:ms||500,til:pnTil(til),go(fwd){const c=S.cl;
     if(!fwd||c.dj!==j-1){pnRef(i);pnTubes(i,N);pnWires(i,NW);for(let q=0;q<j;q++){pnAct(D[q][0],true);pnRunTil(pnTil(D[q][2]));}}
     c.dj=j;pnAct(a);c.hl=null;const id=a.split(':')[1];if(id)hlC(id);update();}}));
   steps.push({k:'دورك الآن',tx:'انتهى الشرح. ستجد العناصر على اللوحة بدون '+(NW?'خراطيم وأسلاك':'خراطيم')+': وصّلها بنفسك كما رأيت، ثم افتح الهواء وجرّب.',ms:1500,go(){S.cl.hl=null;S.air=false;S.pressed.clear();update();}});
