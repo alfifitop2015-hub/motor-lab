@@ -1157,10 +1157,10 @@ function pnClip(i){const x=EX[i];if(!x)return;if(S.cl)clClose(false);S.prac=null
   steps.push({k:'الفكرة',tx:(EXPL[i]||{}).idea||x.n,go(){pnRef(i);S.cl.hl={c:parts.map(c=>c.id)};update();}});
   /* «العناصر» once, on the first part only */
   parts.forEach((c,j)=>steps.push({k:j?'':'العناصر',tx:pnPart(c),go(){pnRef(i);hlC(c.id);update();}}));
-  x.t.forEach(([a,b],j)=>steps.push({k:'التوصيل '+(j+1)+' من '+N,tx:'من '+pnPort(a)+'، إلى '+pnPort(b)+'.',go(){pnRef(i);pnTubes(i,j+1);S.cl.hl={t:j+1,p:[a,b]};update();}}));
+  x.t.forEach(([a,b],j)=>steps.push({k:j?'':'توصيل الخراطيم',tx:'من '+pnPort(a)+'، إلى '+pnPort(b)+'.',go(){pnRef(i);pnTubes(i,j+1);S.cl.hl={t:j+1,p:[a,b]};update();}}));
   /* electro-pneumatics: then the 24V wires, one by one, from +24V through the contacts to the coils and back to 0V */
   const XW=x.w||[],NW=XW.length;
-  XW.forEach(([a,b],j)=>steps.push({k:'الأسلاك '+(j+1)+' من '+NW,tx:'سلك من '+pnPort(a)+'، إلى '+pnPort(b)+'.',go(){pnRef(i);pnTubes(i,N);pnWires(i,j+1);S.cl.hl={w:j+1,p:[a,b]};update();}}));
+  XW.forEach(([a,b],j)=>steps.push({k:j?'':'توصيل الأسلاك',tx:'من '+pnPort(a)+'، إلى '+pnPort(b)+'.',go(){pnRef(i);pnTubes(i,N);pnWires(i,j+1);S.cl.hl={w:j+1,p:[a,b]};update();}}));
   /* the demo runs forward from the wired circuit; stepping back into it starts it again from its first step */
   const d0=steps.length;
   D.forEach(([a,tx,til,ms],j)=>steps.push({k:'التشغيل',tx,ms:ms||500,til:pnTil(til),go(fwd){const c=S.cl;
