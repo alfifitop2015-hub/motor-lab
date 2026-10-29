@@ -970,7 +970,7 @@ const FXC={green:['#2aa84a','أخضر'],red:['#d8322b','أحمر'],yellow:['#f2c
 const FXL={green:'#5dff7f',red:'#ff4a3d',yellow:'#ffe03a',blue:'#5cb0ff',white:'#ffffff'};
 /* ---------- state ---------- */
 const FBW=250,FBH=364,FBDEF={x:705,y:348,sc:1};
-const S={plc:{run:true,prog:[],tm:{},q:[false,false,false,false,false],m:{},ts:{},prev:{},inp:{},pw:false,flow:[]},mm:{on:false,x:700,y:40,mode:'v',red:null,black:null},mmPick:null,fx:[],fbp:{...FBDEF},power:true,Q1:true,F1:true,devs:[],railCount:1,target:0,tm:{},ol:{},done:{},rows:2,motor2:{state:'off'},pressed:new Set(),coils:{},
+const S={plc:{run:true,prog:[],tm:{},q:[false,false,false,false,false],m:{},ts:{},prev:{},inp:{},pw:false,flow:[]},mm:{on:false,x:700,y:40,pos:0,rj:'V',red:null,black:null},mmPick:null,fx:[],fbp:{...FBDEF},power:true,Q1:true,F1:true,devs:[],railCount:1,target:0,tm:{},ol:{},done:{},rows:2,motor2:{state:'off'},pressed:new Set(),coils:{},
   pos:0.5,ls1:false,ls2:false,
   fault:null,wires:[],sel:null,pending:null,showV:true,dahl:false,last:'',hist:[],zoom:1,R:null,motor:{state:'off'},lamps:{},warn:[],osc:false,nextId:1};
 const ofType=t=>S.devs.filter(d=>d.type===t).map(d=>d.id);
@@ -2543,8 +2543,7 @@ function act(a){const [k,id,sg]=a.split(':');
   else if(k==='plc'){return id==='open'?openPLC():plcBtn(id);}
   else if(a==='voice'){return voiceToggle();}
   else if(k==='err'){return errSay(id);}
-  else if(k==='mm'){if(id==='hide'){S.mm.on=false;S.mmPick=null;}else if(id==='mode'){S.mm.mode=sg;mmAudio();}
-    else if(id==='probe'){mmAudio();if(S.mm[sg]){S.mm[sg]=null;S.mmPick=null;}else S.mmPick=S.mmPick===sg?null:sg;}return render();}
+  else if(k==='mm'){return mmAct(id,sg,a);}
   else if(a==='wdel'){if(S.sel!=null)return delWire(S.sel);}
   else if(a==='wsel0'){S.sel=null;return render();}
   else if(a==='wauto'){const w=S.wires.find(x=>x.id===S.sel);if(w&&w.man){snap();delete w.man;say('رجع السلك للمسار التلقائي');}return render();}
@@ -2597,7 +2596,7 @@ const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
 svg.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-drag]');if(!g||e.target.closest('[data-press],[data-act],[data-term]'))return;
   e.preventDefault();const p=svgPt(e);const mmd=g.dataset.drag==='mm';drag={kind:g.dataset.drag,p0:p,x:mmd?S.mm.x:S.fbp.x,y:mmd?S.mm.y:S.fbp.y,sc:S.fbp.sc,moved:false};try{svg.setPointerCapture(e.pointerId);}catch(_){}});
 svg.addEventListener('pointermove',e=>{if(!drag)return;const p=svgPt(e),dx=p.x-drag.p0.x,dy=p.y-drag.p0.y;if(!drag.moved&&Math.hypot(dx,dy)<5)return;
-  if(drag.kind==='mm'){drag.moved=true;S.mm.x=clampN(drag.x+dx,0,W-150*MS);S.mm.y=clampN(drag.y+dy,0,H-262*MS);mmMove();return;}
+  if(drag.kind==='mm'){drag.moved=true;S.mm.x=clampN(drag.x+dx,0,W-MMW*MS);S.mm.y=clampN(drag.y+dy,0,H-MMH*MS);mmMove();return;}
   if(!drag.moved){drag.moved=true;snap();}
   if(drag.kind==='fb'){const w=FBW*S.fbp.sc;S.fbp.x=clampN(drag.x+dx,40,960-w);S.fbp.y=clampN(drag.y+dy,332,S.trunkY[S.rows-1]-40);}
   else{const sc=clampN(drag.sc+Math.max(dx/FBW,dy/FBH),0.6,1.6);S.fbp.sc=+sc.toFixed(3);S.fbp.x=Math.min(S.fbp.x,960-FBW*sc);}
@@ -4207,22 +4206,60 @@ function mmPot(net,adj){const R=S.R,own=R.src.get(net);if(own&&own.size)return o
   for(let d=0;d<4&&q.length;d++){const nq=[];for(const n of q)for(const [m] of adj.get(n)||[]){if(seen.has(m))continue;seen.add(m);const s2=R.src.get(m);if(s2&&s2.size)return s2;nq.push(m);}q=nq;}return EMPTY;}
 function mmOhm(a,b,adj){const dist=new Map([[a,0]]),done=new Set();for(let it=0;it<500;it++){let u=null,du=Infinity;for(const [n,d] of dist)if(!done.has(n)&&d<du){u=n;du=d;}
   if(u==null)break;if(u===b)return du;done.add(u);for(const [m,w] of adj.get(u)||[]){const nd=du+w;if(nd<(dist.has(m)?dist.get(m):Infinity))dist.set(m,nd);}}return Infinity;}
-function mmRead(){const m=S.mm;if(m.mode==='off')return{t:'',u:'',note:'الجهاز مطفأ: أدر المفتاح إلى V~ أو Ω'};
-  const u=m.mode==='v'?'V~':'Ω';
+/* the workshop's digital multimeter (4000 count, red holster): a rotary switch with every range, three jacks
+   (10A, COM, VΩmA), SEL/REL and HOLD; a range too small reads OL, a wrong jack or function reads nothing useful,
+   and measuring a voltage on a current range blows the meter's fuse, as on the real meter */
+const MMW=210,MMH=440,MS=1.1,MCX=105,MCY=226;
+const MP=[['off',0,'OFF'],['vac',4,'4'],['vac',40,'40'],['vac',400,'400'],['vac',750,'750'],
+  ['vdc',1000,'1000'],['vdc',400,'400'],['vdc',40,'40'],['vdc',4,'4'],['vdc',.4,'400m'],['hfe',0,'hFE'],
+  ['aac',10,'10'],['aac',.4,'400m'],['aac',.04,'40m'],['adc',.04,'40m'],['adc',.4,'400m'],['adc',10,'10'],
+  ['ua',4e-3,'4000µ'],['ua',4e-4,'400µ'],['cap',0,'nF'],['cont',0,'•)))'],
+  ['ohm',400,'400'],['ohm',4e3,'4k'],['ohm',4e4,'40k'],['ohm',4e5,'400k'],['ohm',4e6,'4M'],['ohm',4e7,'40M']];
+const MSTEP=360/MP.length,MGRP=[['vac','V~'],['vdc','V⎓'],['hfe',''],['aac','A~'],['adc','A⎓'],['ua','µA⎓'],['cap','⊣⊢'],['cont','▶|'],['ohm','Ω']];
+/* display format of a range: [unit divisor, unit text, decimals, full scale on the display] */
+function mmFmt(f,r){if(f==='vac'||f==='vdc'){if(r<1)return[1e-3,'mV',1,399.9];return r===4?[1,'V',3,3.999]:r===40?[1,'V',2,39.99]:r===400?[1,'V',1,399.9]:[1,'V',0,r];}
+  if(f==='ohm')return r===400?[1,'Ω',1,399.9]:r===4e3?[1e3,'kΩ',3,3.999]:r===4e4?[1e3,'kΩ',2,39.99]:r===4e5?[1e3,'kΩ',1,399.9]:r===4e6?[1e6,'MΩ',3,3.999]:[1e6,'MΩ',2,39.99];
+  if(f==='aac'||f==='adc')return r===10?[1,'A',2,9.99]:r===.4?[1e-3,'mA',1,399.9]:[1e-3,'mA',2,39.99];
+  if(f==='ua')return r===4e-3?[1e-6,'µA',0,3999]:[1e-6,'µA',1,399.9];return[1,'',0,9999];}
+const mmShow=(v,F)=>{const d=v/F[0];return Math.abs(d)>F[3]?'OL':d.toFixed(F[2]);};
+function mmVolt(){const adj=mmGraph(),a=S.R.uf.find(S.mm.red),b=S.R.uf.find(S.mm.black);if(a===b)return{v:0,adj,a,b,same:1};
+  const sa=mmPot(a,adj),sb=mmPot(b,adj),pa=phasesOf(sa),pb=phasesOf(sb),na=sa.has('N'),nb=sb.has('N');
+  let v=0;if(pa.length&&pb.length)v=pa[0]===pb[0]?0:400;else if((pa.length&&nb)||(pb.length&&na))v=230;return{v,adj,a,b};}
+function mmRead(){const m=S.mm,P=MP[m.pos||0],f=P[0],rg=P[1];
+  if(f==='off')return{t:'',u:'',off:1,note:'الجهاز مطفأ: أدر المفتاح إلى الوظيفة والمدى المناسبين'};
   if(m.red&&!T[m.red])m.red=null;if(m.black&&!T[m.black])m.black=null;
-  if(!m.red||!m.black||!S.R)return{t:m.mode==='v'?'0.0':'OL',u,note:'اضغط المقبس ثم الطرف لوضع كل مجس'};
-  const adj=mmGraph(),a=S.R.uf.find(m.red),b=S.R.uf.find(m.black);
-  if(m.mode==='v'){if(a===b)return{t:'0.0',u,note:'الطرفان على نفس النقطة الكهربائية'};
-    const sa=mmPot(a,adj),sb=mmPot(b,adj),pa=phasesOf(sa),pb=phasesOf(sb),na=sa.has('N'),nb=sb.has('N');
-    let v=0;if(pa.length&&pb.length)v=pa[0]===pb[0]?0:400;else if((pa.length&&nb)||(pb.length&&na))v=230;
-    return{t:v?String(v):'0.0',u,note:v===400?'بين طورين':v===230?'بين طور وتعادل':'لا يوجد فرق جهد'};}
-  const live=n=>phasesOf(mmPot(n,adj)).length>0;
-  if(live(a)||live(b))return{t:'LIVE',u:'',warn:1,note:'⚠ الدائرة مكهربة! افصل F1 أو Q1 قبل قياس المقاومة'};
-  if(a===b)return{t:'0.0',u,cont:1,note:'🔊 استمرارية: توصيل مباشر'};
-  const r=mmOhm(a,b,adj);if(!isFinite(r))return{t:'OL',u,note:'دائرة مفتوحة'};
-  return{t:r>=1000?(r/1000).toFixed(2)+'k':r<100?r.toFixed(1):String(Math.round(r)),u,cont:r<30,note:r<30?'🔊 استمرارية':'مقاومة عبر حِمل (ملف/لمبة/محرك)'};}
+  const F=mmFmt(f,rg),u=F[1],ac=f==='vac'||f==='aac',dc=f==='vdc'||f==='adc'||f==='ua',both=m.red&&m.black&&S.R,isA=f==='aac'||f==='adc'||f==='ua',in10=m.rj==='A';
+  const base={u,ac,dc};
+  if(f==='hfe')return{...base,t:'0',u:'hFE',note:'hFE لقياس تكبير الترانزستور في المقبس الصغير، وليس للوحة التحكم'};
+  if(!both){const t=f==='ohm'||f==='cont'?'OL':f==='cap'?'0.00':(0).toFixed(F[2]);return{...base,t,u:f==='cap'?'nF':f==='cont'?(m.dio?'V':'Ω'):u,note:'ضع المجسين: اضغط المقبس ثم الطرف'};}
+  const V=mmVolt();
+  if(isA){const need10=rg===10;
+    if(V.v>0)return{...base,t:'0',blow:in10?'10A':'mA',warn:1,note:'⚠ قست جهدًا على وضع التيار: الملتميتر صار قصرًا على المصدر فاحترق المصهر'};
+    if(need10&&!in10)return{...base,t:(0).toFixed(F[2]),warn:1,note:'⚠ للمدى 10A انقل المجس الأحمر إلى مقبس 10A'};
+    if(!need10&&in10)return{...base,t:(0).toFixed(F[2]),warn:1,note:'⚠ المجس الأحمر في مقبس 10A: للمدى mA وµA انقله إلى مقبس VΩmA'};
+    if(m.fuse&&((in10&&m.fuse==='10A')||(!in10&&m.fuse==='mA')))return{...base,t:(0).toFixed(F[2]),warn:1,note:'المصهر محترق: القراءة صفر دائمًا حتى تبدّله'};
+    return{...base,t:(0).toFixed(F[2]),note:'التيار يُقاس والملتميتر على التوالي مع الحمل (تُفتح الدائرة ويوضع بين طرفيها)'};}
+  if(in10)return{...base,t:f==='ohm'||f==='cont'?'OL':(0).toFixed(F[2]),u:f==='cap'?'nF':f==='cont'?(m.dio?'V':'Ω'):u,warn:1,note:'⚠ المجس الأحمر في مقبس 10A: للجهد والمقاومة انقله إلى مقبس VΩmA'};
+  if(f==='vac'){const t=mmShow(V.v,F);return{...base,t,note:t==='OL'?`المدى ${P[2]}V أصغر من الجهد المقاس: اختر مدى أكبر`:V.v===400?'بين طورين':V.v===230?'بين طور وتعادل':V.same?'الطرفان على نفس النقطة الكهربائية':'لا يوجد فرق جهد'};}
+  if(f==='vdc')return{...base,t:(0).toFixed(F[2]),note:V.v?'⚠ الجهد في اللوحة متردد AC، وأنت على V⎓ (مستمر) فلا تظهر قيمته: اختر V~':'لا يوجد فرق جهد مستمر'};
+  const live=n=>phasesOf(mmPot(n,V.adj)).length>0;
+  if(live(V.a)||live(V.b))return{...base,t:'----',u:f==='cap'?'nF':f==='cont'?'Ω':u,warn:1,note:'⚠ الدائرة مكهربة! افصل F1 أو Q1 قبل قياس المقاومة أو الاستمرارية'};
+  const r=V.same?0:mmOhm(V.a,V.b,V.adj);
+  if(f==='cap')return{...base,t:isFinite(r)&&r<1e5?'OL':'0.00',u:'nF',note:'لا توجد مكثفات في اللوحة'};
+  if(f==='cont'){if(m.dio){const vf=r*0.001;return{...base,t:vf>=2?'OL':vf.toFixed(3),u:'V',dio:1,note:'وضع الدايود: يقيس جهد الوصلة الأمامي'};}
+    const t=r>399.9?'OL':r.toFixed(1);return{...base,t,u:'Ω',cont:r<50,beepy:1,note:r<50?'🔊 استمرارية: توصيل مباشر':isFinite(r)?'يوجد حمل بين الطرفين':'دائرة مفتوحة'};}
+  const t=isFinite(r)?mmShow(r,F):'OL';
+  return{...base,t,cont:0,note:!isFinite(r)?'دائرة مفتوحة':t==='OL'?`المقاومة أكبر من مدى ${P[2]}Ω: اختر مدى أكبر`:r<30?'مقاومة صغيرة جدًا (توصيل أو ملف محرك)':'مقاومة عبر حِمل (ملف/لمبة/محرك)'};}
+/* LCD digits, seven segments each */
+const SEG7={'0':'abcdef','1':'bc','2':'abged','3':'abgcd','4':'fgbc','5':'afgcd','6':'afgedc','7':'abc','8':'abcdefg','9':'abcdfg','-':'g','O':'abcdef','L':'def',' ':''};
+function seg7(str,xr,y,h,col){const w=h*.52,t=h*.13,g=h*.1,cells=[];for(const ch of str){if(ch==='.'&&cells.length){cells[cells.length-1].dp=1;continue;}cells.push({c:ch});}
+  let o='';cells.reverse().forEach((c,i)=>{const x=xr-(i+1)*(w+g);const sg=SEG7[c.c]||'',H=h/2;
+    const S2={a:[x+t*.6,y,w-t*1.2,t],d:[x+t*.6,y+h-t,w-t*1.2,t],g:[x+t*.6,y+H-t/2,w-t*1.2,t],f:[x,y+t*.5,t,H-t*.6],b:[x+w-t,y+t*.5,t,H-t*.6],e:[x,y+H+t*.1,t,H-t*.6],c:[x+w-t,y+H+t*.1,t,H-t*.6]};
+    for(const s of sg){const r=S2[s];o+=`<rect x="${r[0].toFixed(1)}" y="${r[1].toFixed(1)}" width="${r[2].toFixed(1)}" height="${r[3].toFixed(1)}" rx="${(t*.35).toFixed(1)}" fill="${col}"/>`;}
+    if(c.dp)o+=`<rect x="${(x+w+g*.15).toFixed(1)}" y="${(y+h-t).toFixed(1)}" width="${(t*.9).toFixed(1)}" height="${t.toFixed(1)}" fill="${col}"/>`;});
+  return `<g transform="skewX(-7) translate(${(y+h)*.123} 0)">${o}</g>`;}
 function mmLeadsSVG(){const m=S.mm;if(!m.on)return '';let s='';
-  [['black',45,'#1b1b1b'],['red',105,'#d8322b']].forEach(([p,jx,c])=>{const J=[m.x+jx*MS,m.y+230*MS],t=m[p]&&T[m[p]];
+  [['black',MCX,'#1b1b1b'],['red',m.rj==='A'?50:160,'#d8322b']].forEach(([p,jx,c])=>{const J=[m.x+jx*MS,m.y+350*MS],t=m[p]&&T[m[p]];
     const tip=t?[t.x,t.y]:[J[0]+(p==='red'?14:-14),J[1]+86],H=t?[t.x+(p==='red'?20:-20),t.y-36]:[J[0]+(p==='red'?6:-6),J[1]+48];
     const cy=Math.max(J[1],H[1])+(t?80:6),cx=(J[0]+H[0])/2;
     s+=`<path d="M${J[0]} ${J[1]}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${H[0]} ${H[1]}" stroke="#000" stroke-opacity=".35" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M${J[0]} ${J[1]}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${H[0]} ${H[1]}" stroke="${c}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
@@ -4230,30 +4267,65 @@ function mmLeadsSVG(){const m=S.mm;if(!m.on)return '';let s='';
     s+=`<line x1="${H[0]}" y1="${H[1]}" x2="${mid[0]}" y2="${mid[1]}" stroke="${c}" stroke-width="9" stroke-linecap="round"/><line x1="${mid[0]}" y1="${mid[1]}" x2="${tip[0]}" y2="${tip[1]}" stroke="#d6dbe0" stroke-width="2.6" stroke-linecap="round"/>`+
       (t?`<circle cx="${tip[0]}" cy="${tip[1]}" r="9" fill="none" stroke="${c==='#1b1b1b'?'#fff':c}" stroke-width="2.5"/>`:'');});
   return s;}
-const MS=1.4;
-function mmSVG(){const m=S.mm;if(!m.on)return '';const r=mmRead();
+function mmWrap(t,n){const w=String(t).split(' '),L=[''];w.forEach(x=>{if((L[L.length-1]+' '+x).trim().length>n&&L[L.length-1])L.push(x);else L[L.length-1]=(L[L.length-1]+' '+x).trim();});return L.slice(0,3);}
+function mmSVG(){const m=S.mm;if(!m.on)return '';if(m.pos==null)m.pos=0;if(!m.rj)m.rj='V';
+  let r=mmRead();if(r.blow&&m.fuse!==r.blow){m.fuse=r.blow;mmBeep();}
+  if(m.hold&&m.hr&&!r.off)r={...m.hr,note:'HOLD: القراءة مثبتة، اضغط HOLD لتحريرها'};else if(!r.off)m.hr=r;
   if(r.cont&&!m.beep)mmBeep();m.beep=!!r.cont;
-  const ang={off:-55,v:0,r:55},pos=a=>[75+42*Math.sin(a*Math.PI/180),166-42*Math.cos(a*Math.PI/180)];
-  const knob=['off','v','r'].map(k=>{const [px,py]=pos(ang[k]),on=m.mode===k;return `<g class="act" data-act="mm:mode:${k}"><title>${k==='off'?'إطفاء':k==='v'?'قياس الجهد المتردد':'قياس المقاومة والاستمرارية'}</title><circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="14" fill="${on?'#ffd24a':'#3a3f45'}"/><text x="${px.toFixed(1)}" y="${(py+4.5).toFixed(1)}" text-anchor="middle" style="font:700 12px sans-serif;fill:${on?'#1c1400':'#fff'}">${k==='off'?'OFF':k==='v'?'V~':'Ω'}</text></g>`;}).join('');
-  const [kx,ky]=pos(ang[m.mode]);
-  const jack=(p,x,lab,col)=>{const pk=S.mmPick===p,has=!!m[p];return `<g class="act" data-act="mm:probe:${p}"><title>${has?'إزالة':'وضع'} المجس ${p==='red'?'الأحمر':'الأسود'}</title><circle cx="${x}" cy="230" r="16" fill="transparent"/><circle cx="${x}" cy="230" r="11" fill="#111" stroke="${pk?'#ffd24a':col}" stroke-width="${pk?4:3}"/><circle cx="${x}" cy="230" r="4" fill="#555"/><text x="${x}" y="214" text-anchor="middle" style="font:700 9px sans-serif;fill:#fff">${lab}</text></g>`;};
+  const P=MP[m.pos],tx=(x,y,t,sz,c,w,a,ex)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:${w||700} ${sz}px sans-serif;fill:${c}" pointer-events="none"${ex||''}>${t}</text>`;
+  const lcd=r.off?'#8e9a86':r.warn?'#d9b6a8':'#bfcbb8',ink='#1e2619';
+  /* rotary switch: the labels around the knob are the positions; tap one, or tap the knob to step clockwise */
+  let dial='';MP.forEach((p,i)=>{const a=i*MSTEP*Math.PI/180,lx=MCX+66*Math.sin(a),ly=MCY-66*Math.cos(a)+2.6,dx=MCX+52*Math.sin(a),dy=MCY-52*Math.cos(a),on=i===m.pos;
+    const col=p[0]==='off'?'#fff':p[0]==='ohm'||p[0]==='cont'||p[0]==='cap'?'#bfe3ff':p[0]==='vac'||p[0]==='vdc'?'#fff':'#ffd9a0';
+    dial+=`<g class="act" data-act="mm:rng:${i}"><title>${p[0]==='off'?'إطفاء':p[2]}</title><circle cx="${lx.toFixed(1)}" cy="${(ly-2.6).toFixed(1)}" r="8.5" fill="${on?'rgba(255,210,74,.28)':'transparent'}"/>${tx(lx.toFixed(1),ly.toFixed(1),p[2],p[2].length>3?6:7,on?'#ffd24a':col)}</g><circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="1.3" fill="#9aa3ab" pointer-events="none"/>`;});
+  MGRP.forEach(([f,lab])=>{if(!lab)return;const ix=MP.map((p,i)=>p[0]===f?i:-1).filter(i=>i>=0);const a=(ix[0]+ix[ix.length-1])/2*MSTEP*Math.PI/180,R=f==='ohm'||f==='vac'?82:84;
+    dial+=tx((MCX+R*Math.sin(a)).toFixed(1),(MCY-R*Math.cos(a)+3).toFixed(1),lab,f==='cap'||f==='cont'?8:9.5,'#ffd24a');});
+  const ka=m.pos*MSTEP;
+  const knob=`<g class="act" data-act="mm:step"><title>تدوير المفتاح خطوة</title><circle cx="${MCX}" cy="${MCY}" r="44" fill="#151618" stroke="#3b3e42" stroke-width="2"/><circle cx="${MCX}" cy="${MCY}" r="38" fill="#232528"/>
+    <g transform="rotate(${ka.toFixed(1)} ${MCX} ${MCY})"><rect x="${MCX-11}" y="${MCY-44}" width="22" height="88" rx="10" fill="#2e3135" stroke="#46494e"/><path d="M${MCX} ${MCY-41}l-5 10h10z" fill="#e8ecef"/><line x1="${MCX}" y1="${MCY-30}" x2="${MCX}" y2="${MCY+30}" stroke="#3d4045" stroke-width="2"/></g></g>`;
+  const jack=(p,J,x,lab,col)=>{const sel=p==='red'?(m.red&&m.rj===J)||(S.mmPick==='red'&&m.rj===J):!!m.black,pk=S.mmPick===p&&(p!=='red'||m.rj===J);
+    return `<g class="act" data-act="mm:probe:${p}:${J}"><title>${lab}</title><circle cx="${x}" cy="350" r="17" fill="transparent"/><circle cx="${x}" cy="350" r="13" fill="#0e0f10" stroke="${pk?'#ffd24a':'#5b5f64'}" stroke-width="${pk?4:2.5}"/><circle cx="${x}" cy="350" r="8" fill="#26292c" stroke="${sel?col:'#3c4044'}" stroke-width="2.4"/><circle cx="${x}" cy="350" r="3.4" fill="#000"/></g>`;};
+  const F=r.u||'',ann=(t,x,y,on,sz)=>on?tx(x,y,t,sz||8,ink,800,'start'):'';
+  const note=mmWrap(r.note||'',46),fz=m.fuse;
   return `<g id="mmLeads" pointer-events="none">${mmLeadsSVG()}</g><g id="mmG" transform="translate(${m.x} ${m.y}) scale(${MS})">
-  <rect data-drag="mm" x="0" y="0" width="150" height="262" rx="18" fill="#f2b705" stroke="#8a6500" stroke-width="2" filter="url(#ds2)" style="cursor:move"><title>اسحب لتحريك الملتميتر</title></rect>
-  <rect data-drag="mm" x="8" y="30" width="134" height="224" rx="12" fill="#2b2f33" style="cursor:move"/>
-  <text data-drag="mm" x="60" y="21" text-anchor="middle" style="font:700 11px sans-serif;fill:#3a2a00;cursor:move">✥ ملتميتر</text>
-  <g class="act" data-act="mm:hide"><title>إخفاء الملتميتر</title><circle cx="130" cy="16" r="9" fill="#d8322b"/><path d="M126.5 12.5l7 7m0-7l-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
-  <rect x="16" y="38" width="118" height="52" rx="6" fill="${r.warn?'#f0b8ab':m.mode==='off'?'#7d8a70':'#b9c7a3'}" stroke="#111" stroke-width="1.5" pointer-events="none"/>
-  <text x="118" y="76" text-anchor="end" style="font:700 28px 'Courier New',monospace;fill:#1c2410" pointer-events="none">${r.t}</text>
-  <text x="22" y="52" style="font:700 11px sans-serif;fill:#1c2410" pointer-events="none">${r.u}</text>
-  <text x="75" y="103" text-anchor="middle" style="font:500 8.2px sans-serif;fill:${r.warn?'#ff9d8f':'#dfe6ec'}" pointer-events="none">${esc(r.note||'')}</text>
-  <circle cx="75" cy="166" r="24" fill="#1b1d20" stroke="#555" stroke-width="2" pointer-events="none"/><line x1="75" y1="166" x2="${(75+(kx-75)*.5).toFixed(1)}" y2="${(166+(ky-166)*.5).toFixed(1)}" stroke="#ffd24a" stroke-width="4" stroke-linecap="round" pointer-events="none"/>
-  ${knob}${jack('black',45,'COM','#888')}${jack('red',105,'VΩ','#d8322b')}
-  <text x="75" y="250" text-anchor="middle" style="font:500 8px sans-serif;fill:#c7d2dc" pointer-events="none">اضغط المقبس ثم الطرف</text></g>`;}
+  <rect data-drag="mm" x="0" y="0" width="${MMW}" height="384" rx="30" fill="#c8232a" stroke="#7d1116" stroke-width="2" filter="url(#ds2)" style="cursor:move"><title>اسحب لتحريك الملتميتر</title></rect>
+  <rect data-drag="mm" x="5" y="5" width="${MMW-10}" height="374" rx="26" fill="#e1312f" style="cursor:move"/>
+  <path data-drag="mm" d="M5 120q-4 60 0 120M${MMW-5} 120q4 60 0 120" stroke="#b01e24" stroke-width="5" fill="none"/>
+  <rect data-drag="mm" x="14" y="14" width="${MMW-28}" height="356" rx="16" fill="#2a2c2f" style="cursor:move"/>
+  <g class="act" data-act="mm:hide"><title>إخفاء الملتميتر</title><circle cx="${MMW-12}" cy="12" r="10" fill="#1b1b1b" stroke="#fff" stroke-width="1.5"/><path d="M${MMW-15.5} 8.5l7 7m0-7l-7 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
+  <rect x="24" y="24" width="${MMW-48}" height="88" rx="7" fill="#3c3f43" pointer-events="none"/>
+  <rect x="31" y="33" width="${MMW-62}" height="71" rx="4" fill="${lcd}" stroke="#15171a" stroke-width="1.5" pointer-events="none"/>
+  <g pointer-events="none">${r.off?'':seg7(String(r.t),MMW-48,48,40,ink)}
+   ${ann('AC',36,62,!r.off&&r.ac,10)}${ann('DC',36,62,!r.off&&r.dc,10)}${ann('APO',36,98,!r.off,8)}${ann('H',36,48,!r.off&&m.hold,9)}
+   ${!r.off&&r.beepy?tx(64,48,'•)))',8,ink,800):''}${!r.off&&r.dio?tx(64,48,'▶|',8,ink,800):''}
+   ${r.off?'':tx(MMW-36,46,F,10,ink,800,'end')}</g>
+  ${tx(52,127,'SEL/REL',7.5,'#fff')}${tx(MMW-52,127,'HOLD/☼',7.5,'#fff')}
+  <g class="act" data-act="mm:sel"><title>SEL: تبديل الاستمرارية/الدايود</title><rect x="34" y="131" width="36" height="16" rx="4" fill="#f2a20c" stroke="#9c6400"/></g>
+  <g class="act" data-act="mm:hold"><title>HOLD: تثبيت القراءة</title><rect x="${MMW-70}" y="131" width="36" height="16" rx="4" fill="#3f78d8" stroke="#1d4a96"/></g>
+  <g pointer-events="none"><circle cx="${MMW-26}" cy="139" r="7" fill="#1b1c1e" stroke="#555"/>${[[-3,-3],[3,-3],[-3,3],[3,3]].map(([a,b])=>`<circle cx="${MMW-26+a}" cy="${139+b}" r="1.1" fill="#888"/>`).join('')}</g>
+  ${dial}${knob}
+  ${tx(MCX,322,'4000 Count',9,'#fff',700,'middle',' font-style="italic"')}
+  ${tx(50,338,'10A',8,'#ffb3b3')}${tx(MCX,338,'COM',8,'#ffd24a')}${tx(160,338,'VΩµAmA',7.5,'#fff')}
+  <path d="M${77-6} 356l6 -11l6 11z M${133-6} 356l6 -11l6 11z" fill="#f2a20c" pointer-events="none"/>
+  ${jack('red','A',50,'المقبس 10A: للتيار الكبير فقط (المدى 10)','#d8322b')}${jack('black','C',MCX,'COM: المجس الأسود','#888')}${jack('red','V',160,'VΩµAmA: للجهد والمقاومة والتيار الصغير','#d8322b')}
+  ${tx(50,374,fz==='10A'?'FUSE ✕':'FUSED',6,fz==='10A'?'#ff8a80':'#c7cdd2')}${tx(160,374,fz==='mA'?'FUSE ✕':'FUSED',6,fz==='mA'?'#ff8a80':'#c7cdd2')}
+  <g pointer-events="none"><rect x="0" y="390" width="${MMW}" height="${14+note.length*12}" rx="9" fill="${r.warn?'rgba(120,20,20,.9)':'rgba(10,20,32,.85)'}"/>${note.map((l,i)=>tx(MMW/2,404+i*12,esc(l),9,r.warn?'#ffd2cc':'#e6edf3',600)).join('')}</g>
+  ${fz?`<g class="act" data-act="mm:fuse"><title>تبديل المصهر المحترق</title><rect x="${MMW-86}" y="${408+note.length*12}" width="86" height="20" rx="10" fill="#ffb300"/>${tx(MMW-43,422+note.length*12,'تبديل المصهر',9,'#1b1400',800)}</g>`:''}</g>`;}
 function mmMove(){const G=document.getElementById('mmG'),L=document.getElementById('mmLeads');if(G)G.setAttribute('transform',`translate(${S.mm.x} ${S.mm.y}) scale(${MS})`);if(L)L.innerHTML=mmLeadsSVG();}
+function mmAct(id,sg,a){const m=S.mm,J=a.split(':')[3];mmAudio();
+  if(id==='hide'){m.on=false;S.mmPick=null;}
+  else if(id==='rng'||id==='step'){m.pos=id==='rng'?+sg:((m.pos||0)+1)%MP.length;m.hold=false;if(MP[m.pos][0]!=='cont')m.dio=false;const p=MP[m.pos];say(p[0]==='off'?'الملتميتر مطفأ':'المفتاح على '+({vac:'V~ جهد متردد',vdc:'V⎓ جهد مستمر',aac:'A~ تيار متردد',adc:'A⎓ تيار مستمر',ua:'µA تيار صغير',ohm:'Ω مقاومة',cont:'الاستمرارية والدايود',cap:'المكثفات',hfe:'hFE ترانزستور'})[p[0]]+(p[0]==='cont'||p[0]==='cap'||p[0]==='hfe'?'':' بمدى '+p[2]));}
+  else if(id==='probe'){if(sg==='black'){if(m.black){m.black=null;S.mmPick=null;}else S.mmPick=S.mmPick==='black'?null:'black';}
+    else if(m.red){if(J&&J!==m.rj){m.rj=J;say('نُقل المجس الأحمر إلى مقبس '+(J==='A'?'10A':'VΩmA'));}else{m.red=null;S.mmPick=null;}}
+    else{if(J)m.rj=J;S.mmPick=S.mmPick==='red'?null:'red';}}
+  else if(id==='sel'){if(MP[m.pos][0]==='cont'){m.dio=!m.dio;say(m.dio?'وضع الدايود ▶|':'وضع الاستمرارية •)))');}else say('SEL يبدّل بين الاستمرارية والدايود عندما يكون المفتاح على ▶| •)))');}
+  else if(id==='hold'){m.hold=!m.hold;}
+  else if(id==='fuse'){m.fuse=null;say('بُدّل المصهر');}
+  return render();}
 document.getElementById('dMM').onclick=()=>{const m=S.mm;m.on=!m.on;S.mmPick=null;
   if(m.on){mmAudio();const r=svg.getBoundingClientRect(),vw=window.innerWidth,vh=window.innerHeight,wr=wrap.getBoundingClientRect();
     const cx=(Math.max(wr.left,0)+Math.min(wr.right,vw))/2,cy=(Math.max(r.top,0)+Math.min(r.bottom,vh))/2;
-    m.x=clampN((cx-r.left)/S.zoom-75*MS,0,W-150*MS);m.y=clampN((cy-r.top)/S.zoom-131*MS,0,H-262*MS);say('الملتميتر ظاهر: اسحبه من إطاره الأصفر، واضغط المقبس ثم الطرف لوضع المجس');}
+    m.x=clampN((cx-r.left)/S.zoom-MMW/2*MS,0,W-MMW*MS);m.y=clampN((cy-r.top)/S.zoom-MMH/2*MS,0,H-MMH*MS);say('الملتميتر ظاهر: اسحبه من إطاره الأحمر، أدر المفتاح إلى الوظيفة والمدى، ثم اضغط المقبس ثم الطرف لوضع كل مجس');}
   render();};
 
 /* ---------- explanations: live, circuits, components ---------- */
