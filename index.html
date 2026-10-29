@@ -276,8 +276,10 @@ body.fs .wrap{position:fixed;left:0;right:0;top:0;bottom:var(--dockh,120px);over
 .db svg{width:20px;height:26px}
 .db:focus-visible,.dsw:focus-visible,.dsel:focus-visible{outline:3px solid #ffb300;outline-offset:2px}
 .dsep{width:1px;height:38px;background:rgba(255,255,255,.2);flex:none}
-.dsw{width:32px;height:32px;border-radius:50%;flex:none;border:2px solid rgba(255,255,255,.55);cursor:pointer;padding:0}
-.dsw.cur{box-shadow:0 0 0 3px #ffb300}
+.dsw{width:66px;height:46px;border-radius:10px;flex:none;border:0;background:none;cursor:pointer;padding:2px}
+.dsw svg{display:block;width:100%;height:100%;pointer-events:none}
+.dsw.cur{background:rgba(255,179,0,.18);box-shadow:0 0 0 2.5px #ffb300}
+#cPop .cpn{display:none}
 .cdot{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.6)}
 .cpop{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,120px) + 8px);max-width:calc(100vw - 16px);box-sizing:border-box;background:rgba(11,19,30,.97);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:8px 10px;direction:rtl;display:none}
 .cpop.open{display:block}
@@ -2698,7 +2700,18 @@ document.addEventListener('pointerdown',e=>{if(pPop.classList.contains('open')&&
 pPop.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();partsPop(false);dParts.focus();}});
 function pickColor(c){curColor=c;document.querySelectorAll('[data-col]').forEach(x=>x.classList.toggle('cur',x.dataset.col===c));showCol();colPop(false);
   if(S.sel!=null){const w=S.wires.find(w=>w.id===S.sel);if(w){snap();if(c==='auto')w.ac=true;else{w.ac=false;w.c=c;}update();}}}
-[['auto',AUTON],...COLORS].forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.style.background=colBg(c);b.title=n;b.setAttribute('aria-label','سلك '+n);
+/* each colour is shown as a reel of wire in that colour (the 'auto' reel carries the standard colours side by side) */
+function spoolSVG(c){const AU=['#7a4a22','#1b1b1b','#8e949a','#e0342f','#ff8a1f','#4aa3df'],x0=17,x1=60,y0=7,y1=41,id='sp'+String(c).replace(/[^a-z0-9]/gi,'');let body='';
+  if(c==='auto')AU.forEach((k,i)=>{body+=`<rect x="${x0+8+i*6}" y="${y0}" width="6.2" height="${y1-y0}" fill="${k}"/>`;});
+  else{body=`<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" fill="${c===PEW?'#f2c200':c}"/>`;if(c===PEW)for(let x=x0-8;x<x1;x+=6)body+=`<path d="M${x} ${y1}L${x+10} ${y0}" stroke="#2aa84a" stroke-width="2.4"/>`;}
+  let wind='';for(let x=x0+1.5;x<x1;x+=2.6)wind+=`<path d="M${x.toFixed(1)} ${y0}l1.2 ${y1-y0}" stroke="rgba(0,0,0,.22)" stroke-width=".8"/><path d="M${(x+1.1).toFixed(1)} ${y0}l1.2 ${y1-y0}" stroke="rgba(255,255,255,.22)" stroke-width=".6"/>`;
+  const end=c==='auto'?'#4aa3df':c===PEW?'#f2c200':c;
+  return `<svg viewBox="0 0 72 48" aria-hidden="true"><defs><clipPath id="${id}c"><rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}"/></clipPath><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient></defs>`+
+    `<ellipse cx="${x1}" cy="24" rx="9" ry="21" fill="#e6eaee" stroke="#aab3bb" stroke-width="1"/><g clip-path="url(#${id}c)">${body}${wind}</g><rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" fill="url(#${id}g)"/>`+
+    `<ellipse cx="${x1}" cy="24" rx="7" ry="17" fill="${end}" stroke="rgba(0,0,0,.3)" stroke-width=".8"/><ellipse cx="${x1}" cy="24" rx="7" ry="17" fill="url(#${id}g)"/>`+
+    `<ellipse cx="${x0}" cy="24" rx="10" ry="22" fill="#f7f8fa" stroke="#b9c1c8" stroke-width="1.2"/><path d="M${x0-7.4} 38.5a10 22 0 0 0 14.8 0z" fill="#1f5fbf" opacity=".9"/>`+
+    `<ellipse cx="${x0}" cy="22" rx="4.6" ry="9.5" fill="#d3d9de" stroke="#9aa3ab" stroke-width="1"/><ellipse cx="${x0+.6}" cy="22" rx="2.2" ry="5" fill="#7d868e"/></svg>`;}
+[['auto',AUTON],...COLORS].forEach(([c,n])=>{[[dsw,'dsw']].forEach(([box,cls])=>{const b=document.createElement('button');b.className=cls+(c===curColor?' cur':'');b.dataset.col=c;b.innerHTML=spoolSVG(c);b.title=n;b.setAttribute('aria-label','سلك '+n);
   b.onclick=()=>pickColor(c);b.onmouseenter=b.onfocus=()=>{document.getElementById('cpN').textContent=n;};b.onmouseleave=b.onblur=showCol;box.appendChild(b);});});
 showCol();
 const wrap=document.getElementById('wrap');
