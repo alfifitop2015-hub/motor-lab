@@ -280,6 +280,7 @@ body.fs .wrap{position:fixed;left:0;right:0;top:0;bottom:var(--dockh,120px);over
 .dsw svg{display:block;width:100%;height:100%;pointer-events:none}
 .dsw.cur{background:rgba(255,179,0,.18);box-shadow:0 0 0 2.5px #ffb300}
 #cPop .cpn{display:none}
+.cspool{display:block;width:40px;height:27px;margin:0 auto 1px}.db .cspool svg,.cspool svg{display:block;width:40px!important;height:27px!important}
 .cdot{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.6)}
 .cpop{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(var(--dockh,120px) + 8px);max-width:calc(100vw - 16px);box-sizing:border-box;background:rgba(11,19,30,.97);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);padding:8px 10px;direction:rtl;display:none}
 .cpop.open{display:block}
@@ -593,7 +594,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
     <button class="db fs-only" id="dExit" title="خروج من ملء الشاشة" aria-label="خروج من ملء الشاشة"><span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v6H3M21 9h-6V3M15 21v-6h6M3 15h6v6"/></svg></span>خروج</button>
     <button class="db" id="dSd" title="مخطط دائرة القوى والتحكم للتمرين"><span class="ic">📐</span>المخطط</button>
         <span class="dsep"></span>
-    <button class="db full" id="dCol" aria-haspopup="true" aria-expanded="false" aria-controls="cPop" title="اختيار لون السلك"><span class="ic"><i class="cdot" id="dColDot"></i></span>لون السلك ▾</button>
+    <button class="db full" id="dCol" aria-haspopup="true" aria-expanded="false" aria-controls="cPop" title="اختيار لون السلك"><span class="ic"><i class="cspool" id="dColDot"></i></span>الأسلاك ▾</button>
     <span class="dsep full"></span>
     <button class="db full" id="dParts" aria-haspopup="true" aria-expanded="false" aria-controls="pPop" title="المكونات: كونتاكتور، مؤقت، أوفرلود، نقاط مساعدة، ضواغط ولمبات"><svg viewBox="0 0 34 44" aria-hidden="true"><rect x="1" y="1" width="32" height="42" rx="4" fill="#dcdcd6"/><rect x="4" y="12" width="20" height="20" rx="2" fill="#8d9398"/><rect x="8" y="20" width="12" height="5" rx="1" fill="#2fbf5b"/></svg>المكونات ▾<span class="cnt" id="dPartsN"></span></button>
     <button class="db full" id="dMM" title="ملتميتر للقياس"><span class="ic">📟</span>ملتميتر</button>
@@ -2679,7 +2680,7 @@ const colBg=c=>c==='auto'?'conic-gradient(#7a4a22 0 60deg,#1b1b1b 0 120deg,#8e94
 function colPop(o){cPop.classList.toggle('open',o);dCol.setAttribute('aria-expanded',o?'true':'false');dCol.classList.toggle('hl',o);
   if(o){const b=dsw.querySelector('.cur');if(b){b.scrollIntoView({block:'nearest',inline:'center'});b.focus({preventScroll:true});}}}
 const AUTON='تلقائي: القوى بني/أسود/رمادي، تغذية التحكم أحمر، المخارج برتقالي، الملفات أبيض، اللمبات أصفر، مداخل PLC أخضر، التعادل أزرق فاتح';
-function showCol(){const k=curColor==='auto'?['auto',AUTON]:COLORS.find(x=>x[0]===curColor);document.getElementById('dColDot').style.background=colBg(curColor);
+function showCol(){const k=curColor==='auto'?['auto',AUTON]:COLORS.find(x=>x[0]===curColor);document.getElementById('dColDot').innerHTML=spoolSVG(curColor);
   document.getElementById('cpN').textContent=k?k[1]:'';dCol.title='لون السلك: '+(k?k[1]:'');}
 dCol.onclick=e=>{e.stopPropagation();colPop(!cPop.classList.contains('open'));};
 document.addEventListener('pointerdown',e=>{if(cPop.classList.contains('open')&&!cPop.contains(e.target)&&!dCol.contains(e.target))colPop(false);});
