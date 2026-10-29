@@ -558,6 +558,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <button class="mi trainer-only" id="bRates">⭐ تقييمات الاستفادة</button>
         <button class="mi trainer-only" id="bWReal">🧪 التوصيل الواقعي (تجريبي)</button>
+        <button class="mi trainer-only" id="bLine">🏭 خط الإنتاج (تجريبي)</button>
         <button class="mi trainer-only" id="bReal">📷 تقييم لوحة حقيقية بالصور</button>
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
         <button class="mi trainer-only" id="bShare">⇪ مشاركة التوصيلات</button>
@@ -683,6 +684,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
 </div>
 <div id="pnOverlay" style="position:fixed;inset:0;z-index:200;background:#e6ebf0;display:none" aria-label="ورشة التحكم الهوائي"></div>
 <div id="ftOverlay" style="position:fixed;inset:0;z-index:200;background:#e6ebf0;display:none" aria-label="شنطة اكتشاف الأعطال"></div>
+<div id="lnOverlay" style="position:fixed;inset:0;z-index:200;background:#e6ebf0;display:none" aria-label="خط الإنتاج"></div>
 <div class="modal" id="resModal" role="dialog" aria-modal="true" aria-labelledby="rT">
   <div class="box appbox" style="max-width:640px">
     <div class="ah"><h2 id="rT">📋 نتائج المتدربين</h2><button class="btn" id="rClose">إغلاق</button></div>
@@ -3787,6 +3789,13 @@ const CLOUD_URL='https://script.google.com/macros/s/AKfycbyesF3VDtXbCItHAKyqflcU
     ov.style.display='block';document.body.style.overflow='hidden';const d=document.querySelector('.more');if(d)d.open=false;};
   ['bFault','bFault2'].forEach(i=>{$(i).href='#';$(i).onclick=openFt;});
   try{if(sessionStorage.getItem('wsApp')==='ft')openFt();}catch(_){}}
+/* the production line (trainer trial): its own page in a frame over the simulator, kept open across a refresh like the workshops */
+{let fr=null;const ov=$('lnOverlay'),ssS=(v)=>{try{v?sessionStorage.setItem('wsApp',v):sessionStorage.removeItem('wsApp');}catch(_){}};
+  window.__lnClose=()=>{ov.style.display='none';document.body.style.overflow='';ssS(null);};
+  const openLn=e=>{e&&e.preventDefault();ssS('ln');if(!fr){fr=document.createElement('iframe');fr.title='خط الإنتاج';fr.style.cssText='border:0;width:100%;height:100%;display:block';fr.src='line.html';ov.appendChild(fr);}
+    ov.style.display='block';document.body.style.overflow='hidden';const d=document.querySelector('.more');if(d)d.open=false;};
+  $('bLine').onclick=openLn;
+  try{if(sessionStorage.getItem('wsApp')==='ln'&&document.body.classList.contains('trainer'))openLn();}catch(_){}}
 const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
 if(CLOUD_ON)setTimeout(()=>cloud({action:'pinGet'}).then(j=>{if(j.v==null)return;const v=String(j.v),old=lsG('wsPinV');lsS('wsPinV',v);
   if(old!=null&&old!==v){PINH=PIN0;lsS('wsPinH2',null);if(document.body.classList.contains('trainer')){setTrainer(false);try{trLeave();}catch(_){}say('تغيّر الرقم السري للمدرب، فأُغلق وضع المدرب. ادخل بالرقم الجديد.');renderTop();}}}).catch(()=>{}),1500);
