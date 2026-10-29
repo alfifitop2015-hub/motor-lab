@@ -329,7 +329,7 @@ const DEF={
  lamp:{n:'لمبة بيان 24V',pre:'H',w:90,h:120,e:{X1:[24,100],X2:[66,100]}},
  lse:{n:'مفتاح نهاية مشوار كهربائي',pre:'1B',w:120,h:96,e:{'1':[24,78],'2':[60,78],'4':[96,78]}},
  compr:{n:'الكمبرسر (ضاغط الهواء)',g:'Z',w:270,h:170,ports:{}},
- supply:{n:'وحدة الإمداد بالهواء',g:'Z',w:370,h:220,ports:Object.fromEntries([1,2,3,4,5,6,7,8].map(i=>['P'+i,[248+((i-1)%4)*32,i<5?160:196,'d']]))}};
+ supply:{n:'وحدة الإمداد بالهواء',g:'Z',w:370,h:220,ports:Object.fromEntries([1,2,3,4,5,6,7,8].map(i=>['P'+i,[248+((i-1)%4)*32+(i<5?0:16),i<5?160:196,'d']]))}};
 Object.values(DEF).forEach(d=>{d.ports=d.ports||{};});
 const LIB=['cyl1','cyl2','v32nc','v32no','v32sel','v32rol','v32pil','v52man','v52ps','v52pp','or','and','fcv','tim','gauge','tee','psu','pbno','pbnc','swe','relay','timer','counter','lamp','lse','v32sol','v52sol','v52dsol'];
 const SHORT={cyl1:'أسطوانة مفردة',cyl2:'أسطوانة مزدوجة',v32nc:'3/2 مغلق',v32no:'3/2 مفتوح',v32sel:'3/2 اختيار',v32rol:'3/2 بكرة',v32pil:'3/2 هوائي',v52man:'5/2 يدوي',v52ps:'5/2 هوائي',v52pp:'5/2 ذاكرة',or:'OR اختيار',and:'AND مزدوج',fcv:'خانق',tim:'تأخير زمني',gauge:'مانومتر',tee:'موزع T',psu:'مصدر 24V',pbno:'ضاغط NO',pbnc:'ضاغط NC',swe:'مفتاح اختيار',relay:'مرحل K',timer:'مؤقت KT',counter:'عداد KZ',lamp:'لمبة H',lse:'نهاية مشوار ك',v32sol:'3/2 كهربائي',v52sol:'5/2 كهربائي',v52dsol:'5/2 بملفين'};
@@ -527,8 +527,8 @@ function drawComp0(c){const D=DEF[c.t],s=c.s,id=c.id;let o='';
       <g class="act" data-act="air"><title>صمام الإغلاق (الكرة): فتح/إغلاق الهواء</title><rect x="198" y="90" width="24" height="40" rx="4" fill="#1d2126"/>
         <rect x="${on?204:186}" y="${on?84:104}" width="${on?12:36}" height="${on?36:12}" rx="5" fill="#1e63d6" stroke="#0c3b8a"/>${T(236,112,on?'مفتوح':'مغلق',10,on?'#1a8a42':'#c42b22',800,'start')}</g>
       <path d="M210 130V196q0 16 14 16q10 0 10 -12V172" fill="none" stroke="#0f5ea8" stroke-width="9" stroke-linejoin="round"/><path d="M210 130V196q0 16 14 16q10 0 10 -12V172" fill="none" stroke="${on?'url(#gHose)':'#8fbfe6'}" stroke-width="6" stroke-linejoin="round"/>
-      <g data-drag="${id}"><rect x="232" y="136" width="132" height="74" rx="4" fill="url(#gAlu)" stroke="#7d868d" stroke-width="1.5"/>${T(250,148,'⊸◇',9,'#333')}${T(296,148,'DISTRIBUTOR',7.5,'#333',700)}${T(356,148,'PN. 12201',6.5,'#555',600,'end')}
-        <path d="M244 178h112" stroke="#555" stroke-width="1"/><rect x="226" y="164" width="14" height="14" rx="3" fill="#1d2126"/></g>`;return o;}
+      <g data-drag="${id}"><rect x="232" y="136" width="138" height="74" rx="4" fill="url(#gAlu)" stroke="#7d868d" stroke-width="1.5"/>${T(250,148,'⊸◇',9,'#333')}${T(296,148,'DISTRIBUTOR',7.5,'#333',700)}${T(356,148,'PN. 12201',6.5,'#555',600,'end')}
+        <path d="M244 178h118" stroke="#555" stroke-width="1"/><rect x="226" y="164" width="14" height="14" rx="3" fill="#1d2126"/></g>`;return o;}
   case'cyl1':case'cyl2':{const x=s.x||0,dx=(x*150).toFixed(1),two=c.t==='cyl2';o+=body(c,D.w,D.h,two?'مزدوجة الفعل':'مفردة الفعل');
     const ck=id+'.'+(two?'A':'1'),cF=fillF(ck)>0,rF=two&&fillF(id+'.B')>0,v=cylSpeed(c),mv=v&&!((v>0&&x>=1)||(v<0&&x<=0));
     const cs=cF?(mv&&v>0?'aR':'aS'):(mv&&v<0?'aL':''),rs=rF?(mv&&v<0?'aL':'aS'):(two&&mv&&v>0?'aR':''),tint=(st,p)=>st?(p?'rgba(31,111,229,.62)':'rgba(111,179,234,.45)'):'none';
@@ -638,6 +638,8 @@ function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)re
   const sk=new Uint8Array(N),skM=(X,Y,r)=>{for(let gy=Math.max(0,Math.floor((Y-r)/RG));gy<=Math.min(RR-1,Math.ceil((Y+r)/RG));gy++)for(let gx=Math.max(0,Math.floor((X-r)/RG));gx<=Math.min(RC-1,Math.ceil((X+r)/RG));gx++)if(Math.hypot(gx*RG-X,gy*RG-Y)<r)sk[gy*RC+gx]=1;};
   S.comps.forEach(c=>{const E=DEF[c.t].e;if(!E)return;Object.values(E).forEach(([ex,ey])=>{skM(c.x+ex,c.y+ey,11.5);if(c.t!=='psu'&&!/^v[35]/.test(c.t))skM(c.x+ex,c.y+ey-15,7.5);});});
   S.comps.forEach(c=>{if(c.t!=='psu')return;for(let x=c.x+10;x<=c.x+DEF.psu.w-10;x+=8)skM(x,c.y+32,12);});
+  /* hose ports: a hose keeps off every port that is not its own, so it never runs over a fitting */
+  const pm=new Uint8Array(N);S.comps.forEach(c=>Object.values(DEF[c.t].ports).forEach(([px,py])=>{const X=c.x+px,Y=c.y+py;for(let gy=Math.max(0,Math.floor((Y-14)/RG));gy<=Math.min(RR-1,Math.ceil((Y+14)/RG));gy++)for(let gx=Math.max(0,Math.floor((X-14)/RG));gx<=Math.min(RC-1,Math.ceil((X+14)/RG));gx++)if(Math.hypot(gx*RG-X,gy*RG-Y)<14)pm[gy*RC+gx]=1;}));
   for(let i=0;i<N;i++)if(!blk[i]){const x=i%RC;if((x>0&&blk[i-1])||(x<RC-1&&blk[i+1])||(i>=RC&&blk[i-RC])||(i<N-RC&&blk[i+RC]))near[i]=1;}
   const end=(k,P0,c0)=>{const P=P0||portXY(k),c=c0||comp(k.split('.')[0]);if(!P||!c)return null;
     if(k.includes('.~')){const D=DEF[c.t];return{P,dx:0,dy:1,gx:Math.round(P.x/RG),gy:Math.round(P.y/RG),d:2,sock:true,r:[c.x-8,c.y-8,c.x+D.w+8,c.y+D.h+8]};}const [dx,dy]=DV[P.s],D=DEF[c.t],own=(gx,gy)=>gx*RG>=c.x-8&&gx*RG<=c.x+D.w+8&&gy*RG>=c.y-8&&gy*RG<=c.y+D.h+8;let gx=Math.round(P.x/RG),gy=Math.round(P.y/RG);
@@ -650,7 +652,7 @@ function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)re
   if(cp&&su)T2.unshift({t:{id:'feed'},a:end('',{x:cp.x+250,y:cp.y+22,s:'u'},cp),b:end('',{x:su.x+44,y:su.y+96,s:'l'},su)});
   const len=q=>Math.abs(q.a.gx-q.b.gx)+Math.abs(q.a.gy-q.b.gy);
   T2.push(...S.ew.map(w=>({t:{id:'w'+w.id},a:end(w.a),b:end(w.b)})).filter(q=>q.a&&q.b).sort((p,q)=>len(p)-len(q)));
-  T2.forEach(({t,a,b})=>{const c=rAstar(a,b,blk,near,oH,oV,sk);if(!c)return;
+  T2.forEach(({t,a,b})=>{const c=rAstar(a,b,blk,near,oH,oV,sk,pm);if(!c)return;
     for(let i=0;i<c.length-1;i++){const h=c[i]%RC!==c[i+1]%RC;(h?oH:oV)[c[i]]=1;(h?oH:oV)[c[i+1]]=1;}
     let P=c.map(i=>[(i%RC)*RG,((i/RC)|0)*RG]);
     const lead=(e,arr)=>{const k=e.dy?0:1,v=e.dy?e.P.x:e.P.y,g=arr[0][k];for(let i=0;i<arr.length&&arr[i][k]===g;i++)arr[i][k]=v;};
@@ -659,14 +661,14 @@ function routes(){if(S.drg||S.arr)return null;const key=rtKey();if(RT.k===key)re
     if(a.sock)sock(a,P);else lead(a,P);P.reverse();if(b.sock)sock(b,P);else lead(b,P);P.reverse();P=[...(a.sock?[]:[[a.P.x,a.P.y]]),...P,...(b.sock?[]:[[b.P.x,b.P.y]])];
     const Q=[P[0]];for(let i=1;i<P.length-1;i++){const p0=Q[Q.length-1],p1=P[i],p2=P[i+1];if((p0[0]===p1[0]&&p1[0]===p2[0])||(p0[1]===p1[1]&&p1[1]===p2[1]))continue;Q.push(p1);}Q.push(P[P.length-1]);m.set(t.id,Q);});
   RT={k:key,m};return m;}
-function rAstar(a,b,blk,near,oH,oV,sk){const N=RC*RR,g=new Float32Array(N*4).fill(1e9),fr=new Int32Array(N*4).fill(-1),gc=b.gy*RC+b.gx,rd=(b.d+2)%4;
+function rAstar(a,b,blk,near,oH,oV,sk,pm){const N=RC*RR,g=new Float32Array(N*4).fill(1e9),fr=new Int32Array(N*4).fill(-1),gc=b.gy*RC+b.gx,rd=(b.d+2)%4;
   const hf=[],hs=[],push=(f,st)=>{let i=hf.length;hf.push(f);hs.push(st);while(i){const pi=(i-1)>>1;if(hf[pi]<=f)break;hf[i]=hf[pi];hs[i]=hs[pi];i=pi;}hf[i]=f;hs[i]=st;},
     pop=()=>{const st=hs[0],lf=hf.pop(),ls=hs.pop();if(hf.length){let i=0;for(;;){let c=2*i+1;if(c>=hf.length)break;if(c+1<hf.length&&hf[c+1]<hf[c])c++;if(hf[c]>=lf)break;hf[i]=hf[c];hs[i]=hs[c];i=c;}hf[i]=lf;hs[i]=ls;}return st;};
   const ci0=a.gy*RC+a.gx,own=(e,x,y)=>e.r&&x*RG>=e.r[0]&&x*RG<=e.r[2]&&y*RG>=e.r[1]&&y*RG<=e.r[3];
   if(a.sock)for(let d=0;d<4;d++){g[ci0*4+d]=0;push(0,ci0*4+d);}else{const s0=ci0*4+a.d;g[s0]=0;push(0,s0);}let n=0,goal=-1;
   while(hf.length&&n++<90000){const st=pop(),ci=st>>2,d=st&3,gx=ci%RC,gy=(ci/RC)|0,g0=g[st];if(ci===gc){goal=st;break;}
     for(let nd=0;nd<4;nd++){if(nd===((d+2)&3))continue;const nx=gx+RDX[nd],ny=gy+RDY[nd];if(nx<0||ny<0||nx>=RC||ny>=RR)continue;const ni=ny*RC+nx;if(sk&&sk[ni]&&!(a.sock&&Math.hypot(nx*RG-a.P.x,ny*RG-a.P.y)<13)&&!(b.sock&&Math.hypot(nx*RG-b.P.x,ny*RG-b.P.y)<13))continue;
-      let cost=1+(blk[ni]&&ni!==gc?(own(a,nx,ny)||own(b,nx,ny)?7:30):0)+(nd!==d?6:0)+(near[ni]?.6:0)+((nd&1)?(oH[ni]?14:0)+(oV[ni]?1.5:0):(oV[ni]?14:0)+(oH[ni]?1.5:0));
+      let cost=1+(pm&&pm[ni]&&!(Math.hypot(nx*RG-a.P.x,ny*RG-a.P.y)<16)&&!(Math.hypot(nx*RG-b.P.x,ny*RG-b.P.y)<16)?80:0)+(blk[ni]&&ni!==gc?(own(a,nx,ny)||own(b,nx,ny)?7:30):0)+(nd!==d?6:0)+(near[ni]?.6:0)+((nd&1)?(oH[ni]?14:0)+(oV[ni]?1.5:0):(oV[ni]?14:0)+(oH[ni]?1.5:0));
       if(ni===gc&&!b.sock)cost+=nd===rd?0:nd===b.d?40:6;const ns=ni*4+nd,ng=g0+cost;
       if(ng<g[ns]){g[ns]=ng;fr[ns]=st;push(ng+Math.abs(nx-b.gx)+Math.abs(ny-b.gy),ns);}}}
   if(goal<0)return null;const c=[];for(let st=goal;st>=0;st=fr[st])c.push(st>>2);return c.reverse();}
