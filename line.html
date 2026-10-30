@@ -28,7 +28,26 @@ button,select,input{font:inherit;color:inherit}
 .pane{display:none;background:var(--panel);min-height:60vh;padding-bottom:60px}.pane.on{display:block}
 .msg{padding:6px 10px;font-size:.88rem;font-weight:700;color:#fff;background:#1a3a5c}.msg.err{background:var(--warn)}.msg:empty{display:none}
 .scene{overflow-x:auto;direction:ltr;background:#cfd6dc}
-.scene svg{display:block;width:100%;min-width:880px;height:auto}
+.scene svg{display:block;width:100%;height:auto}
+.scene.free svg{min-width:880px}
+#stage{position:relative;background:#cfd6dc}
+.cap{position:absolute;top:8px;right:8px;left:8px;display:flex;gap:6px;align-items:flex-start;pointer-events:none;z-index:2}
+.cap span{background:rgba(10,20,32,.82);color:#fff;border-radius:10px;padding:5px 10px;font-size:.88rem;font-weight:700;line-height:1.4;max-width:80%}
+.cap .gp{margin-inline-start:auto;background:rgba(26,138,66,.9)}
+.camb{position:absolute;bottom:8px;left:8px;display:flex;gap:6px;z-index:3}
+.camb button{border:0;border-radius:10px;background:rgba(10,20,32,.78);color:#fff;font-weight:700;padding:6px 10px;cursor:pointer;font-size:.85rem}
+.tbar{display:none}
+#stage.th{position:fixed;inset:0;z-index:100;background:#0d1620;display:flex;flex-direction:column}
+#stage.th .scene{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage.th .scene svg{width:100%;height:100%;min-width:0}
+#stage.th .tbar{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:#0d1620}
+#stage.th .tbar .ob{background:#1d2a38;border-color:#33465a;color:#fff;min-width:54px;padding:4px 6px;font-size:.72rem}
+#stage.th .tbar .ob i{width:30px;height:30px;line-height:24px;font-size:.85rem}
+#stage.th .camb{display:none}
+.rot{display:none}
+@media (orientation:portrait){#stage.th .rot{display:block;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.75);color:#fff;padding:12px 16px;border-radius:12px;font-weight:700;z-index:4;pointer-events:none;text-align:center}}
+@media (orientation:landscape) and (max-height:560px){.top .bar1 h1 .credit{display:none}.top .bar1{padding:4px 10px 2px}.bar2{padding:2px 10px 4px}.msg{padding:3px 10px}
+  #p-line{display:none}#p-line.on{display:grid;grid-template-columns:minmax(0,1fr) 230px;align-items:start}#p-line.on #stage{grid-row:1/span 4}#p-line.on .ops{gap:5px;padding:6px}#p-line.on .ob{min-width:48px;padding:3px 4px;font-size:.66rem}#p-line.on .ob i{width:28px;height:28px;line-height:22px;font-size:.8rem}#p-line.on .chips,#p-line.on .goals{font-size:.8rem}#p-line.on .plcv{grid-column:1/span 2}}
 .ops{display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px;align-items:center}
 .ob{display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:6px 8px;min-width:64px;cursor:pointer;font-size:.78rem;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none}
 .ob i{display:block;width:38px;height:38px;border-radius:50%;border:3px solid rgba(0,0,0,.3);font-style:normal;color:#fff;font-weight:800;line-height:32px;text-align:center;font-size:1rem}
@@ -83,7 +102,11 @@ table.io td.a{direction:ltr;text-align:left;font-family:monospace;font-weight:70
   <div class="msg" id="msg"></div>
 </div>
 <div class="pane" id="p-line">
-  <div class="scene"><svg id="sc" viewBox="0 0 1420 600" role="img" aria-label="خط الإنتاج"></svg></div>
+  <div id="stage"><div class="scene"><svg id="sc" viewBox="0 0 1420 600" role="img" aria-label="خط الإنتاج"></svg></div>
+    <div class="cap"><span id="capT"></span><span class="gp" id="capG"></span></div>
+    <div class="camb"><button id="camM" title="الكاميرا: تتبع تلقائي لمكان العمل، أو الخط كله، أو تحريك يدوي">🎥 تلقائي</button><button id="thB" title="عرض كامل الشاشة بالعرض مثل الفيديو">⛶ عرض</button></div>
+    <div class="rot">🔄 أدر الجوال للوضع الأفقي</div>
+    <div class="tbar" id="tbar"></div></div>
   <div class="ops" id="ops"></div>
   <div class="chips" id="chips"></div>
   <div class="goals" id="goals"></div>
@@ -476,18 +499,21 @@ function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{
   if(L.brk)s+=`<rect x="440" y="250" width="540" height="60" rx="12" fill="#b3261e"/>${T(710,288,'قصر بين الأطوار: القاطع الرئيسي Q0 فصل',18,'#fff')}`;
   return s;}
 /* ---------- operator panel ---------- */
-function renderOps(){const o=$('ops');let h='';
+function bindPB(root){root.querySelectorAll('[data-pb]').forEach(b=>{const k=b.dataset.pb,dn=e=>{e.preventDefault();L.press.add(k);b.classList.add('dn');try{b.setPointerCapture(e.pointerId);}catch(_){}},up=()=>{L.press.delete(k);b.classList.remove('dn');};
+    b.addEventListener('pointerdown',dn);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);});}
+function pbHTML(){return [['S1','#2aa84a','I','تشغيل S1'],['S0','#d8322b','O','إيقاف S0'],['S2','#2aa84a','I','تشغيل الخلاط S2'],['S3','#d8322b','O','إيقاف الخلاط S3']].filter(b=>EX.in.includes(b[0])).map(([k,c,t,n])=>`<button class="ob" data-pb="${k}" title="${n}"><i style="background:${c}">${t}</i>${n}</button>`).join('');}
+function renderOps(){const o=$('ops');let h='';$('tbar').innerHTML=pbHTML()+`<button class="ob" id="tOlR"><i style="background:#1f5fbf">↺</i>أوفرلود</button><button class="ob" id="tRst"><i style="background:#6b747d">⟲</i>تفريغ</button><button class="ob" id="tCam"><i style="background:#0b3d91">🎥</i>الكاميرا</button><button class="ob" id="tX"><i style="background:#444">✕</i>خروج</button>`;bindPB($('tbar'));
+  $('tOlR').onclick=()=>{L.olTrip={};L.brk=false;};$('tRst').onclick=()=>{L.PL=plantNew(EX);L.g={};L.gx={};L.h={};L.err=[];};$('tCam').onclick=camNext;$('tX').onclick=thOff;
   const btns=[['S1','#2aa84a','I','تشغيل S1'],['S0','#d8322b','O','إيقاف S0'],['S2','#2aa84a','I','تشغيل الخلاط S2'],['S3','#d8322b','O','إيقاف الخلاط S3']].filter(b=>EX.in.includes(b[0]));
   btns.forEach(([k,c,t,n])=>{h+=`<button class="ob" data-pb="${k}" title="${n}"><i style="background:${c}">${t}</i>${n}</button>`;});
   h+=`<button class="ob" id="oQ0" title="القاطع الرئيسي Q0: يعيده بعد الفصل"><i style="background:#555">Q0</i>إعادة Q0</button><button class="ob" id="oOlR" title="إعادة ضبط كل الأوفرلودات"><i style="background:#1f5fbf">↺</i>إعادة الأوفرلود</button>
     <button class="ob" id="oOlT" title="محاكاة فصل الأوفرلود أثناء التشغيل"><i style="background:#ff9f1a">!</i>اختبار الأوفرلود</button><button class="ob" id="oRst" title="تفريغ الخط والبدء من جديد"><i style="background:#6b747d">⟲</i>تفريغ الخط</button>`;
   o.innerHTML=h;
-  o.querySelectorAll('[data-pb]').forEach(b=>{const k=b.dataset.pb,dn=e=>{e.preventDefault();L.press.add(k);b.classList.add('dn');try{b.setPointerCapture(e.pointerId);}catch(_){}},up=()=>{L.press.delete(k);b.classList.remove('dn');};
-    b.addEventListener('pointerdown',dn);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);});
+  bindPB(o);
   $('oQ0').onclick=()=>{L.brk=false;say('أُعيد القاطع الرئيسي Q0');};$('oOlR').onclick=()=>{L.olTrip={};say('أُعيد ضبط الأوفرلود');};
   $('oOlT').onclick=()=>{olTest(L);say('فُصل الأوفرلود '+MOT[EX.mot[0]].f+' للاختبار: يجب أن يتوقف المحرك. أعد ضبطه بزر «إعادة الأوفرلود».');};
   $('oRst').onclick=()=>{L.PL=plantNew(EX);L.g={};L.gx={};L.h={};L.err=[];say('فُرّغ الخط');};}
-function renderLine(){$('sc').innerHTML=scene();const E=L.EL||{};let c='';
+function renderLine(){$('sc').innerHTML=scene();camApply();const E=L.EL||{};let c='';
   if(E.mix||E.dcShort||L.brk)c+=`<span class="bad">${esc((E.err||[])[0]||'القاطع Q0 مفصول')}</span>`;
   if(!E.plcPw&&!E.mix)c+=`<span class="bad">PLC غير مغذى: وصّل L+ وM للجهاز من المصدر 24V</span>`;else if(E.plcPw&&!E.dimOk)c+=`<span class="bad">المداخل لا تعمل: وصّل 1M بـ M</span>`;else if(E.plcPw&&!E.dolOk&&EX.out.length)c+=`<span class="bad">المخارج لا تعمل: وصّل ${MODEL==='300'?'2L+ و2M':'3L+ و3M'}</span>`;
   Object.keys(L.olTrip).forEach(f=>{if(L.olTrip[f])c+=`<span class="bad">الأوفرلود ${f} فاصل</span>`;});
@@ -498,7 +524,8 @@ function renderLine(){$('sc').innerHTML=scene();const E=L.EL||{};let c='';
   $('chips').innerHTML=c;
   $('goals').innerHTML='<b>المطلوب في هذا التمرين:</b><ul>'+EX.goals.map(k=>`<li>${L.g[k]?'✅':L.gx[k]?'❌':'⬜'} ${esc(GOALS[k])}</li>`).join('')+'</ul>'+(EX.goals.every(k=>L.g[k])?'<div class="note" style="color:var(--ok);font-weight:700">🎉 أحسنت! أنجزت كل مطالب التمرين.</div>':'');
   $('plcv').innerHTML=plcSVG();
-  document.querySelectorAll('#ops [data-pb]').forEach(b=>b.classList.toggle('dn',L.press.has(b.dataset.pb)));}
+  document.querySelectorAll('#ops [data-pb],#tbar [data-pb]').forEach(b=>b.classList.toggle('dn',L.press.has(b.dataset.pb)));
+  const n=EX.goals.filter(k=>L.g[k]).length;$('capG').textContent=n===EX.goals.length?'🎉 اكتمل التمرين':'✅ '+n+' / '+EX.goals.length;}
 /* ---------- the PLC as it looks in the workshop: S7-300 rack or S7-1200 compact CPU ---------- */
 function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L.Q;const T=(x,y,t,s,c,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:700 ${s}px sans-serif;fill:${c}">${t}</text>`;
   const led=(x,y,on,c)=>`<rect x="${x}" y="${y}" width="9" height="6" rx="1" fill="${on?c:'#2e3338'}"/>`;
@@ -687,6 +714,48 @@ function stlOf(P){let out='';let fp=0;
       const a=dispA(o.a);if(o.t==='=')s+=`=  ${a}\n`;else if(o.t==='S')s+=`S  ${a}\n`;else if(o.t==='R')s+=`R  ${a}\n`;
       else if(o.t==='TON')s+=`L  ${tFmt(o.v)}\nSD ${a}\n`;else if(o.t==='TOF')s+=`L  ${tFmt(o.v)}\nSF ${a}\n`;else if(o.t==='CU')s+=`CU ${a}\n`+(o.r?`A  ${dispA(o.r)}\nR  ${a}\n`:'');
       out+=s;});out+='\n';});return out;}
+/* ===================== the camera: follows where the work is, like a video ===================== */
+let CAMM=ls('ln2:cam')||'auto';const CAM={x:710,y:300,w:1420,f:'all',t0:0};
+function camNext(){CAMM=CAMM==='auto'?'all':CAMM==='all'?'free':'auto';ls('ln2:cam',CAMM);camBtn();if(CAMM!=='auto'){CAM.x=710;CAM.y=300;CAM.w=1420;}camApply(true);}
+function camBtn(){$('camM').textContent=CAMM==='auto'?'🎥 تلقائي':CAMM==='all'?'▣ الخط كله':'✋ يدوي';document.querySelector('#stage .scene').classList.toggle('free',CAMM==='free'&&!$('stage').classList.contains('th'));}
+$('camM').onclick=camNext;
+/* what deserves the camera now, by priority, with a sentence that says what is happening */
+function camWant(){const p=EX.plant,PL=L.PL,E=L.EL||{},K=L.kOn||{},sn=plantSensors(EX,PL).S,run=m=>runOf(L,m),mo=m=>(E.mot&&E.mot[m]||{}).mode,C=PL.cnt;
+  const W=(f,x,y,w,cap)=>({f,x,y,w,cap});
+  if(L.brk||E.mix||E.dcShort)return W('all',710,300,1420,(E.err&&E.err[0])||'القاطع Q0 مفصول');
+  if(PL.msg)return W('all',710,300,1420,PL.msg);
+  if(p.lift&&run('M4')){const up=(E.mot.M4.dir||0)>0;return W('lift',1240,BB-320*PL.lift-40,620,up?'المصعد يصعد (K3) حتى نهاية المشوار العلوية SQ2':'المصعد ينزل (K4) حتى SQ1');}
+  if(p.lift&&PL.lift>0.98&&PL.liftBox)return W('lift',1240,BB-330,620,'المصعد فوق (SQ2): الصندوق يُدفع إلى الرف');
+  if(p.boxes&&K.Y3){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.fill)<10);return W('fill',GX.fill,430,560,'التعبئة: الصمام Y3 مفتوح · '+(b?Math.round(Math.min(1,b.fill)*100):0)+'%');}
+  if(p.boxes&&run('M2'))return W('box',1010,470,700,'سير الصناديق M2 ينقل الصندوق الممتلئ إلى التعبئة ويأتي صندوق فارغ تحت المزلق');
+  if(p.press&&(PL.press>0.03||sn.B1)){return W('press',GX.press,240,560,PL.press>0.97?'المكبس تحت (1B2): يضغط القطعة':PL.press>0.03?(K.Y1?'المكبس ينزل (Y1) والسير واقف':'المكبس يرتفع حتى 1B1'):'B1 كشف قطعة تحت المكبس: السير يقف');}
+  if(p.sort&&(PL.gate>0.05||sn.B2||PL.pieces.some(q=>q.st==='rej')))return W('gate',GX.gate,330,640,PL.gate>0.05?'بوابة الطرد مفتوحة (Y2): القطعة المعيبة تسقط في المرفوضات':'الحساس اللوني B2 كشف قطعة معيبة (حمراء)');
+  if(p.boxes&&PL.pieces.some(q=>q.st==='chute')){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.chute)<22);return W('chute',GX.chute-20,420,600,'B4 يعدّ القطعة الساقطة في الصندوق · '+(b?Math.min(5,b.n+1):'?')+' من 5');}
+  if(p.mixer&&mo('M3')==='star')return W('mix',220,150,620,'الخلاط M3 يبدأ نجمة (KM + KY) لتخفيف تيار البدء');
+  if(p.mixer&&mo('M3')==='delta'&&L.h.starT==null&&PL.mixDelta<4)return W('mix',220,150,620,'الخلاط تحول إلى دلتا (KM + KD) بقدرته الكاملة');
+  if(p.belt&&run('M1')){const ps=PL.pieces.filter(q=>q.st==='belt');const lead=ps.length?ps.reduce((a,q)=>q.x>a?q.x:a,0):400;return W('belt',Math.max(420,Math.min(lead,720)),260,900,'السير الناقل M1 يحمل القطع'+(p.press?' إلى المكبس':p.boxes?' إلى الصناديق':''));}
+  if(p.mixer&&run('M3'))return W('mix',220,150,620,'الخلاط يعمل دلتا ويغذي السير بالقطع');
+  const st=EX.in.includes('S1')?'S1':'S2';return W('all',710,300,1420,'الخط متوقف: اضغط '+st+' للتشغيل');}
+function camApply(snap){const sv=$('sc'),th=$('stage').classList.contains('th');let asp=1420/600;
+  if(th){const r=document.querySelector('#stage .scene').getBoundingClientRect();if(r.width>50&&r.height>50)asp=r.width/r.height;}
+  let T={x:710,y:300,w:1420,cap:''};
+  if(CAMM==='auto'){const w=camWant(),now=L.t;if(w.f!==CAM.f){if(now-CAM.t0>2.2||CAM.f==='all'||w.f==='all'&&now-CAM.t0>1.2){CAM.f=w.f;CAM.t0=now;CAM.tg=w;}}else CAM.tg=w;T=CAM.tg||w;}
+  else T.cap=camWant().cap;
+  $('capT').textContent=T.cap||'';
+  let w=T.w*(th&&CAMM==='auto'?1.25:1),h=w/asp;if(h>600&&CAMM!=='auto'){h=600;w=h*asp;}if(CAMM!=='auto'&&th){w=Math.max(1420,600*asp);h=w/asp;}
+  const k=snap?1:0.12;CAM.x+=(T.x-CAM.x)*k;CAM.y+=(T.y-CAM.y)*k;CAM.w+=(w-CAM.w)*k;
+  const cw=CAM.w,ch=cw/asp;let x=CAM.x-cw/2,y=CAM.y-ch/2;x=Math.max(Math.min(x,1420-cw),Math.min(0,1420-cw)/1);if(cw>=1420)x=(1420-cw)/2;y=Math.max(Math.min(y,600-ch),0);if(ch>=600)y=(600-ch)/2;
+  sv.setAttribute('viewBox',`${x.toFixed(1)} ${y.toFixed(1)} ${cw.toFixed(1)} ${ch.toFixed(1)}`);}
+/* full screen, sideways, like a video */
+function thOn(){const st=$('stage');st.classList.add('th');document.body.style.overflow='hidden';camBtn();$('thB').textContent='✕ خروج';
+  const fs=st.requestFullscreen||st.webkitRequestFullscreen;if(fs){try{const pr=fs.call(st,{navigationUI:'hide'});if(pr&&pr.then)pr.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(_){}}).catch(()=>{});}catch(_){}}
+  CAM.w=1420;camApply(true);}
+function thOff(){const st=$('stage');st.classList.remove('th');document.body.style.overflow='';$('thB').textContent='⛶ عرض';try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock();}catch(_){}
+  if(document.fullscreenElement||document.webkitFullscreenElement){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document);}catch(_){}}camBtn();camApply(true);}
+$('thB').onclick=()=>{$('stage').classList.contains('th')?thOff():thOn();};
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&$('stage').classList.contains('th'))thOff();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('stage').classList.contains('th'))thOff();});
+camBtn();
 /* ===================== the exercise sheet ===================== */
 function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${esc(ex.d)}</p>`;
   h+=`<div class="note">الجهاز المختار: <b>${MODEL==='300'?'SIMATIC S7-300 (CPU 314 + SM321 DI16 + SM322 DO16) · Step 7 الكلاسيكي':'SIMATIC S7-1200 (CPU 1214C DC/DC/DC) · TIA Portal'}</b>. يمكنك التبديل بين الجهازين من الأعلى، والبرنامج يتحول تلقائيًا إلى عناوين الجهاز الآخر.</div>`;

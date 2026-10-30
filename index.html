@@ -3802,7 +3802,7 @@ const CLOUD_URL='https://script.google.com/macros/s/AKfycbyesF3VDtXbCItHAKyqflcU
 /* the production line with PLC Step 7 (wiring, programming, running): its own page in a frame over the simulator, kept open across a refresh like the workshops */
 {let fr=null;const ov=$('lnOverlay'),ssS=(v)=>{try{v?sessionStorage.setItem('wsApp',v):sessionStorage.removeItem('wsApp');}catch(_){}};
   window.__lnClose=()=>{ov.style.display='none';document.body.style.overflow='';ssS(null);};
-  const openLn=e=>{e&&e.preventDefault();ssS('ln');if(!fr){fr=document.createElement('iframe');fr.title='خط الإنتاج';fr.style.cssText='border:0;width:100%;height:100%;display:block';fr.src='line.html';ov.appendChild(fr);}
+  const openLn=e=>{e&&e.preventDefault();ssS('ln');if(!fr){fr=document.createElement('iframe');fr.title='خط الإنتاج';fr.allow='fullscreen; screen-wake-lock';fr.allowFullscreen=true;fr.style.cssText='border:0;width:100%;height:100%;display:block';fr.src='line.html';ov.appendChild(fr);}
     ov.style.display='block';document.body.style.overflow='hidden';const d=document.querySelector('.more');if(d)d.open=false;};
   $('bLine').onclick=openLn;
   try{if(sessionStorage.getItem('wsApp')==='ln')openLn();}catch(_){}}
