@@ -4,376 +4,709 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b3d91">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<title>خط الإنتاج: ختم وفرز</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<title>خط الإنتاج المتكامل · PLC Step 7</title>
 <style>
-:root{--bg:#e6ebf0;--ink:#15202b;--muted:#586675;--panel:#fff;--line:#c8d2dc;--accent:#1f5fbf;--warn:#c42b22;--ok:#1a8a42;--amber:#d99000;--chip:#eef2f6;
-  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f151c;--ink:#e5eaef;--muted:#93a0ad;--panel:#18212b;--line:#2a3846;--accent:#6ea4ff;--warn:#ff6b60;--ok:#4cd07d;--amber:#ffbf3c;--chip:#212d39;}}
-:root[data-theme="dark"]{--bg:#0f151c;--ink:#e5eaef;--muted:#93a0ad;--panel:#18212b;--line:#2a3846;--accent:#6ea4ff;--warn:#ff6b60;--ok:#4cd07d;--amber:#ffbf3c;--chip:#212d39;}
+:root{--bg:#e6ebf0;--ink:#15202b;--muted:#586675;--panel:#fff;--line:#c8d2dc;--accent:#1f5fbf;--warn:#c42b22;--ok:#1a8a42;--chip:#eef2f6;--s7:#009999;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;font-size:15px;line-height:1.5}
 button,select,input{font:inherit;color:inherit}
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
-.bar1{display:flex;align-items:center;gap:8px;padding:8px 10px 6px}
-.bar1 h1{flex:1;font-size:1.02rem;line-height:1.3;margin:0}
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar1{display:flex;align-items:center;gap:8px;padding:8px 10px 4px}
+.bar1 h1{flex:1;font-size:1rem;line-height:1.3;margin:0}
 .bar1 h1 .credit{display:block;font-size:.72rem;font-weight:500;color:var(--muted)}
-.tbadge{background:#0b3d91;color:#fff;border-radius:999px;padding:2px 10px;font-size:.78rem;font-weight:700;flex:none}
-.ib{min-width:40px;height:38px;border:1px solid var(--line);background:var(--panel);border-radius:9px;font-size:.95rem;font-weight:700;cursor:pointer;flex:none;padding:0 10px;display:inline-flex;align-items:center;gap:4px}
-.top,.ops,.tabs,.panel,.stats{zoom:var(--ui,1)}
-.stats{display:flex;flex-wrap:wrap;gap:6px;padding:6px 10px}
-.stats span{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.85rem}
-.stats b{font-variant-numeric:tabular-nums}
-.stats .bad{color:var(--warn)}.stats .good{color:var(--ok)}
-.scene{overflow-x:auto;direction:ltr;background:#cfd6dc;border-block:1px solid var(--line)}
-.scene svg{display:block;width:100%;min-width:760px;height:auto}
+.ib{min-width:40px;height:38px;border:1px solid var(--line);background:var(--panel);border-radius:9px;font-size:.92rem;font-weight:700;cursor:pointer;flex:none;padding:0 10px}
+.bar2{display:flex;gap:6px;align-items:center;padding:2px 10px 6px;flex-wrap:wrap}
+.bar2 select{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:0 6px;max-width:100%;flex:1 1 220px}
+.mdl{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.mdl button{border:0;background:var(--panel);padding:0 10px;height:34px;cursor:pointer;font-weight:700;font-size:.85rem}
+.mdl button.on{background:var(--s7);color:#fff}
+.tabs{display:flex;gap:4px;padding:0 10px;overflow-x:auto}
+.tab{border:1px solid var(--line);border-bottom:0;background:var(--chip);border-radius:10px 10px 0 0;padding:6px 12px;cursor:pointer;white-space:nowrap;font-weight:700;font-size:.9rem}
+.tab.on{background:var(--panel);color:var(--accent)}
+.pane{display:none;background:var(--panel);min-height:60vh;padding-bottom:60px}.pane.on{display:block}
+.msg{padding:6px 10px;font-size:.88rem;font-weight:700;color:#fff;background:#1a3a5c}.msg.err{background:var(--warn)}.msg:empty{display:none}
+.scene{overflow-x:auto;direction:ltr;background:#cfd6dc}
+.scene svg{display:block;width:100%;min-width:880px;height:auto}
 .ops{display:flex;flex-wrap:wrap;gap:8px;padding:8px 10px;align-items:center}
-.ob{display:inline-flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:6px 10px;min-width:74px;cursor:pointer;font-size:.8rem;font-weight:700;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-.ob i{display:block;width:30px;height:30px;border-radius:50%;border:3px solid rgba(0,0,0,.25);font-style:normal;color:#fff;line-height:24px;text-align:center;font-size:.8rem}
-.ob.down i{transform:scale(.88);box-shadow:inset 0 3px 6px rgba(0,0,0,.45)}
-.ob.on{outline:3px solid var(--accent)}
-.lamps{display:flex;gap:10px;margin-inline-start:auto;align-items:center;font-size:.8rem;font-weight:700}
-.lamp{display:flex;flex-direction:column;align-items:center;gap:2px}
-.lamp i{width:22px;height:22px;border-radius:50%;border:2px solid #555;background:#3a3f44}
-.tabs{display:flex;gap:4px;padding:6px 10px 0;overflow-x:auto;border-bottom:1px solid var(--line)}
-.tab{border:1px solid var(--line);border-bottom:0;background:var(--chip);border-radius:10px 10px 0 0;padding:7px 12px;cursor:pointer;white-space:nowrap;font-weight:700;font-size:.9rem}
-.tab[aria-selected="true"]{background:var(--panel);color:var(--accent)}
-.panel{background:var(--panel);padding:10px 12px 40px;min-height:40vh}
-.panel h3{margin:.4em 0 .3em;font-size:1rem}
-.panel p,.panel li{font-size:.92rem}
-.lad{direction:ltr;overflow-x:auto}
-.lad svg{display:block;width:100%;min-width:560px;height:auto}
-.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 10px;cursor:pointer;white-space:nowrap;font-weight:700}
-.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
-.btn.red{color:var(--warn)}
-.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0}
-table.io{border-collapse:collapse;font-size:.88rem;width:100%;max-width:640px}
-table.io td,table.io th{border:1px solid var(--line);padding:3px 8px;text-align:start}
-table.io th{background:var(--chip)}
-.flt{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0;cursor:pointer}
-.flt input{margin-top:5px;width:18px;height:18px;flex:none}
-.flt small{display:block;color:var(--muted)}
-.flt.on{border-color:var(--warn);background:rgba(196,43,34,.06)}
-.ed{border:1px solid var(--line);border-radius:10px;padding:6px 8px;margin:6px 0;direction:ltr}
-.ed .el{display:inline-flex;flex-direction:column;gap:2px;border:1px dashed var(--line);border-radius:8px;padding:4px;margin:2px;vertical-align:top}
-.ed select,.ed input{font-size:.85rem;padding:2px;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
-.ed .x{border:0;background:none;color:var(--warn);cursor:pointer;font-weight:700}
-.ed .n{font-weight:700;color:var(--muted);margin-inline-end:6px}
-.note{background:var(--chip);border-radius:10px;padding:8px 10px;font-size:.9rem}
-.msg{padding:6px 10px;font-size:.88rem;font-weight:700;color:#fff;background:#1a3a5c}
-.msg.err{background:var(--warn)}
+.ob{display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--line);background:var(--chip);border-radius:12px;padding:6px 8px;min-width:64px;cursor:pointer;font-size:.78rem;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none}
+.ob i{display:block;width:38px;height:38px;border-radius:50%;border:3px solid rgba(0,0,0,.3);font-style:normal;color:#fff;font-weight:800;line-height:32px;text-align:center;font-size:1rem}
+.ob.dn i{transform:scale(.88);box-shadow:inset 0 3px 6px rgba(0,0,0,.5)}
+.ob.on{border-color:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:4px 10px}
+.chips span{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.82rem}
+.chips .ok{color:var(--ok);border-color:var(--ok)}.chips .bad{color:var(--warn);border-color:var(--warn)}
+.goals{padding:4px 12px}.goals li{font-size:.9rem;margin:2px 0;list-style:none}.goals ul{padding:0;margin:4px 0}
+.plcv{direction:ltr;padding:4px 10px;overflow-x:auto}.plcv svg{display:block;max-width:760px;width:100%;min-width:520px;height:auto}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:6px 10px;cursor:pointer;white-space:nowrap;font-weight:700;font-size:.86rem}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.s7{background:var(--s7);color:#fff;border-color:var(--s7)}.btn.red{color:var(--warn)}
+.btn:disabled{opacity:.45}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 10px}
+.board{overflow:auto;direction:ltr;background:#d9dee3;max-height:72vh;border-block:1px solid var(--line);touch-action:pan-x pan-y}
+.board svg{display:block}
+.rep{padding:6px 12px;font-size:.88rem}.rep li{margin:2px 0}.rep .bad{color:var(--warn)}.rep .ok{color:var(--ok)}
+.nets{padding:6px 8px}
+.net{border:1px solid var(--line);border-radius:10px;margin:8px 0;background:#fbfcfd;overflow:hidden}
+.nh{display:flex;align-items:center;gap:6px;padding:4px 8px;background:#e9eef3;font-size:.85rem}
+.nh b{direction:ltr;white-space:nowrap;color:var(--s7)}
+.nh input{flex:1;min-width:60px;border:1px solid var(--line);border-radius:6px;padding:2px 6px;background:#fff;font-size:.84rem}
+.nh button{border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;padding:0 6px;height:26px;font-size:.8rem}
+.lad{overflow-x:auto;direction:ltr}.lad svg{display:block}
+.ce{direction:rtl;border-top:1px solid var(--line);padding:6px 8px;background:#fff;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ce .tb{border:1px solid var(--line);background:var(--chip);border-radius:7px;padding:2px 8px;cursor:pointer;font-family:monospace;font-weight:700;direction:ltr;min-height:32px}
+.ce .tb.on{background:var(--s7);color:#fff;border-color:var(--s7)}
+.ce select,.ce input{border:1px solid var(--line);border-radius:7px;padding:3px 6px;background:#fff;direction:ltr;min-height:32px}
+.stl{direction:ltr;font-family:Consolas,monospace;font-size:.85rem;background:#10202b;color:#cfe8ff;padding:10px 12px;margin:8px;border-radius:10px;white-space:pre;overflow-x:auto}
+.doc{padding:8px 14px;font-size:.93rem}.doc h3{font-size:1rem;margin:.6em 0 .3em}
+table.io{border-collapse:collapse;font-size:.86rem;width:100%;max-width:680px}
+table.io td,table.io th{border:1px solid var(--line);padding:3px 8px;text-align:start}table.io th{background:var(--chip)}
+table.io td.a{direction:ltr;text-align:left;font-family:monospace;font-weight:700;color:var(--s7)}
+.note{background:var(--chip);border-radius:10px;padding:8px 10px;font-size:.88rem;margin:6px 0}
+.wsel{stroke:#ffb300!important;stroke-width:7!important}
+.term{cursor:pointer}.term:hover circle.tc{stroke:#ff8a00}
+@media (max-width:600px){.bar1 h1{font-size:.9rem}.ob{min-width:56px;padding:5px 6px}.ob i{width:34px;height:34px;line-height:28px}}
 </style>
 </head>
 <body>
-<script>(function(){var f=function(){var u=Math.min(innerWidth/1400,innerHeight/850);u=Math.max(1,Math.min(2,Math.round(u*20)/20));document.documentElement.style.setProperty('--ui',u);};f();addEventListener('resize',f);})();</script>
 <div class="top">
   <div class="bar1">
-    <h1>خط إنتاج: ختم القطع وفحصها وفرزها<span class="credit">تقليدي + جهاز تحكم مبرمج + نيوماتيك · فكرة وتنفيذ م. جابر الفيفي بواسطة Claude · © جميع الحقوق محفوظة</span></h1>
-    <span class="tbadge">مدرب · تجريبي</span>
+    <h1>خط الإنتاج المتكامل · PLC Step 7<span class="credit">توصيل + برمجة + تشغيل · فكرة وتنفيذ م. جابر الفيفي بواسطة Claude · © جميع الحقوق محفوظة</span></h1>
     <button class="ib" id="bBack" title="رجوع إلى المحاكي">رجوع ↩</button>
   </div>
-  <div class="msg" id="msg" hidden></div>
+  <div class="bar2">
+    <select id="exSel" aria-label="التمرين"></select>
+    <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: CPU 314 مع DI16 وDO16 (Step 7 الكلاسيكي)">S7-300</button><button id="m1200" title="SIMATIC S7-1200: CPU 1214C DC/DC/DC (TIA Portal)">S7-1200</button></div>
+  </div>
+  <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="ex">📋 التمرين</button></div>
+  <div class="msg" id="msg"></div>
 </div>
-<div class="stats" id="stats"></div>
-<div class="scene"><svg id="sc" viewBox="0 0 1200 500" role="img" aria-label="خط الإنتاج"></svg></div>
-<div class="ops" id="ops">
-  <button class="ob" id="oQ0" title="المفتاح الرئيسي Q0"><i style="background:#555">Q0</i>رئيسي</button>
-  <button class="ob" data-p="S1" title="S1 تشغيل الخط (NO)"><i style="background:#2aa84a">I</i>تشغيل S1</button>
-  <button class="ob" data-p="S0" title="S0 إيقاف الخط (NC)"><i style="background:#d8322b">O</i>إيقاف S0</button>
-  <button class="ob" id="oS9" title="S9 طوارئ (يبقى مضغوطًا حتى يُفك)"><i style="background:#c00;border-color:#f5d000">!</i>طوارئ S9</button>
-  <button class="ob" data-p="S2" title="S2 تصفير عداد الدفعة (مدخل PLC I8)"><i style="background:#1f5fbf">0</i>تصفير S2</button>
-  <button class="ob" id="oRun" title="تشغيل/إيقاف برنامج جهاز التحكم المبرمج"><i style="background:#0b3d91">P</i>PLC</button>
-  <div class="lamps"><div class="lamp"><i id="H1"></i>H1 يعمل</div><div class="lamp"><i id="H3"></i>H3 دفعة</div><div class="lamp"><i id="H2"></i>H2 عطل</div></div>
+<div class="pane" id="p-line">
+  <div class="scene"><svg id="sc" viewBox="0 0 1420 600" role="img" aria-label="خط الإنتاج"></svg></div>
+  <div class="ops" id="ops"></div>
+  <div class="chips" id="chips"></div>
+  <div class="goals" id="goals"></div>
+  <div class="plcv" id="plcv"></div>
 </div>
-<div class="tabs" role="tablist" id="tabs">
-  <button class="tab" role="tab" data-t="help">📖 طريقة العمل</button>
-  <button class="tab" role="tab" data-t="conv">⚡ التحكم التقليدي</button>
-  <button class="tab" role="tab" data-t="plc">🧠 برنامج PLC</button>
-  <button class="tab" role="tab" data-t="pn">💨 النيوماتيك</button>
-  <button class="tab" role="tab" data-t="flt">⚠ الأعطال</button>
+<div class="pane" id="p-wire">
+  <div class="row"><button class="btn" id="wUndo">↶ تراجع</button><button class="btn red" id="wDel" disabled>🗑 حذف السلك</button><button class="btn" id="wClr">مسح كل الأسلاك</button><button class="btn pri" id="wChk">✔ فحص التوصيل</button><button class="btn" id="wZo">−</button><button class="btn" id="wZi">+</button><button class="btn trainer" id="wSol">توصيل نموذجي</button></div>
+  <div class="note" style="margin:0 10px" id="wHint">اضغط طرفًا ثم طرفًا آخر لتمديد سلك. اضغط سلكًا لتحديده وحذفه. لون السلك يتحدد تلقائيًا: أحمر L+، أزرق M، بنفسجي إشارة، وبني/أسود/رمادي للأطوار.</div>
+  <div class="board" id="board"><svg id="bd"></svg></div>
+  <div class="rep" id="wRep"></div>
 </div>
-<div class="panel" id="panel"></div>
-
+<div class="pane" id="p-prog">
+  <div class="row"><button class="btn s7" id="pDl" title="تحميل البرنامج من المحرر إلى الجهاز">⤓ تحميل إلى PLC</button><button class="btn" id="pRun">RUN / STOP</button><button class="btn" id="pMon">👓 مراقبة</button><button class="btn" id="pAdd">＋ شبكة</button><button class="btn" id="pStl">STL</button><button class="btn red" id="pClr">مسح البرنامج</button><button class="btn trainer" id="pSol">البرنامج النموذجي</button></div>
+  <div class="note" style="margin:0 10px" id="pHint"></div>
+  <div class="nets" id="nets"></div>
+  <div id="stlBox"></div>
+</div>
+<div class="pane" id="p-ex"><div class="doc" id="exDoc"></div></div>
 <script>
 (function(){
+/* ===================== data: I/O, devices, exercises ===================== */
+const IN=[['S1','تشغيل الخط','NO'],['S0','إيقاف الخط','NC'],['B1','قطعة تحت المكبس','PNP'],['1B1','المكبس فوق','PNP'],['1B2','المكبس تحت','PNP'],
+  ['B2','قطعة معيبة عند الطرد','PNP'],['B3','صندوق تحت المزلق','PNP'],['B4','قطعة تسقط في الصندوق','PNP'],['B5','صندوق عند التعبئة','PNP'],
+  ['SQ1','المصعد تحت','LS'],['SQ2','المصعد فوق','LS'],['S2','تشغيل الخلاط','NO'],['F','الأوفرلودات (NC على التوالي)','OL'],['S3','إيقاف الخلاط','NC']];
+const OUT=[['K1','محرك السير M1'],['Y1','إنزال المكبس 1A'],['Y2','بوابة الطرد 2A'],['K2','سير الصناديق M2'],['Y3','صمام التعبئة'],
+  ['K3','المصعد صعود M4'],['K4','المصعد نزول M4'],['KM','الخلاط: الرئيسي'],['KY','الخلاط: نجمة'],['KD','الخلاط: دلتا']];
+const IA=i=>'I'+(i>>3)+'.'+(i&7),QA=i=>'Q'+(i>>3)+'.'+(i&7);
+const INI={},OUTI={};IN.forEach((d,i)=>INI[d[0]]=i);OUT.forEach((d,i)=>OUTI[d[0]]=i);
+/* motors: contactors, overload, kind */
+const MOT={M1:{k:['K1'],f:'F1',n:'محرك السير الناقل',kind:'dol'},M2:{k:['K2'],f:'F2',n:'محرك سير الصناديق',kind:'dol'},
+  M3:{k:['KM','KY','KD'],f:'F3',n:'محرك الخلاط (نجمة/دلتا)',kind:'yd'},M4:{k:['K3','K4'],f:'F4',n:'محرك المصعد (عكس حركة)',kind:'rev'}};
+/* ---- the exercises ---- */
+const EXS=[
+ {id:'e1',n:'1. تشغيل السير الناقل مع تثبيت ذاتي',in:['S1','S0','F'],out:['K1'],mot:['M1'],plant:{belt:1},
+  d:'S1 يشغّل محرك السير M1 ويبقى يعمل بعد رفع الإصبع، وS0 (مغلق NC) يوقفه، وفصل الأوفرلود F1 يوقفه أيضًا. القطع تنزل آليًا على السير وتسقط في الحاوية آخره.',
+  goals:['run','stop','ol','deliver5']},
+ {id:'e2',n:'2. تشغيل سيرين بالتتابع',in:['S1','S0','F'],out:['K1','K2'],mot:['M1','M2'],plant:{belt:1,boxes:1,boxFree:1},
+  d:'عند S1 يعمل سير الصناديق M2 أولًا، وبعد 3 ثوانٍ يعمل السير الناقل M1، حتى لا تسقط القطع على سير متوقف. عند S0 يقف M1 فورًا ويستمر M2 ثلاث ثوانٍ ليفرغ ثم يقف. الأوفرلود يوقف الاثنين فورًا.',
+  goals:['seqStart','seqStop','ol']},
+ {id:'e3',n:'3. تشغيل الخلاط نجمة/دلتا',in:['S2','S3','F'],out:['KM','KY','KD'],mot:['M3'],plant:{mixer:1},
+  d:'S2 يشغّل محرك الخلاط M3 نجمة (KM + KY) لتخفيف تيار البدء، وبعد 5 ثوانٍ يتحول إلى دلتا (KM + KD). لا يعمل KY وKD معًا أبدًا (قصر بين الأطوار). S3 والأوفرلود يوقفانه.',
+  goals:['star','delta','mixStop','ol']},
+ {id:'e4',n:'4. مكبس الختم الهوائي',in:['S1','S0','B1','1B1','1B2','F'],out:['K1','Y1'],mot:['M1'],plant:{belt:1,press:1},
+  d:'السير يحمل القطع. عندما يكشف B1 قطعة تحت المكبس يقف السير، وينزل المكبس 1A (الصمام Y1) حتى 1B2، ويضغط نصف ثانية، ثم يرتفع حتى 1B1، ثم يعود السير. إذا تحرك السير والمكبس نازل تنحشر القطعة.',
+  goals:['run','stamp5','nojam']},
+ {id:'e5',n:'5. فحص القطع وطرد المعيبة',in:['S1','S0','B2','F'],out:['K1','Y2'],mot:['M1'],plant:{belt:1,sort:1},
+  d:'الحساس اللوني B2 يكشف القطعة المعيبة (الحمراء). عندها تُفتح بوابة الطرد بالأسطوانة 2A (Y2) لمدة 0.8 ثانية فتسقط القطعة المعيبة في صندوق المرفوضات، وتمر السليمة.',
+  goals:['run','reject3','nogoodrej']},
+ {id:'e6',n:'6. العد والتعبئة في الصناديق',in:['S1','S0','B3','B4','B5','F'],out:['K1','K2','Y3'],mot:['M1','M2'],plant:{belt:1,boxes:1},
+  d:'كل صندوق تحت المزلق (B3) يأخذ 5 قطع يعدّها B4. عند اكتمال العدد يقف السير M1 ويتحرك سير الصناديق M2 حتى يصل الصندوق إلى التعبئة (B5)، فيفتح صمام التعبئة Y3 أربع ثوانٍ. السير M1 لا يعمل إلا وصندوق فارغ تحته.',
+  goals:['box2','fill2','nospill']},
+ {id:'e7',n:'7. مصعد الصناديق (عكس حركة)',in:['S1','S0','SQ1','SQ2','F'],out:['K3','K4'],mot:['M4'],plant:{lift:1,liftSelf:1},
+  d:'S1 يرفع المصعد بمحرك M4 (K3) حتى نهاية المشوار العلوية SQ2، فيُدفع الصندوق إلى الرف، ثم بعد ثانيتين ينزل (K4) حتى SQ1. لا يعمل K3 وK4 معًا أبدًا، وS0 يوقف الحركة.',
+  goals:['lift2','nocrash']},
+ {id:'e8',n:'8. الخط الكامل',in:IN.map(d=>d[0]),out:OUT.map(d=>d[0]),mot:['M1','M2','M3','M4'],plant:{mixer:1,belt:1,press:1,sort:1,boxes:1,lift:1},
+  d:'كل المراحل معًا: الخلاط يعمل نجمة/دلتا ويغذي السير بالقطع، المكبس يختم كل قطعة، بوابة الطرد تُسقط المعيبة، القطع السليمة تُعدّ 5 في كل صندوق، الصندوق يُعبأ ثم يُنقل إلى المصعد الذي يرفعه إلى الرف ويعود.',
+  goals:['delta','stamp5','reject3','fill2','store2','nojam','nospill']}];
+const GOALS={run:'S1 يشغّل M1 ويبقى يعمل بعد رفع الإصبع',stop:'S0 يوقف M1',ol:'فصل الأوفرلود يوقف المحرك (جرّب زر «اختبار الأوفرلود»)',deliver5:'وصلت 5 قطع إلى آخر السير',
+  seqStart:'M2 يبدأ قبل M1 بثلاث ثوانٍ تقريبًا',seqStop:'عند S0 يقف M1 أولًا ثم M2 بعده بثلاث ثوانٍ تقريبًا',star:'الخلاط بدأ نجمة',delta:'الخلاط تحول إلى دلتا بعد زمن النجمة',mixStop:'S3 يوقف الخلاط',
+  stamp5:'خُتمت 5 قطع',nojam:'لم تنحشر أي قطعة تحت المكبس',reject3:'طُردت 3 قطع معيبة',nogoodrej:'لم تُطرد أي قطعة سليمة',box2:'امتلأ صندوقان بخمس قطع',fill2:'عُبئ صندوقان',
+  nospill:'لا قطع خارج الصندوق ولا انسكاب',lift2:'أكمل المصعد دورتين (صعود ونزول)',nocrash:'لم يصطدم المصعد بنهاية المشوار',store2:'وصل صندوقان إلى الرف'};
+
+/* ===================== devices & terminals of the wiring board ===================== */
+/* each device: id, type, terminals; the PLC is one device with DI, DQ, supply terminals */
+function devList(ex){const L=[{id:'SUP',t:'sup'},{id:'PS',t:'ps'},{id:'PLC',t:'plc'}];
+  ex.in.forEach(n=>{const k=IN[INI[n]][2];if(k==='OL')return;L.push({id:n,t:k==='NO'?'pbno':k==='NC'?'pbnc':k==='LS'?'ls':'pnp'});});
+  ex.mot.forEach(m=>{const M=MOT[m];M.k.forEach(k=>L.push({id:k,t:'k'}));L.push({id:M.f,t:'ol'});L.push({id:m,t:'mot'});});
+  ex.out.forEach(n=>{if(n[0]==='Y')L.push({id:n,t:'sol'});});return L;}
+const TERM={sup:['L1','L2','L3'],ps:['L+','L+2','M','M2'],pbno:['13','14'],pbnc:['11','12'],ls:['13','14'],pnp:['BN','BK','BU'],
+  k:['A1','A2','1','2','3','4','5','6'],ol:['1','2','3','4','5','6','95','96'],mot:['U1','V1','W1','W2','U2','V2'],sol:['A1','A2']};
+function plcTerms(){const t=['L+','M','DIM','DOL','DOM'];IN.forEach((d,i)=>t.push('I'+i));OUT.forEach((d,i)=>t.push('Q'+i));return t;}
+function allTerms(ex){const T=[];devList(ex).forEach(d=>{(d.t==='plc'?plcTerms():TERM[d.t]).forEach(n=>T.push(d.id+'.'+n));});return T;}
+const isAC=k=>{const [d,n]=k.split('.');return d==='SUP'||/^M\d$/.test(d)||(/^(K\d|KM|KY|KD|F\d)$/.test(d)&&/^[1-6]$/.test(n));};
+
+/* the reference wiring of an exercise, as nets (each array must end up connected, and different arrays must stay apart) */
+function solNets(ex){const D=devList(ex),has=id=>D.some(d=>d.id===id),N=[];const LP=['PS.L+','PLC.L+','PLC.DOL'],MM=['PS.M','PLC.M','PLC.DIM','PLC.DOM'];
+  ex.in.forEach(n=>{const i=INI[n],k=IN[i][2];
+    if(k==='NO'||k==='LS'){LP.push(n+'.13');N.push([n+'.14','PLC.I'+i]);}
+    else if(k==='NC'){LP.push(n+'.11');N.push([n+'.12','PLC.I'+i]);}
+    else if(k==='PNP'){LP.push(n+'.BN');MM.push(n+'.BU');N.push([n+'.BK','PLC.I'+i]);}
+    else if(k==='OL'){const fs=ex.mot.map(m=>MOT[m].f);LP.push(fs[0]+'.95');for(let j=0;j<fs.length-1;j++)N.push([fs[j]+'.96',fs[j+1]+'.95']);N.push([fs[fs.length-1]+'.96','PLC.I'+i]);}});
+  ex.out.forEach(n=>{const i=OUTI[n];N.push(['PLC.Q'+i,n+'.A1']);MM.push(n+'.A2');});
+  N.push(LP,MM);
+  /* power: L1 L2 L3 nets */
+  const P={L1:['SUP.L1'],L2:['SUP.L2'],L3:['SUP.L3']};
+  ex.mot.forEach(m=>{const M=MOT[m],f=M.f;
+    if(M.kind==='dol'){const k=M.k[0];P.L1.push(k+'.1');P.L2.push(k+'.3');P.L3.push(k+'.5');N.push([k+'.2',f+'.1'],[k+'.4',f+'.3'],[k+'.6',f+'.5'],[f+'.2',m+'.U1'],[f+'.4',m+'.V1'],[f+'.6',m+'.W1'],[m+'.U2',m+'.V2',m+'.W2']);}
+    else if(M.kind==='rev'){P.L1.push('K3.1','K4.5');P.L2.push('K3.3','K4.3');P.L3.push('K3.5','K4.1');N.push(['K3.2','K4.2',f+'.1'],['K3.4','K4.4',f+'.3'],['K3.6','K4.6',f+'.5'],[f+'.2',m+'.U1'],[f+'.4',m+'.V1'],[f+'.6',m+'.W1'],[m+'.U2',m+'.V2',m+'.W2']);}
+    else{P.L1.push('KM.1');P.L2.push('KM.3');P.L3.push('KM.5');N.push(['KM.2',f+'.1'],['KM.4',f+'.3'],['KM.6',f+'.5'],[f+'.2',m+'.U1','KD.1'],[f+'.4',m+'.V1','KD.3'],[f+'.6',m+'.W1','KD.5'],
+      [m+'.W2','KD.2','KY.5'],[m+'.U2','KD.4','KY.1'],[m+'.V2','KD.6','KY.3'],['KY.2','KY.4','KY.6']);}});
+  N.push(P.L1,P.L2,P.L3);return N;}
+function solWires(ex){const W=[];solNets(ex).forEach(n=>{for(let i=0;i<n.length-1;i++)W.push([n[i],n[i+1]]);});return W;}
+
+/* ===================== union-find ===================== */
+function UF(){const p=new Map();const f=k=>{let r=k;while(p.has(r)&&p.get(r)!==r)r=p.get(r);let c=k;while(c!==r&&p.has(c)){const n=p.get(c);p.set(c,r);c=n;}return r;};return{f,u:(a,b)=>{const ra=f(a),rb=f(b);if(ra!==rb)p.set(ra,rb);}};}
+
+/* ===================== the electrical model =====================
+   st: {wires:[[a,b]], press:Set(button ids pressed), sens:{B1:bool,...}, ls:{SQ1:bool}, Q:[bool] PLC outputs (image), plcOn,
+        kOn:{K1:bool} contactor state (from last solve), olTrip:{F1:bool}, brk (Q0 tripped)} */
+function elSolve(ex,st){const R={err:[],dcShort:false,acShort:false,mix:false,I:[],coil:{},plcPw:false,mot:{}};const D=devList(ex),typ={};D.forEach(d=>typ[d.id]=d.t);
+  /* AC and DC must never meet */
+  {const u=UF();st.wires.forEach(([a,b])=>u.u(a,b));const ac=new Set(),dc=new Set();allTerms(ex).forEach(k=>{(isAC(k)?ac:dc).add(u.f(k));});for(const r of ac)if(dc.has(r)){R.mix=true;break;}}
+  if(R.mix){R.err.push('⚠ خطأ خطير: سلك يصل دائرة القوى 400V بدائرة التحكم 24V. افصله قبل التشغيل.');return R;}
+  /* ---- DC 24V ---- */
+  const u=UF();st.wires.forEach(([a,b])=>{if(!isAC(a))u.u(a,b);});
+  const dcEdge=(a,b)=>u.u(a,b);
+  D.forEach(d=>{const p=n=>d.id+'.'+n;
+    if(d.t==='ps'){dcEdge(p('L+'),p('L+2'));dcEdge(p('M'),p('M2'));}
+    if(d.t==='pbno'&&st.press.has(d.id))dcEdge(p('13'),p('14'));
+    if(d.t==='pbnc'&&!st.press.has(d.id))dcEdge(p('11'),p('12'));
+    if(d.t==='ls'&&st.ls[d.id])dcEdge(p('13'),p('14'));
+    if(d.t==='ol'&&!st.olTrip[d.id])dcEdge(p('95'),p('96'));});
+  /* PNP sensors: output = supply when powered and active (judged after supply nets are known) */
+  const LPn=u.f('PS.L+'),Mn=u.f('PS.M');
+  if(LPn===Mn){R.dcShort=true;R.err.push('⚠ قصر في مصدر 24V: L+ موصول بـ M. المصدر فصل حمايةً لنفسه.');return R;}
+  D.forEach(d=>{if(d.t!=='pnp')return;const p=n=>d.id+'.'+n;if(st.sens[d.id]&&u.f(p('BN'))===u.f('PS.L+')&&u.f(p('BU'))===u.f('PS.M'))dcEdge(p('BN'),p('BK'));});
+  R.plcPw=u.f('PLC.L+')===u.f('PS.L+')&&u.f('PLC.M')===u.f('PS.M');
+  const dolOk=u.f('PLC.DOL')===u.f('PS.L+')&&u.f('PLC.DOM')===u.f('PS.M'),dimOk=u.f('PLC.DIM')===u.f('PS.M');
+  /* outputs source 24V when on */
+  if(R.plcPw&&dolOk)OUT.forEach((o,i)=>{if(st.Q[i]&&st.plcRun)dcEdge('PLC.Q'+i,'PLC.DOL');});
+  const LP=u.f('PS.L+'),M=u.f('PS.M');
+  if(LP===M){R.dcShort=true;R.err.push('⚠ قصر: مخرج من مخارج الجهاز موصول مباشرة بـ M. الجهاز فصل المخرج حمايةً له.');R.qShort=true;}
+  IN.forEach((d,i)=>{R.I[i]=R.plcPw&&dimOk&&u.f('PLC.I'+i)===LP&&!R.dcShort;});
+  D.forEach(d=>{if(d.t==='k'||d.t==='sol')R.coil[d.id]=!R.dcShort&&u.f(d.id+'.A1')===LP&&u.f(d.id+'.A2')===M;});
+  R.dimOk=dimOk;R.dolOk=dolOk;
+  /* ---- AC 400V ---- */
+  const v=UF();st.wires.forEach(([a,b])=>{if(isAC(a))v.u(a,b);});
+  if(!st.brk){const kOn=st.kOn||{};
+    D.forEach(d=>{const p=n=>d.id+'.'+n;if(d.t==='k'&&kOn[d.id]){v.u(p('1'),p('2'));v.u(p('3'),p('4'));v.u(p('5'),p('6'));}if(d.t==='ol'){v.u(p('1'),p('2'));v.u(p('3'),p('4'));v.u(p('5'),p('6'));}});
+    const ph={};['L1','L2','L3'].forEach(l=>{const r=v.f('SUP.'+l);if(ph[r]&&ph[r]!==l)R.acShort=true;ph[r]=l;});
+    if(R.acShort)R.err.push('⚠ قصر بين الأطوار! القاطع الرئيسي Q0 فصل.');
+    else ex.mot.forEach(m=>{const t=n=>ph[v.f(m+'.'+n)]||null,sp=n=>v.f(m+'.'+n);
+      const W=[['U1','U2'],['V1','V2'],['W1','W2']].map(([a,b])=>({a:t(a),b:t(b),ra:sp(a),rb:sp(b)}));
+      let mode='off',dir=0;const full=W.every(w=>w.a&&w.b&&w.a!==w.b),seq=x=>{const o={L1:0,L2:1,L3:2};return x.every(Boolean)?((o[x[1]]-o[x[0]]+3)%3===1&&(o[x[2]]-o[x[1]]+3)%3===1?1:(o[x[1]]-o[x[0]]+3)%3===2&&(o[x[2]]-o[x[1]]+3)%3===2?-1:0):0;};
+      if(full){mode='delta';dir=seq([t('U1'),t('V1'),t('W1')]);}
+      else{const s=W.map(w=>w.a&&!w.b?w.rb:null);if(s.every(x=>x)&&s[0]===s[1]&&s[1]===s[2]&&new Set(W.map(w=>w.a)).size===3){mode='star';dir=seq(W.map(w=>w.a));}
+        else if(W.some(w=>(w.a&&w.b&&w.a!==w.b)||(w.a&&!w.b&&W.some(x=>x!==w&&x.rb===w.rb&&x.a&&x.a!==w.a))))mode='fault';}
+      if((mode==='star'||mode==='delta')&&!dir)mode='fault';
+      R.mot[m]={mode,dir};});}
+  return R;}
+
+/* ===================== Step 7 program =====================
+   program: [{c:'comment', rows:[[cell...]], lk:[[bool per boundary]], out:[outEl|null per row]}]
+   cell: null (open) | {t:'W'} wire | {t:'NO'|'NC'|'P'|'N', a} | {t:'GE', a:'C1', n} compare counter >= n
+   out: {t:'=','S','R','TON','TOF','CU', a, v (seconds / PV), r (reset address for CU)} */
+const NC=6,NR=4;
+function newNet(){return{c:'',rows:[Array.from({length:NC},()=>({t:'W'})),...Array.from({length:NR-1},()=>Array(NC).fill(null))],lk:Array.from({length:NR-1},()=>Array(NC+1).fill(false)),out:Array(NR).fill(null)};}
+function plcNew(){return{I:[],Q:Array(OUT.length).fill(false),M:{},T:{},C:{},E:{},run:false};}
+function bitOf(P,a,model){if(!a)return false;const c=a[0];
+  if(c==='I')return !!P.I[INI_A[a]];if(c==='Q')return !!P.Q[OUTI_A[a]];if(c==='M')return !!P.M[a];
+  if(c==='T'){const t=P.T[a];return !!(t&&t.q);}if(c==='C'){const k=P.C[a];return !!k&&(model==='300'?k.cv>0:k.cv>=(k.pv||0));}return false;}
+const INI_A={},OUTI_A={};IN.forEach((d,i)=>INI_A[IA(i)]=i);OUT.forEach((d,i)=>OUTI_A[QA(i)]=i);
+function netFlow(P,N,model,key,mon){const R=N.rows.length,val=Array.from({length:R},()=>Array(NC+1).fill(false));
+  for(let r=0;r<R;r++)val[r][0]=true;
+  const join=b=>{if(b===0)return;for(let r=0;r<R-1;r++)if(N.lk[r][b]){let r2=r;while(r2<R-1&&N.lk[r2][b])r2++;const v=val.slice(r,r2+1).some(x=>x[b]);for(let q=r;q<=r2;q++)val[q][b]=v;r=r2;}};
+  for(let c=0;c<NC;c++){for(let r=0;r<R;r++){const e=N.rows[r][c];let pass=false;
+      if(e){const b=bitOf(P,e.a,model);
+        if(e.t==='W')pass=true;else if(e.t==='NO')pass=b;else if(e.t==='NC')pass=!b;
+        else if(e.t==='P'||e.t==='N'){const k=key+':'+r+':'+c,old=!!P.E[k];P.E[k]=b;pass=e.t==='P'?b&&!old:!b&&old;}
+        else if(e.t==='GE'){const k=P.C[e.a];pass=!!k&&k.cv>=(+e.n||0);}}
+      val[r][c+1]=val[r][c]&&pass;if(mon)mon[r][c]=val[r][c+1];}
+    join(c+1);}
+  return val.map(x=>x[NC]);}
+function plcScan(P,prog,model,dt,mon){
+  prog.forEach((N,ni)=>{const m=mon?(mon[ni]={c:N.rows.map(()=>Array(NC).fill(false)),o:[]}):null;const pw=netFlow(P,N,model,ni,m&&m.c);
+    N.out.forEach((o,r)=>{if(!o)return;const p=pw[r];if(m)m.o[r]=p;const a=o.a;if(!a)return;
+      const set=(a,v)=>{const c=a[0];if(c==='Q'&&OUTI_A[a]!=null)P.Q[OUTI_A[a]]=v;else if(c==='M')P.M[a]=v;};
+      if(o.t==='=')set(a,p);else if(o.t==='S'){if(p)set(a,true);}else if(o.t==='R'){if(p){if(a[0]==='C'){const k=P.C[a];if(k)k.cv=0;}else if(a[0]==='T'){P.T[a]={acc:0,q:false};}else set(a,false);}}
+      else if(o.t==='TON'||o.t==='TOF'){const t=P.T[a]||(P.T[a]={acc:0,q:false,in:false});const pt=+o.v||0;
+        if(o.t==='TON'){if(p){t.acc=Math.min(pt,t.acc+dt);t.q=t.acc>=pt;}else{t.acc=0;t.q=false;}}
+        else{if(p){t.acc=0;t.q=true;}else if(t.q){t.acc+=dt;if(t.acc>=pt)t.q=false;}}t.in=p;}
+      else if(o.t==='CU'){const k=P.C[a]||(P.C[a]={cv:0,pv:0,last:false});k.pv=+o.v||0;if(p&&!k.last)k.cv=Math.min(999,k.cv+1);k.last=p;
+        if(o.r&&bitOf(P,o.r,model))k.cv=0;}});});}
+/* ===================== reference programs (canonical addresses, S7-1200 style) ===================== */
+function cellOf(s){if(s==null)return null;if(s==='W')return{t:'W'};let m;
+  if((m=/^>=(C\d+):(\d+)$/.exec(s)))return{t:'GE',a:m[1],n:+m[2]};if((m=/^([PN]):(.+)$/.exec(s)))return{t:m[1],a:m[2]};if(s[0]==='/')return{t:'NC',a:s.slice(1)};return{t:'NO',a:s};}
+function outOf(s){if(!s)return null;if(s[0]==='=')return{t:'=',a:s.slice(1)};const p=s.split(':');
+  if(p[0]==='S'||p[0]==='R')return{t:p[0],a:p[1]};if(p[0]==='TON'||p[0]==='TOF')return{t:p[0],a:p[1],v:+p[2]};if(p[0]==='CU')return{t:'CU',a:p[1],v:+p[2],r:p[3]||''};return null;}
+function NW(c,rows,outs,links){const N=newNet();N.c=c;N.rows=Array.from({length:NR},(_,r)=>Array.from({length:NC},(_,k)=>{const s=rows[r]&&rows[r][k];if(s!==undefined)return cellOf(s);return r===0?{t:'W'}:null;}));
+  N.out=Array.from({length:NR},(_,r)=>outOf(outs[r]));(links||[]).forEach(([r,b])=>{N.lk[r][b]=true;});return N;}
+const LATCH=(c,set,stop,ol,mem)=>NW(c,[[set,stop,ol],[mem]],['='+mem],[[0,1]]);
+const P_MIX=()=>[LATCH('الخلاط: تشغيل S2 مع تثبيت، إيقاف S3 والأوفرلود','I1.3','I1.5','I1.4','M0.1'),
+  NW('الكونتاكتور الرئيسي KM',[['M0.1']],['=Q0.7']),NW('زمن النجمة 5 ثوانٍ',[['M0.1']],['TON:T3:5']),
+  NW('نجمة KY حتى ينتهي الزمن، مع إعاقة KD',[['M0.1','/T3','/Q1.1']],['=Q1.0']),NW('دلتا KD بعد الزمن، مع إعاقة KY',[['M0.1','T3','/Q1.0']],['=Q1.1'])];
+const P_PRESS=()=>[NW('B1 كشف قطعة لم تُختم: ابدأ دورة الختم',[['I0.2','/M0.3','M0.0']],['S:M0.2']),NW('أنزل المكبس Y1',[['M0.2','/M0.3']],['=Q0.1']),
+  NW('المكبس تحت 1B2: اضغط نصف ثانية',[['M0.2','I0.4']],['TON:T4:0.5']),NW('انتهى الضغط: القطعة خُتمت',[['T4']],['S:M0.3']),
+  NW('المكبس رجع فوق 1B1: انتهت الدورة',[['M0.3','I0.3']],['R:M0.2']),NW('القطعة خرجت من تحت المكبس',[['/I0.2']],['R:M0.3'])];
+const P_SORT=()=>[NW('B2 كشف قطعة معيبة: ابدأ الطرد',[['I0.5']],['S:M0.4']),NW('افتح بوابة الطرد Y2',[['M0.4']],['=Q0.2']),
+  NW('زمن فتح البوابة',[['M0.4']],['TON:T5:0.8']),NW('انتهى الطرد',[['T5']],['R:M0.4'])];
+const P_BOX=(lift)=>[NW('B4 يعدّ القطع الساقطة في الصندوق (يُصفَّر أثناء نقل الصناديق)',[['I0.7']],['CU:C1:5:M0.5']),NW('الصندوق امتلأ: 5 قطع',[['>=C1:5']],['=M0.6']),
+  lift?NW('انقل الصناديق: الصندوق ممتلئ وآخر قطعة استقرت فيه، والتعبئة انتهت أو لا صندوق عندها، والمصعد تحت وجاهز',[['M0.6','M0.7','I1.1','/M1.1','/M1.2','/I0.7'],[null,'/I1.0']],['S:M0.5'],[[0,1],[0,2]])
+      :NW('انقل الصناديق: الصندوق ممتلئ وآخر قطعة استقرت فيه، والتعبئة انتهت أو لا صندوق عندها',[['M0.6','M0.7','/I0.7'],[null,'/I1.0']],['S:M0.5'],[[0,1],[0,2]]),
+  ...(lift?[NW('الصندوق المعبأ ذاهب إلى المصعد',[['P:M0.5','M0.7']],['S:M1.3'])]:[]),
+  NW('وصل صندوق إلى التعبئة B5: أوقف النقل',[['P:I1.0']],['R:M0.5']),NW('سير الصناديق M2',[['M0.5','M0.0','I1.4']],['=Q0.3']),
+  NW('الصندوق غادر التعبئة',[['/I1.0']],['R:M0.7']),NW('زمن التعبئة 4 ثوانٍ',[['I1.0','/M0.7','/M0.5']],['TON:T6:4']),
+  NW('صمام التعبئة Y3',[['I1.0','/M0.7','/M0.5','/T6']],['=Q0.4']),NW('انتهت التعبئة',[['T6']],['S:M0.7'])];
+const P_LIFTUD=()=>[NW('المصعد فوق SQ2: أوقف الصعود',[['I1.2']],['R:M1.1']),NW('انتظر ثانيتين فوق',[['I1.2']],['TON:T7:2']),NW('ابدأ النزول',[['T7']],['S:M1.2']),
+  NW('المصعد تحت SQ1: أوقف النزول',[['I1.1']],['R:M1.2']),NW('صعود K3 مع إعاقة K4',[['M1.1','/I1.2','/Q0.6','I1.4']],['=Q0.5']),NW('نزول K4 مع إعاقة K3',[['M1.2','/I1.1','/Q0.5','I1.4']],['=Q0.6'])];
+const SOL={
+ e1:()=>[LATCH('M1: تشغيل S1 مع تثبيت ذاتي، إيقاف S0 والأوفرلود','I0.0','I0.1','I1.4','Q0.0')],
+ e2:()=>[LATCH('ذاكرة تشغيل الخط','I0.0','I0.1','I1.4','M0.0'),NW('تأخير بدء M1 ثلاث ثوانٍ',[['M0.0']],['TON:T1:3']),NW('السير الناقل M1',[['M0.0','T1','I1.4']],['=Q0.0']),
+   NW('M2 يستمر 3 ثوانٍ بعد الإيقاف',[['M0.0']],['TOF:T2:3']),NW('سير الصناديق M2',[['T2','I1.4']],['=Q0.3'])],
+ e3:()=>P_MIX(),
+ e4:()=>[LATCH('ذاكرة تشغيل الخط','I0.0','I0.1','I1.4','M0.0'),...P_PRESS(),NW('السير M1 يعمل إذا لم يكن المكبس في دورة',[['M0.0','/M0.2','I1.4']],['=Q0.0'])],
+ e5:()=>[LATCH('ذاكرة تشغيل الخط','I0.0','I0.1','I1.4','M0.0'),...P_SORT(),NW('السير M1',[['M0.0','I1.4']],['=Q0.0'])],
+ e6:()=>[LATCH('ذاكرة تشغيل الخط','I0.0','I0.1','I1.4','M0.0'),...P_BOX(false),NW('السير M1: صندوق فارغ تحته ولم يمتلئ ولا نقل',[['M0.0','I0.6','/M0.5','/M0.6','I1.4']],['=Q0.0'])],
+ e7:()=>[NW('S1 يبدأ الصعود والمصعد تحت',[['I0.0','I1.1','/M1.2']],['S:M1.1']),...P_LIFTUD(),NW('S0 يوقف الحركة',[['/I0.1'],['/I0.1']],['R:M1.1','R:M1.2'])],
+ e8:()=>[LATCH('ذاكرة تشغيل الخط','I0.0','I0.1','I1.4','M0.0'),...P_MIX(),...P_PRESS(),...P_SORT(),...P_BOX(true),
+   NW('انتهى النقل والصندوق المعبأ على المصعد: اصعد',[['N:M0.5','M1.3','I1.1']],['S:M1.1']),NW('',[['M1.1']],['R:M1.3']),...P_LIFTUD(),
+   NW('السير M1: لا ختم، وصندوق فارغ تحت المزلق، ولا نقل، ولم يمتلئ',[['M0.0','/M0.2','I0.6','/M0.5','/M0.6','I1.4']],['=Q0.0'])]};
+/* ===================== the plant (mechanics of the line) ===================== */
+const GX={feed:150,press:400,gate:640,end:900,chute:960,fill:1110,lift:1260,boxEnd:1215};
+function plantNew(ex){const p=ex.plant;const PL={t:0,pieces:[],boxes:[],nid:1,press:0,gate:0,lift:0,liftBox:null,mixA:0,mixDelta:0,spawnT:0,dist:0,
+  cnt:{deliver:0,stamped:0,badRej:0,goodRej:0,jam:0,floor:0,spill:0,boxFull:0,boxFill:0,stored:0,liftCyc:0,crash:0,over:0,unstamped:0,badIn:0},
+  stall:{},jamT:0,crashT:0,spillT:0,msg:'',top:false,shelf:[],liftWait:0};
+  if(p.boxes)[660,810,960].forEach(x=>PL.boxes.push({id:PL.nid++,x,n:0,fill:0,st:'belt'}));
+  return PL;}
+const motRun=(EL,m)=>{const r=EL&&EL.mot&&EL.mot[m];return r&&(r.mode==='star'||r.mode==='delta')?r:null;};
+function plantSensors(ex,PL){const S={},near=(x,c,w)=>Math.abs(x-c)<=w;
+  const belt=PL.pieces.filter(q=>q.st==='belt');
+  S.B1=belt.some(q=>near(q.x,GX.press,6));S['1B1']=PL.press<0.03;S['1B2']=PL.press>0.97;
+  S.B2=belt.some(q=>q.bad&&q.x>=GX.gate-45&&q.x<=GX.gate-25);
+  S.B3=PL.boxes.some(b=>b.st==='belt'&&near(b.x,GX.chute,6));S.B4=PL.pieces.some(q=>q.st==='chute');S.B5=PL.boxes.some(b=>b.st==='belt'&&near(b.x,GX.fill,6));
+  const LS={SQ1:PL.lift<=0.01,SQ2:PL.lift>=0.99};return{S,LS};}
+/* one step: EL = electrical result, coil states; returns overload trips requested */
+function plantStep(ex,PL,EL,dt,kOn){const p=ex.plant,C=PL.cnt,trip=[];PL.t+=dt;PL.msg='';
+  const coil=k=>!!(kOn&&kOn[k]);
+  /* mixer */
+  const mx=motRun(EL,'M3');PL.mixA+=dt*(mx?(mx.mode==='delta'?6:2.2):0);PL.mixDelta=mx&&mx.mode==='delta'?PL.mixDelta+dt:0;
+  /* conveyor 1 */
+  const m1=motRun(EL,'M1');let v1=m1?m1.dir*(m1.mode==='delta'?120:70):0;
+  /* press and gate (pneumatics, always supplied with air) */
+  if(p.press){PL.press=Math.max(0,Math.min(1,PL.press+(coil('Y1')?2.6:-2.6)*dt));}
+  if(p.sort){PL.gate=Math.max(0,Math.min(1,PL.gate+(coil('Y2')?6:-6)*dt));}
+  /* jam: belt moving while the press is down on a piece */
+  if(p.press&&PL.press>0.55&&v1&&PL.pieces.some(q=>q.st==='belt'&&Math.abs(q.x-GX.press)<24)){PL.jamT+=dt;v1=0;if(PL.jamT>0.05&&!PL.jamNow){PL.jamNow=1;C.jam++;}PL.msg='⚠ قطعة انحشرت تحت المكبس والسير يتحرك: المحرك M1 مُحمَّل زيادة';if(PL.jamT>1){trip.push('F1');}}
+  else{PL.jamT=0;PL.jamNow=0;}
+  if(p.belt){/* spawn */const free=!PL.pieces.some(q=>q.st==='belt'&&Math.abs(q.x-GX.feed)<70);
+    if(p.mixer){PL.spawnT+=dt;if(PL.mixDelta>1&&PL.spawnT>2.8&&free){PL.spawnT=0;PL.pieces.push({id:PL.nid++,x:GX.feed,bad:p.sort&&Math.random()<0.35,stamped:false,st:'belt',f:0});}}
+    else if(v1>0){PL.dist+=v1*dt;if(PL.dist>190&&free){PL.dist=0;PL.pieces.push({id:PL.nid++,x:GX.feed,bad:p.sort&&Math.random()<0.35,stamped:false,st:'belt',f:0});}}
+    if(!p.mixer&&!PL.pieces.length)PL.pieces.push({id:PL.nid++,x:GX.feed+40,bad:false,stamped:false,st:'belt',f:0});}
+  PL.pieces.forEach(q=>{
+    if(q.st==='belt'){q.x+=v1*dt;if(q.x<GX.feed-30)q.x=GX.feed-30;
+      if(p.press&&PL.press>0.95&&Math.abs(q.x-GX.press)<10&&!q.stamped){q.stamped=true;C.stamped++;}
+      if(p.sort&&PL.gate>0.5&&Math.abs(q.x-GX.gate)<28){q.st='rej';q.f=0;if(q.bad)C.badRej++;else C.goodRej++;}
+      if(q.x>=GX.end){if(p.press&&!q.stamped)C.unstamped++;if(q.bad)C.badIn++;q.st=p.boxes?'chute':'bin';q.f=0;if(!p.boxes)C.deliver++;}}
+    else if(q.st==='chute'){q.f+=dt/0.45;if(q.f>=1){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.chute)<22);
+      if(b){b.n++;C.deliver++;q.st='box';q.box=b.id;if(b.n>5){C.over++;}}else{q.st='floor';C.floor++;}}}
+    else if(q.st==='rej'||q.st==='bin'||q.st==='floor'){q.f+=dt;}});
+  PL.pieces=PL.pieces.filter(q=>q.st==='belt'||q.st==='chute'||((q.st==='rej'||q.st==='bin'||q.st==='floor')&&q.f<1.2));
+  /* box conveyor */
+  if(p.boxes){const m2=motRun(EL,'M2'),v2=m2?m2.dir*(m2.mode==='delta'?100:60):0;
+    if(v2){const lead=PL.boxes.filter(b=>b.st==='belt').reduce((a,b)=>Math.max(a,b.x),0);let blocked=false;
+      if(p.lift&&lead+v2*dt>=GX.boxEnd&&v2>0&&!(PL.lift<=0.01&&!PL.liftBox)){blocked=true;PL.msg='⚠ سير الصناديق يدفع صندوقًا والمصعد ليس تحت أو عليه صندوق';PL.stall.F2=(PL.stall.F2||0)+dt;if(PL.stall.F2>1.5)trip.push('F2');}
+      if(!blocked){PL.boxes.forEach(b=>{if(b.st!=='belt')return;const ox=b.x;b.x+=v2*dt;
+        if(ox<GX.chute-10&&b.x>=GX.chute-10){}
+        if(Math.abs(ox-GX.chute)<=6&&Math.abs(b.x-GX.chute)>6&&v2>0&&b.n>0){if(b.n===5)C.boxFull++;}
+        if(Math.abs(ox-GX.fill)<=6&&Math.abs(b.x-GX.fill)>6&&v2>0&&b.fill>0){if(b.fill>=0.9&&b.fill<=1.15)C.boxFill++;}
+        if(b.x>=GX.boxEnd){if(p.lift){b.st='lift';b.x=GX.lift;PL.liftBox=b.id;}else{b.st='done';}}});}
+      else PL.stall.F2=PL.stall.F2;}
+    else PL.stall.F2=0;
+    const belt=PL.boxes.filter(b=>b.st==='belt');const minx=belt.reduce((a,b)=>Math.min(a,b.x),1e9);
+    if(belt.length&&minx>660){PL.boxes.push({id:PL.nid++,x:minx-150,n:0,fill:0,st:'belt'});}
+    /* filling */
+    if(p.boxes&&coil('Y3')){const b=belt.find(b=>Math.abs(b.x-GX.fill)<10);if(b){b.fill+=dt/4;if(b.fill>1.15&&!b.sp){b.sp=1;C.spill++;}}else{PL.spillT+=dt;if(PL.spillT>0.3){PL.spillT=0;C.spill++;}}PL.msg=PL.msg||(b?'':'⚠ صمام التعبئة مفتوح ولا يوجد صندوق تحته: انسكاب');}
+    PL.boxes=PL.boxes.filter(b=>b.st!=='done'||b.x<1500);PL.boxes.forEach(b=>{if(b.st==='done'){b.x+=80*dt;}});PL.boxes=PL.boxes.filter(b=>!(b.st==='done'&&b.x>1290));}
+  /* lift */
+  if(p.lift){const m4=motRun(EL,'M4');const v=m4?m4.dir/3:0;const np=PL.lift+v*dt;
+    if((np>1.005&&v>0)||(np<-0.005&&v<0)){PL.crashT+=dt;PL.msg='⚠ المصعد يدفع نهاية المشوار والمحرك ما زال يعمل!';if(PL.crashT>0.4&&!PL.crashNow){PL.crashNow=1;C.crash++;trip.push('F4');}}else{PL.crashT=0;PL.crashNow=0;}
+    PL.lift=Math.max(0,Math.min(1,np));
+    if(PL.lift>=0.99){if(!PL.top){PL.top=true;}if(PL.liftBox){PL.liftWait+=dt;if(PL.liftWait>0.5){PL.boxes=PL.boxes.filter(b=>b.id!==PL.liftBox);PL.liftBox=null;PL.liftWait=0;C.stored++;PL.shelf.push(1);}}}
+    if(PL.lift<=0.01&&PL.top){PL.top=false;C.liftCyc++;}
+    if(p.liftSelf&&PL.lift<=0.01&&!PL.liftBox){PL.liftWait+=dt;if(PL.liftWait>1){PL.liftWait=0;const b={id:PL.nid++,x:GX.lift,n:5,fill:1,st:'lift'};PL.boxes.push(b);PL.liftBox=b.id;}}}
+  /* a motor running on a fault (one phase missing) hums and trips its overload */
+  ex.mot.forEach(m=>{const r=EL&&EL.mot&&EL.mot[m];const f=MOT[m].f;if(r&&r.mode==='fault'){PL.stall[f]=(PL.stall[f]||0)+dt;PL.msg=PL.msg||'⚠ المحرك '+m+' يطن: ينقصه طور أو توصيل أطرافه خطأ';if(PL.stall[f]>2)trip.push(f);}else if(f!=='F2')PL.stall[f]=0;});
+  return trip;}
+/* ===================== one simulation tick of the whole line ===================== */
+function lineNew(ex){return{ex,wires:[],press:new Set(),plcRun:true,Q:Array(OUT.length).fill(false),kOn:{},olTrip:{},brk:false,model:'300',prog:[],P:plcNew(),PL:plantNew(ex),EL:null,g:{},gx:{},h:{},err:[],mon:null,t:0};}
+function lineTick(L,dt,mon){const ex=L.ex,PL=L.PL;L.t+=dt;
+  const sn=plantSensors(ex,PL);const base={wires:L.wires,press:L.press,sens:sn.S,ls:sn.LS,olTrip:L.olTrip,brk:L.brk,plcRun:L.plcRun};
+  let E=elSolve(ex,{...base,Q:L.Q,kOn:L.kOn});
+  if(E.plcPw&&L.plcRun&&!E.mix){L.P.I=E.I;plcScan(L.P,L.prog,L.model,dt,mon);L.Q=L.P.Q.slice();}else{L.Q=Array(OUT.length).fill(false);if(!E.plcPw){L.P=plcNew();}}
+  E=elSolve(ex,{...base,Q:L.Q,kOn:L.kOn});const kOn={};devList(ex).forEach(d=>{if(d.t==='k'||d.t==='sol')kOn[d.id]=!!(E.coil&&E.coil[d.id]);});L.kOn=kOn;
+  E=elSolve(ex,{...base,Q:L.Q,kOn});if(E.acShort){L.brk=true;}L.EL=E;
+  const tr=plantStep(ex,PL,E,dt,kOn);tr.forEach(f=>{if(!L.olTrip[f]){L.olTrip[f]=true;L.err.push('فصل الأوفرلود '+f);}});
+  goalsStep(L,dt);return E;}
+function runOf(L,m){const r=L.EL&&L.EL.mot&&L.EL.mot[m];return !!r&&(r.mode==='star'||r.mode==='delta');}
+function goalsStep(L,dt){const g=L.g,h=L.h,C=L.PL.cnt,t=L.t,ex=L.ex,on=m=>runOf(L,m);
+  const pr=k=>L.press.has(k);
+  /* edges of the buttons */
+  ['S1','S0','S2','S3'].forEach(k=>{const v=pr(k),o=h['p'+k];if(v&&!o)h['dn'+k]=t;if(!v&&o)h['up'+k]=t;h['p'+k]=v;});
+  ['M1','M2','M3','M4'].forEach(m=>{const v=on(m),o=h['r'+m];if(v&&!o)h['on'+m]=t;if(!v&&o)h['off'+m]=t;h['r'+m]=v;});
+  if(h.upS1!=null&&t-h.upS1>1&&t-h.upS1<1.2&&on('M1'))g.run=1;
+  if(h.dnS0!=null&&h.offM1!=null&&h.offM1>=h.dnS0&&h.offM1-h.dnS0<0.6&&h.onM1<h.dnS0)g.stop=1;
+  if(h.olT!=null&&t-h.olT>0.7&&!h.olDone){h.olDone=1;if(ex.mot.every(m=>!on(m))&&h.olRun)g.ol=1;}
+  if(C.deliver>=5)g.deliver5=1;
+  if(h.onM1!=null&&h.onM2!=null&&on('M2')&&h.onM1-h.onM2>2.3&&h.onM1-h.onM2<3.8)g.seqStart=1;
+  if(h.offM2!=null&&h.offM1!=null&&h.offM2-h.offM1>2.3&&h.offM2-h.offM1<3.8)g.seqStop=1;
+  const m3=L.EL&&L.EL.mot&&L.EL.mot.M3;if(m3&&m3.mode==='star'){if(h.starT==null)h.starT=t;g.star=1;}else if(!(m3&&m3.mode==='delta'))h.starT=null;
+  if(m3&&m3.mode==='delta'&&h.starT!=null&&t-h.starT>=4)g.delta=1;
+  if(h.dnS3!=null&&h.offM3!=null&&h.offM3>=h.dnS3&&h.offM3-h.dnS3<0.6)g.mixStop=1;
+  if(C.stamped>=5)g.stamp5=1;if(C.badRej>=3)g.reject3=1;if(C.boxFull>=2)g.box2=1;if(C.boxFill>=2)g.fill2=1;if(C.liftCyc>=2)g.lift2=1;if(C.stored>=2)g.store2=1;
+  /* the "no ..." goals: met once the work is done without the mistake; failed for good after one */
+  const neg=(k,bad,done)=>{if(bad)L.gx[k]=1;else if(done&&!L.gx[k])g[k]=1;};
+  neg('nojam',C.jam>0,C.stamped>=3);neg('nogoodrej',C.goodRej>0,C.badRej>=2);neg('nospill',C.spill+C.floor+C.over>0,C.boxFull>=1||C.boxFill>=1);neg('nocrash',C.crash>0,C.liftCyc>=1);
+  ex.goals.forEach(k=>{if(L.gx[k])delete g[k];});}
+function olTest(L){const f=L.ex.mot.map(m=>MOT[m].f)[0];L.h.olRun=L.ex.mot.some(m=>runOf(L,m));L.olTrip[f]=true;L.h.olT=L.t;L.h.olDone=0;}
+/* ===================== UI ===================== */
 const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const EMB=window.parent&&window.parent!==window&&typeof window.parent.__lnClose==='function';
-$('bBack').onclick=()=>{if(EMB)window.parent.__lnClose();else location.href='index.html';};
-
-/* ---------- the line: positions on the scene ---------- */
-const XS=430,XR=780,XE=1080,XEND=1120,BELT_Y=300,PW=44,PH=30,VB=90;
-/* PLC I/O: what each address is wired to on this line */
-const IOC={I1:'K1 الخط في وضع التشغيل',I2:'B1 قطعة تحت المكبس',I3:'1B1 المكبس فوق',I4:'1B2 المكبس تحت',I5:'B2 قطعة عند الفرز',I6:'B3 الكاميرا: القطعة معيبة',I7:'B4 قطعة في نهاية الخط',I8:'S2 تصفير العداد',
-  Q1:'K2 محرك السير',Q2:'1Y1 إنزال المكبس',Q3:'2Y1 ذراع الطرد',Q4:'H3 اكتملت الدفعة',M1:'دورة الختم',M2:'دورة الطرد',M3:'القطعة خُتمت',M4:'',T1:'زمن الختم',T2:'زمن الطرد',T3:'',C1:'عداد الدفعة',C2:''};
-const OPS=['I1','I2','I3','I4','I5','I6','I7','I8','Q1','Q2','Q3','Q4','M1','M2','M3','M4','T1','T2','T3','C1','C2'];
-const c_=(a,n)=>({a,n:!!n});
-/* the default program, rung by rung (easy-style coils: = coil, S set, R reset, TT timer, CC count, RC reset counter) */
-const PROG0=[
- {s:[c_('I2'),c_('M3',1)],t:'S',o:'M1',r:'قطعة وصلت تحت المكبس ولم تُختم بعد: ابدأ دورة الختم'},
- {s:[c_('M1'),c_('M3',1)],t:'=',o:'Q2',r:'أنزل المكبس حتى تُختم القطعة'},
- {s:[c_('M1'),c_('I4')],t:'TT',o:'T1',p:1,r:'المكبس وصل تحت: اضغط ثانية واحدة'},
- {s:[c_('T1')],t:'S',o:'M3',r:'انتهى الضغط: القطعة خُتمت، فيرتفع المكبس'},
- {s:[c_('M3'),c_('I3')],t:'R',o:'M1',r:'المكبس رجع فوق: انتهت دورة الختم'},
- {s:[c_('I2',1)],t:'R',o:'M3',r:'خرجت القطعة من المكبس: استعد للقطعة التالية'},
- {s:[c_('I5'),c_('I6')],t:'S',o:'M2',r:'قطعة معيبة عند الفرز: ابدأ الطرد'},
- {s:[c_('M2')],t:'=',o:'Q3',r:'أخرج ذراع الطرد'},
- {s:[c_('M2')],t:'TT',o:'T2',p:.8,r:'زمن خروج الذراع'},
- {s:[c_('T2')],t:'R',o:'M2',r:'انتهى الطرد: أرجع الذراع'},
- {s:[c_('I1'),c_('M1',1),c_('M2',1),c_('C1',1)],t:'=',o:'Q1',r:'السير يتحرك إذا كان الخط يعمل ولا ختم ولا طرد ولم تكتمل الدفعة'},
- {s:[c_('I7')],t:'CC',o:'C1',p:10,r:'عدّ القطع الواصلة إلى نهاية الخط'},
- {s:[c_('I8')],t:'RC',o:'C1',r:'S2 يصفّر العداد'},
- {s:[c_('C1')],t:'=',o:'Q4',r:'اكتملت الدفعة: أضئ H3'}];
+const EMB=(()=>{try{return window.parent!==window&&typeof window.parent.__lnClose==='function';}catch(_){return false;}})();
+const TRAINER=(()=>{try{return !EMB||window.parent.document.body.classList.contains('trainer');}catch(_){return true;}})();
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(_){return null;}};
 const clone=o=>JSON.parse(JSON.stringify(o));
-const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(_){return null;}};
+$('bBack').onclick=()=>{if(EMB)window.parent.__lnClose();else location.href='index.html';};
+document.querySelectorAll('.trainer').forEach(b=>{b.hidden=!TRAINER;});
+let ZOOM0=innerWidth<700?0.6:1;let MODEL=ls('ln2:model')==='1200'?'1200':'300',EX=EXS.find(e=>e.id===ls('ln2:ex'))||EXS[0],L=null,EP=[],SEL=null,PEND=null,WSEL=null,ZOOM=ZOOM0,MON=false,MONS=[],STL=false,TAB=ls('ln2:tab')||'ex',HIST=[];
+/* ---------- addresses as each CPU writes them ---------- */
+function dispA(a,ctx){if(!a)return '???';const c=a[0];
+  if(c==='I'||c==='Q'||c==='M'){let s=a;if(c==='Q'&&MODEL==='300'){const [b,i]=a.slice(1).split('.');s='Q'+(+b+4)+'.'+i;}return MODEL==='1200'?'%'+s:s;}
+  if(c==='T'||c==='C'){if(MODEL==='300')return a;return ctx==='box'?'"'+a+'"':ctx==='cv'?'"'+a+'".CV':'"'+a+'".Q';}return a;}
+function symOf(a){if(!a)return '';if(a[0]==='I'){const i=INI_A[a];return i!=null?IN[i][0]:'';}if(a[0]==='Q'){const i=OUTI_A[a];return i!=null?OUT[i][0]:'';}return '';}
+function tFmt(v){v=+v||0;if(MODEL==='300')return 'S5T#'+(v<1?Math.round(v*1000)+'MS':(Math.round(v*10)/10)+'S');return 'T#'+(v<1?Math.round(v*1000)+'ms':(Math.round(v*10)/10)+'s');}
+const BOXN={TON:{'300':'S_ODT','1200':'TON'},TOF:{'300':'S_OFFDT','1200':'TOF'},CU:{'300':'S_CU','1200':'CTU'}};
+const ADDR={I:IN.map((d,i)=>IA(i)),Q:OUT.map((d,i)=>QA(i)),M:[],T:[],C:[]};for(let b=0;b<4;b++)for(let i=0;i<8;i++)ADDR.M.push('M'+b+'.'+i);for(let i=1;i<=10;i++)ADDR.T.push('T'+i);for(let i=1;i<=5;i++)ADDR.C.push('C'+i);
+const tName=k=>{const [d,n]=k.split('.');if(d==='PLC'){if(n==='L+'||n==='M')return 'PLC:'+n;if(n==='DIM')return 'PLC:1M';if(n==='DOL')return 'PLC:'+(MODEL==='300'?'2L+':'3L+');if(n==='DOM')return 'PLC:'+(MODEL==='300'?'2M':'3M');
+  if(n[0]==='I')return dispA(IA(+n.slice(1)));if(n[0]==='Q')return dispA(QA(+n.slice(1)));}if(d==='PS')return 'مصدر 24V:'+n.replace('2','');if(d==='SUP')return n;return d+':'+n;};
+function say(m,err){const e=$('msg');e.textContent=m||'';e.className='msg'+(err?' err':'');}
 
-/* ---------- state ---------- */
-const S={Q0:true,S9:false,pr:new Set(),K1:false,K2:false,run:true,prog:(()=>{try{const p=JSON.parse(ls('lnProg'));if(Array.isArray(p)&&p.length)return p;}catch(_){}return clone(PROG0);})(),
-  Q:{},M:{},T:{},C:{},I:{},st:0,pu:0,parts:[],nid:1,off:0,good:0,rej:0,err:0,flt:new Set(),hid:null,last:'',seq:0,mf:0};
-const F=k=>S.flt.has(k);
+/* ---------- state per exercise ---------- */
+function keyW(){return 'ln2:'+EX.id+':w';}function keyP(){return 'ln2:'+EX.id+':p';}
+function loadEx(){L=lineNew(EX);L.model=MODEL;try{const w=JSON.parse(ls(keyW())||'null');if(Array.isArray(w))L.wires=w.filter(x=>Array.isArray(x)&&x.length===2);}catch(_){}
+  try{const p=JSON.parse(ls(keyP())||'null');EP=Array.isArray(p)&&p.length?p:[newNet()];}catch(_){EP=[newNet()];}
+  L.prog=clone(EP);L.plcRun=true;SEL=null;PEND=null;WSEL=null;HIST=[];MONS=[];
+  $('exSel').value=EX.id;ls('ln2:ex',EX.id);renderAll();}
+function saveW(){ls(keyW(),JSON.stringify(L.wires));}function saveP(){ls(keyP(),JSON.stringify(EP));}
+function setModel(m){MODEL=m;L.model=m;ls('ln2:model',m);$('m300').classList.toggle('on',m==='300');$('m1200').classList.toggle('on',m==='1200');L.P=plcNew();renderAll();}
+EXS.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.n;$('exSel').appendChild(o);});
+$('exSel').onchange=e=>{EX=EXS.find(x=>x.id===e.target.value)||EXS[0];loadEx();say('التمرين: '+EX.n);};
+$('m300').onclick=()=>setModel('300');$('m1200').onclick=()=>setModel('1200');
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+function showTab(t){TAB=t;ls('ln2:tab',t);document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));
+  if(t==='wire')renderBoard();if(t==='prog')renderProg();if(t==='ex')renderDoc();}
+function renderAll(){$('m300').classList.toggle('on',MODEL==='300');$('m1200').classList.toggle('on',MODEL==='1200');renderOps();renderDoc();renderBoard();renderProg();showTab(TAB);}
 
-/* ---------- PLC ---------- */
-function ev(a){const k=a[0];if(k==='I')return !!S.I[a];if(k==='Q')return !!S.Q[a];if(k==='M')return !!S.M[a];
-  if(k==='T'){const t=S.T[a];return !!t&&t.acc>=t.pre;}if(k==='C'){const c=S.C[a];return !!c&&c.cnt>=c.pre;}return false;}
-const passE=(e,f)=>e.par?e.par.some(b=>b.every(x=>passE(x,f))):(f(e.a)!==e.n);
-function scan(dt){S.prog.forEach(r=>{const v=r.s.every(e=>passE(e,ev));r._v=v;const o=r.o;
-  if(r.t==='='||r.t==='S'||r.t==='R'){const m=o[0]==='Q'?S.Q:S.M;if(r.t==='=')m[o]=v;else if(v)m[o]=r.t==='S';}
-  else if(r.t==='TT'){const t=S.T[o]||(S.T[o]={acc:0,pre:1});t.pre=+r.p||1;t.acc=v?Math.min(t.pre,t.acc+dt):0;}
-  else if(r.t==='CC'){const c=S.C[o]||(S.C[o]={cnt:0,pre:10,l:false});c.pre=Math.max(1,+r.p||10);if(v&&!c.l)c.cnt++;c.l=v;}
-  else if(r.t==='RC'){if(v&&S.C[o])S.C[o].cnt=0;}});}
-function plcReset(){S.Q={};S.M={};S.T={};Object.values(S.C).forEach(c=>c.l=false);}
-
-/* ---------- one step of the whole line ---------- */
-const near=(x,c,w)=>Math.abs(x-c)<=w;
-function step(dt){const P=S.parts.filter(p=>p.st==='belt');
-  /* sensors */
-  const at=(c,w)=>P.find(p=>near(p.x,c,w));
-  const b1=at(XS,6),b2=at(XR,6),cam=at(XR,26);
-  S.I={I1:S.K1,I2:!!b1&&!F('b1'),I3:S.st<.04,I4:S.st>.96&&!F('lim'),I5:!!b2,I6:!!cam&&(cam.def||F('cam')),I7:!!at(XE,6),I8:S.pr.has('S2')};
-  /* the hardwired part: K1 holds itself through 13-14, F2 and the stops break it */
-  const pw=S.Q0,stopOk=!S.S9&&!S.pr.has('S0')&&!F('ol');
-  S.K1=pw&&stopOk&&(S.pr.has('S1')||(S.K1&&!F('hold')));
-  /* the PLC (powered from Q0) */
-  if(pw&&S.run)scan(dt);else{S.Q={};}
-  S.K2=S.K1&&!!S.Q.Q1&&!F('q1')&&!F('ol');
-  /* air: the valves and cylinders */
-  const bar=F('air')?2:6,sp=bar/6*2.2;const y1=!!S.Q.Q2,y2=!!S.Q.Q3&&!F('coil');
-  const hold=b1&&S.st>.5;S.st=Math.max(0,Math.min(1,S.st+(y1?1:-1)*sp*dt*(y1&&S.st>.75&&b1?.5:1)));
-  S.pu=Math.max(0,Math.min(1,S.pu+(y2?1:-1)*sp*1.3*dt));S.bar=bar;
-  if(b1&&S.st>=.97&&!b1.stp)b1.stp=true;
-  if(S.pu>.9){const r=at(XR,26);if(r){r.st='rej';r.t=0;}}
-  /* the belt */
-  const run=S.K2;S.mv=run;
-  if(run){S.off=(S.off+VB*dt)%40;const L=S.parts.filter(p=>p.st==='belt').sort((a,b)=>b.x-a.x);let lead=1e9;
-    L.forEach(p=>{let nx=p.x+VB*dt;if(near(p.x,XS,26)&&S.st>.35)nx=p.x;nx=Math.min(nx,lead-PW-8);if(nx>p.x)p.x=nx;lead=p.x;});
-    if(!S.parts.some(p=>p.st==='belt'&&p.x<200)&&S.mf<=0){S.seq++;S.parts.push({id:S.nid++,x:88,st:'belt',def:[0,0,1,0,0,0,1,0,0,1,0,0][S.seq%12]===1,stp:false});S.mf=1;}}
-  S.mf-=dt;
-  S.parts.forEach(p=>{if(p.st==='belt'&&p.x>=XEND){p.st='drop';p.t=0;}
-    if(p.st==='drop'||p.st==='rej'){p.t+=dt/.6;if(p.t>=1){p.st='done';
-      if(p.st0)return;p.st0=1;
-      if(p.x>=XEND-1){if(p.def||!p.stp){S.err++;say(p.def?'⚠ قطعة معيبة وصلت إلى صندوق السليمة!':'⚠ قطعة غير مختومة وصلت إلى نهاية الخط!',1);}else S.good++;}
-      else{S.rej++;if(!p.def){S.err++;say('⚠ طُردت قطعة سليمة!',1);}}}}});
-  S.parts=S.parts.filter(p=>p.st!=='done');}
-
-/* ---------- drawing the line ---------- */
-const T=(x,y,s,sz,fill,wt,anc)=>`<text x="${x}" y="${y}" text-anchor="${anc||'middle'}" style="font:${wt||700} ${sz||12}px 'IBM Plex Sans Arabic',sans-serif;fill:${fill||'#1c2126'}">${s}</text>`;
-const led=(x,y,on,c)=>`<circle cx="${x}" cy="${y}" r="4.5" fill="${on?(c||'#ffd000'):'#4a5157'}" stroke="#222"/>`;
-function partSVG(p,x,y,rot){return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})${rot?` rotate(${rot})`:''}"><rect x="${-PW/2}" y="0" width="${PW}" height="${PH}" rx="3" fill="url(#gPart)" stroke="#55606a"/>
-  ${p.def?`<path d="M-14 6l8 7l-3 5l9 8" fill="none" stroke="#c62828" stroke-width="2.4"/>`:''}${p.stp?`<circle cx="6" cy="15" r="8" fill="none" stroke="#0b3d91" stroke-width="2.4"/><path d="M2 15l3 3l6-6" fill="none" stroke="#0b3d91" stroke-width="2.2"/>`:''}</g>`;}
-function sensor(x,lab,on){return `<g><rect x="${x-13}" y="${BELT_Y+24}" width="26" height="16" rx="3" fill="#2c3540"/>${led(x,BELT_Y+32,on,'#ff9800')}${T(x,BELT_Y+56,lab,11,'#0b1d33')}${on?`<path d="M${x} ${BELT_Y+24}V${BELT_Y+4}" stroke="#ff9800" stroke-width="2" stroke-dasharray="3 3"/>`:''}</g>`;}
-function cyl(x,pos,lab,head,lim){const ht=172+pos*86;return `<g><rect x="${x-18}" y="70" width="36" height="100" rx="5" fill="#cfd6dc" stroke="#6b757d"/><rect x="${x-18}" y="70" width="36" height="${(10+pos*80).toFixed(1)}" fill="${pos>0||S.Q[lim[2]]?'rgba(31,111,229,.55)':'none'}"/>
-  <rect x="${x-14}" y="${(76+pos*86).toFixed(1)}" width="28" height="8" fill="#3b4650"/><rect x="${x-4}" y="${(84+pos*86).toFixed(1)}" width="8" height="${(ht-84-pos*86).toFixed(1)}" fill="url(#gRod)" stroke="#777"/>
-  <rect x="${x-head/2}" y="${ht.toFixed(1)}" width="${head}" height="12" rx="2" fill="#39424b"/>${T(x,62,lab,12,'#0b3d91')}
-  ${lim[0]?`<rect x="${x+20}" y="74" width="22" height="12" rx="2" fill="#fff" stroke="#333"/>${led(x+31,80,S.I[lim[0]==='1B1'?'I3':'']||(lim[0]==='1B1'&&S.st<.04),'#2aa84a')}${T(x+50,84,lim[0],10,'#0b1d33',700,'start')}`:''}
-  ${lim[1]?`<rect x="${x+20}" y="150" width="22" height="12" rx="2" fill="#fff" stroke="#333"/>${led(x+31,156,S.I.I4,'#2aa84a')}${T(x+50,160,lim[1],10,'#0b1d33',700,'start')}`:''}</g>`;}
-function scene(){const lit=(c,on)=>on?c:'#4a5157';let o=`<defs><linearGradient id="gPart" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef2f5"/><stop offset="1" stop-color="#9aa6b0"/></linearGradient>
-  <linearGradient id="gRod" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9ced3"/><stop offset="1" stop-color="#8d949a"/></linearGradient></defs>
-  <rect width="1200" height="500" fill="#d5dbe0"/><rect y="440" width="1200" height="60" fill="#9aa4ac"/>`;
-  /* control cabinet with the PLC and the relays */
-  o+=`<g><rect x="140" y="14" width="220" height="190" rx="8" fill="#e9ecef" stroke="#7d868d" stroke-width="2"/>${T(250,32,'لوحة التحكم',12,'#0b3d91')}
-    <rect x="152" y="42" width="140" height="92" rx="6" fill="#dfe3e6" stroke="#8a939b"/>${T(222,56,'EATON easy512',9,'#333')}
-    <rect x="160" y="60" width="124" height="46" rx="3" fill="${S.Q0?'#a9c58a':'#6f7a66'}" stroke="#333"/>`;
-  if(S.Q0){const iS=[1,2,3,4,5,6,7,8].map(n=>S.I['I'+n]?n:'-').join(''),qS=[1,2,3,4].map(n=>S.Q['Q'+n]?n:'-').join('');
-    o+=`<text x="166" y="76" style="font:700 11px monospace;fill:#1b2a12">I${iS}</text><text x="166" y="90" style="font:700 11px monospace;fill:#1b2a12">Q${qS}  ${S.run?'RUN':'STOP'}</text><text x="166" y="102" style="font:700 10px monospace;fill:#1b2a12">C1:${S.C.C1?S.C.C1.cnt:0}</text>`;}
-  o+=`${[0,1,2,3].map(i=>`<circle cx="${180+i*22}" cy="120" r="5" fill="#bfc5ca" stroke="#555"/>`).join('')}
-    ${[['K1',S.K1],['K2',S.K2]].map(([n,on],i)=>`<rect x="${300+i*30}" y="44" width="24" height="56" rx="3" fill="#f2f2f2" stroke="#555"/>${led(312+i*30,58,on,'#2aa84a')}${T(312+i*30,92,n,10)}`).join('')}
-    ${T(250,160,'Q0 '+(S.Q0?'ON':'OFF'),11,S.Q0?'#1a8a42':'#c42b22')}${T(250,180,'F2 '+(F('ol')?'فصل ✕':'سليم'),11,F('ol')?'#c42b22':'#454f58')}</g>`;
-  /* stack light */
-  o+=`<g><rect x="984" y="120" width="8" height="180" fill="#555"/>${[['#d8322b',!!(F('ol')||S.S9)],['#ffb300',!!S.Q.Q4],['#2aa84a',S.K1]].map(([c,on],i)=>`<rect x="972" y="${40+i*26}" width="32" height="24" rx="4" fill="${lit(c,on)}" stroke="#222" opacity="${on?1:.85}"/>`).join('')}${T(1012,58,'H2',10,'#333',700,'start')}${T(1012,84,'H3',10,'#333',700,'start')}${T(1012,110,'H1',10,'#333',700,'start')}</g>`;
-  /* belt */
-  o+=`<rect x="40" y="${BELT_Y}" width="${XEND-40}" height="22" rx="11" fill="#2b2f33"/><path d="M52 ${BELT_Y+3}H${XEND-12}" stroke="#555c63" stroke-width="3" stroke-dasharray="10 30" stroke-dashoffset="${(-S.off).toFixed(1)}"/>
-    <circle cx="52" cy="${BELT_Y+11}" r="9" fill="#777"/><circle cx="${XEND-12}" cy="${BELT_Y+11}" r="9" fill="#777"/>
-    ${[200,600,950].map(x=>`<rect x="${x}" y="${BELT_Y+22}" width="10" height="${440-BELT_Y-22}" fill="#6b757d"/>`).join('')}`;
-  /* motor */
-  o+=`<g><rect x="20" y="${BELT_Y+34}" width="70" height="44" rx="8" fill="#3c6e9e" stroke="#20384f"/><g transform="translate(55 ${BELT_Y+56}) rotate(${S.mv?(S.off*9)%360:0})"><path d="M-12 0H12M0 -12V12" stroke="#cfe2f3" stroke-width="3"/></g>${T(55,BELT_Y+94,'M1 3~',11,'#0b1d33')}</g>`;
-  /* feeder */
-  o+=`<g><rect x="62" y="140" width="52" height="${BELT_Y-150}" fill="none" stroke="#6b757d" stroke-width="3"/>${[0,1,2].map(i=>partSVG({},88,BELT_Y-62-i*32)).join('')}${T(88,132,'المخزن',11,'#333')}</g>`;
-  /* stamp station */
-  o+=`<g><rect x="382" y="50" width="10" height="${BELT_Y-50}" fill="#7d868d"/><rect x="468" y="50" width="10" height="${BELT_Y-50}" fill="#7d868d"/><rect x="382" y="44" width="96" height="12" fill="#7d868d"/>${T(XS,30,'محطة الختم',13,'#0b3d91')}</g>`;
-  o+=cyl(XS,S.st,'1A',56,['1B1','1B2','Q2'])+sensor(XS,'B1',S.I.I2);
-  /* inspection and reject station */
-  const cam=S.parts.find(p=>p.st==='belt'&&near(p.x,XR,26));
-  o+=`<g>${T(XR,30,'الفحص والفرز',13,'#0b3d91')}<rect x="664" y="176" width="44" height="28" rx="5" fill="#2c3540"/><circle cx="700" cy="190" r="8" fill="#5b8ccc" stroke="#ddd"/>${T(686,170,'B3',11,'#0b1d33')}
-    <path d="M700 196L${XR-24} ${BELT_Y-32}H${XR+24}Z" fill="${cam?(S.I.I6?'rgba(216,50,43,.25)':'rgba(42,168,74,.25)'):'rgba(255,255,255,.18)'}"/></g>`;
-  o+=cyl(XR,S.pu,'2A',60,[null,null,'Q3'])+sensor(XR,'B2',S.I.I5)+sensor(XE,'B4',S.I.I7);
-  o+=`<path d="M${XR-24} ${BELT_Y+22}L${XR+26} ${BELT_Y+22}L${XR+70} 420L${XR+20} 420Z" fill="#b0b8bf" stroke="#7d868d"/><rect x="${XR+6}" y="410" width="110" height="70" rx="4" fill="#c0392b" opacity=".85"/>${T(XR+61,452,'مرفوضة '+S.rej,13,'#fff')}
-    <rect x="${XEND+6}" y="370" width="74" height="110" rx="4" fill="#2e7d4f" opacity=".9"/>${T(XEND+43,432,'سليمة',13,'#fff')}${T(XEND+43,452,S.good,13,'#fff')}`;
-  S.parts.forEach(p=>{if(p.st==='belt')o+=partSVG(p,p.x,BELT_Y-PH);
-    else if(p.st==='rej')o+=partSVG(p,XR+p.t*55,BELT_Y-PH+p.t*120,p.t*30);
-    else if(p.st==='drop')o+=partSVG(p,XEND+p.t*36,BELT_Y-PH+p.t*p.t*110,p.t*50);});
-  $('sc').innerHTML=o;}
-
-/* ---------- ladder drawing (the PLC program and the hardwired circuit use the same drawing) ---------- */
-const CW=96;
-function elW(e){return e.par?Math.max(...e.par.map(b=>b.reduce((s,x)=>s+elW(x),0))):1;}
-function elH(e){return e.par?e.par.reduce((s,b)=>s+Math.max(...b.map(elH)),0):1;}
-function ladSVG(R,f,L){const RH=62;let y=8,o='';const W=40+Math.max(4,...R.map(r=>r.s.reduce((s,e)=>s+elW(e),0)))*CW+150;
-  const contact=(e,x,yy)=>{const ok=f(e.a)!==e.n,c=ok?'#1a8a42':'#2a3440';const lb=L(e.a);
-    return `<line x1="${x}" y1="${yy}" x2="${x+30}" y2="${yy}" stroke="${c}" stroke-width="2"/><line x1="${x+30}" y1="${yy-12}" x2="${x+30}" y2="${yy+12}" stroke="${c}" stroke-width="2.4"/><line x1="${x+46}" y1="${yy-12}" x2="${x+46}" y2="${yy+12}" stroke="${c}" stroke-width="2.4"/>${e.n?`<line x1="${x+28}" y1="${yy+12}" x2="${x+48}" y2="${yy-12}" stroke="${c}" stroke-width="2"/>`:''}
-      ${ok?`<rect x="${x+31}" y="${yy-11}" width="14" height="22" fill="rgba(42,168,74,.25)"/>`:''}<line x1="${x+46}" y1="${yy}" x2="${x+CW}" y2="${yy}" stroke="${c}" stroke-width="2"/>${T(x+38,yy-17,esc(lb[0]),11,'#0b3d91')}${T(x+38,yy+26,esc(lb[1]||''),8.5,'#586675',500)}`;};
-  const seq=(arr,x,yy)=>{let s='';arr.forEach(e=>{if(e.par){const w=elW(e);let by=yy;e.par.forEach((b,i)=>{let bx=x;s+=seq(b,bx,by);const bw=b.reduce((q,z)=>q+elW(z),0);if(bw<w)s+=`<line x1="${x+bw*CW}" y1="${by}" x2="${x+w*CW}" y2="${by}" stroke="#2a3440" stroke-width="2"/>`;
-        if(i)s+=`<line x1="${x}" y1="${yy}" x2="${x}" y2="${by}" stroke="#2a3440" stroke-width="2"/><line x1="${x+w*CW}" y1="${yy}" x2="${x+w*CW}" y2="${by}" stroke="#2a3440" stroke-width="2"/>`;by+=Math.max(...b.map(elH))*RH;});x+=w*CW;}
-      else{s+=contact(e,x,yy);x+=CW;}});return s;};
-  R.forEach((r,i)=>{const h=Math.max(...r.s.map(elH),1)*RH,yy=y+26,ws=r.s.reduce((s,e)=>s+elW(e),0),xe=40+ws*CW,cx=W-110,on=!!r._v,cc=on?'#1a8a42':'#2a3440';
-    o+=`<text x="4" y="${yy+4}" style="font:700 10px sans-serif;fill:#8a96a3">${i+1}</text>`+seq(r.s,40,yy)+`<line x1="${xe}" y1="${yy}" x2="${cx-16}" y2="${yy}" stroke="${cc}" stroke-width="2"/>
-      <circle cx="${cx}" cy="${yy}" r="15" fill="${on?'#c8f0d4':'#fff'}" stroke="${cc}" stroke-width="2.4"/>${T(cx,yy+4,{'=':'','S':'S','R':'R','TT':'T','CC':'C','RC':'RC'}[r.t]||'',10,cc)}<line x1="${cx+15}" y1="${yy}" x2="${W-14}" y2="${yy}" stroke="${cc}" stroke-width="2"/>
-      ${T(cx,yy-20,esc(L(r.o)[0])+(r.t==='TT'?` ${r.p}s`:r.t==='CC'?` =${r.p}`:''),11,'#0b3d91')}${T(cx,yy+30,esc(L(r.o)[1]||''),8.5,'#586675',500)}
-      ${r.r?`<text x="44" y="${y+h+24}" text-anchor="start" style="font:500 10px 'IBM Plex Sans Arabic',sans-serif;fill:#7a5a00">${esc(r.r)}</text>`:''}`;
-    y+=h+(r.r?40:22);});
-  return `<svg viewBox="0 0 ${W} ${y+4}"><line x1="34" y1="0" x2="34" y2="${y}" stroke="#d8322b" stroke-width="4"/><line x1="${W-12}" y1="0" x2="${W-12}" y2="${y}" stroke="#1f5fbf" stroke-width="4"/>${o}</svg>`;}
-
-/* the hardwired control circuit, drawn as rungs between the two supply lines */
-const CONV=[
- {s:[c_('S9',1),c_('S0',1),{par:[[c_('S1')],[c_('K1h')]]},c_('F2',1)],t:'=',o:'K1',r:'التشغيل والإيقاف والطوارئ والحماية: K1 يمسك نفسه عن طريق تلامسه 13-14'},
- {s:[c_('K1b'),c_('Q1')],t:'=',o:'K2',r:'محرك السير: يلزم أن يكون الخط يعمل (K1) وأن يطلب PLC الحركة (Q1)'},
- {s:[c_('K1c')],t:'=',o:'H1',r:'لمبة الخط يعمل'},
- {s:[{par:[[c_('F2')],[c_('S9')]]}],t:'=',o:'H2',r:'لمبة العطل: فصل F2 أو ضغط الطوارئ'},
- {s:[c_('Q4')],t:'=',o:'H3',r:'لمبة اكتمال الدفعة من خرج PLC'}];
-const CL={S9:['S9','طوارئ'],S0:['S0','إيقاف'],S1:['S1','تشغيل'],K1h:['K1','13-14 مسك'],F2:['F2','95-96 / 97-98'],K1b:['K1','23-24'],Q1:['Q1','خرج PLC'],K1c:['K1','33-34'],Q4:['Q4','خرج PLC'],
-  K1:['K1','مرحل تشغيل الخط'],K2:['K2','كونتاكتور السير'],H1:['H1','أخضر'],H2:['H2','أحمر'],H3:['H3','أصفر']};
-function cv(a){switch(a){case'S9':return S.S9;case'S0':case'S1':return S.pr.has(a);case'K1h':return S.K1&&!F('hold');case'K1b':case'K1c':return S.K1;case'F2':return F('ol');case'Q1':return !!S.Q.Q1&&!F('q1');case'Q4':return !!S.Q.Q4;}return false;}
-function convSVG(){const pw=S.Q0;CONV.forEach(r=>{r._v=pw&&r.s.every(e=>passE(e,cv));});return ladSVG(CONV,a=>pw&&cv(a),a=>CL[a]||[a]);}
-function powerSVG(){const on=S.Q0,m=S.K2,col=v=>v?'#d8322b':'#2a3440';let o='';
-  [0,1,2].forEach(i=>{const x=60+i*26;o+=`<line x1="${x}" y1="20" x2="${x}" y2="300" stroke="${col(on&&(m||true))}" stroke-width="2.4" opacity="${on?1:.6}"/>`;});
-  const box=(y,h,l,s,c)=>`<rect x="40" y="${y}" width="96" height="${h}" rx="6" fill="#fff" stroke="${c||'#2a3440'}" stroke-width="2"/>${T(150,y+h/2+4,l,12,'#0b3d91',700,'start')}${T(150,y+h/2+18,s,9,'#586675',500,'start')}`;
-  o+=T(86,14,'L1  L2  L3',11,'#333')+box(36,30,'Q0',on?'مغلق':'مفتوح',on?'#1a8a42':'#c42b22')+box(84,30,'F1','مصهرات')+box(132,36,'K2',m?'مغلق: السير يعمل':'مفتوح',m?'#1a8a42':'#2a3440')+box(186,30,'F2',F('ol')?'فصل (حمل زائد)':'حماية حرارية',F('ol')?'#c42b22':'#2a3440');
-  o+=`<circle cx="86" cy="270" r="30" fill="${m?'#c8f0d4':'#fff'}" stroke="#2a3440" stroke-width="2.4"/>${T(86,268,'M1',13)}${T(86,284,'3~',11)}`;
-  return `<svg viewBox="0 0 300 310" style="max-width:380px;width:100%">${o}</svg>`;}
-
-/* ---------- pneumatic schematic ---------- */
-function pnSVG(){const bar=S.bar||6,air=v=>v?'#1f6fe5':'#9fc0e3';let o='';
-  [[XS,'1A','المكبس','1V1','1Y1',S.st,!!S.Q.Q2,0],[XR,'2A','ذراع الطرد','2V1','2Y1',S.pu,!!S.Q.Q3&&!F('coil'),1]].forEach(([_,c,n,v,y,pos,on,i])=>{const x0=30+i*330;
-    o+=`<rect x="${x0}" y="30" width="220" height="44" rx="4" fill="#eef2f5" stroke="#333" stroke-width="1.6"/><rect x="${x0+2}" y="32" width="${(10+pos*160).toFixed(1)}" height="40" fill="${on?'rgba(31,111,229,.55)':'rgba(111,179,234,.35)'}"/>
-      <rect x="${(x0+20+pos*160).toFixed(1)}" y="32" width="${(198-20-pos*160).toFixed(1)}" height="40" fill="${on?'rgba(111,179,234,.35)':'rgba(31,111,229,.55)'}"/><rect x="${(x0+12+pos*160).toFixed(1)}" y="32" width="8" height="40" fill="#333"/><rect x="${(x0+20+pos*160).toFixed(1)}" y="48" width="200" height="8" fill="#888"/>${T(x0+110,22,c+' · '+n,12,'#0b3d91')}`;
-    const vx=x0+50,vy=150,s=40,pA=x0+20,pB=x0+200;
-    o+=`<path d="M${pA} 74V110H${vx+12}V${vy}" fill="none" stroke="${air(on)}" stroke-width="3"/><path d="M${pB} 74V120H${vx+28+s}V${vy}" fill="none" stroke="${air(!on)}" stroke-width="3"/>`;
-    const sq=(x,act)=>`<rect x="${x}" y="${vy}" width="${s}" height="${s}" fill="${act?'#cfe4ff':'#fff'}" stroke="#1b2530" stroke-width="1.6"/>`;
-    o+=sq(vx,on)+sq(vx+s,!on)+`<path d="M${vx+8} ${vy+s}L${vx+12} ${vy}M${vx+20} ${vy+s}L${vx+30} ${vy}" stroke="${on?'#1f6fe5':'#333'}" stroke-width="2"/><path d="M${vx+s+12} ${vy}L${vx+s+20} ${vy+s}M${vx+s+28} ${vy}L${vx+s+32} ${vy+s}" stroke="${on?'#333':'#1f6fe5'}" stroke-width="2"/>`;
-    o+=`<rect x="${vx-30}" y="${vy+8}" width="28" height="24" fill="${on?'#ffd000':'#fff'}" stroke="#1b2530"/>${T(vx-16,vy+25,y,10)}<path d="M${vx+2*s} ${vy+20}l6 -8l6 16l6 -16l6 8" fill="none" stroke="#1b2530"/>${T(vx+s,vy+s+18,v+' · 5/2',11,'#0b3d91')}
-      <path d="M${vx+s+20} ${vy+s}V${vy+s+40}H28V232" fill="none" stroke="#1f6fe5" stroke-width="3"/>`;});
-  o+=`<rect x="0" y="232" width="56" height="30" rx="5" fill="#dfe3e6" stroke="#555"/>${T(28,252,bar+' bar',11,bar<4?'#c42b22':'#1a8a42')}`;
-  return `<svg viewBox="0 0 680 280" style="max-width:680px">${o}</svg>`;}
-
-/* ---------- panels ---------- */
-let TAB=ls('lnTab')||'help',EDIT=false;
-const L_PLC=a=>[a,IOC[a]||''];
-function panel(force){const p=$('panel');
-  if(TAB==='help'){if(!force)return;p.innerHTML=`<h3>ماذا يحدث في هذا الخط؟</h3>
-    <ol><li>القطع تنزل من <b>المخزن</b> على <b>السير الناقل</b> الذي يديره المحرك <b>M1</b> عن طريق الكونتاكتور <b>K2</b>.</li>
-    <li>عند وصول القطعة إلى <b>محطة الختم</b> يكشفها الحساس <b>B1</b>، فيوقف PLC السير، وينزل المكبس <b>1A</b> (الصمام 1V1 بالملف 1Y1)، وبعد أن يصل إلى <b>1B2</b> يضغط ثانية ثم يرجع إلى <b>1B1</b> فيكمل السير.</li>
-    <li>في <b>محطة الفحص</b> يكشف <b>B2</b> القطعة وتفحصها الكاميرا <b>B3</b>: المعيبة (عليها شق أحمر) يقف لها السير ويطردها الذراع <b>2A</b> إلى صندوق المرفوضة، والسليمة تكمل.</li>
-    <li>الحساس <b>B4</b> في نهاية الخط يعدّ القطع؛ عند اكتمال الدفعة (10) يقف الخط وتضيء <b>H3</b>، والضاغط <b>S2</b> يصفّر العداد.</li></ol>
-    <h3>من يتحكم في ماذا؟</h3>
-    <ul><li><b>⚡ التحكم التقليدي (مرحلات وكونتاكتورات):</b> المفتاح الرئيسي Q0، والتشغيل S1 والإيقاف S0 والطوارئ S9، والحماية F2، ومرحل الخط K1 بمسك ذاتي، وكونتاكتور السير K2 واللمبات. الأمان مُوصّل بالأسلاك ولا يعتمد على البرنامج.</li>
-    <li><b>🧠 جهاز التحكم المبرمج EATON easy:</b> يقرأ الحساسات ويقرر التتابع: متى يقف السير، ومتى ينزل المكبس، ومتى يطرد، ويعدّ القطع.</li>
-    <li><b>💨 النيوماتيك:</b> المكبس 1A وذراع الطرد 2A بصمامين 5/2 كهربائيين بملف ونابض.</li></ul>
-    <h3>جدول المداخل والمخارج</h3><table class="io"><tr><th>العنوان</th><th>موصول بـ</th></tr>${['I1','I2','I3','I4','I5','I6','I7','I8','Q1','Q2','Q3','Q4'].map(k=>`<tr><td dir="ltr">${k}</td><td>${IOC[k]}</td></tr>`).join('')}</table>
-    <p class="note">ابدأ بـ <b>تشغيل S1</b>. جرّب الطوارئ والإيقاف، ثم افتح تبويب <b>⚠ الأعطال</b> وأدخل عطلاً ليكتشفه المتدربون، أو عدّل <b>برنامج PLC</b> وشاهد أثره على الخط مباشرة.</p>`;return;}
-  /* the live drawings are redrawn in their own box, so the buttons around them stay put and take every tap */
-  const live=h=>{const el=$('live');if(el)el.innerHTML=h;};
-  if(TAB==='conv'){if(force)p.innerHTML=`<div id="live"></div>`;live(`<h3>دائرة التحكم (تُرسم مباشرة: الأخضر مغلق ويمر فيه التيار)</h3><div class="lad">${convSVG()}</div><h3>دائرة القدرة لمحرك السير</h3>${powerSVG()}`);return;}
-  if(TAB==='plc'){if(EDIT){if(force)p.innerHTML=editor();return;}
-    if(force)p.innerHTML=`<div class="row"><b>البرنامج على الجهاز</b> <span id="runL" style="font-weight:700"></span><button class="btn pri" data-a="edit">✏ تعديل البرنامج</button><button class="btn" data-a="run" id="runB"></button></div><div id="live"></div>`;
-    $('runL').textContent=S.run?'RUN':'STOP';$('runL').style.color=S.run?'#1a8a42':'#c42b22';$('runB').textContent=S.run?'⏹ STOP':'▶ RUN';
-    live(`<div class="lad">${ladSVG(S.prog,a=>S.Q0&&S.run&&ev(a),L_PLC)}</div>
-      <p class="note">الأخضر: تلامس مغلق أو ملف عليه إشارة. T1 = ${S.T.T1?S.T.T1.acc.toFixed(1):'0.0'}s · T2 = ${S.T.T2?S.T.T2.acc.toFixed(1):'0.0'}s · C1 = ${S.C.C1?S.C.C1.cnt:0}/${S.C.C1?S.C.C1.pre:10}</p>`);return;}
-  if(TAB==='pn'){if(force)p.innerHTML=`<h3>الدائرة الهوائية (الأزرق الغامق عليه ضغط)</h3><div id="live"></div><p class="note">ملف الصمام يضيء أصفر عندما يعطيه PLC إشارة (Q2 للمكبس، Q3 للطرد). عند انقطاع الإشارة يرجع النابض الصمام فترجع الأسطوانة.</p>`;live(`<div class="lad">${pnSVG()}</div>`);return;}
-  if(TAB==='flt'){if(!force)return;p.innerHTML=`<h3>أعطال يدخلها المدرب</h3><p class="note">اختر عطلاً، ثم اطلب من المتدربين ملاحظة العَرَض وتتبعه في الدوائر الثلاث حتى يحددوا مكانه.</p>
-    <div class="row"><button class="btn pri" data-a="hid">🎲 عطل عشوائي مخفي</button><button class="btn" data-a="show" ${S.hid?'':'disabled'}>👁 إظهار العطل المخفي</button><button class="btn red" data-a="fix">✔ إصلاح كل الأعطال</button></div>
-    ${FLT.map(([k,n,h])=>`<label class="flt${F(k)&&S.hid!==k?' on':''}"><input type="checkbox" data-f="${k}" ${F(k)&&S.hid!==k?'checked':''}><span><b>${n}</b><small>العَرَض: ${h}</small></span></label>`).join('')}`;}}
-const FLT=[
- ['ol','الحماية الحرارية F2 فصلت (حمل زائد على المحرك)','الخط لا يعمل ولا يمسك، واللمبة الحمراء H2 مضيئة.'],
- ['hold','تلامس المسك الذاتي K1 (13-14) لا يغلق','الخط يعمل فقط ما دام S1 مضغوطًا، ويقف عند رفع الإصبع.'],
- ['q1','خرج PLC Q1 تالف (لا يغلق تلامسه)','شاشة easy تظهر Q1 يعمل لكن K2 لا يجذب والسير واقف.'],
- ['b1','الحساس B1 عند المكبس معطل','القطع تمر دون ختم وتصل إلى النهاية غير مختومة.'],
- ['lim','مفتاح نهاية المشوار 1B2 لا يعمل','المكبس ينزل ويبقى تحت، والخط متوقف (T1 لا يبدأ).'],
- ['cam','الكاميرا B3 ترى كل القطع معيبة','كل القطع تُطرد حتى السليمة.'],
- ['coil','ملف الصمام 2Y1 محروق','السير يقف عند القطعة المعيبة ثم يكملها إلى صندوق السليمة دون طرد.'],
- ['air','ضغط الهواء منخفض (2 bar)','حركة المكبس والذراع بطيئة، وزمن الدورة يطول، والذراع لا يكمل الطرد قبل انتهاء T2 فتمر بعض المعيبة.']];
-function editor(){const opt=(v,arr)=>arr.map(a=>`<option value="${a}"${a===v?' selected':''}>${a}${IOC[a]?' · '+IOC[a]:''}</option>`).join('');
-  const ce=(e,ri,ei,bi)=>`<span class="el"><select data-k="a" data-r="${ri}" data-e="${ei}" data-b="${bi}">${opt(e.a,OPS)}</select><select data-k="n" data-r="${ri}" data-e="${ei}" data-b="${bi}"><option value="0"${e.n?'':' selected'}>⊣ ⊢ مفتوح NO</option><option value="1"${e.n?' selected':''}>⊣/⊢ مغلق NC</option></select><span><button class="x" data-a="dc" data-r="${ri}" data-e="${ei}" data-b="${bi}" title="حذف التلامس">✕</button><button class="btn" data-a="or" data-r="${ri}" data-e="${ei}" title="إضافة تلامس بالتوازي (أو)">+ أو</button></span></span>`;
-  return `<div class="row" dir="rtl"><b>تعديل البرنامج</b><button class="btn pri" data-a="done">✔ حفظ وتشغيل</button><button class="btn" data-a="add">+ سطر جديد</button><button class="btn red" data-a="def">↺ البرنامج الأصلي</button></div>
-  <p class="note" dir="rtl">كل سطر: تلامسات على التوالي (و) ثم ملف. «+ أو» يضيف تلامسًا بالتوازي. الملف: = عادي، S ضبط، R مسح، TT مؤقت تأخير تشغيل، CC عداد، RC تصفير العداد.</p>`+
-  S.prog.map((r,ri)=>`<div class="ed"><span class="n">${ri+1}</span>${r.s.map((e,ei)=>e.par?`<span class="el" style="border-style:solid">${e.par.map((b,bi)=>ce(b[0],ri,ei,bi)).join('<small style="text-align:center">أو</small>')}</span>`:ce(e,ri,ei,-1)).join(' ')}
-    <button class="btn" data-a="ac" data-r="${ri}" title="إضافة تلامس">+ تلامس</button> → <select data-k="t" data-r="${ri}">${['=','S','R','TT','CC','RC'].map(t=>`<option${t===r.t?' selected':''}>${t}</option>`).join('')}</select><select data-k="o" data-r="${ri}">${opt(r.o,r.t==='TT'?['T1','T2','T3']:/C/.test(r.t)?['C1','C2']:['Q1','Q2','Q3','Q4','M1','M2','M3','M4'])}</select>
-    ${r.t==='TT'||r.t==='CC'?`<input data-k="p" data-r="${ri}" type="number" step="${r.t==='TT'?.1:1}" min="0.1" value="${r.p}" style="width:64px" title="${r.t==='TT'?'الزمن بالثواني':'القيمة'}">`:''}
-    <button class="x" data-a="up" data-r="${ri}" title="أعلى">▲</button><button class="x" data-a="dr" data-r="${ri}" title="حذف السطر">🗑</button>
-    <input data-k="r" data-r="${ri}" value="${esc(r.r||'')}" placeholder="ملاحظة" style="width:100%;margin-top:4px" dir="rtl"></div>`).join('');}
-function getE(r,e,b){const el=S.prog[r].s[e];return b>=0?el.par[b][0]:el;}
-$('panel').addEventListener('change',e=>{const t=e.target,k=t.dataset.k;if(!k)return;const r=+t.dataset.r,P=S.prog[r];
-  if(k==='a'||k==='n'){const el=getE(r,+t.dataset.e,+t.dataset.b);if(k==='a')el.a=t.value;else el.n=t.value==='1';}
-  else if(k==='t'){P.t=t.value;if(P.t==='TT'){P.o=/^T/.test(P.o)?P.o:'T1';P.p=P.p||1;}else if(/C/.test(P.t)){P.o=/^C/.test(P.o)?P.o:'C1';P.p=P.p||10;}else if(!/^[QM]/.test(P.o))P.o='M1';panel(true);}
-  else if(k==='o')P.o=t.value;else if(k==='p')P.p=Math.max(.1,+t.value||1);else if(k==='r')P.r=t.value;});
-$('panel').addEventListener('click',e=>{const b=e.target.closest('[data-a]');const fl=e.target.closest('[data-f]');
-  if(fl){const k=fl.dataset.f;if(fl.checked)S.flt.add(k);else S.flt.delete(k);say(fl.checked?'أُدخل عطل: '+FLT.find(f=>f[0]===k)[1]:'أُصلح العطل');panel(true);return;}
-  if(!b)return;const a=b.dataset.a,r=+b.dataset.r,P=S.prog[r];
-  if(a==='edit'){EDIT=true;panel(true);return;}
-  if(a==='run'){S.run=!S.run;plcReset();say(S.run?'PLC: RUN':'PLC: STOP');panel(true);return;}
-  if(a==='done'){EDIT=false;S.prog.forEach(q=>q.s=q.s.filter(Boolean));S.prog=S.prog.filter(q=>q.s.length);ls('lnProg',JSON.stringify(S.prog.map(({_v,...q})=>q)));plcReset();say('حُفظ البرنامج ونُقل إلى الجهاز');panel(true);return;}
-  if(a==='def'){if(!confirm('استعادة البرنامج الأصلي؟ ستضيع تعديلاتك.'))return;S.prog=clone(PROG0);ls('lnProg',JSON.stringify(S.prog));plcReset();panel(true);return;}
-  if(a==='add'){S.prog.push({s:[c_('I1')],t:'=',o:'M4',r:''});panel(true);return;}
-  if(a==='ac'){P.s.push(c_('I1'));panel(true);return;}
-  if(a==='dr'){S.prog.splice(r,1);panel(true);return;}
-  if(a==='up'){if(r>0){[S.prog[r-1],S.prog[r]]=[S.prog[r],S.prog[r-1]];}panel(true);return;}
-  if(a==='or'){const i=+b.dataset.e,el=P.s[i];if(el.par)el.par.push([c_('I1')]);else P.s[i]={par:[[el],[c_('I1')]]};panel(true);return;}
-  if(a==='dc'){const i=+b.dataset.e,bi=+b.dataset.b;const el=P.s[i];if(bi>=0){el.par.splice(bi,1);if(el.par.length===1)P.s[i]=el.par[0][0];}else P.s.splice(i,1);panel(true);return;}
-  if(a==='hid'){[...S.flt].forEach(k=>{if(k===S.hid)S.flt.delete(k);});const k=FLT[Math.floor(Math.random()*FLT.length)][0];S.hid=k;S.flt.add(k);say('🎲 أُدخل عطل مخفي: اطلب من المتدربين تحديده');panel(true);return;}
-  if(a==='show'){if(S.hid)alert('العطل المخفي: '+FLT.find(f=>f[0]===S.hid)[1]);return;}
-  if(a==='fix'){S.flt.clear();S.hid=null;say('أُصلحت كل الأعطال');panel(true);}});
-$('tabs').addEventListener('click',e=>{const t=e.target.closest('[data-t]');if(!t)return;TAB=t.dataset.t;ls('lnTab',TAB);EDIT=false;tabsUI();panel(true);});
-function tabsUI(){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',String(t.dataset.t===TAB)));}
-
-/* ---------- operator buttons ---------- */
-document.querySelectorAll('[data-p]').forEach(b=>{const k=b.dataset.p,dn=e=>{e.preventDefault();S.pr.add(k);b.classList.add('down');},up=()=>{S.pr.delete(k);b.classList.remove('down');};
-  b.addEventListener('pointerdown',dn);['pointerup','pointercancel','pointerleave'].forEach(t=>b.addEventListener(t,up));b.addEventListener('contextmenu',e=>e.preventDefault());});
-$('oQ0').onclick=()=>{S.Q0=!S.Q0;if(!S.Q0){S.K1=false;plcReset();}say(S.Q0?'Q0: وُصلت الكهرباء':'Q0: فُصلت الكهرباء');};
-$('oS9').onclick=()=>{S.S9=!S.S9;say(S.S9?'🛑 طوارئ: توقف كل شيء. اضغط مرة أخرى لفك زر الطوارئ':'فُك زر الطوارئ: شغّل الخط بـ S1');};
-$('oRun').onclick=()=>{S.run=!S.run;plcReset();say(S.run?'PLC: RUN':'PLC: STOP');panel(true);};
-let msgT=0;function say(m,err){const el=$('msg');el.textContent=m;el.hidden=false;el.classList.toggle('err',!!err);clearTimeout(msgT);msgT=setTimeout(()=>el.hidden=true,4000);}
-function opsUI(){$('oQ0').classList.toggle('on',S.Q0);$('oS9').classList.toggle('down',S.S9);$('oRun').classList.toggle('on',S.run);
-  $('H1').style.background=S.K1?'#2aa84a':'#3a3f44';$('H2').style.background=F('ol')||S.S9?'#d8322b':'#3a3f44';$('H3').style.background=S.Q.Q4?'#ffb300':'#3a3f44';
-  $('stats').innerHTML=`<span>سليمة: <b class="good">${S.good}</b></span><span>مطرودة: <b>${S.rej}</b></span><span>أخطاء جودة: <b class="bad">${S.err}</b></span><span>الدفعة C1: <b>${S.C.C1?S.C.C1.cnt:0}/${S.C.C1?S.C.C1.pre:10}</b></span><span>السير: <b>${S.K2?'يتحرك':'واقف'}</b></span>`;}
-
-/* ---------- loop ---------- */
-let lt=performance.now(),n=0;
-function loop(){const now=performance.now(),dt=Math.min(.1,(now-lt)/1000);lt=now;step(dt);scene();opsUI();if(++n%4===0)panel(false);}
-setInterval(loop,40);
-tabsUI();panel(true);
-window.__ln={S,step,PROG0};
+/* ===================== the line scene ===================== */
+const BY=330,BB=540;
+function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{mode:'off'},kOn=L.kOn||{};let s='';
+  const T=(x,y,t,sz,c,w,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:${w||700} ${sz||12}px sans-serif;fill:${c||'#1c2833'}">${t}</text>`;
+  const led=(x,y,on,c)=>`<circle cx="${x}" cy="${y}" r="5" fill="${on?(c||'#39d353'):'#3a3f44'}" stroke="#111"/>`;
+  const mlab=(x,y,m)=>{const r=mot(m),run=r.mode==='star'||r.mode==='delta';const txt=r.mode==='delta'?(m==='M3'?'دلتا':'يعمل'):r.mode==='star'?(m==='M3'?'نجمة':'يعمل'):r.mode==='fault'?'يطن!':'متوقف';
+    return `<g><rect x="${x-34}" y="${y-18}" width="68" height="36" rx="6" fill="${run?'#2f7d3a':r.mode==='fault'?'#b3261e':'#5d6770'}" stroke="#222"/>${T(x,y-3,m,12,'#fff',800)}${T(x,y+12,txt+(run&&r.dir<0&&m!=='M4'?' ⟲':''),9.5,'#fff',600)}</g>`;};
+  s+=`<rect width="1420" height="600" fill="#cfd6dc"/><rect y="560" width="1420" height="40" fill="#9aa4ad"/>`;
+  /* mixer */
+  if(p.mixer){const r=mot('M3');s+=`<rect x="70" y="40" width="160" height="150" rx="14" fill="#8fa3b5" stroke="#38485a" stroke-width="3"/><g transform="rotate(${(PL.mixA*57.3%360).toFixed(1)} 150 115)"><path d="M150 60V170M95 115H205M111 76L189 154M189 76L111 154" stroke="#2e3e4f" stroke-width="8" stroke-linecap="round"/></g><circle cx="150" cy="115" r="14" fill="#2e3e4f"/>
+      <path d="M130 190L140 250H160L170 190Z" fill="#7a8794" stroke="#38485a" stroke-width="2"/>${T(150,30,'الخلاط',13)}${mlab(272,80,'M3')}`;}
+  else if(p.belt)s+=`<path d="M120 200h70l-20 60h-30z" fill="#aab4bd" stroke="#555"/>${T(150,190,'تغذية آلية',11)}`;
+  /* conveyor 1 */
+  if(p.belt){const r=mot('M1'),off=((PL.t*(r.mode==='star'||r.mode==='delta'?r.dir*70:0))%24+24)%24;
+    s+=`<rect x="110" y="${BY}" width="800" height="22" rx="11" fill="#2b2f33"/><line x1="122" y1="${BY+11}" x2="898" y2="${BY+11}" stroke="#5a6168" stroke-width="12" stroke-dasharray="12 12" stroke-dashoffset="${(-off).toFixed(1)}"/>
+      <circle cx="122" cy="${BY+11}" r="11" fill="#777"/><circle cx="898" cy="${BY+11}" r="11" fill="#777"/><rect x="120" y="${BY+22}" width="10" height="${560-BY-22}" fill="#6b747d"/><rect x="880" y="${BY+22}" width="10" height="${560-BY-22}" fill="#6b747d"/>${mlab(150,BY+60,'M1')}`;
+    if(!p.boxes)s+=`<path d="M905 ${BY+40}h90l-8 120h-74z" fill="#7d8f62" stroke="#444" stroke-width="2"/>${T(950,BY+120,'الحاوية',12,'#fff')}`;}
+  /* press */
+  if(p.press){const y=170+PL.press*108;s+=`<rect x="345" y="40" width="110" height="18" fill="#4a5560"/><rect x="345" y="40" width="10" height="${BY-40}" fill="#4a5560"/><rect x="445" y="40" width="10" height="${BY-40}" fill="#4a5560"/>
+      <rect x="380" y="58" width="40" height="112" rx="5" fill="#c9d3dc" stroke="#45515c" stroke-width="2"/>${T(400,52,'1A',11,'#fff')}<rect x="394" y="170" width="12" height="${(y-170).toFixed(1)}" fill="#d9dee3" stroke="#666"/><rect x="378" y="${y.toFixed(1)}" width="44" height="14" rx="3" fill="#59636d"/>
+      ${led(372,70,PL.press<0.03,'#ffcc00')}${T(352,74,'1B1',9,'#222',700,'end')}${led(372,160,PL.press>0.97,'#ffcc00')}${T(352,164,'1B2',9,'#222',700,'end')}${T(470,110,'Y1',11,kOn.Y1?'#0b6b20':'#555')}
+      <rect x="392" y="${BY+24}" width="16" height="14" fill="#333"/>${(()=>{const b=PL.pieces.some(q=>q.st==='belt'&&Math.abs(q.x-GX.press)<=6);return `<line x1="372" y1="${BY-14}" x2="428" y2="${BY-14}" stroke="${b?'#ff2d2d':'#ff9a9a'}" stroke-width="${b?2.5:1}" stroke-dasharray="${b?'':'3 3'}"/><rect x="364" y="${BY-24}" width="8" height="20" fill="#333"/><rect x="428" y="${BY-24}" width="8" height="20" fill="#333"/>${T(400,BY+52,'B1',10)}`;})()}`;}
+  /* sorting gate */
+  if(p.sort){const g=PL.gate;s+=`<rect x="${GX.gate-30}" y="${BY}" width="60" height="22" fill="${g>0.5?'#0d0f11':'#2b2f33'}"/>${g>0.05?`<path d="M${GX.gate-30} ${BY+22}l${(55*g).toFixed(1)} ${(40*g).toFixed(1)}" stroke="#888" stroke-width="5"/>`:''}
+      <path d="M${GX.gate-50} ${BY+56}h100l-10 74h-80z" fill="#b34a3a" stroke="#5a1f17" stroke-width="2"/>${T(GX.gate,BY+100,'المرفوضات',11,'#fff')}${T(GX.gate+70,BY+50,'2A / Y2',10,kOn.Y2?'#0b6b20':'#555')}
+      <rect x="${GX.gate-46}" y="${BY-70}" width="22" height="30" rx="4" fill="#2d6cdf"/>${led(GX.gate-35,BY-78,L.P.I&&PL&&plantSensors(EX,PL).S.B2,'#ffcc00')}<line x1="${GX.gate-35}" y1="${BY-40}" x2="${GX.gate-35}" y2="${BY-6}" stroke="#7fb3ff" stroke-dasharray="3 3"/>${T(GX.gate-35,BY-88,'B2',10)}`;}
+  /* boxes line */
+  if(p.boxes){const r=mot('M2'),off=((PL.t*(r.mode==='star'||r.mode==='delta'?r.dir*60:0))%24+24)%24;
+    s+=`<path d="M900 ${BY+4}L950 430" stroke="#8a949d" stroke-width="10" stroke-linecap="round"/><rect x="760" y="${BB}" width="${GX.boxEnd-760}" height="20" rx="10" fill="#2b2f33"/><line x1="770" y1="${BB+10}" x2="${GX.boxEnd-10}" y2="${BB+10}" stroke="#5a6168" stroke-width="10" stroke-dasharray="12 12" stroke-dashoffset="${(-off).toFixed(1)}"/>${mlab(800,BB+44,'M2')}
+      ${T(GX.chute,BB+40,'B3',10)}<rect x="${GX.chute-4}" y="${BB+20}" width="8" height="8" fill="#2d6cdf"/>${T(GX.fill,BB+40,'B5',10)}<rect x="${GX.fill-4}" y="${BB+20}" width="8" height="8" fill="#2d6cdf"/>${T(905,420,'B4',10,'#222',700,'end')}
+      <rect x="${GX.fill-40}" y="300" width="80" height="60" rx="8" fill="#5b8fc9" stroke="#2b4d75" stroke-width="2"/>${T(GX.fill,335,'سائل',11,'#fff')}<rect x="${GX.fill-6}" y="360" width="12" height="40" fill="#555"/>${T(GX.fill+55,390,'Y3',11,kOn.Y3?'#0b6b20':'#555')}
+      ${kOn.Y3?`<rect x="${GX.fill-3}" y="400" width="6" height="${BB-400-50}" fill="#4aa3ff" opacity=".85"/>`:''}`;
+    const sn=plantSensors(EX,PL).S;s+=led(GX.chute,BB+56,sn.B3,'#ffcc00')+led(GX.fill,BB+56,sn.B5,'#ffcc00')+led(915,410,sn.B4,'#ffcc00');
+    PL.boxes.forEach(b=>{const y=b.st==='lift'?BB-70-320*PL.lift:BB-70;if(b.x<760)return;s+=`<g><rect x="${(b.x-45).toFixed(1)}" y="${y.toFixed(1)}" width="90" height="70" fill="#c69a5b" stroke="#6d4f22" stroke-width="2"/>${b.fill>0?`<rect x="${(b.x-41).toFixed(1)}" y="${(y+66-60*Math.min(1.1,b.fill)).toFixed(1)}" width="82" height="${(60*Math.min(1.1,b.fill)).toFixed(1)}" fill="#4aa3ff" opacity=".7"/>`:''}${T(b.x.toFixed(1),y+40,b.n?b.n+' قطع':'',11,'#3b2a10')}</g>`;});}
+  /* lift */
+  if(p.lift){const y=BB-320*PL.lift;s+=`<rect x="1212" y="160" width="8" height="${BB-140}" fill="#556"/><rect x="1300" y="160" width="8" height="${BB-140}" fill="#556"/><rect x="1215" y="${y.toFixed(1)}" width="90" height="12" fill="#3d4650"/>${mlab(1260,130,'M4')}
+      <rect x="1310" y="${BB-320}" width="105" height="10" fill="#6b4f2a"/>${T(1362,BB-330,'الرف: '+PL.cnt.stored,11)}${led(1325,BB-6,PL.lift<=0.01,'#ffcc00')}${T(1340,BB-2,'SQ1',10,'#222',700,'start')}${led(1325,BB-312,PL.lift>=0.99,'#ffcc00')}${T(1340,BB-296,'SQ2',10,'#222',700,'start')}`;
+    if(!p.boxes)PL.boxes.forEach(b=>{const yy=BB-70-320*PL.lift;s+=`<rect x="${b.x-45}" y="${yy.toFixed(1)}" width="90" height="70" fill="#c69a5b" stroke="#6d4f22" stroke-width="2"/>`;});}
+  /* pieces */
+  PL.pieces.forEach(q=>{let x=q.x,y=BY-26,o=1;
+    if(q.st==='chute'){x=900+(GX.chute-900)*q.f;y=BY-26+(BB-70-(BY-26))*q.f;}else if(q.st==='rej'){x=GX.gate;y=BY+q.f*80;o=Math.max(0,1-q.f);}else if(q.st==='bin'){x=950;y=BY+30+q.f*60;o=Math.max(0,1-q.f);}else if(q.st==='floor'){y=BB+q.f*10;o=Math.max(0,1-q.f);}
+    s+=`<g opacity="${o.toFixed(2)}"><rect x="${(x-18).toFixed(1)}" y="${y.toFixed(1)}" width="36" height="26" rx="4" fill="${q.bad?'#d8322b':'#6f8fb3'}" stroke="#2a3540" stroke-width="1.5"/>${q.stamped?`<circle cx="${x.toFixed(1)}" cy="${(y+13).toFixed(1)}" r="6" fill="none" stroke="#fff" stroke-width="2"/>`:''}</g>`;});
+  if(L.brk)s+=`<rect x="440" y="250" width="540" height="60" rx="12" fill="#b3261e"/>${T(710,288,'قصر بين الأطوار: القاطع الرئيسي Q0 فصل',18,'#fff')}`;
+  return s;}
+/* ---------- operator panel ---------- */
+function renderOps(){const o=$('ops');let h='';
+  const btns=[['S1','#2aa84a','I','تشغيل S1'],['S0','#d8322b','O','إيقاف S0'],['S2','#2aa84a','I','تشغيل الخلاط S2'],['S3','#d8322b','O','إيقاف الخلاط S3']].filter(b=>EX.in.includes(b[0]));
+  btns.forEach(([k,c,t,n])=>{h+=`<button class="ob" data-pb="${k}" title="${n}"><i style="background:${c}">${t}</i>${n}</button>`;});
+  h+=`<button class="ob" id="oQ0" title="القاطع الرئيسي Q0: يعيده بعد الفصل"><i style="background:#555">Q0</i>إعادة Q0</button><button class="ob" id="oOlR" title="إعادة ضبط كل الأوفرلودات"><i style="background:#1f5fbf">↺</i>إعادة الأوفرلود</button>
+    <button class="ob" id="oOlT" title="محاكاة فصل الأوفرلود أثناء التشغيل"><i style="background:#ff9f1a">!</i>اختبار الأوفرلود</button><button class="ob" id="oRst" title="تفريغ الخط والبدء من جديد"><i style="background:#6b747d">⟲</i>تفريغ الخط</button>`;
+  o.innerHTML=h;
+  o.querySelectorAll('[data-pb]').forEach(b=>{const k=b.dataset.pb,dn=e=>{e.preventDefault();L.press.add(k);b.classList.add('dn');try{b.setPointerCapture(e.pointerId);}catch(_){}},up=()=>{L.press.delete(k);b.classList.remove('dn');};
+    b.addEventListener('pointerdown',dn);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);});
+  $('oQ0').onclick=()=>{L.brk=false;say('أُعيد القاطع الرئيسي Q0');};$('oOlR').onclick=()=>{L.olTrip={};say('أُعيد ضبط الأوفرلود');};
+  $('oOlT').onclick=()=>{olTest(L);say('فُصل الأوفرلود '+MOT[EX.mot[0]].f+' للاختبار: يجب أن يتوقف المحرك. أعد ضبطه بزر «إعادة الأوفرلود».');};
+  $('oRst').onclick=()=>{L.PL=plantNew(EX);L.g={};L.gx={};L.h={};L.err=[];say('فُرّغ الخط');};}
+function renderLine(){$('sc').innerHTML=scene();const E=L.EL||{};let c='';
+  if(E.mix||E.dcShort||L.brk)c+=`<span class="bad">${esc((E.err||[])[0]||'القاطع Q0 مفصول')}</span>`;
+  if(!E.plcPw&&!E.mix)c+=`<span class="bad">PLC غير مغذى: وصّل L+ وM للجهاز من المصدر 24V</span>`;else if(E.plcPw&&!E.dimOk)c+=`<span class="bad">المداخل لا تعمل: وصّل 1M بـ M</span>`;else if(E.plcPw&&!E.dolOk&&EX.out.length)c+=`<span class="bad">المخارج لا تعمل: وصّل ${MODEL==='300'?'2L+ و2M':'3L+ و3M'}</span>`;
+  Object.keys(L.olTrip).forEach(f=>{if(L.olTrip[f])c+=`<span class="bad">الأوفرلود ${f} فاصل</span>`;});
+  if(L.PL.msg)c+=`<span class="bad">${esc(L.PL.msg)}</span>`;
+  const C=L.PL.cnt,P=EX.plant;if(P.belt)c+=`<span>قطع وصلت: ${C.deliver}</span>`;if(P.press)c+=`<span>مختومة: ${C.stamped}</span>`;if(P.sort)c+=`<span>مرفوضة: ${C.badRej}${C.goodRej?' (سليمة مرفوضة '+C.goodRej+')':''}</span>`;
+  if(P.boxes)c+=`<span>صناديق ممتلئة: ${C.boxFull} · معبأة: ${C.boxFill}</span>`;if(P.lift)c+=`<span>على الرف: ${C.stored}</span>`;
+  if(C.floor+C.spill+C.over)c+=`<span class="bad">أخطاء: ${C.floor?C.floor+' قطعة على الأرض ':''}${C.spill?C.spill+' انسكاب ':''}${C.over?C.over+' زيادة عن 5':''}</span>`;
+  $('chips').innerHTML=c;
+  $('goals').innerHTML='<b>المطلوب في هذا التمرين:</b><ul>'+EX.goals.map(k=>`<li>${L.g[k]?'✅':L.gx[k]?'❌':'⬜'} ${esc(GOALS[k])}</li>`).join('')+'</ul>'+(EX.goals.every(k=>L.g[k])?'<div class="note" style="color:var(--ok);font-weight:700">🎉 أحسنت! أنجزت كل مطالب التمرين.</div>':'');
+  $('plcv').innerHTML=plcSVG();
+  document.querySelectorAll('#ops [data-pb]').forEach(b=>b.classList.toggle('dn',L.press.has(b.dataset.pb)));}
+/* ---------- the PLC as it looks in the workshop: S7-300 rack or S7-1200 compact CPU ---------- */
+function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L.Q;const T=(x,y,t,s,c,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:700 ${s}px sans-serif;fill:${c}">${t}</text>`;
+  const led=(x,y,on,c)=>`<rect x="${x}" y="${y}" width="9" height="6" rx="1" fill="${on?c:'#2e3338'}"/>`;
+  let s='';
+  if(MODEL==='300'){s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="6" y="20" width="628" height="12" fill="#8c949b"/>`;
+    const mod=(x,w,c,lab,sub)=>`<rect x="${x}" y="30" width="${w}" height="170" rx="3" fill="${c}" stroke="#55606a"/>${T(x+w/2,46,lab,10,'#fff')}${T(x+w/2,58,sub,8,'#e8eef3')}`;
+    s+=mod(10,70,'#6c7680','PS 307','5A')+`<rect x="22" y="70" width="46" height="20" rx="3" fill="${pw?'#39d353':'#2e3338'}"/>${T(45,84,'24V DC',8,'#111')}`;
+    s+=mod(84,120,'#6c7680','CPU 314','Step 7')+led(96,72,!pw?false:false,'#ff3b30')+T(122,78,'SF',8,'#fff','start')+led(96,88,run,'#39d353')+T(122,94,'RUN',8,'#fff','start')+led(96,104,pw&&!L.plcRun,'#ffcc00')+T(122,110,'STOP',8,'#fff','start');
+    s+=`<g class="rs" style="cursor:pointer" data-rs="1"><rect x="160" y="70" width="30" height="50" rx="4" fill="#2e3338"/><rect x="166" y="${L.plcRun?74:96}" width="18" height="20" rx="3" fill="#cfd6dc"/>${T(175,134,L.plcRun?'RUN':'STOP',9,'#fff')}</g>`;
+    s+=mod(208,200,'#4f5a64','SM 321','DI16 × DC24V');IN.forEach((d,i)=>{const x=220+(i>>3)*92,y=72+(i&7)*15;s+=led(x,y,I[i],'#39d353')+T(x+14,y+6,'I'+(i>>3)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
+    s+=mod(412,200,'#4f5a64','SM 322','DO16 × DC24V');OUT.forEach((d,i)=>{const x=424+(i>>3)*92,y=72+(i&7)*15;s+=led(x,y,Q[i],'#39d353')+T(x+14,y+6,'Q'+((i>>3)+4)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
+    s+='</svg>';}
+  else{s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="60" y="14" width="520" height="186" rx="6" fill="#76828c" stroke="#47525c" stroke-width="2"/><rect x="60" y="14" width="520" height="28" fill="#5c6872"/>${T(320,33,'SIMATIC S7-1200 · CPU 1214C DC/DC/DC',12,'#fff')}`;
+    s+=led(76,56,run,'#39d353')+T(90,62,'RUN/STOP',8,'#fff','start')+led(76,72,pw&&!L.plcRun,'#ffcc00')+T(90,78,'STOP',8,'#fff','start')+led(76,88,false,'#ff3b30')+T(90,94,'ERROR',8,'#fff','start');
+    s+=`<g style="cursor:pointer" data-rs="1"><rect x="76" y="108" width="70" height="26" rx="5" fill="#2e3338"/>${T(111,126,L.plcRun?'RUN ▸':'STOP ■',10,L.plcRun?'#39d353':'#ffcc00')}</g>`;
+    s+=T(330,58,'DI a .0 – .7   ·   DI b .0 – .5',9,'#e8eef3');IN.forEach((d,i)=>{const x=180+i*28,y=66;s+=led(x,y,I[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});
+    s+=T(330,130,'DQ a .0 – .7   ·   DQ b .0 – .1',9,'#e8eef3');OUT.forEach((d,i)=>{const x=200+i*34,y=140;s+=led(x,y,Q[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});s+='</svg>';}
+  return s;}
+$('plcv').addEventListener('click',e=>{if(e.target.closest('[data-rs]')){L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');}});
+/* ---------- the clock ---------- */
+let lastT=performance.now(),acc=0;
+setInterval(()=>{const now=performance.now();acc+=Math.min(0.5,(now-lastT)/1000);lastT=now;let n=0;
+  while(acc>=0.05&&n<8){const mon=MON&&TAB==='prog'?[]:null;lineTick(L,0.05,mon);if(mon)MONS=mon;acc-=0.05;n++;}
+  if(TAB==='line')renderLine();else if(TAB==='prog'&&MON)monUpd();},50);
+/* ===================== wiring board ===================== */
+const DSZ={sup:[170,90],ps:[160,96],pbno:[78,100],pbnc:[78,100],ls:[78,100],pnp:[96,100],k:[132,150],ol:[132,130],mot:[150,130],sol:[90,100]};
+let LAY=null;
+function layout(){const D=devList(EX),pos={},W=1180;let x=20,y=20,rh=0;const place=(d,w,h)=>{if(x+w>W){x=20;y+=rh+40;rh=0;}pos[d.id]={x,y,w,h};x+=w+26;rh=Math.max(rh,h);};
+  const plcW=MODEL==='300'?560:620;
+  D.filter(d=>d.t==='sup'||d.t==='ps').forEach(d=>place(d,...DSZ[d.t]));place({id:'PLC'},plcW,250);
+  x=20;y+=rh+50;rh=0;D.filter(d=>['pbno','pbnc','ls','pnp'].includes(d.t)).forEach(d=>place(d,...DSZ[d.t]));
+  x=20;y+=rh+50;rh=0;D.filter(d=>d.t==='sol').forEach(d=>place(d,...DSZ.sol));
+  EX.mot.forEach(m=>{const M=MOT[m];x=20;y+=rh+50;rh=0;M.k.forEach(k=>place({id:k},...DSZ.k));place({id:M.f},...DSZ.ol);place({id:m},...DSZ.mot);});
+  LAY={pos,W:W+40,H:y+rh+40};return LAY;}
+/* where each terminal sits */
+function tPos(k){const [d,n]=k.split('.'),P=LAY.pos[d];if(!P)return null;const dv=devList(EX).find(x=>x.id===d);const t=d==='PLC'?'plc':dv&&dv.t;
+  const at=(fx,fy)=>({x:P.x+fx,y:P.y+fy});
+  switch(t){case'sup':return at(40+['L1','L2','L3'].indexOf(n)*45,P.h-16);
+    case'ps':return at(n[0]==='L'?(n==='L+'?30:62):(n==='M'?100:132),P.h-16);
+    case'pbno':case'ls':return at(n==='13'?22:56,P.h-14);case'pbnc':return at(n==='11'?22:56,P.h-14);
+    case'pnp':return at(18+['BN','BK','BU'].indexOf(n)*30,P.h-14);
+    case'sol':return at(n==='A1'?24:66,P.h-14);
+    case'k':{const top=['A1','1','3','5'],bot=['A2','2','4','6'];return top.includes(n)?at(18+top.indexOf(n)*32,16):at(18+bot.indexOf(n)*32,P.h-16);}
+    case'ol':{const top=['1','3','5','95'],bot=['2','4','6','96'];return top.includes(n)?at(18+top.indexOf(n)*32,16):at(18+bot.indexOf(n)*32,P.h-16);}
+    case'mot':{const top=['W2','U2','V2'],bot=['U1','V1','W1'];return top.includes(n)?at(30+top.indexOf(n)*45,56):at(30+bot.indexOf(n)*45,100);}
+    case'plc':{const top=['L+','M','DIM',...IN.map((x,i)=>'I'+i)],bot=['DOL','DOM',...OUT.map((x,i)=>'Q'+i)];const sp=(P.w-30)/top.length;
+      return top.includes(n)?at(22+top.indexOf(n)*sp,22):at(22+bot.indexOf(n)*((P.w-30)/12),P.h-20);}}
+  return null;}
+function staticNets(){const u=UF();L.wires.forEach(([a,b])=>u.u(a,b));u.u('PS.L+','PS.L+2');u.u('PS.M','PS.M2');return u;}
+function wColor(w,u){const a=w[0];if(isAC(a)){const r=u.f(a);return r===u.f('SUP.L1')?'#7a4a22':r===u.f('SUP.L2')?'#1b1b1b':r===u.f('SUP.L3')?'#8e949a':'#3a3a3a';}
+  const r=u.f(a);return r===u.f('PS.L+')?'#d8322b':r===u.f('PS.M')?'#1f5fbf':'#7a3fbf';}
+function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:${w||700} ${s}px sans-serif;fill:${c||'#1c2833'}">${t}</text>`;let s=`<g transform="translate(${P.x} ${P.y})">`;
+  const box=(f,st)=>`<rect width="${P.w}" height="${P.h}" rx="8" fill="${f}" stroke="${st||'#6d7780'}" stroke-width="1.5"/>`;
+  const lab=(t,sub)=>T(P.w/2,18,t,12)+(sub?T(P.w/2,32,sub,9,'#4b5966','middle',600):'');
+  switch(d.t){case'sup':s+=box('#e9e4d8')+lab('Q0 · 3~ 400V','القاطع الرئيسي');break;
+    case'ps':s+=box('#cfd6dc')+lab(MODEL==='300'?'PS 307 5A':'مصدر 24V DC','دخل 230V · خرج 24V');break;
+    case'pbno':case'pbnc':s+=box('#e7ebef')+`<circle cx="${P.w/2}" cy="44" r="16" fill="${d.t==='pbno'?'#2aa84a':'#d8322b'}" stroke="#333" stroke-width="2"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,74,d.t==='pbno'?'NO':'NC',9,'#4b5966');break;
+    case'ls':s+=box('#e7ebef')+`<rect x="${P.w/2-14}" y="30" width="28" height="30" rx="4" fill="#d9cfa9" stroke="#555"/><circle cx="${P.w/2}" cy="28" r="7" fill="#999" stroke="#444"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,74,'NO',9,'#4b5966');break;
+    case'pnp':s+=box('#e7ebef')+`<rect x="${P.w/2-10}" y="26" width="20" height="40" rx="5" fill="#4a6fa5" stroke="#223"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,78,'PNP',9,'#4b5966');break;
+    case'sol':s+=box('#e7ebef')+`<rect x="${P.w/2-18}" y="26" width="36" height="40" rx="4" fill="#3b4652"/><path d="M${P.w/2-12} 36h24M${P.w/2-12} 46h24M${P.w/2-12} 56h24" stroke="#d9a05b" stroke-width="3"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,80,'ملف 24V',9,'#4b5966');break;
+    case'k':s+=box('#e3e5df')+T(P.w/2,P.h/2-4,d.id,14)+T(P.w/2,P.h/2+12,OUT[OUTI[d.id]]?OUT[OUTI[d.id]][1]:'',8.5,'#4b5966','middle',600);break;
+    case'ol':s+=box('#e3e5df')+T(P.w/2,P.h/2,d.id+' أوفرلود',12)+(L.olTrip[d.id]?T(P.w/2,P.h/2+16,'فاصل',10,'#c42b22'):'');break;
+    case'mot':s+=box('#cfd6dc')+T(P.w/2,18,d.id,13)+T(P.w/2,32,MOT[d.id].n,8.5,'#4b5966','middle',600)+`<rect x="10" y="40" width="${P.w-20}" height="78" rx="6" fill="#2f353b"/>`;break;
+    case'plc':s+=box(MODEL==='300'?'#58636d':'#76828c','#3c4650')+T(P.w/2,P.h/2,MODEL==='300'?'S7-300 · CPU 314 + SM321 DI16 + SM322 DO16':'S7-1200 · CPU 1214C DC/DC/DC',13,'#fff')+T(P.w/2,P.h/2+18,'المداخل في الأعلى · المخارج في الأسفل',10,'#e3e9ee','middle',600);break;}
+  s+='</g>';
+  (d.t==='plc'?plcTerms():TERM[d.t]).forEach(n=>{if(d.t==='ps'&&(n==='L+2'||n==='M2'))0;const k=d.id+'.'+n,p=tPos(k);if(!p)return;const pend=PEND===k;
+    const lb=d.t==='plc'?tName(k).replace('PLC:',''):d.t==='ps'?n.replace('2',''):n;const up=(d.t==='k'||d.t==='ol')&&p.y-P.y<30||d.t==='plc'&&p.y-P.y<30;
+    const fill=d.t==='pnp'?{BN:'#7a4a22',BK:'#111',BU:'#1f5fbf'}[n]:'#c9ced3';
+    s+=`<g class="term" data-t="${k}"><circle cx="${p.x}" cy="${p.y}" r="14" fill="transparent"/><circle class="tc" cx="${p.x}" cy="${p.y}" r="8" fill="${pend?'#fff1c2':fill}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><circle cx="${p.x}" cy="${p.y}" r="2.6" fill="#333"/>`+
+      T(p.x,up?p.y+22:p.y-13,esc(lb),d.t==='plc'?8.5:9.5,'#0b1d33','middle',700)+`</g>`;});
+  return s;}
+function renderBoard(){if(!L)return;layout();const u=staticNets();let s=`<rect width="${LAY.W}" height="${LAY.H}" fill="#d9dee3"/>`;
+  devList(EX).forEach(d=>{s+=devSVG(d);});
+  L.wires.forEach((w,i)=>{const A=tPos(w[0]),B=tPos(w[1]);if(!A||!B)return;const c=wColor(w,u),dy=Math.max(30,Math.abs(A.y-B.y)*.35),sa=A.y<(LAY.pos[w[0].split('.')[0]]||{y:0}).y+40?-1:1,sb=B.y<(LAY.pos[w[1].split('.')[0]]||{y:0}).y+40?-1:1;
+    const d=`M${A.x} ${A.y}C${A.x} ${A.y+sa*dy} ${B.x} ${B.y+sb*dy} ${B.x} ${B.y}`;
+    s+=`<path d="${d}" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="6"/><path d="${d}" fill="none" stroke="${c}" stroke-width="3.4" class="${WSEL===i?'wsel':''}"/><path d="${d}" fill="none" stroke="transparent" stroke-width="16" data-w="${i}" style="cursor:pointer"/>`;});
+  const sv=$('bd');sv.setAttribute('viewBox',`0 0 ${LAY.W} ${LAY.H}`);sv.setAttribute('width',LAY.W*ZOOM);sv.setAttribute('height',LAY.H*ZOOM);sv.innerHTML=s;$('wDel').disabled=WSEL==null;}
+$('bd').addEventListener('click',e=>{const t=e.target.closest('[data-t]'),w=e.target.closest('[data-w]');
+  if(t){const k=t.dataset.t;WSEL=null;if(!PEND)PEND=k;else if(PEND===k)PEND=null;else{const a=PEND,b=k;PEND=null;
+      if(isAC(a)!==isAC(b)){say('⚠ لا يُوصل طرف من دائرة القوى 400V بطرف من دائرة التحكم 24V. لو وُصل في الواقع لاحترقت الأجهزة.',1);}
+      if(!L.wires.some(x=>(x[0]===a&&x[1]===b)||(x[0]===b&&x[1]===a))){HIST.push(clone(L.wires));L.wires.push([a,b]);saveW();say('سلك: '+tName(a)+' ↔ '+tName(b));}}
+    renderBoard();return;}
+  if(w){WSEL=+w.dataset.w;PEND=null;const x=L.wires[WSEL];say('سلك محدد: '+tName(x[0])+' ↔ '+tName(x[1]));renderBoard();return;}
+  PEND=null;WSEL=null;renderBoard();});
+$('wDel').onclick=()=>{if(WSEL==null)return;HIST.push(clone(L.wires));L.wires.splice(WSEL,1);WSEL=null;saveW();renderBoard();};
+$('wUndo').onclick=()=>{if(!HIST.length)return;L.wires=HIST.pop();WSEL=null;saveW();renderBoard();};
+$('wClr').onclick=()=>{if(!L.wires.length||!confirm('حذف كل الأسلاك في هذا التمرين؟'))return;HIST.push(clone(L.wires));L.wires=[];saveW();renderBoard();$('wRep').innerHTML='';};
+$('wZo').onclick=()=>{ZOOM=Math.max(.4,ZOOM-.15);renderBoard();};$('wZi').onclick=()=>{ZOOM=Math.min(2,ZOOM+.15);renderBoard();};
+$('wSol').onclick=()=>{if(L.wires.length&&!confirm('استبدال توصيلك بالتوصيل النموذجي؟'))return;HIST.push(clone(L.wires));L.wires=solWires(EX);saveW();renderBoard();say('حُمّل التوصيل النموذجي');};
+/* check against the reference nets: missing joins and joins that must not be there */
+$('wChk').onclick=()=>{const u=staticNets(),N=solNets(EX),own={};N.forEach((n,i)=>n.forEach(k=>{own[k]=i;}));own['PS.L+2']=own['PS.L+'];own['PS.M2']=own['PS.M'];
+  const miss=[],bad=[],extra=[];N.forEach(n=>{for(let i=1;i<n.length;i++){if(u.f(n[i])!==u.f(n[0])){miss.push([n[0],n[i]]);}}});
+  const groups={};allTerms(EX).forEach(k=>{const r=u.f(k);(groups[r]=groups[r]||[]).push(k);});
+  Object.values(groups).forEach(g=>{if(g.length<2)return;const sets=new Map();g.forEach(k=>{if(own[k]!=null){if(!sets.has(own[k]))sets.set(own[k],k);}else if(!(k==='PS.L+2'||k==='PS.M2'))extra.push(k);});
+    if(sets.size>1){const v=[...sets.values()];bad.push(v);}});
+  let h='';if(!miss.length&&!bad.length&&!extra.length)h='<div class="ok" style="font-weight:700">✔ التوصيل صحيح ومطابق. انتقل إلى البرنامج.</div>';
+  else{if(bad.length)h+='<b class="bad">توصيلات خاطئة (نقاط يجب أن تبقى منفصلة):</b><ul>'+bad.slice(0,12).map(v=>`<li class="bad">${v.map(tName).map(esc).join(' ↔ ')}</li>`).join('')+'</ul>';
+    if(extra.length)h+='<b class="bad">أطراف موصولة لا تحتاجها هذه الدائرة:</b><ul>'+[...new Set(extra)].slice(0,10).map(k=>`<li class="bad">${esc(tName(k))}</li>`).join('')+'</ul>';
+    if(miss.length)h+=`<b>توصيلات ناقصة (${miss.length}):</b><ul>`+miss.slice(0,14).map(([a,b])=>`<li>${esc(tName(a))} ↔ ${esc(tName(b))}</li>`).join('')+(miss.length>14?'<li>…</li>':'')+'</ul>';}
+  $('wRep').innerHTML=h;};
+/* ===================== Step 7 program editor (LAD) ===================== */
+const CW=78,RH=60,X0=16,OX=X0+NC*CW;
+function rowsUsed(N){let u=0;for(let r=0;r<NR;r++){if(N.rows[r].some(Boolean)||N.out[r]||(r<NR-1&&N.lk[r].some(Boolean))||(r>0&&N.lk[r-1].some(Boolean)))u=r+1;}return Math.min(NR,Math.max(1,u+1));}
+function netSVG(N,ni){const R=rowsUsed(N),W=OX+190,H=R*RH+8,m=MON&&MONS[ni];const T=(x,y,t,s,c,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:700 ${s}px Consolas,monospace;fill:${c||'#1c2833'}">${t}</text>`;
+  const G='#16a34a',K='#2a3440';let s=`<line x1="${X0}" y1="4" x2="${X0}" y2="${H-4}" stroke="${m?G:K}" stroke-width="3"/>`;
+  for(let r=0;r<R;r++){const y=r*RH+36;let pv=!!m;
+    for(let c=0;c<NC;c++){const e=N.rows[r][c],x=X0+c*CW,cx=x+CW/2,on=m&&m.c[r]&&m.c[r][c],sel=SEL&&SEL.n===ni&&SEL.r===r&&SEL.c===c;const lc=on?G:K;
+      if(sel)s+=`<rect x="${x+2}" y="${y-30}" width="${CW-4}" height="${RH-6}" rx="6" fill="#fff3c4" stroke="#ffb300"/>`;
+      if(!e){s+=`<rect x="${x+8}" y="${y-10}" width="${CW-16}" height="20" rx="4" fill="none" stroke="#c8d2dc" stroke-dasharray="3 3"/>`;}
+      else if(e.t==='W')s+=`<line x1="${x}" y1="${y}" x2="${x+CW}" y2="${y}" stroke="${lc}" stroke-width="2.4"/>`;
+      else if(e.t==='GE'){s+=`<line x1="${x}" y1="${y}" x2="${x+8}" y2="${y}" stroke="${lc}" stroke-width="2.4"/><line x1="${x+CW-8}" y1="${y}" x2="${x+CW}" y2="${y}" stroke="${lc}" stroke-width="2.4"/><rect x="${x+8}" y="${y-18}" width="${CW-16}" height="36" rx="3" fill="#fff" stroke="${lc}" stroke-width="2"/>`+T(cx,y-6,'CMP>=I',8.5,'#555')+T(cx,y+5,esc(dispA(e.a,'cv')),8,'#009999')+T(cx,y+14,String(e.n),8.5);}
+      else{s+=`<line x1="${x}" y1="${y}" x2="${cx-7}" y2="${y}" stroke="${lc}" stroke-width="2.4"/><line x1="${cx+7}" y1="${y}" x2="${x+CW}" y2="${y}" stroke="${lc}" stroke-width="2.4"/><line x1="${cx-7}" y1="${y-11}" x2="${cx-7}" y2="${y+11}" stroke="${lc}" stroke-width="2.4"/><line x1="${cx+7}" y1="${y-11}" x2="${cx+7}" y2="${y+11}" stroke="${lc}" stroke-width="2.4"/>`;
+        if(e.t==='NC')s+=`<line x1="${cx-9}" y1="${y+11}" x2="${cx+9}" y2="${y-11}" stroke="${lc}" stroke-width="2"/>`;if(e.t==='P'||e.t==='N')s+=T(cx,y+4,e.t,11,lc);
+        s+=T(cx,y-17,esc(dispA(e.a)),9.5,'#009999')+T(cx,y+24,esc(symOf(e.a)),8.5,'#586675');}
+      s+=`<rect x="${x}" y="${y-30}" width="${CW}" height="${RH-6}" fill="transparent" data-ce="${ni}:${r}:${c}" style="cursor:pointer"/>`;}
+    /* output */
+    const o=N.out[r],ox=OX,on=m&&m.o[r];const lc=on?G:K;
+    if(SEL&&SEL.n===ni&&SEL.r===r&&SEL.c==='o')s+=`<rect x="${ox+2}" y="${y-30}" width="180" height="${RH-6}" rx="6" fill="#fff3c4" stroke="#ffb300"/>`;
+    if(o){if(o.t==='='||o.t==='S'||o.t==='R'){s+=`<line x1="${ox}" y1="${y}" x2="${ox+40}" y2="${y}" stroke="${lc}" stroke-width="2.4"/><path d="M${ox+48} ${y-12}q-8 12 0 24M${ox+64} ${y-12}q8 12 0 24" fill="none" stroke="${lc}" stroke-width="2.4"/>`+(o.t!=='='?T(ox+56,y+4,o.t,11,lc):'')+T(ox+56,y-17,esc(dispA(o.a,'box').replace(/^"(.+)"$/,'"$1"')),9.5,'#009999')+T(ox+56,y+24,esc(symOf(o.a)),8.5,'#586675');}
+      else{const nm=BOXN[o.t][MODEL],acc=o.a&&o.a[0]==='T'?L.P.T[o.a]:o.a&&o.a[0]==='C'?L.P.C[o.a]:null;s+=`<line x1="${ox}" y1="${y}" x2="${ox+20}" y2="${y}" stroke="${lc}" stroke-width="2.4"/><rect x="${ox+20}" y="${y-26}" width="150" height="50" rx="4" fill="#fff" stroke="${lc}" stroke-width="2"/>`+
+        T(ox+95,y-12,esc(dispA(o.a,'box'))+'  '+nm,10,'#009999')+
+        T(ox+95,y+2,o.t==='CU'?(MODEL==='300'?'CU · R '+esc(o.r?dispA(o.r):'—'):'PV '+o.v+' · R '+esc(o.r?dispA(o.r):'—')):(MODEL==='300'?'TV ':'PT ')+tFmt(o.v),9.5)+
+        (MON&&acc?T(ox+95,y+17,o.t==='CU'?'CV = '+acc.cv:'ET = '+(acc.acc||0).toFixed(1)+'s',9,'#16a34a'):'');}}
+    else s+=`<rect x="${ox+8}" y="${y-10}" width="120" height="20" rx="4" fill="none" stroke="#c8d2dc" stroke-dasharray="3 3"/>`+T(ox+68,y+4,'مخرج',9,'#9aa7b3');
+    s+=`<rect x="${ox}" y="${y-30}" width="180" height="${RH-6}" fill="transparent" data-co="${ni}:${r}" style="cursor:pointer"/>`;
+    /* links to the next row */
+    if(r<R-1)for(let b=1;b<=NC;b++){const x=X0+b*CW,on2=N.lk[r][b];s+=on2?`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+RH}" stroke="${m&&m.c[r]&&m.c[r][b-1]?G:K}" stroke-width="2.4"/>`:'';
+      s+=`<g data-lk="${ni}:${r}:${b}" style="cursor:pointer"><circle cx="${x}" cy="${y+RH/2}" r="9" fill="${on2?'#009999':'#fff'}" stroke="#009999" stroke-width="1.5" opacity="${on2?1:.6}"/>${T(x,y+RH/2+4,on2?'│':'+',10,on2?'#fff':'#009999')}</g>`;}}
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;min-width:${Math.round(W*.6)}px;height:auto">${s}</svg>`;}
+function addrOpts(kinds,cur){let h='<option value="">—</option>';kinds.forEach(k=>{h+=`<optgroup label="${k}">`+ADDR[k].map(a=>`<option value="${a}"${a===cur?' selected':''}>${esc(dispA(a,k==='T'||k==='C'?'box':''))}${symOf(a)?'  '+esc(symOf(a)):''}</option>`).join('')+'</optgroup>';});return h;}
+function cellEditor(ni){if(!SEL||SEL.n!==ni)return '';const N=EP[ni];
+  if(SEL.c==='o'){const o=N.out[SEL.r]||{t:'',a:''};const tb=(t,lab)=>`<button class="tb${o.t===t?' on':''}" data-ot="${t}">${lab}</button>`;
+    let h=tb('=','( )')+tb('S','(S)')+tb('R','(R)')+tb('TON',BOXN.TON[MODEL])+tb('TOF',BOXN.TOF[MODEL])+tb('CU',BOXN.CU[MODEL])+tb('','✕');
+    if(o.t){const kinds=o.t==='TON'||o.t==='TOF'?['T']:o.t==='CU'?['C']:o.t==='R'?['Q','M','T','C']:['Q','M'];h+=`<select data-oa>${addrOpts(kinds,o.a)}</select>`;
+      if(o.t==='TON'||o.t==='TOF')h+=`<label>${MODEL==='300'?'TV':'PT'} <input data-ov type="number" step="0.1" min="0.1" value="${o.v||1}" style="width:70px"> ث</label>`;
+      if(o.t==='CU')h+=(MODEL==='1200'?`<label>PV <input data-ov type="number" min="1" value="${o.v||1}" style="width:60px"></label>`:'')+`<label>R <select data-or>${addrOpts(['I','M','Q'],o.r)}</select></label>`;}
+    return `<div class="ce">${h}<button class="btn" data-cx>تم</button></div>`;}
+  const e=N.rows[SEL.r][SEL.c]||{t:''};const tb=(t,lab)=>`<button class="tb${e.t===t?' on':''}" data-ct="${t}">${lab}</button>`;
+  let h=tb('W','──')+tb('NO','─| |─')+tb('NC','─|/|─')+tb('P','─|P|─')+tb('N','─|N|─')+tb('GE','CMP>=')+tb('','فارغ');
+  if(e.t==='NO'||e.t==='NC'||e.t==='P'||e.t==='N')h+=`<select data-ca>${addrOpts(['I','Q','M','T','C'],e.a)}</select>`;
+  if(e.t==='GE')h+=`<select data-ca>${addrOpts(['C'],e.a)}</select><label>>= <input data-cn type="number" min="0" value="${e.n||0}" style="width:60px"></label>`;
+  return `<div class="ce">${h}<button class="btn" data-cx>تم</button></div>`;}
+function renderProg(){if(!L)return;const box=$('nets');let h='';
+  EP.forEach((N,ni)=>{h+=`<div class="net" data-net="${ni}"><div class="nh"><b>Network ${ni+1}:</b><input data-nc="${ni}" value="${esc(N.c||'')}" placeholder="تعليق"><button data-nu="${ni}" title="أعلى">▲</button><button data-nd="${ni}" title="أسفل">▼</button><button data-nx="${ni}" title="حذف الشبكة">✕</button></div><div class="lad">${netSVG(N,ni)}</div>${cellEditor(ni)}</div>`;});
+  box.innerHTML=h;$('pMon').classList.toggle('s7',MON);$('pRun').textContent=L.plcRun?'■ STOP':'▸ RUN';
+  const same=JSON.stringify(EP)===JSON.stringify(L.prog);$('pHint').innerHTML=(same?'✔ البرنامج في الجهاز مطابق للمحرر.':'<b style="color:var(--warn)">البرنامج في المحرر لم يُحمَّل بعد إلى الجهاز: اضغط «⤓ تحميل إلى PLC».</b>')+
+    ' اضغط خانة لوضع تلامس، والدائرة الصغيرة بين سطرين لعمل فرع توازي (OR)، وخانة «مخرج» لوضع ملف أو مؤقت أو عداد.'+(MODEL==='300'?' العناوين بأسلوب Step 7 الكلاسيكي (المخارج تبدأ من Q4.0).':' العناوين بأسلوب TIA Portal (%I، %Q، والمؤقت "T1".Q).');
+  $('pStl').hidden=MODEL!=='300';$('stlBox').innerHTML=STL&&MODEL==='300'?`<div class="stl">${esc(stlOf(EP))}</div>`:'';}
+function monUpd(){document.querySelectorAll('#nets .net').forEach(el=>{const ni=+el.dataset.net;const l=el.querySelector('.lad');if(l&&EP[ni])l.innerHTML=netSVG(EP[ni],ni);});}
+$('nets').addEventListener('click',e=>{const t=e.target;let m;
+  if((m=t.closest('[data-ce]'))){const [n,r,c]=m.dataset.ce.split(':').map(Number);SEL={n,r,c};return renderProg();}
+  if((m=t.closest('[data-co]'))){const [n,r]=m.dataset.co.split(':').map(Number);SEL={n,r,c:'o'};return renderProg();}
+  if((m=t.closest('[data-lk]'))){const [n,r,b]=m.dataset.lk.split(':').map(Number);EP[n].lk[r][b]=!EP[n].lk[r][b];saveP();return renderProg();}
+  if((m=t.closest('[data-ct]'))){const N=EP[SEL.n],ty=m.dataset.ct,old=N.rows[SEL.r][SEL.c];N.rows[SEL.r][SEL.c]=ty===''?null:ty==='W'?{t:'W'}:{t:ty,a:(old&&old.a&&(ty!=='GE'||old.a[0]==='C'))?old.a:(ty==='GE'?'C1':''),n:ty==='GE'?(old&&old.n)||5:undefined};saveP();return renderProg();}
+  if((m=t.closest('[data-ot]'))){const N=EP[SEL.n],ty=m.dataset.ot,old=N.out[SEL.r];N.out[SEL.r]=ty===''?null:{t:ty,a:old&&old.a&&((ty==='TON'||ty==='TOF')?old.a[0]==='T':ty==='CU'?old.a[0]==='C':ty==='R'||'QM'.includes(old.a[0]))?old.a:'',v:old&&old.v||(ty==='CU'?5:1),r:old&&old.r||''};saveP();return renderProg();}
+  if(t.closest('[data-cx]')){SEL=null;return renderProg();}
+  if((m=t.closest('[data-nu]'))){const i=+m.dataset.nu;if(i>0){[EP[i-1],EP[i]]=[EP[i],EP[i-1]];SEL=null;saveP();renderProg();}return;}
+  if((m=t.closest('[data-nd]'))){const i=+m.dataset.nd;if(i<EP.length-1){[EP[i+1],EP[i]]=[EP[i],EP[i+1]];SEL=null;saveP();renderProg();}return;}
+  if((m=t.closest('[data-nx]'))){const i=+m.dataset.nx;if(EP.length>1&&!confirm('حذف Network '+(i+1)+'؟'))return;EP.splice(i,1);if(!EP.length)EP.push(newNet());SEL=null;saveP();renderProg();return;}});
+$('nets').addEventListener('change',e=>{const t=e.target;if(t.dataset.nc!=null){EP[+t.dataset.nc].c=t.value;saveP();return;}if(!SEL)return;const N=EP[SEL.n];
+  if(SEL.c==='o'){const o=N.out[SEL.r];if(!o)return;if(t.hasAttribute('data-oa'))o.a=t.value;if(t.hasAttribute('data-ov'))o.v=Math.max(0.1,+t.value||1);if(t.hasAttribute('data-or'))o.r=t.value;}
+  else{const c=N.rows[SEL.r][SEL.c];if(!c)return;if(t.hasAttribute('data-ca'))c.a=t.value;if(t.hasAttribute('data-cn'))c.n=Math.max(0,Math.round(+t.value||0));}
+  saveP();renderProg();});
+$('pAdd').onclick=()=>{EP.push(newNet());SEL={n:EP.length-1,r:0,c:0};saveP();renderProg();};
+$('pDl').onclick=()=>{const errs=progCheck(EP);if(errs.length){say(errs[0],1);return;}L.prog=clone(EP);L.P=plcNew();say('حُمّل البرنامج إلى '+(MODEL==='300'?'CPU 314':'CPU 1214C')+' ('+EP.length+' Network). الجهاز على '+(L.plcRun?'RUN':'STOP'));renderProg();};
+$('pRun').onclick=()=>{L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');renderProg();};
+$('pMon').onclick=()=>{MON=!MON;renderProg();};$('pStl').onclick=()=>{STL=!STL;renderProg();};
+$('pClr').onclick=()=>{if(!confirm('مسح كل شبكات البرنامج في هذا التمرين؟'))return;EP=[newNet()];SEL=null;saveP();renderProg();};
+$('pSol').onclick=()=>{if(!confirm('استبدال برنامجك بالبرنامج النموذجي لهذا التمرين؟'))return;EP=SOL[EX.id]();SEL=null;saveP();renderProg();say('حُمّل البرنامج النموذجي في المحرر: اضغط «⤓ تحميل إلى PLC»');};
+function progCheck(P){const e=[];P.forEach((N,ni)=>{N.rows.forEach((row,r)=>row.forEach(c=>{if(c&&c.t!=='W'&&!c.a)e.push(`Network ${ni+1}: تلامس بلا عنوان`);}));N.out.forEach(o=>{if(o&&!o.a)e.push(`Network ${ni+1}: مخرج بلا عنوان`);});});
+  /* a coil written in two places */
+  const seen={};P.forEach((N,ni)=>N.out.forEach(o=>{if(o&&o.t==='='&&o.a){if(seen[o.a]!=null&&seen[o.a]!==ni)e.push(`تحذير: الملف ${dispA(o.a)} مكتوب في Network ${seen[o.a]+1} وNetwork ${ni+1}، والأخير هو الذي يُطبق`);seen[o.a]=ni;}}));
+  return e.filter(x=>!x.startsWith('تحذير'));}
+/* ---------- STL of the program (S7-300) ---------- */
+function stlOf(P){let out='';let fp=0;
+  P.forEach((N,ni)=>{out+=`// Network ${ni+1}: ${N.c||''}\n`;const R=N.rows.length;
+    let val=Array.from({length:R},()=>Array(NC+1).fill(null));for(let r=0;r<R;r++)val[r][0]={k:'T'};
+    const and=(a,b)=>{if(!a||!b)return null;if(a.k==='T')return b;if(b.k==='T')return a;return{k:'and',x:[...(a.k==='and'?a.x:[a]),...(b.k==='and'?b.x:[b])]};};
+    const or=xs=>{xs=xs.filter(Boolean);if(!xs.length)return null;if(xs.some(x=>x.k==='T'))return{k:'T'};const u=[];xs.forEach(x=>{const s=JSON.stringify(x);if(!u.some(y=>JSON.stringify(y)===s))u.push(x);});return u.length===1?u[0]:{k:'or',x:u.flatMap(x=>x.k==='or'?x.x:[x])};};
+    for(let c=0;c<NC;c++){for(let r=0;r<R;r++){const e=N.rows[r][c];const v=val[r][c];val[r][c+1]=!e||!v?null:e.t==='W'?v:and(v,{k:'leaf',e});}
+      for(let r=0;r<R-1;r++)if(N.lk[r][c+1]){let r2=r;while(r2<R-1&&N.lk[r2][c+1])r2++;const o=or(val.slice(r,r2+1).map(x=>x[c+1]));for(let q=r;q<=r2;q++)val[q][c+1]=o;r=r2;}}
+    const leaf=(e,op)=>{const a=dispA(e.a);if(e.t==='NO')return `${op} ${a}\n`;if(e.t==='NC')return `${op}N ${a}\n`;if(e.t==='P'||e.t==='N')return `${op}(\n  A ${a}\n  F${e.t} M100.${fp++%8}\n)\n`;if(e.t==='GE')return `${op}(\n  L ${a}\n  L ${e.n}\n  >=I\n)\n`;return '';};
+    const emit=(x,op)=>{if(x.k==='T')return '';if(x.k==='leaf')return leaf(x.e,op);if(x.k==='and'){return x.x.map(k=>k.k==='or'?`${op}(\n${emitOr(k).replace(/^/gm,'  ')})\n`:emit(k,op)).join('');}return `${op}(\n${emitOr(x).replace(/^/gm,'  ')})\n`;};
+    const emitOr=x=>x.x.map((k,i)=>k.k==='leaf'?leaf(k.e,'O'):k.k==='and'?(i?'O\n':'')+emit(k,'A'):emit(k,'O')).join('');
+    N.out.forEach((o,r)=>{if(!o||!o.a)return;const x=val[r][NC];let s=x?(x.k==='or'?emitOr(x):emit(x,'A')):'CLR\n';if(x&&x.k==='T')s='SET\n';
+      const a=dispA(o.a);if(o.t==='=')s+=`=  ${a}\n`;else if(o.t==='S')s+=`S  ${a}\n`;else if(o.t==='R')s+=`R  ${a}\n`;
+      else if(o.t==='TON')s+=`L  ${tFmt(o.v)}\nSD ${a}\n`;else if(o.t==='TOF')s+=`L  ${tFmt(o.v)}\nSF ${a}\n`;else if(o.t==='CU')s+=`CU ${a}\n`+(o.r?`A  ${dispA(o.r)}\nR  ${a}\n`:'');
+      out+=s;});out+='\n';});return out;}
+/* ===================== the exercise sheet ===================== */
+function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${esc(ex.d)}</p>`;
+  h+=`<div class="note">الجهاز المختار: <b>${MODEL==='300'?'SIMATIC S7-300 (CPU 314 + SM321 DI16 + SM322 DO16) · Step 7 الكلاسيكي':'SIMATIC S7-1200 (CPU 1214C DC/DC/DC) · TIA Portal'}</b>. يمكنك التبديل بين الجهازين من الأعلى، والبرنامج يتحول تلقائيًا إلى عناوين الجهاز الآخر.</div>`;
+  h+=`<h3>جدول الرموز (المداخل والمخارج)</h3><table class="io"><tr><th>العنوان</th><th>الرمز</th><th>الوصف</th><th>النوع</th></tr>`;
+  ex.in.forEach(n=>{const i=INI[n],d=IN[i];h+=`<tr><td class="a">${esc(dispA(IA(i)))}</td><td><b>${d[0]}</b></td><td>${esc(d[1])}</td><td>${{NO:'ضاغط مفتوح NO',NC:'ضاغط مغلق NC',PNP:'حساس PNP ثلاثي الأسلاك',LS:'نهاية مشوار NO',OL:'تلامسات 95-96 للأوفرلودات'}[d[2]]}</td></tr>`;});
+  ex.out.forEach(n=>{const i=OUTI[n],d=OUT[i];h+=`<tr><td class="a">${esc(dispA(QA(i)))}</td><td><b>${d[0]}</b></td><td>${esc(d[1])}</td><td>${d[0][0]==='Y'?'ملف صمام هوائي 24V':'ملف كونتاكتور 24V'}</td></tr>`;});h+='</table>';
+  h+=`<h3>خطوات التمرين</h3><ol>
+    <li><b>التوصيل 🔌:</b> وصّل مصدر 24V بالجهاز (L+ وM)، و1M للمداخل، و${MODEL==='300'?'2L+ و2M':'3L+ و3M'} للمخارج. ثم وصّل كل ضاغط وحساس إلى مدخله، وكل مخرج إلى ملف الكونتاكتور أو الصمام (A1)، وA2 إلى M.</li>
+    <li><b>دائرة القوى:</b> من الأطوار L1 L2 L3 إلى الكونتاكتور (1-3-5)، ومن (2-4-6) إلى الأوفرلود، ثم إلى أطراف المحرك U1 V1 W1. محرك التشغيل المباشر يُوصل نجمة بقنطرة بين U2 V2 W2.${ex.mot.includes('M3')?' محرك النجمة/دلتا: KD يربط U1-W2 وV1-U2 وW1-V2، وKY يقصر U2 V2 W2 معًا.':''}${ex.mot.includes('M4')?' عكس الحركة: K4 يبدّل الطورين L1 وL3.':''}</li>
+    <li><b>تلامسات الأوفرلود 95-96</b> توصل على التوالي من L+ إلى مدخل F، فيصبح المدخل 0 عند أي فصل.</li>
+    <li>اضغط <b>✔ فحص التوصيل</b> لمعرفة الناقص والخطأ.</li>
+    <li><b>البرنامج 🧠:</b> اكتب الشبكات بالسلم LAD، ثم <b>⤓ تحميل إلى PLC</b> وتأكد أن الجهاز على RUN.</li>
+    <li><b>التشغيل 🏭:</b> شغّل الخط بالضواغط وتابع المطالب حتى تكتمل كلها ✅.</li></ol>`;
+  h+=`<h3>المطلوب</h3><ul>${ex.goals.map(k=>`<li>${esc(GOALS[k])}</li>`).join('')}</ul>`;
+  h+=`<h3>تذكير بتعليمات Step 7 في هذا المحاكي</h3><table class="io"><tr><th>الرمز</th><th>المعنى</th></tr>
+    <tr><td class="a">─| |─</td><td>تلامس مفتوح: يمرر عندما يكون العنوان 1</td></tr><tr><td class="a">─|/|─</td><td>تلامس مغلق: يمرر عندما يكون العنوان 0 (ضاغط NC موصول بمدخل يعطي 1 وهو غير مضغوط، فيُكتب في البرنامج تلامسًا مفتوحًا)</td></tr>
+    <tr><td class="a">─|P|─ / ─|N|─</td><td>نبضة عند صعود الإشارة / عند هبوطها (لدورة واحدة)</td></tr><tr><td class="a">( ) (S) (R)</td><td>ملف، ضبط (يبقى 1)، إعادة ضبط</td></tr>
+    <tr><td class="a">${BOXN.TON[MODEL]}</td><td>مؤقت تأخير تشغيل: ${MODEL==='300'?'TV = S5T#5S، وتلامسه T1':'PT = T#5s، وتلامسه "T1".Q'}</td></tr><tr><td class="a">${BOXN.TOF[MODEL]}</td><td>مؤقت تأخير فصل: مخرجه يبقى 1 مدة الزمن بعد زوال الدخل</td></tr>
+    <tr><td class="a">${BOXN.CU[MODEL]}</td><td>عداد تصاعدي: يزيد 1 مع كل صعود للدخل، ودخل R يصفّره. ${MODEL==='300'?'تلامس C1 يكون 1 إذا كانت القيمة أكبر من صفر':'"C1".Q يكون 1 إذا وصلت القيمة إلى PV'}</td></tr>
+    <tr><td class="a">CMP>=I</td><td>مقارنة: يمرر إذا كانت قيمة العداد أكبر من الرقم أو تساويه</td></tr></table>`;
+  if(TRAINER)h+=`<div class="note">للمدرب: زر «توصيل نموذجي» في التوصيل، و«البرنامج النموذجي» في البرنامج، يحمّلان الحل الكامل لهذا التمرين.</div>`;
+  h+=`<div class="row" style="padding:6px 0"><button class="btn red" id="exReset">بدء التمرين من جديد (مسح التوصيل والبرنامج)</button></div>`;
+  $('exDoc').innerHTML=h;$('exReset').onclick=()=>{if(!confirm('مسح توصيلك وبرنامجك في هذا التمرين؟'))return;ls(keyW(),null);ls(keyP(),null);loadEx();};}
+loadEx();
 })();
 </script>
-<style>#ptr{position:fixed;top:-46px;left:50%;transform:translateX(-50%);width:40px;height:40px;border-radius:50%;background:#fff;color:#0b3d91;box-shadow:0 3px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;z-index:9999;opacity:0;transition:opacity .15s,background .15s;pointer-events:none}#ptr.on{opacity:1}#ptr.go{background:#0b3d91;color:#fff}</style>
-<script>
-/* pull down from the top of the page to reload: inside the main site this page sits in a frame, which the browser's own pull-to-refresh never reaches */
-(function(){var y0=null,ind=document.createElement('div');ind.id='ptr';ind.setAttribute('aria-hidden','true');ind.textContent='↻';document.body.appendChild(ind);
-var atTop=function(){return (document.scrollingElement||document.documentElement).scrollTop<=0;},reset=function(){ind.classList.remove('on','go');ind.style.transform='translateX(-50%)';};
-addEventListener('touchstart',function(e){y0=null;if(e.touches.length!==1||!atTop()||e.target.closest('svg,.ops,.panel,select,input,textarea'))return;y0=e.touches[0].clientY;},{passive:true});
-addEventListener('touchmove',function(e){if(y0==null)return;var dy=e.touches[0].clientY-y0;if(e.touches.length!==1||dy<=0||!atTop()){reset();if(dy<0)y0=null;return;}var d=Math.min(120,dy*.5);ind.style.transform='translate(-50%,'+(d+8)+'px) rotate('+(d*3)+'deg)';ind.classList.add('on');ind.classList.toggle('go',d>=70);},{passive:true});
-var end=function(){if(y0==null)return;var go=ind.classList.contains('go');y0=null;reset();if(go){ind.classList.add('on','go');try{(window.parent&&window.parent!==window?window.parent:window).location.reload();}catch(_){location.reload();}}};
-addEventListener('touchend',end,{passive:true});addEventListener('touchcancel',function(){y0=null;reset();},{passive:true});})();
-</script>
-</body>
-</html>
+</body></html>

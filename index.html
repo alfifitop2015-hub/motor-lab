@@ -558,7 +558,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
         <button class="mi trainer-only" id="bOpenStu">📥 فتح تجربة متدرب</button>
         <button class="mi trainer-only" id="bRates">⭐ تقييمات الاستفادة</button>
         <button class="mi trainer-only" id="bWReal">🧪 التوصيل الواقعي (تجريبي)</button>
-        <button class="mi trainer-only" id="bLine">🏭 خط الإنتاج (تجريبي)</button>
+        <button class="mi" id="bLine">🏭 خط الإنتاج وPLC Step 7</button>
         <button class="mi trainer-only" id="bReal">📷 تقييم لوحة حقيقية بالصور</button>
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
         <button class="mi trainer-only" id="bShare">⇪ مشاركة التوصيلات</button>
@@ -3799,13 +3799,13 @@ const CLOUD_URL='https://script.google.com/macros/s/AKfycbyesF3VDtXbCItHAKyqflcU
     ov.style.display='block';document.body.style.overflow='hidden';const d=document.querySelector('.more');if(d)d.open=false;};
   ['bFault','bFault2'].forEach(i=>{if(!$(i))return;$(i).href='#';$(i).onclick=openFt;});
   try{if(sessionStorage.getItem('wsApp')==='ft')openFt();}catch(_){}}
-/* the production line (trainer trial): its own page in a frame over the simulator, kept open across a refresh like the workshops */
+/* the production line with PLC Step 7 (wiring, programming, running): its own page in a frame over the simulator, kept open across a refresh like the workshops */
 {let fr=null;const ov=$('lnOverlay'),ssS=(v)=>{try{v?sessionStorage.setItem('wsApp',v):sessionStorage.removeItem('wsApp');}catch(_){}};
   window.__lnClose=()=>{ov.style.display='none';document.body.style.overflow='';ssS(null);};
   const openLn=e=>{e&&e.preventDefault();ssS('ln');if(!fr){fr=document.createElement('iframe');fr.title='خط الإنتاج';fr.style.cssText='border:0;width:100%;height:100%;display:block';fr.src='line.html';ov.appendChild(fr);}
     ov.style.display='block';document.body.style.overflow='hidden';const d=document.querySelector('.more');if(d)d.open=false;};
   $('bLine').onclick=openLn;
-  try{if(sessionStorage.getItem('wsApp')==='ln'&&document.body.classList.contains('trainer'))openLn();}catch(_){}}
+  try{if(sessionStorage.getItem('wsApp')==='ln')openLn();}catch(_){}}
 const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
 if(CLOUD_ON)setTimeout(()=>cloud({action:'pinGet'}).then(j=>{if(j.v==null)return;const v=String(j.v),old=lsG('wsPinV');lsS('wsPinV',v);
   if(old!=null&&old!==v){PINH=PIN0;lsS('wsPinH2',null);if(document.body.classList.contains('trainer')){setTrainer(false);try{trLeave();}catch(_){}say('تغيّر الرقم السري للمدرب، فأُغلق وضع المدرب. ادخل بالرقم الجديد.');renderTop();}}}).catch(()=>{}),1500);
