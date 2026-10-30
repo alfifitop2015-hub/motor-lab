@@ -113,8 +113,8 @@ table.io td.a{direction:ltr;text-align:left;font-family:monospace;font-weight:70
   <div class="plcv" id="plcv"></div>
 </div>
 <div class="pane" id="p-wire">
-  <div class="row"><button class="btn" id="wUndo">↶ تراجع</button><button class="btn red" id="wDel" disabled>🗑 حذف السلك</button><button class="btn" id="wClr">مسح كل الأسلاك</button><button class="btn pri" id="wChk">✔ فحص التوصيل</button><button class="btn" id="wZo">−</button><button class="btn" id="wZi">+</button><button class="btn" id="wSol">التوصيل الجاهز</button></div>
-  <div class="note" style="margin:0 10px" id="wHint">اضغط طرفًا ثم طرفًا آخر لتمديد سلك. اضغط سلكًا لتحديده وحذفه. لون السلك يتحدد تلقائيًا: أحمر L+، أزرق M، بنفسجي إشارة، وبني/أسود/رمادي للأطوار.</div>
+  <div class="row"><button class="btn" id="wUndo">↶ تراجع</button><button class="btn red" id="wDel" disabled>🗑 حذف السلك</button><button class="btn" id="wClr">مسح كل الأسلاك</button><button class="btn pri" id="wChk">✔ فحص التوصيل</button><button class="btn" id="wFull">▦ أظهر المسارات</button><button class="btn" id="wZo">−</button><button class="btn" id="wZi">+</button><button class="btn" id="wSol">التوصيل الجاهز</button></div>
+  <div class="note" style="margin:0 10px" id="wHint">اضغط طرفًا ثم طرفًا آخر لتمديد سلك، فيدخل السلك مجرى الأسلاك ويخرج عند الطرف الآخر، وعلى كل طرف علامة باسم الطرف المقابل كما في اللوحات الحقيقية. اضغط سلكًا لتحديده (يظهر مساره كاملًا) وحذفه. الألوان: أحمر L+، أزرق M، بنفسجي إشارة، وبني/أسود/رمادي للأطوار.</div>
   <div class="board" id="board"><svg id="bd"></svg></div>
   <div class="rep" id="wRep"></div>
 </div>
@@ -553,13 +553,18 @@ setInterval(()=>{const now=performance.now();acc+=Math.min(0.5,(now-lastT)/1000)
 /* ===================== wiring board ===================== */
 const DSZ={sup:[170,90],ps:[160,96],pbno:[78,100],pbnc:[78,100],ls:[78,100],pnp:[96,100],k:[132,150],ol:[132,130],mot:[150,130],sol:[90,100]};
 let LAY=null;
-function layout(){const D=devList(EX),pos={},W=1180;let x=20,y=20,rh=0;const place=(d,w,h)=>{if(x+w>W){x=20;y+=rh+40;rh=0;}pos[d.id]={x,y,w,h};x+=w+26;rh=Math.max(rh,h);};
-  const plcW=MODEL==='300'?560:620;
+/* devices in rows, with a wiring duct above and below every row and one down the left side, as in a real panel */
+const DG=64,DH=26,VX=26;
+function layout(){const D=devList(EX),pos={},W=1180,rows=[];let x=60,y=20+DG,rh=0,r=-1;
+  const row=()=>{if(r>=0){rows[r].h=rh;y+=rh+DG;}x=60;rh=0;r++;rows.push({y,h:0});};
+  const place=(d,w,h)=>{if(x+w>W)row();pos[d.id]={x,y,w,h,r};x+=w+26;rh=Math.max(rh,h);};
+  const plcW=MODEL==='300'?560:620;row();
   D.filter(d=>d.t==='sup'||d.t==='ps').forEach(d=>place(d,...DSZ[d.t]));place({id:'PLC'},plcW,250);
-  x=20;y+=rh+50;rh=0;D.filter(d=>['pbno','pbnc','ls','pnp'].includes(d.t)).forEach(d=>place(d,...DSZ[d.t]));
-  x=20;y+=rh+50;rh=0;D.filter(d=>d.t==='sol').forEach(d=>place(d,...DSZ.sol));
-  EX.mot.forEach(m=>{const M=MOT[m];x=20;y+=rh+50;rh=0;M.k.forEach(k=>place({id:k},...DSZ.k));place({id:M.f},...DSZ.ol);place({id:m},...DSZ.mot);});
-  LAY={pos,W:W+40,H:y+rh+40};return LAY;}
+  row();D.filter(d=>['pbno','pbnc','ls','pnp'].includes(d.t)).forEach(d=>place(d,...DSZ[d.t]));
+  const sol=D.filter(d=>d.t==='sol');if(sol.length){row();sol.forEach(d=>place(d,...DSZ.sol));}
+  EX.mot.forEach(m=>{const M=MOT[m];row();M.k.forEach(k=>place({id:k},...DSZ.k));place({id:M.f},...DSZ.ol);place({id:m},...DSZ.mot);});
+  rows[r].h=rh;const ducts=rows.map(q=>q.y-DG/2);ducts.push(rows[r].y+rows[r].h+DG/2);
+  LAY={pos,rows,ducts,W:W+40,H:ducts[ducts.length-1]+DG/2};return LAY;}
 /* where each terminal sits */
 function tPos(k){const [d,n]=k.split('.'),P=LAY.pos[d];if(!P)return null;const dv=devList(EX).find(x=>x.id===d);const t=d==='PLC'?'plc':dv&&dv.t;
   const at=(fx,fy)=>({x:P.x+fx,y:P.y+fy});
@@ -597,12 +602,31 @@ function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="$
     s+=`<g class="term" data-t="${k}"><circle cx="${p.x}" cy="${p.y}" r="14" fill="transparent"/><circle class="tc" cx="${p.x}" cy="${p.y}" r="8" fill="${pend?'#fff1c2':fill}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><circle cx="${p.x}" cy="${p.y}" r="2.6" fill="#333"/>`+
       T(p.x,up?p.y+22:p.y-13,esc(lb),d.t==='plc'?8.5:9.5,'#0b1d33','middle',700)+`</g>`;});
   return s;}
-function renderBoard(){if(!L)return;layout();const u=staticNets();let s=`<rect width="${LAY.W}" height="${LAY.H}" fill="#d9dee3"/>`;
-  devList(EX).forEach(d=>{s+=devSVG(d);});
-  L.wires.forEach((w,i)=>{const A=tPos(w[0]),B=tPos(w[1]);if(!A||!B)return;const c=wColor(w,u),dy=Math.max(30,Math.abs(A.y-B.y)*.35),sa=A.y<(LAY.pos[w[0].split('.')[0]]||{y:0}).y+40?-1:1,sb=B.y<(LAY.pos[w[1].split('.')[0]]||{y:0}).y+40?-1:1;
-    const d=`M${A.x} ${A.y}C${A.x} ${A.y+sa*dy} ${B.x} ${B.y+sb*dy} ${B.x} ${B.y}`;
-    s+=`<path d="${d}" fill="none" stroke="#000" stroke-opacity=".25" stroke-width="6"/><path d="${d}" fill="none" stroke="${c}" stroke-width="3.4" class="${WSEL===i?'wsel':''}"/><path d="${d}" fill="none" stroke="transparent" stroke-width="16" data-w="${i}" style="cursor:pointer"/>`;});
-  const sv=$('bd');sv.setAttribute('viewBox',`0 0 ${LAY.W} ${LAY.H}`);sv.setAttribute('width',LAY.W*ZOOM);sv.setAttribute('height',LAY.H*ZOOM);sv.innerHTML=s;$('wDel').disabled=WSEL==null;}
+/* which duct a terminal's wire goes into: up from the upper terminals, down from the lower ones */
+function tDuct(k){const P=LAY.pos[k.split('.')[0]],p=tPos(k);if(!P||!p)return 0;return p.y<P.y+P.h/2?P.r:P.r+1;}
+let WFULL=ls('ln2:wfull')==='1';
+function renderBoard(){if(!L)return;layout();const u=staticNets();const D=LAY.ducts,W=LAY.W;
+  let base=`<rect width="${W}" height="${LAY.H}" fill="#d9dee3"/>`,cover='';
+  /* the ducts: grey slotted trunking, horizontal between rows and one vertical on the left */
+  const duct=(x,y,w,h,v)=>{let o=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#aab4bc" stroke="#7d8891"/>`;
+    let c=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#c3cbd2" fill-opacity=".86" stroke="#7d8891"/>`;
+    if(v)for(let yy=y+6;yy<y+h-6;yy+=14)c+=`<rect x="${x+2}" y="${yy}" width="5" height="8" fill="#9aa5ae"/><rect x="${x+w-7}" y="${yy}" width="5" height="8" fill="#9aa5ae"/>`;
+    else for(let xx=x+6;xx<x+w-6;xx+=14)c+=`<rect x="${xx}" y="${y+2}" width="8" height="5" fill="#9aa5ae"/><rect x="${xx}" y="${y+h-7}" width="8" height="5" fill="#9aa5ae"/>`;
+    base+=o;cover+=c;};
+  D.forEach(y=>duct(VX-DH/2,y-DH/2,W-VX-4,DH,0));duct(VX-DH/2,D[0]-DH/2,DH,D[D.length-1]-D[0]+DH,1);
+  /* each wire: stub out of its terminal into the duct, along the duct, down the side duct if it changes row */
+  const lane=i=>((i*7)%19-9)*0.9,cnt={},pathOf=(w,i)=>{const A=tPos(w[0]),B=tPos(w[1]);if(!A||!B)return null;const da=tDuct(w[0]),db=tDuct(w[1]),o=lane(i),ya=D[da]+o,yb=D[db]+o,vx=VX+o*.9;
+      return da===db?`M${A.x} ${A.y}V${ya}H${B.x}V${B.y}`:`M${A.x} ${A.y}V${ya}H${vx}V${yb}H${B.x}V${B.y}`;};
+  let inner='',stubs='',sel='';
+  L.wires.forEach((w,i)=>{const d=pathOf(w,i);if(!d)return;const c=wColor(w,u);
+    inner+=`<path d="${d}" fill="none" stroke="${c}" stroke-width="2.6" stroke-linejoin="round" opacity="${WFULL?1:.9}"/>`;
+    if(WSEL===i)sel=`<path d="${d}" fill="none" stroke="#ffb300" stroke-width="8" stroke-linejoin="round" opacity=".9"/><path d="${d}" fill="none" stroke="${c}" stroke-width="3.4" stroke-linejoin="round"/>`;
+    [0,1].forEach(e=>{const k=w[e],o=w[1-e],p=tPos(k),dd=D[tDuct(k)];if(!p)return;const n=(cnt[k]=(cnt[k]||0)+1)-1,x=p.x+(n?(n%2?1:-1)*Math.ceil(n/2)*5:0),up=dd<p.y,y2=up?dd+DH/2:dd-DH/2;
+      stubs+=`<path d="M${p.x} ${p.y}L${x} ${p.y+(up?-9:9)}V${y2}" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/><path d="M${x} ${p.y}V${y2}" stroke="transparent" stroke-width="12" data-w="${i}" style="cursor:pointer"/>`;
+      const tag=esc(tName(o).replace('مصدر 24V:','24V ')),ty=up?y2+3:y2-3,len=Math.min(8+tag.length*4.3,Math.abs(p.y-y2)-12);
+      if(len>14)stubs+=`<g transform="translate(${x} ${ty}) rotate(-90)" pointer-events="none"><rect x="${up?-len:0}" y="-4.5" width="${len}" height="9" rx="2" fill="#fff" stroke="#9aa5ae" stroke-width=".6"/><text x="${up?-len/2:len/2}" y="3" text-anchor="middle" style="font:700 6.6px sans-serif;fill:#22303c">${tag}</text></g>`;});});
+  let s=base+(WFULL?'':inner)+cover+(WFULL?inner:'');devList(EX).forEach(d=>{s+=devSVG(d);});s+=stubs+sel;
+  const sv=$('bd');sv.setAttribute('viewBox',`0 0 ${W} ${LAY.H}`);sv.setAttribute('width',W*ZOOM);sv.setAttribute('height',LAY.H*ZOOM);sv.innerHTML=s;$('wDel').disabled=WSEL==null;$('wFull').textContent=WFULL?'▤ داخل المجاري':'▦ أظهر المسارات';}
 $('bd').addEventListener('click',e=>{const t=e.target.closest('[data-t]'),w=e.target.closest('[data-w]');
   if(t){const k=t.dataset.t;WSEL=null;if(!PEND)PEND=k;else if(PEND===k)PEND=null;else{const a=PEND,b=k;PEND=null;
       if(isAC(a)!==isAC(b)){say('⚠ لا يُوصل طرف من دائرة القوى 400V بطرف من دائرة التحكم 24V. لو وُصل في الواقع لاحترقت الأجهزة.',1);}
@@ -613,6 +637,7 @@ $('bd').addEventListener('click',e=>{const t=e.target.closest('[data-t]'),w=e.ta
 $('wDel').onclick=()=>{if(WSEL==null)return;HIST.push(clone(L.wires));L.wires.splice(WSEL,1);WSEL=null;saveW();renderBoard();};
 $('wUndo').onclick=()=>{if(!HIST.length)return;L.wires=HIST.pop();WSEL=null;saveW();renderBoard();};
 $('wClr').onclick=()=>{if(!L.wires.length||!confirm('حذف كل الأسلاك في هذا التمرين؟'))return;HIST.push(clone(L.wires));L.wires=[];saveW();renderBoard();$('wRep').innerHTML='';};
+$('wFull').onclick=()=>{WFULL=!WFULL;ls('ln2:wfull',WFULL?'1':'0');renderBoard();};
 $('wZo').onclick=()=>{ZOOM=Math.max(.4,ZOOM-.15);renderBoard();};$('wZi').onclick=()=>{ZOOM=Math.min(2,ZOOM+.15);renderBoard();};
 $('wSol').onclick=()=>{if(L.wires.length&&!confirm('استبدال توصيلك بالتوصيل الجاهز؟'))return;HIST.push(clone(L.wires));L.wires=solWires(EX);saveW();renderBoard();say('حُمّل التوصيل الجاهز');};
 /* check against the reference nets: missing joins and joins that must not be there */
