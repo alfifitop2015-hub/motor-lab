@@ -76,6 +76,7 @@ table.io td.a{direction:ltr;text-align:left;font-family:monospace;font-weight:70
   </div>
   <div class="bar2">
     <select id="exSel" aria-label="التمرين"></select>
+    <button class="btn red" id="bClear" title="مسح التوصيل والبرنامج لتبدأ بنفسك">🧹 امسح وابدأ بنفسي</button><button class="btn" id="bReady" title="إرجاع التمرين جاهزًا بالتوصيل والبرنامج">✨ الجاهز</button>
     <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: CPU 314 مع DI16 وDO16 (Step 7 الكلاسيكي)">S7-300</button><button id="m1200" title="SIMATIC S7-1200: CPU 1214C DC/DC/DC (TIA Portal)">S7-1200</button></div>
   </div>
   <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="ex">📋 التمرين</button></div>
@@ -89,13 +90,13 @@ table.io td.a{direction:ltr;text-align:left;font-family:monospace;font-weight:70
   <div class="plcv" id="plcv"></div>
 </div>
 <div class="pane" id="p-wire">
-  <div class="row"><button class="btn" id="wUndo">↶ تراجع</button><button class="btn red" id="wDel" disabled>🗑 حذف السلك</button><button class="btn" id="wClr">مسح كل الأسلاك</button><button class="btn pri" id="wChk">✔ فحص التوصيل</button><button class="btn" id="wZo">−</button><button class="btn" id="wZi">+</button><button class="btn trainer" id="wSol">توصيل نموذجي</button></div>
+  <div class="row"><button class="btn" id="wUndo">↶ تراجع</button><button class="btn red" id="wDel" disabled>🗑 حذف السلك</button><button class="btn" id="wClr">مسح كل الأسلاك</button><button class="btn pri" id="wChk">✔ فحص التوصيل</button><button class="btn" id="wZo">−</button><button class="btn" id="wZi">+</button><button class="btn" id="wSol">التوصيل الجاهز</button></div>
   <div class="note" style="margin:0 10px" id="wHint">اضغط طرفًا ثم طرفًا آخر لتمديد سلك. اضغط سلكًا لتحديده وحذفه. لون السلك يتحدد تلقائيًا: أحمر L+، أزرق M، بنفسجي إشارة، وبني/أسود/رمادي للأطوار.</div>
   <div class="board" id="board"><svg id="bd"></svg></div>
   <div class="rep" id="wRep"></div>
 </div>
 <div class="pane" id="p-prog">
-  <div class="row"><button class="btn s7" id="pDl" title="تحميل البرنامج من المحرر إلى الجهاز">⤓ تحميل إلى PLC</button><button class="btn" id="pRun">RUN / STOP</button><button class="btn" id="pMon">👓 مراقبة</button><button class="btn" id="pAdd">＋ شبكة</button><button class="btn" id="pStl">STL</button><button class="btn red" id="pClr">مسح البرنامج</button><button class="btn trainer" id="pSol">البرنامج النموذجي</button></div>
+  <div class="row"><button class="btn s7" id="pDl" title="تحميل البرنامج من المحرر إلى الجهاز">⤓ تحميل إلى PLC</button><button class="btn" id="pRun">RUN / STOP</button><button class="btn" id="pMon">👓 مراقبة</button><button class="btn" id="pAdd">＋ شبكة</button><button class="btn" id="pStl">STL</button><button class="btn red" id="pClr">مسح البرنامج</button><button class="btn" id="pSol">البرنامج الجاهز</button></div>
   <div class="note" style="margin:0 10px" id="pHint"></div>
   <div class="nets" id="nets"></div>
   <div id="stlBox"></div>
@@ -398,7 +399,7 @@ const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null
 const clone=o=>JSON.parse(JSON.stringify(o));
 $('bBack').onclick=()=>{if(EMB)window.parent.__lnClose();else location.href='index.html';};
 document.querySelectorAll('.trainer').forEach(b=>{b.hidden=!TRAINER;});
-let ZOOM0=innerWidth<700?0.6:1;let MODEL=ls('ln2:model')==='1200'?'1200':'300',EX=EXS.find(e=>e.id===ls('ln2:ex'))||EXS[0],L=null,EP=[],SEL=null,PEND=null,WSEL=null,ZOOM=ZOOM0,MON=false,MONS=[],STL=false,TAB=ls('ln2:tab')||'ex',HIST=[];
+let ZOOM0=innerWidth<700?0.6:1;let MODEL=ls('ln2:model')==='1200'?'1200':'300',EX=EXS.find(e=>e.id===ls('ln2:ex'))||EXS[0],L=null,EP=[],SEL=null,PEND=null,WSEL=null,ZOOM=ZOOM0,MON=false,MONS=[],STL=false,TAB=ls('ln2:tab')||'line',HIST=[];
 /* ---------- addresses as each CPU writes them ---------- */
 function dispA(a,ctx){if(!a)return '???';const c=a[0];
   if(c==='I'||c==='Q'||c==='M'){let s=a;if(c==='Q'&&MODEL==='300'){const [b,i]=a.slice(1).split('.');s='Q'+(+b+4)+'.'+i;}return MODEL==='1200'?'%'+s:s;}
@@ -412,15 +413,18 @@ const tName=k=>{const [d,n]=k.split('.');if(d==='PLC'){if(n==='L+'||n==='M')retu
 function say(m,err){const e=$('msg');e.textContent=m||'';e.className='msg'+(err?' err':'');}
 
 /* ---------- state per exercise ---------- */
-function keyW(){return 'ln2:'+EX.id+':w';}function keyP(){return 'ln2:'+EX.id+':p';}
-function loadEx(){L=lineNew(EX);L.model=MODEL;try{const w=JSON.parse(ls(keyW())||'null');if(Array.isArray(w))L.wires=w.filter(x=>Array.isArray(x)&&x.length===2);}catch(_){}
-  try{const p=JSON.parse(ls(keyP())||'null');EP=Array.isArray(p)&&p.length?p:[newNet()];}catch(_){EP=[newNet()];}
+function keyW(){return 'ln3:'+EX.id+':w';}function keyP(){return 'ln3:'+EX.id+':p';}
+/* the line comes ready: wired and programmed, until the trainee clears it to do it alone */
+function loadEx(){L=lineNew(EX);L.model=MODEL;L.wires=solWires(EX);EP=SOL[EX.id]();try{const w=JSON.parse(ls(keyW())||'null');if(Array.isArray(w))L.wires=w.filter(x=>Array.isArray(x)&&x.length===2);}catch(_){}
+  try{const p=JSON.parse(ls(keyP())||'null');if(Array.isArray(p)&&p.length)EP=p;}catch(_){}
   L.prog=clone(EP);L.plcRun=true;SEL=null;PEND=null;WSEL=null;HIST=[];MONS=[];
   $('exSel').value=EX.id;ls('ln2:ex',EX.id);renderAll();}
 function saveW(){ls(keyW(),JSON.stringify(L.wires));}function saveP(){ls(keyP(),JSON.stringify(EP));}
 function setModel(m){MODEL=m;L.model=m;ls('ln2:model',m);$('m300').classList.toggle('on',m==='300');$('m1200').classList.toggle('on',m==='1200');L.P=plcNew();renderAll();}
 EXS.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.n;$('exSel').appendChild(o);});
 $('exSel').onchange=e=>{EX=EXS.find(x=>x.id===e.target.value)||EXS[0];loadEx();say('التمرين: '+EX.n);};
+$('bClear').onclick=()=>{if(!confirm('مسح التوصيل والبرنامج في «'+EX.n+'» لتوصله وتبرمجه بنفسك من جديد؟'))return;L.wires=[];EP=[newNet()];saveW();saveP();L.prog=clone(EP);L.P=plcNew();L.PL=plantNew(EX);L.g={};L.gx={};L.h={};L.kOn={};L.brk=false;L.olTrip={};SEL=null;PEND=null;WSEL=null;HIST=[];renderAll();showTab('wire');say('مُسح التمرين: ابدأ بالتوصيل 🔌 ثم البرنامج 🧠');};
+$('bReady').onclick=()=>{if(!confirm('إرجاع «'+EX.n+'» جاهزًا بالتوصيل والبرنامج؟ سيُستبدل عملك في هذا التمرين.'))return;ls(keyW(),null);ls(keyP(),null);loadEx();showTab('line');say('رجع الخط جاهزًا: شغّله بالضواغط');};
 $('m300').onclick=()=>setModel('300');$('m1200').onclick=()=>setModel('1200');
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 function showTab(t){TAB=t;ls('ln2:tab',t);document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));
@@ -583,7 +587,7 @@ $('wDel').onclick=()=>{if(WSEL==null)return;HIST.push(clone(L.wires));L.wires.sp
 $('wUndo').onclick=()=>{if(!HIST.length)return;L.wires=HIST.pop();WSEL=null;saveW();renderBoard();};
 $('wClr').onclick=()=>{if(!L.wires.length||!confirm('حذف كل الأسلاك في هذا التمرين؟'))return;HIST.push(clone(L.wires));L.wires=[];saveW();renderBoard();$('wRep').innerHTML='';};
 $('wZo').onclick=()=>{ZOOM=Math.max(.4,ZOOM-.15);renderBoard();};$('wZi').onclick=()=>{ZOOM=Math.min(2,ZOOM+.15);renderBoard();};
-$('wSol').onclick=()=>{if(L.wires.length&&!confirm('استبدال توصيلك بالتوصيل النموذجي؟'))return;HIST.push(clone(L.wires));L.wires=solWires(EX);saveW();renderBoard();say('حُمّل التوصيل النموذجي');};
+$('wSol').onclick=()=>{if(L.wires.length&&!confirm('استبدال توصيلك بالتوصيل الجاهز؟'))return;HIST.push(clone(L.wires));L.wires=solWires(EX);saveW();renderBoard();say('حُمّل التوصيل الجاهز');};
 /* check against the reference nets: missing joins and joins that must not be there */
 $('wChk').onclick=()=>{const u=staticNets(),N=solNets(EX),own={};N.forEach((n,i)=>n.forEach(k=>{own[k]=i;}));own['PS.L+2']=own['PS.L+'];own['PS.M2']=own['PS.M'];
   const miss=[],bad=[],extra=[];N.forEach(n=>{for(let i=1;i<n.length;i++){if(u.f(n[i])!==u.f(n[0])){miss.push([n[0],n[i]]);}}});
@@ -663,7 +667,7 @@ $('pDl').onclick=()=>{const errs=progCheck(EP);if(errs.length){say(errs[0],1);re
 $('pRun').onclick=()=>{L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');renderProg();};
 $('pMon').onclick=()=>{MON=!MON;renderProg();};$('pStl').onclick=()=>{STL=!STL;renderProg();};
 $('pClr').onclick=()=>{if(!confirm('مسح كل شبكات البرنامج في هذا التمرين؟'))return;EP=[newNet()];SEL=null;saveP();renderProg();};
-$('pSol').onclick=()=>{if(!confirm('استبدال برنامجك بالبرنامج النموذجي لهذا التمرين؟'))return;EP=SOL[EX.id]();SEL=null;saveP();renderProg();say('حُمّل البرنامج النموذجي في المحرر: اضغط «⤓ تحميل إلى PLC»');};
+$('pSol').onclick=()=>{if(!confirm('استبدال برنامجك بالبرنامج الجاهز لهذا التمرين؟'))return;EP=SOL[EX.id]();SEL=null;saveP();L.prog=clone(EP);L.P=plcNew();renderProg();say('حُمّل البرنامج الجاهز إلى المحرر وإلى PLC');};
 function progCheck(P){const e=[];P.forEach((N,ni)=>{N.rows.forEach((row,r)=>row.forEach(c=>{if(c&&c.t!=='W'&&!c.a)e.push(`Network ${ni+1}: تلامس بلا عنوان`);}));N.out.forEach(o=>{if(o&&!o.a)e.push(`Network ${ni+1}: مخرج بلا عنوان`);});});
   /* a coil written in two places */
   const seen={};P.forEach((N,ni)=>N.out.forEach(o=>{if(o&&o.t==='='&&o.a){if(seen[o.a]!=null&&seen[o.a]!==ni)e.push(`تحذير: الملف ${dispA(o.a)} مكتوب في Network ${seen[o.a]+1} وNetwork ${ni+1}، والأخير هو الذي يُطبق`);seen[o.a]=ni;}}));
@@ -703,9 +707,8 @@ function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${e
     <tr><td class="a">${BOXN.TON[MODEL]}</td><td>مؤقت تأخير تشغيل: ${MODEL==='300'?'TV = S5T#5S، وتلامسه T1':'PT = T#5s، وتلامسه "T1".Q'}</td></tr><tr><td class="a">${BOXN.TOF[MODEL]}</td><td>مؤقت تأخير فصل: مخرجه يبقى 1 مدة الزمن بعد زوال الدخل</td></tr>
     <tr><td class="a">${BOXN.CU[MODEL]}</td><td>عداد تصاعدي: يزيد 1 مع كل صعود للدخل، ودخل R يصفّره. ${MODEL==='300'?'تلامس C1 يكون 1 إذا كانت القيمة أكبر من صفر':'"C1".Q يكون 1 إذا وصلت القيمة إلى PV'}</td></tr>
     <tr><td class="a">CMP>=I</td><td>مقارنة: يمرر إذا كانت قيمة العداد أكبر من الرقم أو تساويه</td></tr></table>`;
-  if(TRAINER)h+=`<div class="note">للمدرب: زر «توصيل نموذجي» في التوصيل، و«البرنامج النموذجي» في البرنامج، يحمّلان الحل الكامل لهذا التمرين.</div>`;
-  h+=`<div class="row" style="padding:6px 0"><button class="btn red" id="exReset">بدء التمرين من جديد (مسح التوصيل والبرنامج)</button></div>`;
-  $('exDoc').innerHTML=h;$('exReset').onclick=()=>{if(!confirm('مسح توصيلك وبرنامجك في هذا التمرين؟'))return;ls(keyW(),null);ls(keyP(),null);loadEx();};}
+  h+=`<div class="note">كل تمرين يأتي <b>جاهزًا</b> بالتوصيل والبرنامج لتشغّله وتشاهده فورًا. للتدرب: اضغط <b>🧹 امسح وابدأ بنفسي</b> في الأعلى، ثم وصّل وبرمج من جديد. وزر <b>✨ الجاهز</b> يرجعه جاهزًا متى أردت.</div>`;
+  $('exDoc').innerHTML=h;}
 loadEx();
 })();
 </script>
