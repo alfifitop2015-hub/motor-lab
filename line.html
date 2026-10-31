@@ -186,8 +186,10 @@ function devList(ex){const L=[{id:'SUP',t:'sup'},{id:'PS',t:'ps'},{id:'PLC',t:'p
   ex.out.forEach(n=>{if(n[0]==='Y')L.push({id:n,t:'sol'});});return L;}
 const TERM={sup:['L1','L2','L3'],ps:['L+','L+2','M','M2'],pbno:['13','14'],pbnc:['11','12'],ls:['13','14'],pnp:['BN','BK','BU'],
   k:['A1','A2','1','2','3','4','5','6'],ol:['1','2','3','4','5','6','95','96'],mot:['U1','V1','W1','W2','U2','V2'],sol:['A1','A2']};
-function plcTerms(){const t=['L+','M','DIM','DOL','DOM'];IN.forEach((d,i)=>t.push('I'+i));OUT.forEach((d,i)=>t.push('Q'+i));return t;}
-function allTerms(ex){const T=[];devList(ex).forEach(d=>{(d.t==='plc'?plcTerms():TERM[d.t]).forEach(n=>T.push(d.id+'.'+n));});return T;}
+/* only the inputs and outputs the exercise uses are shown on the PLC */
+const usedI=ex=>IN.map((d,i)=>i).filter(i=>ex.in.includes(IN[i][0])),usedQ=ex=>OUT.map((d,i)=>i).filter(i=>ex.out.includes(OUT[i][0]));
+function plcTerms(ex){const t=['L+','M','DIM','DOL','DOM'];usedI(ex).forEach(i=>t.push('I'+i));usedQ(ex).forEach(i=>t.push('Q'+i));return t;}
+function allTerms(ex){const T=[];devList(ex).forEach(d=>{(d.t==='plc'?plcTerms(ex):TERM[d.t]).forEach(n=>T.push(d.id+'.'+n));});return T;}
 const isAC=k=>{const [d,n]=k.split('.');return d==='SUP'||/^M\d$/.test(d)||(/^(K\d|KM|KY|KD|F\d)$/.test(d)&&/^[1-6]$/.test(n));};
 
 /* the reference wiring of an exercise, as nets (each array must end up connected, and different arrays must stay apart) */
@@ -543,14 +545,14 @@ function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L
     s+=mod(10,70,'#6c7680','PS 307','5A')+`<rect x="22" y="70" width="46" height="20" rx="3" fill="${pw?'#39d353':'#2e3338'}"/>${T(45,84,'24V DC',8,'#111')}`;
     s+=mod(84,120,'#6c7680','CPU 314','Step 7')+led(96,72,!pw?false:false,'#ff3b30')+T(122,78,'SF',8,'#fff','start')+led(96,88,run,'#39d353')+T(122,94,'RUN',8,'#fff','start')+led(96,104,pw&&!L.plcRun,'#ffcc00')+T(122,110,'STOP',8,'#fff','start');
     s+=`<g class="rs" style="cursor:pointer" data-rs="1"><rect x="160" y="70" width="30" height="50" rx="4" fill="#2e3338"/><rect x="166" y="${L.plcRun?74:96}" width="18" height="20" rx="3" fill="#cfd6dc"/>${T(175,134,L.plcRun?'RUN':'STOP',9,'#fff')}</g>`;
-    s+=mod(208,200,'#4f5a64','SM 321','DI16 × DC24V');IN.forEach((d,i)=>{const x=220+(i>>3)*92,y=72+(i&7)*15;s+=led(x,y,I[i],'#39d353')+T(x+14,y+6,'I'+(i>>3)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
-    s+=mod(412,200,'#4f5a64','SM 322','DO16 × DC24V');OUT.forEach((d,i)=>{const x=424+(i>>3)*92,y=72+(i&7)*15;s+=led(x,y,Q[i],'#39d353')+T(x+14,y+6,'Q'+((i>>3)+4)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
+    s+=mod(208,200,'#4f5a64','SM 321','DI16 × DC24V');usedI(EX).forEach((i,j)=>{const d=IN[i],x=220+(j>>3)*92,y=72+(j&7)*15;s+=led(x,y,I[i],'#39d353')+T(x+14,y+6,'I'+(i>>3)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
+    s+=mod(412,200,'#4f5a64','SM 322','DO16 × DC24V');usedQ(EX).forEach((i,j)=>{const d=OUT[i],x=424+(j>>3)*92,y=72+(j&7)*15;s+=led(x,y,Q[i],'#39d353')+T(x+14,y+6,'Q'+((i>>3)+4)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
     s+='</svg>';}
   else{s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="60" y="14" width="520" height="186" rx="6" fill="#76828c" stroke="#47525c" stroke-width="2"/><rect x="60" y="14" width="520" height="28" fill="#5c6872"/>${T(320,33,'S7-1200 (حديث) · النوع: CPU 1214C DC/DC/DC · برنامج TIA Portal',11,'#fff')}`;
     s+=led(76,56,run,'#39d353')+T(90,62,'RUN/STOP',8,'#fff','start')+led(76,72,pw&&!L.plcRun,'#ffcc00')+T(90,78,'STOP',8,'#fff','start')+led(76,88,false,'#ff3b30')+T(90,94,'ERROR',8,'#fff','start');
     s+=`<g style="cursor:pointer" data-rs="1"><rect x="76" y="108" width="70" height="26" rx="5" fill="#2e3338"/>${T(111,126,L.plcRun?'RUN ▸':'STOP ■',10,L.plcRun?'#39d353':'#ffcc00')}</g>`;
-    s+=T(330,58,'DI a .0 – .7   ·   DI b .0 – .5',9,'#e8eef3');IN.forEach((d,i)=>{const x=180+i*28,y=66;s+=led(x,y,I[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});
-    s+=T(330,130,'DQ a .0 – .7   ·   DQ b .0 – .1',9,'#e8eef3');OUT.forEach((d,i)=>{const x=200+i*34,y=140;s+=led(x,y,Q[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});s+='</svg>';}
+    s+=T(330,58,'المداخل DI',9,'#e8eef3');{const U=usedI(EX),sp=Math.min(36,380/Math.max(1,U.length)),x0=375-U.length*sp/2;U.forEach((i,j)=>{const d=IN[i],x=x0+j*sp,y=66;s+=led(x,y,I[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});}
+    s+=T(330,130,'المخارج DQ',9,'#e8eef3');{const U=usedQ(EX),sp=Math.min(40,380/Math.max(1,U.length)),x0=375-U.length*sp/2;U.forEach((i,j)=>{const d=OUT[i],x=x0+j*sp,y=140;s+=led(x,y,Q[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});}s+='</svg>';}
   return s;}
 $('plcv').addEventListener('click',e=>{if(e.target.closest('[data-rs]')){L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');}});
 /* ---------- the clock ---------- */
@@ -566,7 +568,7 @@ const DG=64,DH=26,VX=26;
 function layout(){const D=devList(EX),pos={},W=1180,rows=[];let x=60,y=20+DG,rh=0,r=-1;
   const row=()=>{if(r>=0){rows[r].h=rh;y+=rh+DG;}x=60;rh=0;r++;rows.push({y,h:0});};
   const place=(d,w,h)=>{if(x+w>W)row();pos[d.id]={x,y,w,h,r};x+=w+26;rh=Math.max(rh,h);};
-  const plcW=MODEL==='300'?560:620;row();
+  const plcW=Math.max(360,Math.max(usedI(EX).length+3,usedQ(EX).length+2)*36+40);row();
   D.filter(d=>d.t==='sup'||d.t==='ps').forEach(d=>place(d,...DSZ[d.t]));place({id:'PLC'},plcW,250);
   row();D.filter(d=>['pbno','pbnc','ls','pnp'].includes(d.t)).forEach(d=>place(d,...DSZ[d.t]));
   const sol=D.filter(d=>d.t==='sol');if(sol.length){row();sol.forEach(d=>place(d,...DSZ.sol));}
@@ -584,8 +586,8 @@ function tPos(k){const [d,n]=k.split('.'),P=LAY.pos[d];if(!P)return null;const d
     case'k':{const top=['A1','1','3','5'],bot=['A2','2','4','6'];return top.includes(n)?at(18+top.indexOf(n)*32,16):at(18+bot.indexOf(n)*32,P.h-16);}
     case'ol':{const top=['1','3','5','95'],bot=['2','4','6','96'];return top.includes(n)?at(18+top.indexOf(n)*32,16):at(18+bot.indexOf(n)*32,P.h-16);}
     case'mot':{const top=['W2','U2','V2'],bot=['U1','V1','W1'];return top.includes(n)?at(30+top.indexOf(n)*45,56):at(30+bot.indexOf(n)*45,100);}
-    case'plc':{const top=['L+','M','DIM',...IN.map((x,i)=>'I'+i)],bot=['DOL','DOM',...OUT.map((x,i)=>'Q'+i)];const sp=(P.w-30)/top.length;
-      return top.includes(n)?at(22+top.indexOf(n)*sp,22):at(22+bot.indexOf(n)*((P.w-30)/12),P.h-20);}}
+    case'plc':{const top=['L+','M','DIM',...usedI(EX).map(i=>'I'+i)],bot=['DOL','DOM',...usedQ(EX).map(i=>'Q'+i)];const sp=(P.w-30)/Math.max(bot.length,top.length);
+      return top.includes(n)?at(22+top.indexOf(n)*sp,22):at(22+bot.indexOf(n)*((P.w-30)/Math.max(bot.length,top.length)),P.h-20);}}
   return null;}
 function staticNets(){const u=UF();L.wires.forEach(([a,b])=>u.u(a,b));u.u('PS.L+','PS.L+2');u.u('PS.M','PS.M2');return u;}
 function wColor(w,u){const a=w[0];if(isAC(a)){const r=u.f(a);return r===u.f('SUP.L1')?'#7a4a22':r===u.f('SUP.L2')?'#1b1b1b':r===u.f('SUP.L3')?'#8e949a':'#3a3a3a';}
@@ -604,7 +606,7 @@ function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="$
     case'mot':s+=box('#cfd6dc')+T(P.w/2,18,d.id,13)+T(P.w/2,32,MOT[d.id].n,8.5,'#4b5966','middle',600)+`<rect x="10" y="40" width="${P.w-20}" height="78" rx="6" fill="#2f353b"/>`;break;
     case'plc':s+=box(MODEL==='300'?'#58636d':'#76828c','#3c4650')+T(P.w/2,P.h/2,MODEL==='300'?'S7-300 · CPU 314 + SM321 DI16 + SM322 DO16':'S7-1200 · CPU 1214C DC/DC/DC',13,'#fff')+T(P.w/2,P.h/2+18,'المداخل في الأعلى · المخارج في الأسفل',10,'#e3e9ee','middle',600);break;}
   s+='</g>';
-  (d.t==='plc'?plcTerms():TERM[d.t]).forEach(n=>{if(d.t==='ps'&&(n==='L+2'||n==='M2'))0;const k=d.id+'.'+n,p=tPos(k);if(!p)return;const pend=PEND===k;
+  (d.t==='plc'?plcTerms(EX):TERM[d.t]).forEach(n=>{if(d.t==='ps'&&(n==='L+2'||n==='M2'))0;const k=d.id+'.'+n,p=tPos(k);if(!p)return;const pend=PEND===k;
     const lb=d.t==='plc'?tName(k).replace('PLC:',''):d.t==='ps'?n.replace('2',''):n;const up=(d.t==='k'||d.t==='ol')&&p.y-P.y<30||d.t==='plc'&&p.y-P.y<30;
     const fill=d.t==='pnp'?{BN:'#7a4a22',BK:'#111',BU:'#1f5fbf'}[n]:'#c9ced3';
     s+=`<g class="term" data-t="${k}"><circle cx="${p.x}" cy="${p.y}" r="14" fill="transparent"/><circle class="tc" cx="${p.x}" cy="${p.y}" r="8" fill="${pend?'#fff1c2':fill}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><circle cx="${p.x}" cy="${p.y}" r="2.6" fill="#333"/>`+
@@ -691,7 +693,7 @@ function netSVG(N,ni){const R=rowsUsed(N),W=OX+190,H=R*RH+8,m=MON&&MONS[ni];cons
     if(r<R-1)for(let b=1;b<=NC;b++){const x=X0+b*CW,on2=N.lk[r][b];s+=on2?`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+RH}" stroke="${m&&m.c[r]&&m.c[r][b-1]?G:K}" stroke-width="2.4"/>`:'';
       s+=`<g data-lk="${ni}:${r}:${b}" style="cursor:pointer"><circle cx="${x}" cy="${y+RH/2}" r="9" fill="${on2?'#009999':'#fff'}" stroke="#009999" stroke-width="1.5" opacity="${on2?1:.6}"/>${T(x,y+RH/2+4,on2?'│':'+',10,on2?'#fff':'#009999')}</g>`;}}
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;min-width:${Math.round(W*.6)}px;height:auto">${s}</svg>`;}
-function addrOpts(kinds,cur){let h='<option value="">—</option>';kinds.forEach(k=>{h+=`<optgroup label="${k}">`+ADDR[k].map(a=>`<option value="${a}"${a===cur?' selected':''}>${esc(dispA(a,k==='T'||k==='C'?'box':''))}${symOf(a)?'  '+esc(symOf(a)):''}</option>`).join('')+'</optgroup>';});return h;}
+function addrOpts(kinds,cur){let h='<option value="">—</option>';kinds.forEach(k=>{const A=k==='I'?usedI(EX).map(IA):k==='Q'?usedQ(EX).map(QA):ADDR[k];h+=`<optgroup label="${k}">`+A.map(a=>`<option value="${a}"${a===cur?' selected':''}>${esc(dispA(a,k==='T'||k==='C'?'box':''))}${symOf(a)?'  '+esc(symOf(a)):''}</option>`).join('')+'</optgroup>';});return h;}
 function cellEditor(ni){if(!SEL||SEL.n!==ni)return '';const N=EP[ni];
   if(SEL.c==='o'){const o=N.out[SEL.r]||{t:'',a:''};const tb=(t,lab)=>`<button class="tb${o.t===t?' on':''}" data-ot="${t}">${lab}</button>`;
     let h=tb('=','( )')+tb('S','(S)')+tb('R','(R)')+tb('TON',BOXN.TON[MODEL])+tb('TOF',BOXN.TOF[MODEL])+tb('CU',BOXN.CU[MODEL])+tb('','✕');
