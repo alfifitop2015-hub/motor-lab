@@ -21,7 +21,7 @@ button,select,input{font:inherit;color:inherit}
 .bar2 select{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:0 6px;max-width:100%;flex:1 1 220px}
 .mdl{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
 .mdl button{border:0;background:var(--panel);padding:0 10px;height:34px;cursor:pointer;font-weight:700;font-size:.85rem}
-.mdl button.on{background:var(--s7);color:#fff}
+.mdl button.on{background:var(--s7);color:#fff}.mdl button{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;height:40px!important}.mdl small{font-size:.66rem;font-weight:600;opacity:.85;white-space:nowrap}
 .tabs{display:flex;gap:4px;padding:0 10px;overflow-x:auto}
 .tab{border:1px solid var(--line);border-bottom:0;background:var(--chip);border-radius:10px 10px 0 0;padding:6px 12px;cursor:pointer;white-space:nowrap;font-weight:700;font-size:.9rem}
 .tab.on{background:var(--panel);color:var(--accent)}
@@ -57,7 +57,7 @@ button,select,input{font:inherit;color:inherit}
 .chips span{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.82rem}
 .chips .ok{color:var(--ok);border-color:var(--ok)}.chips .bad{color:var(--warn);border-color:var(--warn)}
 .goals{padding:4px 12px}.goals li{font-size:.9rem;margin:2px 0;list-style:none}.goals ul{padding:0;margin:4px 0}
-.plcv{direction:ltr;padding:4px 10px;overflow-x:auto}.plcv svg{display:block;max-width:760px;width:100%;min-width:520px;height:auto}
+.plcv{direction:ltr;padding:4px 10px;overflow-x:auto}.plcv svg{display:block;max-width:760px;width:100%;height:auto}
 .btn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:6px 10px;cursor:pointer;white-space:nowrap;font-weight:700;font-size:.86rem}
 .btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.s7{background:var(--s7);color:#fff;border-color:var(--s7)}.btn.red{color:var(--warn)}
 .btn:disabled{opacity:.45}
@@ -102,7 +102,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
   </div>
   <div class="bar2">
     <select id="exSel" aria-label="التمرين"></select>
-    <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: CPU 314 مع DI16 وDO16 (Step 7 الكلاسيكي)">S7-300</button><button id="m1200" title="SIMATIC S7-1200: CPU 1214C DC/DC/DC (TIA Portal)">S7-1200</button></div>
+    <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: الجهاز القديم الكلاسيكي، يُبرمج ببرنامج Step 7 (CPU 314 مع DI16 وDO16)"><b>S7-300</b><small>CPU 314 · قديم</small></button><button id="m1200" title="SIMATIC S7-1200: الجهاز الحديث، يُبرمج ببرنامج TIA Portal (CPU 1214C DC/DC/DC)"><b>S7-1200</b><small>CPU 1214C · حديث</small></button></div>
     <details class="mm"><summary title="خيارات التمرين">⋯</summary><div><button class="btn red" id="bClear">🧹 امسح وابدأ بنفسي</button><button class="btn" id="bReady">✨ أرجعه جاهزًا</button></div></details>
   </div>
   <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="ex">📋 التمرين</button></div>
@@ -116,8 +116,8 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
     <div class="tbar" id="tbar"></div></div>
   <div class="ops" id="ops"></div>
   <div class="chips" id="chips"></div>
+  <div class="plcv" id="plcv"></div>
   <details class="fold" id="gFold"><summary id="gSum">المطلوب</summary><div class="goals" id="goals"></div></details>
-  <details class="fold"><summary>جهاز PLC (لمبات المداخل والمخارج)</summary><div class="plcv" id="plcv"></div></details>
 </div>
 <div class="pane" id="p-wire">
   <div class="row"><button class="btn pri" id="wChk">✔ فحص</button><button class="btn" id="wUndo">↶</button><button class="btn red" id="wDel" disabled>🗑</button><button class="btn" id="wFull">🔧 الأغطية</button><button class="btn" id="wZo">−</button><button class="btn" id="wZi">+</button>
@@ -539,14 +539,14 @@ function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L
   const led=(x,y,on,c)=>`<rect x="${x}" y="${y}" width="9" height="6" rx="1" fill="${on?c:'#2e3338'}"/>`;
   let s='';
   if(MODEL==='300'){s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="6" y="20" width="628" height="12" fill="#8c949b"/>`;
-    const mod=(x,w,c,lab,sub)=>`<rect x="${x}" y="30" width="${w}" height="170" rx="3" fill="${c}" stroke="#55606a"/>${T(x+w/2,46,lab,10,'#fff')}${T(x+w/2,58,sub,8,'#e8eef3')}`;
+    s+=`<text x="320" y="14" text-anchor="middle" style="font:700 11px sans-serif;fill:#1c2833">S7-300 (قديم) · النوع: CPU 314 + SM321 DI16 + SM322 DO16 · برنامج Step 7</text>`;const mod=(x,w,c,lab,sub)=>`<rect x="${x}" y="30" width="${w}" height="170" rx="3" fill="${c}" stroke="#55606a"/>${T(x+w/2,46,lab,10,'#fff')}${T(x+w/2,58,sub,8,'#e8eef3')}`;
     s+=mod(10,70,'#6c7680','PS 307','5A')+`<rect x="22" y="70" width="46" height="20" rx="3" fill="${pw?'#39d353':'#2e3338'}"/>${T(45,84,'24V DC',8,'#111')}`;
     s+=mod(84,120,'#6c7680','CPU 314','Step 7')+led(96,72,!pw?false:false,'#ff3b30')+T(122,78,'SF',8,'#fff','start')+led(96,88,run,'#39d353')+T(122,94,'RUN',8,'#fff','start')+led(96,104,pw&&!L.plcRun,'#ffcc00')+T(122,110,'STOP',8,'#fff','start');
     s+=`<g class="rs" style="cursor:pointer" data-rs="1"><rect x="160" y="70" width="30" height="50" rx="4" fill="#2e3338"/><rect x="166" y="${L.plcRun?74:96}" width="18" height="20" rx="3" fill="#cfd6dc"/>${T(175,134,L.plcRun?'RUN':'STOP',9,'#fff')}</g>`;
     s+=mod(208,200,'#4f5a64','SM 321','DI16 × DC24V');IN.forEach((d,i)=>{const x=220+(i>>3)*92,y=72+(i&7)*15;s+=led(x,y,I[i],'#39d353')+T(x+14,y+6,'I'+(i>>3)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
     s+=mod(412,200,'#4f5a64','SM 322','DO16 × DC24V');OUT.forEach((d,i)=>{const x=424+(i>>3)*92,y=72+(i&7)*15;s+=led(x,y,Q[i],'#39d353')+T(x+14,y+6,'Q'+((i>>3)+4)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
     s+='</svg>';}
-  else{s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="60" y="14" width="520" height="186" rx="6" fill="#76828c" stroke="#47525c" stroke-width="2"/><rect x="60" y="14" width="520" height="28" fill="#5c6872"/>${T(320,33,'SIMATIC S7-1200 · CPU 1214C DC/DC/DC',12,'#fff')}`;
+  else{s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="60" y="14" width="520" height="186" rx="6" fill="#76828c" stroke="#47525c" stroke-width="2"/><rect x="60" y="14" width="520" height="28" fill="#5c6872"/>${T(320,33,'S7-1200 (حديث) · النوع: CPU 1214C DC/DC/DC · برنامج TIA Portal',11,'#fff')}`;
     s+=led(76,56,run,'#39d353')+T(90,62,'RUN/STOP',8,'#fff','start')+led(76,72,pw&&!L.plcRun,'#ffcc00')+T(90,78,'STOP',8,'#fff','start')+led(76,88,false,'#ff3b30')+T(90,94,'ERROR',8,'#fff','start');
     s+=`<g style="cursor:pointer" data-rs="1"><rect x="76" y="108" width="70" height="26" rx="5" fill="#2e3338"/>${T(111,126,L.plcRun?'RUN ▸':'STOP ■',10,L.plcRun?'#39d353':'#ffcc00')}</g>`;
     s+=T(330,58,'DI a .0 – .7   ·   DI b .0 – .5',9,'#e8eef3');IN.forEach((d,i)=>{const x=180+i*28,y=66;s+=led(x,y,I[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});
@@ -794,6 +794,7 @@ camBtn();
 /* ===================== the exercise sheet ===================== */
 function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${esc(ex.d)}</p>`;
 
+  h+=`<div class="note">${MODEL==='300'?'الجهاز المختار: <b>S7-300 القديم</b>، نوعه CPU 314 مع وحدة مداخل SM321 DI16 ووحدة مخارج SM322 DO16 (برنامج Step 7): المخارج من Q4.0، والمؤقت S_ODT والعداد S_CU، ويُعرض البرنامج بـ STL أيضًا.':'الجهاز المختار: <b>S7-1200 الحديث</b>، نوعه CPU 1214C DC/DC/DC: تغذية 24V DC، مداخل DC، مخارج DC ترانزستور (برنامج TIA Portal): العناوين %I و%Q، والمؤقت TON والعداد CTU.'} البرنامج يتحول تلقائيًا عند التبديل بينهما.</div>`;
   h+=`<h3>جدول الرموز (المداخل والمخارج)</h3><table class="io"><tr><th>العنوان</th><th>الرمز</th><th>الوصف</th><th>النوع</th></tr>`;
   ex.in.forEach(n=>{const i=INI[n],d=IN[i];h+=`<tr><td class="a">${esc(dispA(IA(i)))}</td><td><b>${d[0]}</b></td><td>${esc(d[1])}</td><td>${{NO:'ضاغط مفتوح NO',NC:'ضاغط مغلق NC',PNP:'حساس PNP ثلاثي الأسلاك',LS:'نهاية مشوار NO',OL:'تلامسات 95-96 للأوفرلودات'}[d[2]]}</td></tr>`;});
   ex.out.forEach(n=>{const i=OUTI[n],d=OUT[i];h+=`<tr><td class="a">${esc(dispA(QA(i)))}</td><td><b>${d[0]}</b></td><td>${esc(d[1])}</td><td>${d[0][0]==='Y'?'ملف صمام هوائي 24V':'ملف كونتاكتور 24V'}</td></tr>`;});h+='</table>';
