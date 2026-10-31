@@ -16,6 +16,7 @@ button,select,input{font:inherit;color:inherit}
 .bar1{display:flex;align-items:center;gap:8px;padding:8px 10px 4px}
 .bar1 h1{flex:1;font-size:1rem;line-height:1.3;margin:0}
 .bar1 h1 .credit{display:block;font-size:.72rem;font-weight:500;color:var(--muted)}
+.ib.new{background:#1a8a42;color:#fff;border-color:#1a8a42;animation:pulse 1.4s infinite}@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(26,138,66,.25)}}
 .ib{min-width:40px;height:38px;border:1px solid var(--line);background:var(--panel);border-radius:9px;font-size:.92rem;font-weight:700;cursor:pointer;flex:none;padding:0 10px}
 .bar2{display:flex;gap:6px;align-items:center;padding:2px 10px 6px;flex-wrap:wrap}
 .bar2 select{height:36px;border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:0 6px;max-width:100%;flex:1 1 220px}
@@ -98,7 +99,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 <div class="top">
   <div class="bar1">
     <h1>خط الإنتاج · PLC Step 7<span class="credit">م. جابر الفيفي · Claude ©</span></h1>
-    <button class="ib" id="bBack" title="رجوع إلى المحاكي">رجوع ↩</button>
+    <button class="ib" id="bUpd" title="تحديث صفحة خط الإنتاج إلى آخر نسخة دون الخروج">⟳</button><button class="ib" id="bBack" title="رجوع إلى المحاكي">رجوع ↩</button>
   </div>
   <div class="bar2">
     <select id="exSel" aria-label="التمرين"></select>
@@ -821,6 +822,13 @@ function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${e
 loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
+/* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
+const LNV='1793418703';
+$('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
+  try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
+async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
+  if(m&&m[1]!==LNV){const b=$('bUpd');b.classList.add('new');b.textContent='⟳ تحديث';b.title='توجد نسخة أحدث: اضغط للتحديث';}}catch(_){}}
+setTimeout(updCheck,4000);setInterval(updCheck,5*60*1000);
 })();
 </script>
 </body></html>
