@@ -455,11 +455,12 @@ function keyW(){return 'ln3:'+EX.id+':w';}function keyP(){return 'ln3:'+EX.id+':
 function loadEx(){L=lineNew(EX);L.model=MODEL;L.wires=solWires(EX);EP=SOL[EX.id]();try{const w=JSON.parse(ls(keyW())||'null');if(Array.isArray(w))L.wires=w.filter(x=>Array.isArray(x)&&x.length===2);}catch(_){}
   try{const p=JSON.parse(ls(keyP())||'null');if(Array.isArray(p)&&p.length)EP=p;}catch(_){}
   L.prog=clone(EP);L.plcRun=true;SEL=null;PEND=null;WSEL=null;HIST=[];MONS=[];
-  $('exSel').value=EX.id;ls('ln2:ex',EX.id);renderAll();}
+  $('exSel').value=ls('ln2:picked')?EX.id:'';ls('ln2:ex',EX.id);renderAll();}
 function saveW(){ls(keyW(),JSON.stringify(L.wires));}function saveP(){ls(keyP(),JSON.stringify(EP));}
 function setModel(m){MODEL=m;L.model=m;ls('ln2:model',m);$('m300').classList.toggle('on',m==='300');$('m1200').classList.toggle('on',m==='1200');L.P=plcNew();renderAll();}
+{const o=document.createElement('option');o.value='';o.disabled=true;o.textContent='📋 التمرين — اختر من هنا';$('exSel').appendChild(o);}
 EXS.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.n;$('exSel').appendChild(o);});
-$('exSel').onchange=e=>{EX=EXS.find(x=>x.id===e.target.value)||EXS[0];loadEx();say('التمرين: '+EX.n);};
+$('exSel').onchange=e=>{ls('ln2:picked','1');EX=EXS.find(x=>x.id===e.target.value)||EXS[0];loadEx();say('التمرين: '+EX.n);};
 $('bClear').onclick=()=>{if(!confirm('مسح التوصيل والبرنامج في «'+EX.n+'» لتوصله وتبرمجه بنفسك من جديد؟'))return;L.wires=[];EP=[newNet()];saveW();saveP();L.prog=clone(EP);L.P=plcNew();L.PL=plantNew(EX);L.g={};L.gx={};L.h={};L.kOn={};L.brk=false;L.olTrip={};SEL=null;PEND=null;WSEL=null;HIST=[];renderAll();showTab('wire');say('مُسح التمرين: ابدأ بالتوصيل 🔌 ثم البرنامج 🧠');};
 $('bReady').onclick=()=>{if(!confirm('إرجاع «'+EX.n+'» جاهزًا بالتوصيل والبرنامج؟ سيُستبدل عملك في هذا التمرين.'))return;ls(keyW(),null);ls(keyP(),null);loadEx();showTab('line');say('رجع الخط جاهزًا: شغّله بالضواغط');};
 $('m300').onclick=()=>setModel('300');$('m1200').onclick=()=>setModel('1200');
@@ -835,7 +836,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793440342';
+const LNV='1793440385';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
