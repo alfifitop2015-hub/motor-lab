@@ -609,7 +609,7 @@ function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="$
     case'k':s+=box('#e3e5df')+T(P.w/2,P.h/2-4,d.id,14)+T(P.w/2,P.h/2+12,OUT[OUTI[d.id]]?OUT[OUTI[d.id]][1]:'',8.5,'#4b5966','middle',600);break;
     case'ol':s+=box('#e3e5df')+T(P.w/2,P.h/2,d.id+' أوفرلود',12)+(L.olTrip[d.id]?T(P.w/2,P.h/2+16,'فاصل',10,'#c42b22'):'');break;
     case'mot':s+=box('#cfd6dc')+T(P.w/2,18,d.id,13)+T(P.w/2,32,MOT[d.id].n,8.5,'#4b5966','middle',600)+`<rect x="10" y="40" width="${P.w-20}" height="78" rx="6" fill="#2f353b"/>`;break;
-    case'plc':s+=box(MODEL==='300'?'#58636d':'#76828c','#3c4650')+T(P.w/2,P.h/2,MODEL==='300'?'S7-300 · CPU 317-2 PN/DP + SM321 DI32 + SM322 DO32':'S7-1200 · CPU 1214C',13,'#fff')+T(P.w/2,P.h/2+18,'المداخل في الأعلى · المخارج في الأسفل',10,'#e3e9ee','middle',600);break;}
+    case'plc':{const M=PLCIMG[MODEL],ah=P.h-84,aw=Math.min(P.w-20,ah*M.w/M.h);s+=box('#e9edf0','#3c4650')+`<image href="${M.src}" x="${(P.w-aw)/2}" y="40" width="${aw}" height="${aw*M.h/M.w}" preserveAspectRatio="xMidYMid meet"/>`;}break;}
   s+='</g>';
   (d.t==='plc'?plcTerms(EX):TERM[d.t]).forEach(n=>{if(d.t==='ps'&&(n==='L+2'||n==='M2'))0;const k=d.id+'.'+n,p=tPos(k);if(!p)return;const pend=PEND===k;
     const lb=d.t==='plc'?tName(k).replace('PLC:',''):d.t==='ps'?n.replace('2',''):n;const up=(d.t==='k'||d.t==='ol')&&p.y-P.y<30||d.t==='plc'&&p.y-P.y<30;
@@ -827,7 +827,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793419750';
+const LNV='1793420085';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
