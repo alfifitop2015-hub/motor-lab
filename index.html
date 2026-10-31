@@ -537,6 +537,14 @@ body.fs{padding-bottom:0}
 /* the clip explains the easy program: the device window opens under the clip window and the explained rung is lit */
 body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-top:150px}body.wcplc #plcModal .box{max-height:calc((100vh - 170px) / var(--ui,1))}
 .pr.pxhl{background:rgba(255,196,0,.55);border-radius:6px;box-shadow:0 0 0 3px #ffb300}
+.qz{margin:10px 0;border:1.5px solid #7c5cd6;border-radius:12px;padding:10px 12px;background:rgba(124,92,214,.06)}
+.qz .qzh{font-weight:800;font-size:1rem}.qz .qzh span{display:block;font-weight:400;font-size:.82rem;color:var(--muted);margin-top:2px}
+.qz ol{margin:8px 0 4px;padding-inline-start:22px}.qz li{margin:0 0 10px;font-size:.92rem;line-height:1.5}.qz li.miss{outline:2px solid #d8322b;outline-offset:3px;border-radius:6px}
+.qz .qzt i{font-style:normal;font-size:.75rem;background:#7c5cd6;color:#fff;border-radius:6px;padding:0 6px;margin-inline-end:4px}
+.qz .qzo{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.qz .qzo label{display:flex;align-items:center;gap:5px;border:1px solid var(--line,#ccd);border-radius:8px;padding:5px 9px;cursor:pointer;background:var(--card,#fff)}
+.qz .qzo label:has(input:checked){border-color:#7c5cd6;background:rgba(124,92,214,.14);font-weight:700}
+.qz.done li.ok{color:inherit}.qz.done li.no{color:#b3261e}.qz .qzm{color:var(--warn);font-size:.88rem;min-height:1.1em;margin:4px 0}
+.qz details summary{cursor:pointer;font-size:.88rem;margin-top:6px}.rqz{display:block;font-size:.72rem;font-weight:700;color:#5b3fc4;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -2975,13 +2983,167 @@ function panelBlob(nm,id){return new Promise(res=>{let done=false;const fin=b=>{
     img.onerror=()=>fin(null);img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(x);}catch(_){fin(null);}});}
 function sendSummary(){const m=S.motor,ks=S.devs.filter(d=>d.type!=='aux'&&!d.host).length;
   return `الأسلاك: ${S.wires.length} · القطع على اللوحة: ${S.devs.length} · المحرك M1: ${m.state==='run'?modeTxt(m)+' '+(m.dir==='cw'?'للأمام':'للخلف'):m.state==='fault'?'عطل':'متوقف'}${S.fault?' · يوجد قصر في الدائرة':''}`+gradeLine();}
+/* ===== theory test at the end of every exercise: [question, options (none = true/false), index of the right answer].
+   One mark for every right answer, apart from the wiring grade; it must be answered before the exercise is sent ===== */
+const QZ={
+p1:[['ضاغط التشغيل S1 من النوع المفتوح (NO) ويُوصل على الطرفين 13-14.',0,0],
+ ['ضاغط الإيقاف S0 من النوع:',['مفتوح NO','مغلق NC','مفتاح دوّار','نهاية مشوار'],1],
+ ['وظيفة التثبيت الذاتي هي:',['حماية المحرك من زيادة التيار','إبقاء الكونتاكتور عاملًا بعد رفع اليد عن ضاغط التشغيل','عكس اتجاه دوران المحرك','تقليل تيار البدء'],1],
+ ['تلامس التثبيت الذاتي 13-14 للكونتاكتور K1 يوصل على التوازي مع ضاغط التشغيل S1.',0,0],
+ ['الأوفرلود الحراري يحمي المحرك من:',['قصر الدائرة بين الأطوار','زيادة الحمل (التيار) لمدة طويلة','الصعق الكهربائي','انعكاس الأطوار'],1],
+ ['تلامس الأوفرلود 95-96 مغلق في الوضع الطبيعي ويوصل على التوالي في دائرة التحكم.',0,0],
+ ['لمبة العطل H4 تُضاء عبر تلامس الأوفرلود:',['95-96','97-98','13-14','A1-A2'],1],
+ ['طرفا ملف الكونتاكتور هما:',['1 و 2','13 و 14','A1 و A2','95 و 96'],2],
+ ['التلامسات الرئيسية للكونتاكتور (1-2، 3-4، 5-6) هي التي تحمل تيار المحرك.',0,0],
+ ['لمبة الإيقاف H3 تبقى مضاءة والمحرك يعمل.',0,1]],
+p2:[['لتشغيل المحرك من مكانين يوصل ضاغطا التشغيل S1 و S2:',['على التوالي','على التوازي','أحدهما مكان الآخر','مع الأوفرلود'],1],
+ ['ضاغطا الإيقاف S0 و S3 يوصلان على التوالي، فالضغط على أي منهما يوقف المحرك.',0,0],
+ ['لو وُصل ضاغطا الإيقاف على التوازي فإن الضغط على أحدهما فقط:',['يوقف المحرك','لا يوقف المحرك لأن الآخر ما زال يمرر التيار','يعكس الحركة','يفصل الأوفرلود'],1],
+ ['تلامس التثبيت الذاتي 13-14 يوصل على التوازي مع ضاغطي التشغيل.',0,0],
+ ['عدد الكونتاكتورات اللازمة لتشغيل محرك واحد من مكانين:',['1','2','3','4'],0],
+ ['فصل الأوفرلود (فتح 95-96) يوقف المحرك أيًّا كان مكان تشغيله.',0,0],
+ ['الضاغط NC يكون تلامسه مغلقًا قبل الضغط عليه.',0,0],
+ ['لمبة التشغيل H1 تضيء عندما:',['يُضغط S0','يعمل الكونتاكتور K1','يفصل الأوفرلود','تنقطع الكهرباء'],1]],
+p3:[['في التشغيل التتابعي لا يمكن تشغيل M2 إلا إذا كان M1 يعمل.',0,0],
+ ['لتحقيق شرط التتابع يوصل في مسار ملف K2:',['تلامس مغلق NC من K1','تلامس مفتوح NO من K1','تلامس الأوفرلود 97-98','ضاغط S3 على التوازي'],1],
+ ['الضاغط S0 يوقف المحركين معًا، والضاغط S3 يوقف M2 وحده.',0,0],
+ ['لو فصل أوفرلود المحرك M2 فإن المطلوب في هذا التمرين أن:',['يتوقف M2 فقط','يتوقف المحركان','لا يتوقف أي محرك','يتوقف M1 فقط'],1],
+ ['لذلك يوصل تلامسا الأوفرلود 95-96 للمحركين على التوالي في دائرة التحكم.',0,0],
+ ['لمبة H2 تبين:',['عمل المحرك M1','عمل المحرك M2','العطل','الإيقاف'],1],
+ ['عند الضغط على S2 والمحرك M1 متوقف يعمل M2 فورًا.',0,1],
+ ['لكل محرك كونتاكتور خاص به وأوفرلود خاص به.',0,0]],
+p4:[['لعكس اتجاه دوران المحرك ثلاثي الأطوار:',['نعكس طرفي ملف الكونتاكتور','نبدّل طورين من الأطوار الثلاثة','نبدّل الأطوار الثلاثة كلها','نخفض الجهد'],1],
+ ['الإعاقة الكهربائية تمنع عمل الكونتاكتورين K1 و K2 معًا.',0,0],
+ ['لو عمل K1 و K2 معًا يحدث:',['دوران أسرع','قصر بين طورين','توقف آمن للمحرك','لا شيء'],1],
+ ['الإعاقة الكهربائية تُنفّذ بتوصيل تلامس مغلق (21-22) من كل كونتاكتور في مسار ملف الكونتاكتور الآخر.',0,0],
+ ['في العكس البطيء، للانتقال من الأمامي إلى العكسي يجب:',['الضغط على S2 مباشرة','الضغط على S0 أولًا ثم S2','فصل القاطع الرئيسي','الضغط على S1 و S2 معًا'],1],
+ ['H1 تبين الدوران الأمامي، و H2 تبين الدوران العكسي.',0,0],
+ ['لكل من K1 و K2 تلامس تثبيت ذاتي 13-14 خاص به.',0,0],
+ ['أوفرلود واحد يكفي لحماية المحرك في الاتجاهين لأنه موصل بعد الكونتاكتورين.',0,0]],
+p5:[['في العكس السريع ينعكس المحرك بالضغط على ضاغط الاتجاه الآخر مباشرة دون الضغط على S0.',0,0],
+ ['لتحقيق العكس السريع يوصل في مسار K1:',['تلامس مفتوح من S2','تلامس مغلق من الضاغط S2','تلامس الأوفرلود 97-98','مؤقت'],1],
+ ['الإعاقة الكهربائية بتلامسات الكونتاكتورات 21-22 تُلغى في العكس السريع.',0,1],
+ ['الضاغط المزدوج (NO + NC) عند ضغطه:',['يفتح NC أولًا ثم يغلق NO','يغلق NO أولًا ثم يفتح NC','يغلقان معًا','لا يتغير شيء'],0],
+ ['العكس المباشر أثناء الدوران يسبب تيارًا عاليًا وإجهادًا ميكانيكيًا، لذلك يناسب الأحمال الخفيفة.',0,0],
+ ['عدد الكونتاكتورات في دائرة عكس الحركة:',['1','2','3','4'],1],
+ ['لو ضُغط S1 و S2 معًا في العكس السريع يعمل الكونتاكتوران معًا.',0,1]],
+p6:[['الهدف من بدء المحرك نجمة ثم دلتا:',['زيادة السرعة','تقليل تيار البدء','عكس الحركة','زيادة عزم البدء'],1],
+ ['تيار البدء في النجمة يساوي تقريبًا ثلث تيار البدء المباشر بالدلتا.',0,0],
+ ['في توصيلة النجمة جهد كل ملف يساوي:',['جهد الخط','جهد الخط ÷ √3','جهد الخط × √3','نصف جهد الخط'],1],
+ ['لا يجوز أن يعمل كونتاكتور النجمة وكونتاكتور الدلتا معًا لأن ذلك يسبب قصرًا.',0,0],
+ ['في هذا التمرين يتم التحويل من النجمة إلى الدلتا:',['تلقائيًا بالمؤقت','يدويًا بالضاغط S2','بالأوفرلود','بنهاية المشوار'],1],
+ ['الكونتاكتور الرئيسي يبقى عاملًا في النجمة وفي الدلتا.',0,0],
+ ['في توصيلة الدلتا يقع على كل ملف:',['جهد الخط ÷ √3','جهد الخط كاملًا','نصف جهد الخط','لا جهد'],1],
+ ['المحرك الذي يبدأ نجمة/دلتا يجب أن يكون مصممًا للعمل دلتا على جهد الشبكة.',0,0],
+ ['عزم البدء في النجمة أكبر من عزم البدء المباشر بالدلتا.',0,1]],
+p7:[['المؤقت المستخدم في النجمة/دلتا من نوع:',['تأخير الفصل Off-delay','تأخير التشغيل On-delay','نبضي','عداد'],1],
+ ['بعد انتهاء زمن المؤقت يُفتح تلامسه المغلق 15-16 فيفصل النجمة، ويُغلق تلامسه المفتوح 15-18 فيشغّل الدلتا.',0,0],
+ ['يبدأ المؤقت العد عند:',['تشغيل الدلتا','الضغط على S1 وبدء النجمة','الضغط على S0','فصل الأوفرلود'],1],
+ ['يُضبط زمن المؤقت على الزمن الذي يقترب فيه المحرك من سرعته الكاملة.',0,0],
+ ['طرفا ملف المؤقت هما A1 و A2.',0,0],
+ ['لو ضُبط زمن المؤقت قصيرًا جدًا:',['يتحول إلى الدلتا قبل اكتمال السرعة فيرتفع التيار','لا يتحول أبدًا','يتوقف المحرك','ينعكس الدوران'],0],
+ ['الإعاقة بين كونتاكتوري النجمة والدلتا غير لازمة بوجود المؤقت.',0,1],
+ ['S0 يوقف المحرك في أي مرحلة، نجمة كانت أو دلتا.',0,0]],
+p8:[['جهاز easy هو:',['مرحل تحكم قابل للبرمجة (PLC صغير)','أوفرلود','مؤقت فقط','قاطع'],0],
+ ['ضاغط الإيقاف S0 (NC) موصل على I1، فيكون المدخل I1 عاملًا (1) في الوضع الطبيعي.',0,0],
+ ['لذلك يُكتب تلامس I1 في البرنامج كتلامس:',['مفتوح لأن المدخل عامل أصلًا','مغلق','لا يُكتب','ملف'],0],
+ ['لماذا يوصل ضاغط الإيقاف NC وليس NO؟',['أرخص','إذا انقطع سلكه يتوقف المحرك (أمان)','لتقليل عدد المداخل','لا فرق'],1],
+ ['المخرج Q1 يشغّل ملف الكونتاكتور K1، والكونتاكتور هو الذي يشغّل المحرك.',0,0],
+ ['التثبيت الذاتي يُنفّذ في البرنامج بتلامس Q1 على التوازي مع I2.',0,0],
+ ['تلامس الأوفرلود 95-96 يغذي مشترك المخارج، فعند فصله:',['يبقى K1 عاملًا','ينفصل K1 حتى لو كان Q1 عاملًا','ينعكس الدوران','يتوقف البرنامج'],1],
+ ['يمكن تشغيل المحرك مباشرة من مخرج easy دون كونتاكتور.',0,1]],
+p9:[['في البرنامج تُكتب مداخل التشغيل I2 و I3:',['على التوالي','على التوازي','كلٌّ في سطر يشغّل مخرجًا مختلفًا','لا تُستخدم'],1],
+ ['مداخل الإيقاف I1 و I4 تُكتب على التوالي في البرنامج.',0,0],
+ ['تغيير طريقة التشغيل في easy يكون غالبًا بتعديل البرنامج دون تغيير التوصيل.',0,0],
+ ['عدد مداخل easy المستخدمة في هذا التمرين:',['2','3','4','5'],2],
+ ['ضاغطا الإيقاف S0 و S3 من نوع NC.',0,0],
+ ['المخرج المستخدم في هذا التمرين هو Q1 فقط.',0,0],
+ ['في وضع STOP يبقى easy ينفّذ البرنامج وتعمل المخارج.',0,1]],
+p10:[['شرط تشغيل Q2 بعد Q1 يُكتب في البرنامج بتلامس Q1 مفتوح في سطر Q2.',0,0],
+ ['الأوفرلودان F2 و F3 موصلان:',['على التوازي في تغذية المخارج','على التوالي في تغذية المخارج','على المدخلين I5 و I6','لا حاجة لهما'],1],
+ ['فصل أي من الأوفرلودين يقطع تغذية المخارج فيتوقف المحركان.',0,0],
+ ['S3 على I4 يوقف M2 وحده، و S0 على I1 يوقف الاثنين.',0,0],
+ ['Q1 يشغّل الكونتاكتور K1 للمحرك:',['M1','M2','الاثنين','لا شيء'],0],
+ ['إيقاف M1 يوقف M2 أيضًا لأن Q2 مشروط بعمل Q1.',0,0],
+ ['يمكن تشغيل M2 قبل M1 إذا ضُغط S2 أولًا.',0,1]],
+p11:[['الإعاقة بين الأمامي والعكسي في هذا التمرين تُنفّذ:',['في البرنامج بتلامس Q2 مغلق في سطر Q1 والعكس','بالأوفرلود','بالمؤقت','لا تلزم'],0],
+ ['في العكس البطيء بجهاز easy يجب الضغط على S0 قبل تغيير الاتجاه.',0,0],
+ ['Q1 يشغّل:',['الأمامي K1','العكسي K2','النجمة','الدلتا'],0],
+ ['عكس الاتجاه يتم بتبديل طورين في دائرة القدرة بين K1 و K2.',0,0],
+ ['S1 موصل على I2، و S2 موصل على I3.',0,0],
+ ['لو عمل Q1 و Q2 معًا بسبب خطأ في البرنامج يحدث قصر بين طورين.',0,0],
+ ['الإعاقة في البرنامج تغني عن أي حماية، فلا يحدث قصر حتى لو التصق تلامس K1.',0,1]],
+p12:[['العكس السريع في easy يتحقق بوضع تلامس مغلق من مدخل الاتجاه الآخر في سطر كل مخرج.',0,0],
+ ['عند الضغط على S2 والمحرك يدور أماميًا:',['يستمر أماميًا','يفصل Q1 ويعمل Q2 مباشرة','يتوقف فقط','لا يحدث شيء'],1],
+ ['في العكس السريع لا حاجة لأي إعاقة بين Q1 و Q2.',0,1],
+ ['العكس المباشر يرفع تيار المحرك لحظيًا أعلى من البدء العادي.',0,0],
+ ['الفرق بين التمرين 11 والتمرين 12 في:',['التوصيل فقط','البرنامج فقط','المحرك','جهد التغذية'],1],
+ ['المدخل I1 (S0) يوقف الاتجاهين.',0,0]],
+p13:[['Q1 يشغّل الكونتاكتور الرئيسي K1، و Q2 النجمة K2، و Q3 الدلتا K3.',0,0],
+ ['تلامس Q3 المغلق في سطر Q2 وتلامس Q2 المغلق في سطر Q3 هما:',['تثبيت ذاتي','إعاقة بين النجمة والدلتا','مؤقت','عداد'],1],
+ ['التحويل إلى الدلتا في هذا التمرين بالضغط على S2 الموصل على I3.',0,0],
+ ['بعد التحويل إلى الدلتا يجب أن ينفصل Q2 (النجمة).',0,0],
+ ['إذا ضُغط S2 قبل S1:',['يعمل المحرك دلتا مباشرة','لا يحدث شيء لأن الدلتا مشروطة بعمل Q1','يعمل نجمة','ينعكس الدوران'],1],
+ ['تيار البدء نجمة يساوي تقريبًا ثلث تيار البدء المباشر بالدلتا.',0,0]],
+p14:[['المؤقت T1 في البرنامج من نوع تأخير التشغيل (On-delay) وزمنه 5 ثوانٍ.',0,0],
+ ['يبدأ المؤقت T1 العد عند:',['تشغيل Q1 والنجمة','الضغط على S0','تشغيل Q3','فصل الأوفرلود'],0],
+ ['بعد انتهاء T1: تلامس T1 المغلق يفصل Q2، وتلامس T1 المفتوح يشغّل Q3.',0,0],
+ ['ميزة المؤقت في البرنامج أنه لا يحتاج مؤقتًا منفصلًا في اللوحة.',0,0],
+ ['لتغيير زمن التحويل إلى 8 ثوانٍ نغيّر:',['توصيل الأسلاك','إعداد زمن T1 في البرنامج','الأوفرلود','المحرك'],1],
+ ['هذا التمرين يحتاج ضاغطًا للتحويل إلى الدلتا.',0,1]],
+p15:[['مفتاح نهاية المشوار يعمل عندما:',['يضغطه المشغّل بيده','تصل إليه العربة أو الجزء المتحرك','ينقطع التيار','يسخن المحرك'],1],
+ ['النقطة المغلقة لـ SQ2 موصلة في مسار K1 فتوقف الحركة الأمامية عند وصول العربة إليها.',0,0],
+ ['النقطة المغلقة لـ SQ1 (21-22) موصلة في مسار:',['K1 الأمامي','K2 العكسي','لمبة العطل','الأوفرلود'],1],
+ ['بعد توقف العربة عند SQ2 يمكن تشغيلها بالاتجاه العكسي بالضغط على S2.',0,0],
+ ['بعد توقف العربة عند SQ2 يمكن تشغيلها أماميًا مرة أخرى بالضغط على S1.',0,1],
+ ['تُستخدم نقطة مغلقة (NC) في نهاية المشوار حتى إذا انقطع سلكها تتوقف الحركة (أمان).',0,0],
+ ['تبقى الإعاقة الكهربائية بين K1 و K2 لازمة مع وجود نهايتي المشوار.',0,0]],
+p16:[['محرك دالندر يعمل بسرعتين نسبتهما:',['1 : 2','1 : 3','1 : 1.5','1 : 4'],0],
+ ['في السرعة البطيئة تُغذى الأطراف 1U 1V 1W وتبقى 2U 2V 2W مفتوحة (توصيلة دلتا).',0,0],
+ ['في السرعة العالية:',['تُقصر 2U 2V 2W وتُغذى 1U 1V 1W','تُقصر 1U 1V 1W وتُغذى 2U 2V 2W (نجمة مزدوجة)','تُغذى الأطراف الستة معًا','يوصل المحرك نجمة عادية'],1],
+ ['الكونتاكتور K4 في هذا التمرين يقصر الأطراف 1U 1V 1W.',0,0],
+ ['K5 (السرعة العالية) لا يعمل إلا بعد عمل K4 عبر تلامسه 53-54.',0,0],
+ ['المؤقت K1T يحوّل المحرك من السرعة البطيئة إلى العالية بعد انتهاء زمنه.',0,0],
+ ['يجوز أن يعمل K3 (البطيئة) مع K5 (العالية) معًا.',0,1],
+ ['محرك دالندر له ستة أطراف: 1U 1V 1W و 2U 2V 2W.',0,0],
+ ['يوجد أوفرلودان F5 و F6 لأن تيار المحرك يختلف بين السرعتين.',0,0],
+ ['يبدأ المحرك في هذا التمرين بالسرعة العالية ثم يتحول إلى البطيئة.',0,1]],
+p17:[['المؤقت T1 والإعاقات في هذا التمرين موجودة في برنامج easy.',0,0],
+ ['Q4 يشغّل K4 الذي:',['يقصر 1U 1V 1W','يغذي 1U 1V 1W','يعكس الحركة','يحمي المحرك'],0],
+ ['K5 يعمل مع K4 عبر نقطته 53-54 وليس من مخرج مستقل.',0,0],
+ ['Q3 يشغّل:',['السرعة البطيئة K3','السرعة العالية K5','الاتجاه العكسي','الاتجاه الأمامي'],0],
+ ['يجب منع Q3 و Q4 من العمل معًا في البرنامج.',0,0],
+ ['السرعة العالية لمحرك دالندر توصيلة نجمة مزدوجة (YY).',0,0],
+ ['F5 و F6 موصلان على التوالي في تغذية مخارج easy.',0,0],
+ ['S1 (I2) للأمامي، و S2 (I3) للعكسي، و S0 (I1) للإيقاف.',0,0]]};
+const QZK='wsQuiz',qzAll=()=>{try{return JSON.parse(localStorage.getItem(QZK)||'{}')||{};}catch(_){return{};}},qzSave=o=>{try{localStorage.setItem(QZK,JSON.stringify(o));}catch(_){}};
+const qzGet=ex=>qzAll()[ex]||null,qzOpts=q=>q[1]||['صح','خطأ'];
+const qzNeed=ex=>!!QZ[ex]&&!qzGet(ex)&&!document.body.classList.contains('trainer');
+let QZD={};
+/* the questions come in a different order for every trainee number, so neighbours do not copy one another */
+function qzOrder(ex){let h=2166136261;for(const c of String($('stId').value||'')+ex)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;
+  const r=()=>{h=Math.imul(h^(h>>>15),2246822507)>>>0;h=Math.imul(h^(h>>>13),3266489909)>>>0;return ((h^(h>>>16))>>>0)/4294967296;};
+  const ix=QZ[ex].map((_,i)=>i);for(let i=ix.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ix[i],ix[j]]=[ix[j],ix[i]];}return ix;}
+function qzHTML(ex){const Q=QZ[ex];if(!Q)return '';const R=qzGet(ex);
+  if(R)return `<div class="qz done"><div class="qzh">🧠 الاختبار النظري: <b>${R.c} من ${R.n}</b><span>درجة لكل إجابة صحيحة، منفصلة عن درجة التوصيل</span></div>
+    <details><summary>مراجعة الإجابات</summary><ol>${Q.map((q,i)=>{const a=R.a[i],ok=a===q[2];return `<li class="${ok?'ok':'no'}">${ok?'✔':'✖'} ${esc(q[0])}<br><small>إجابتك: ${a==null?'—':esc(qzOpts(q)[a])}${ok?'':' · الصحيحة: <b>'+esc(qzOpts(q)[q[2]])+'</b>'}</small></li>`;}).join('')}</ol></details></div>`;
+  const D=QZD[ex]||{};
+  return `<div class="qz"><div class="qzh">🧠 الاختبار النظري (${Q.length} ${Q.length>10?'سؤالًا':'أسئلة'})<span>لكل إجابة صحيحة درجة، منفصلة عن درجة التوصيل. أجب عن كل الأسئلة ثم اضغط «تصحيح الاختبار». لا يُرسل التمرين قبل حل الاختبار، ولا يُعدّل بعد التصحيح.</span></div><ol>${qzOrder(ex).map(i=>{const q=Q[i];
+    return `<li id="qzq${i}"><div class="qzt">${q[1]?'':'<i>صح أم خطأ؟</i> '}${esc(q[0])}</div><div class="qzo">${qzOpts(q).map((o,j)=>`<label><input type="radio" name="qz${i}" data-qz="${i}" value="${j}"${D[i]===j?' checked':''}> ${esc(o)}</label>`).join('')}</div></li>`;}).join('')}</ol>
+    <p id="qzMsg" class="qzm"></p><button class="btn prim" id="qzGo">✅ تصحيح الاختبار</button></div>`;}
+function qzGrade(ex){const Q=QZ[ex],D=QZD[ex]||{},miss=Q.map((_,i)=>i).filter(i=>D[i]==null);
+  if(miss.length){$('qzMsg').textContent='بقي '+miss.length+' '+(miss.length>2&&miss.length<11?'أسئلة':'سؤال')+' بلا إجابة (معلّمة بالأحمر).';miss.forEach(i=>{const e=$('qzq'+i);if(e)e.classList.add('miss');});const e=$('qzq'+miss[0]);if(e)e.scrollIntoView({block:'center',behavior:'smooth'});return;}
+  if(!confirm('تصحيح الاختبار الآن؟ لا يمكن تعديل الإجابات بعد التصحيح.'))return;
+  const a=Q.map((_,i)=>D[i]),c=Q.filter((q,i)=>a[i]===q[2]).length,A=qzAll();A[ex]={a,c,n:Q.length,t:Date.now()};qzSave(A);delete QZD[ex];
+  say('الاختبار النظري: '+c+' من '+Q.length);gRender();}
 function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();
   if(!n||!id){[['stName','stName2',n],['stId','stId2',id]].forEach(([a,b,v])=>{if(!v){$(a).classList.add('bad');$(b).classList.add('bad');}});
     const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='اكتب اسمك ورقمك التدريبي أولًا.';(n?$('stId2'):$('stName2')).focus();return null;}
   if(!S.wires.length){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='لا توجد توصيلات بعد. نفّذ التجربة ثم أرسلها.';return null;}
   if(!curGrade()&&!S.stu&&!document.body.classList.contains('trainer')){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='يرجى التقييم أولًا: اضغط 🎯 تقييم وإرسال.';return null;}
+  {const G=curGrade();if(G&&qzNeed(G.ex)){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='حل الاختبار النظري أولًا: اضغط 🎯 تقييم وإرسال وأجب عن أسئلته، ثم أرسل.';return null;}}
   return{n,id};}
-async function buildMsg(st){const G=curGrade();const code=await encodeCode(G?{...G.w,st:{n:st.n,id:st.id,t:Date.now(),g:{ex:G.ex,s:G.s,t:G.t,n:G.n,id:G.id}}}:{...serial(),st:{n:st.n,id:st.id,t:Date.now()}});
+async function buildMsg(st){const G=curGrade();const code=await encodeCode(G?{...G.w,st:{n:st.n,id:st.id,t:Date.now(),g:{ex:G.ex,s:G.s,t:G.t,n:G.n,id:G.id},...(qzGet(G.ex)?{q:qzGet(G.ex)}:{})}}:{...serial(),st:{n:st.n,id:st.id,t:Date.now()}});
   const link=isHosted()&&code.startsWith('Z1')?location.href.split('#')[0]+'#t='+code.slice(2):'';
   const text=`تجربة من محاكي ورشة التحكم في المحركات الكهربائية\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\n${sendSummary()}\n`+(link?`\nافتح التجربة مباشرة:\n${link}\n`:'')+`\nكود التجربة (للمدرب: ⋯ ← فتح تجربة متدرب):\n${code}`;
   return{text,code};}
@@ -3320,7 +3482,7 @@ function gSave(o){try{localStorage.setItem(GK,JSON.stringify(o));}catch(_){}}
 /* the attempt that is sent: the highest one (kept in .top when a later attempt scored less) */
 function curGrade(){const A=gAll();let k=A._cur;try{if(EXP.ex)k=EXP.ex;}catch(_){}const L=k&&A[k];return L?(L.top||L):null;}
 const sameAsGraded=()=>{const G=curGrade();return !G||JSON.stringify(serial().w)===JSON.stringify(G.w.w);};
-const gradeLine=()=>{const G=curGrade();return G?` · الدرجة: ${G.s} من 20 (${PNAME[G.ex]})`:'';};
+const gradeLine=()=>{const G=curGrade(),Q=G&&qzGet(G.ex);return G?` · الدرجة: ${G.s} من 20 (${PNAME[G.ex]})`+(Q?` · الاختبار النظري: ${Q.c} من ${Q.n}`:''):'';};
 async function withGraded(fn){const G=curGrade();if(!G||sameAsGraded())return fn();const cur=serial();
   try{applyObj(G.w);update();return await fn();}finally{applyObj(cur);update();}}
 const gM=$('gradeModal');let GV={ex:''};
@@ -3413,9 +3575,9 @@ function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classLis
   let h=EXP.ex&&ex===EXP.ex?`<p class="gexn">التمرين: <b>${Object.keys(PNAME).indexOf(ex)+1}. ${esc(PNAME[ex])}</b>${A[ex]?' — '+(A[ex].top||A[ex]).s+'/20':''}<span>لتقييم تمرين آخر اختره من قائمة التمارين أعلى اللوحة.</span></p>`:`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+(A[k].top||A[k]).s+'/20':''}</option>`).join('')}</select></label>`;
   if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. تُحسب الدرجة من توصيلاتك: 20 × التوصيلات الصحيحة ÷ (المطلوبة + الخاطئة أو الزائدة)، ويُجبر الكسر لصالحك. يُقبل التوصيل المكافئ: سلك على أي طرف من نفس النقطة، أو تلامس مساعد آخر من نفس النوع، أو المحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد. أسلاك لمبات البيان محسوبة في التمرين الأول، وفي باقي التمارين هي درجة إضافية حتى درجة واحدة، ولا يتعدى المجموع 20. بعد التقييم يشغّل المحاكي لوحتك آليًا ويريك هل تعمل وأين أخطاؤك خطوة بخطوة، للتعلّم دون أن يؤثر في الدرجة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
   else if(G){const T=G.top||G;
-    h+=`<div class="glock">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b> (المحاولة ${T.try||1})، وتوصيلها محفوظ، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت: لا تضيع عليك الدرجة الأعلى.</div>`+gResHTML(G)+
+    h+=`<div class="glock">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b> (المحاولة ${T.try||1})، وتوصيلها محفوظ، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت: لا تضيع عليك الدرجة الأعلى.</div>`+gResHTML(G)+qzHTML(ex)+
     `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
-    <div class="sbtns"><button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20) للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالتوصيل الحالي</button></div>${gMoveHTML(ex)}`;}
+    <div class="sbtns">${qzNeed(ex)?`<button class="btn prim" disabled title="حل الاختبار النظري أعلاه أولًا">📤 الإرسال بعد حل الاختبار النظري</button>`:`<button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20)${qzGet(ex)?' والاختبار ('+qzGet(ex).c+'/'+qzGet(ex).n+')':''} للمدرب</button>`}<button class="btn" id="gGo">🔁 إعادة التقييم بالتوصيل الحالي</button></div>${gMoveHTML(ex)}`;}
   else{h+=`<div class="greq"><b>المطلوب:</b> ${GREQ[ex]}${PLCX.has(ex)?'<br><b>التقييم:</b> التوصيل 10 درجات، والبرنامج 10 درجات (يُختبر تشغيله آليًا).':''}</div>
     <div class="glock">يمكنك إعادة التقييم بعد تصحيح أخطائك، وتُحفظ أعلى محاولة لك وتوصيلها، وهي التي تُرسل للمدرب. استخدم أسماء القطع وأرقام الأطراف كما في المخطط (K1، K2، F2، KT1…).</div>
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
@@ -3435,6 +3597,8 @@ $('gBody').addEventListener('click',e=>{const id=e.target.id;if(e.target.dataset
   else if(e.target.dataset.mv)gMove(e.target.dataset.mv);
   else if(id==='gSend'){const A=gAll();A._cur=GV.ex;gSave(A);gM.classList.remove('open');openSend();}
 });
+$('gBody').addEventListener('change',e=>{const r=e.target.closest('[data-qz]');if(!r||!GV.ex)return;(QZD[GV.ex]=QZD[GV.ex]||{})[+r.dataset.qz]=+r.value;const li=$('qzq'+r.dataset.qz);if(li)li.classList.remove('miss');});
+$('gBody').addEventListener('click',e=>{if(e.target.id==='qzGo'&&GV.ex)qzGrade(GV.ex);});
 function gDo(){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
     if(!GV.ex)return false;
     if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return false;}
@@ -3448,7 +3612,7 @@ function gDo(){const tr=document.body.classList.contains('trainer'),n=$('stName'
 const ulkCode=(id,ex,t)=>{let h=5381,k=7;for(const ch of 'wsu:'+id+'|'+ex+'|'+t){h=((h*33)^ch.charCodeAt(0))>>>0;k=(k*31+ch.charCodeAt(0))>>>0;}return ((h^(k<<7))>>>0).toString(36).toUpperCase().padStart(6,'0').slice(-6);};
 function ulkApply(raw){const c=String(raw||'').toUpperCase().replace(/[^0-9A-Z]/g,'');if(c.length!==6)return null;const A=gAll();
   const ex=Object.keys(A).find(k=>k!=='_cur'&&A[k]&&ulkCode(A[k].id,k,A[k].t)===c);if(!ex)return null;
-  delete A[ex];if(A._cur===ex)delete A._cur;gSave(A);gUpdBtn();say('فُك قفل '+PNAME[ex]+'. يمكنك إعادة التقييم الآن.');renderTop();return ex;}
+  delete A[ex];if(A._cur===ex)delete A._cur;gSave(A);{const Z=qzAll();delete Z[ex];qzSave(Z);}gUpdBtn();say('فُك قفل '+PNAME[ex]+'. يمكنك إعادة التقييم الآن.');renderTop();return ex;}
 $('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex=EXP.ex;gUpdBtn();say('مُسحت الدرجات من هذا الجهاز');renderTop();};
 function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20 · إرسال':'🎯 تقييم وإرسال';}
 gUpdBtn();
@@ -3817,7 +3981,7 @@ async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JS
   const t=await r.text();let j;try{j=JSON.parse(t);}catch(_){throw new Error('setup');}if(!j.ok){const E=new Error(j.err||'fail');E.srv=j.msg||'';throw E;};return j;}
 $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const G=curGrade();const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
   try{const {code}=await buildMsg(st);okMsg('جارٍ تجهيز صورة اللوحة…');const im=await cloudImgs(st);okMsg('جارٍ الإرسال…');const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:G?G.ex:'',s:G?G.s:'',code,img:im.img,th:im.th});
-    okMsg('✔ وصلت تجربتك للمدرب'+(G?' مع درجتك '+G.s+' من 20':'')+'. رقم المرجع: '+j.uid);}
+    okMsg('✔ وصلت تجربتك للمدرب'+(G?' مع درجتك '+G.s+' من 20'+(qzGet(G.ex)?' والاختبار النظري '+qzGet(G.ex).c+' من '+qzGet(G.ex).n:''):'')+'. رقم المرجع: '+j.uid);}
   catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}const m=$('sendMsg');m.style.color='var(--warn)';m.textContent=(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أبلغ المدرب، وأرسل الآن عبر واتساب.':'تعذّر الوصول لخادم الحفظ. تأكد من الإنترنت وحاول مرة أخرى، أو أرسل عبر واتساب.');}
   finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set(),chk:{},open:new Set(),ready:false};
@@ -3827,7 +3991,7 @@ const fmtT=t=>{try{return new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn
 /* every result is graded again with the current rules from the wiring (and easy program) it was sent with;
    that grade is the one shown, used to keep the highest and exported; the sheet keeps the grade as it was sent */
 async function recheck(r){if(RS.chk[r.uid]!==undefined||!r.code||!PRESETS[r.ex])return;RS.chk[r.uid]=null;
-  try{const o=await decodeCode(r.code);RS.chk[r.uid]=gradeNow(r.ex,o).s;}catch(_){RS.chk[r.uid]=null;}}
+  try{const o=await decodeCode(r.code);(RS.qz=RS.qz||{})[r.uid]=o.st&&o.st.q?o.st.q:null;RS.chk[r.uid]=gradeNow(r.ex,o).s;}catch(_){RS.chk[r.uid]=null;}}
 /* trainees are grouped by their training number, because names are written in different ways:
    Arabic digits count as Latin ones and spaces or marks are ignored */
 const rKeyId=id=>String(id||'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[^0-9A-Za-z]/g,'').toLowerCase()||'—';
@@ -3863,7 +4027,7 @@ function rRowHTML(r,best){const c=RS.chk[r.uid],sv=r.s===''||r.s==null?'—':r.s
   const th=r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="صورة لوحة ${esc(r.n)}" loading="lazy">`:'<div class="rth none">بلا صورة</div>',low=PNAME[r.ex]&&!best;
   return `<div class="rrow${low?' low':''}${SEEN.has(r.uid)?'':' rnew'}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${seenBtn(r)}${th}<div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${esc(exName(r.ex))}${r.ex0&&r.ex0!==r.ex?` <small style="color:var(--amber)">(صحّحه المدرب، أُرسل على: ${esc(exName(r.ex0))})</small>`:''} · ${fmtT(r.t)}${best?' · <span class="rbest">⭐ الأعلى</span>':''}</div>
       ${r.sug?`<div class="rs">${r.sug.k===r.ex?'✔ هذا أقرب تمرين لتوصيله':`أقرب تمرين لتوصيله: <b>${esc(exName(r.sug.k))}</b> (${r.sug.s}/20) <button data-rapply="${esc(r.uid)}">تطبيق</button>`}</div>`:''}</div>
-    <div class="rg">${esc(cur)}<small style="color:var(--muted);font-weight:400">/20</small>${ok}</div>
+    <div class="rg">${esc(cur)}<small style="color:var(--muted);font-weight:400">/20</small>${ok}${RS.qz&&RS.qz[r.uid]?`<small class="rqz" title="الاختبار النظري: درجة لكل إجابة صحيحة">🧠 نظري ${RS.qz[r.uid].c}/${RS.qz[r.uid].n}</small>`:''}</div>
     <div class="ra"><select class="rexs" data-rex="${esc(r.uid)}" title="رُفع التوصيل على تمرين خطأ؟ اختر التمرين الصحيح ليُعاد تقييمه عليه" aria-label="تمرين هذه المحاولة">${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===r.ex?' selected':''}>🔀 ${i+1}. ${esc(PNAME[k])}</option>`).join('')}</select><button data-rguess="${esc(r.uid)}" title="يقارن التوصيل بكل التمارين">🔍 أي تمرين؟</button><button data-ropen="${esc(r.uid)}">👁 فتح التوصيل</button><button data-rshare="${esc(r.uid)}">📤 مشاركة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div>`;}
 function rRender(){if(RS.rows!==seenRows){seenRows=RS.rows;if(!seenSync())seenInit();}else if(!SEENSRV)seenInit();seenBar();const q=$('rFind').value.trim(),L=rVis();
   const vis=L.length&&L.every(r=>RS.sel.has(r.uid));$('rAll').textContent=vis?'☐ إلغاء التحديد':'☑ تحديد الكل';$('rAll').disabled=!L.length;
@@ -3972,7 +4136,7 @@ async function shrFromHash(){const m=/^#b=(.+)$/.exec(location.hash);if(!m)retur
 shrFromHash();window.addEventListener('hashchange',shrFromHash);
 $('rCsv').onclick=async()=>{if(!RS.rows.length){$('rMsg').textContent='حمّل النتائج أولًا.';return;}
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const csv='﻿'+[['الاسم','الرقم التدريبي','التمرين','الدرجة من 20','الدرجة المرسلة','الوقت'].map(q).join(',')].concat(RS.rows.map(r=>[r.n,r.id,exName(r.ex),rCur(r),r.s,fmtT(r.t)].map(q).join(','))).join('\r\n');
+  const csv='﻿'+[['الاسم','الرقم التدريبي','التمرين','الدرجة من 20','الدرجة المرسلة','الاختبار النظري','الوقت'].map(q).join(',')].concat(RS.rows.map(r=>[r.n,r.id,exName(r.ex),rCur(r),r.s,RS.qz&&RS.qz[r.uid]?RS.qz[r.uid].c+' من '+RS.qz[r.uid].n:'',fmtT(r.t)].map(q).join(','))).join('\r\n');
   const res=await saveBlob(new Blob([csv],{type:'text/csv'}),'نتائج-المتدربين.csv');$('rMsg').textContent=res==='saved'?'نُزّل الملف، ويفتح في Excel.':res==='declined'?'':'التنزيل غير متاح هنا.';};
 window.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(imM.classList.contains('open'))imM.classList.remove('open');else if(rM.classList.contains('open'))rM.classList.remove('open');});
 
