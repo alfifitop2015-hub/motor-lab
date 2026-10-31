@@ -184,6 +184,14 @@ body.clip .dock,body.clip .clrow,body.clip .xrtab{display:none}
 .rgnew{background:#d62b22;color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
 #rNew.on{background:#d62b22;border-color:#d62b22;color:#fff}
 @keyframes cvib{0%,100%{transform:translate(0,0)}50%{transform:translate(.6px,-.6px)}}.cvib{animation:cvib .12s linear infinite}@media (prefers-reduced-motion:reduce){.cvib{animation:none}}
+.qz{margin:10px 0;border:1.5px solid #7c5cd6;border-radius:12px;padding:10px 12px;background:rgba(124,92,214,.06);text-align:right}
+.qz .qzh{font-weight:800;font-size:1rem}.qz .qzh span{display:block;font-weight:400;font-size:.82rem;color:var(--muted);margin-top:2px}
+.qz ol{margin:8px 0 4px;padding-inline-start:22px}.qz li{margin:0 0 10px;font-size:.92rem;line-height:1.5}.qz li.miss{outline:2px solid #d8322b;outline-offset:3px;border-radius:6px}
+.qz .qzt i{font-style:normal;font-size:.75rem;background:#7c5cd6;color:#fff;border-radius:6px;padding:0 6px;margin-inline-end:4px}
+.qz .qzo{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.qz .qzo label{display:flex;align-items:center;gap:5px;border:1px solid var(--line,#ccd);border-radius:8px;padding:5px 9px;cursor:pointer;background:rgba(255,255,255,.6)}
+.qz .qzo label:has(input:checked){border-color:#7c5cd6;background:rgba(124,92,214,.14);font-weight:700}
+.qz.done li.no{color:#b3261e}.qz .qzm{color:var(--warn);font-size:.88rem;min-height:1.1em;margin:4px 0}
+.qz details summary{cursor:pointer;font-size:.88rem;margin-top:6px}.rqz{font-size:.75rem;font-weight:700;color:#5b3fc4;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1072,9 +1080,10 @@ const STK='wsStudent',stGet=()=>{try{return JSON.parse(localStorage.getItem(STK)
 [['stName','stName2','n'],['stId','stId2','id']].forEach(([a,b,k])=>{$(a).value=$(b).value=stGet()[k]||'';[a,b].forEach(x=>$(x).addEventListener('input',e=>{$(a).value=$(b).value=e.target.value;$(a).classList.remove('bad');const q=stGet();q[k]=e.target.value.trim();stSet(q);}));});
 const sM=$('sendModal'),okMsg=(t,w)=>{const m=$('sendMsg');m.style.color=w?'var(--warn)':'var(--ok)';m.textContent=t;};
 function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();if(!n||!id){okMsg('اكتب اسمك ورقمك التدريبي أولًا.',1);return null;}if(!S.tubes.length){okMsg('لا توجد خراطيم بعد. نفّذ الدائرة ثم أرسلها.',1);return null;}
-  if(!pgCur()&&!S.stu&&!document.body.classList.contains('trainer')){okMsg('يرجى التقييم أولًا: اضغط 🎯 تقييم وإرسال.',1);return null;}return{n,id};}
-async function buildMsg(st){const G=pgCur(),B=G?G.w:serial(),code=await encodeCode({...B,st:{n:st.n,id:st.id,t:Date.now(),...(G?{g:{ex:+PNX,s:G.s,t:G.t}}:{})}});const link=isHosted()&&code.startsWith('Z1')?PN_URL()+'#t='+code.slice(2):'';
-  return{code,text:`دائرة هوائية من محاكي ورشة التحكم الهوائي\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\n${G?'التمرين: '+EX[+PNX].n+' · الدرجة: '+G.s+' من 20\n':''}العناصر: ${B.comps.length-1} · الخراطيم: ${B.tubes.length}\n`+(link?`\nافتح الدائرة مباشرة:\n${link}\n`:'')+`\nكود الدائرة (للمدرب: ⋯ ← فتح تجربة متدرب):\n${code}`};}
+  if(!pgCur()&&!S.stu&&!document.body.classList.contains('trainer')){okMsg('يرجى التقييم أولًا: اضغط 🎯 تقييم وإرسال.',1);return null;}
+  if(pgCur()&&qzNeed(PNX)){okMsg('حل الاختبار النظري أولًا: اضغط 🎯 تقييم وإرسال وأجب عن أسئلته، ثم أرسل.',1);return null;}return{n,id};}
+async function buildMsg(st){const G=pgCur(),B=G?G.w:serial(),code=await encodeCode({...B,st:{n:st.n,id:st.id,t:Date.now(),...(G?{g:{ex:+PNX,s:G.s,t:G.t}}:{}),...(G&&qzGet(PNX)?{q:qzGet(PNX)}:{})}});const link=isHosted()&&code.startsWith('Z1')?PN_URL()+'#t='+code.slice(2):'';
+  return{code,text:`دائرة هوائية من محاكي ورشة التحكم الهوائي\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\n${G?'التمرين: '+EX[+PNX].n+' · الدرجة: '+G.s+' من 20\n':''}${G&&qzGet(PNX)?'الاختبار النظري: '+qzGet(PNX).c+' من '+qzGet(PNX).n+'\n':''}العناصر: ${B.comps.length-1} · الخراطيم: ${B.tubes.length}\n`+(link?`\nافتح الدائرة مباشرة:\n${link}\n`:'')+`\nكود الدائرة (للمدرب: ⋯ ← فتح تجربة متدرب):\n${code}`};}
 function panelBlob(nm,id){return new Promise(res=>{let done=false;const fin=b=>{if(!done){done=true;res(b);}};setTimeout(()=>fin(null),6000);
   try{const css=[...document.querySelectorAll('style')].map(x=>x.textContent).join('\n');let x=svg.outerHTML.replace(/(<svg[^>]*?)\sstyle="[^"]*"/,'$1').replace('<svg','<svg width="'+W+'" height="'+H+'"').replace(/<\/svg>\s*$/,'<style>'+css+'</style></svg>');
     if(!/xmlns=/.test(x.slice(0,300)))x=x.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
@@ -1120,7 +1129,7 @@ function seenBar(){const n=RS.rows.filter(r=>!SEEN.has(r.uid)).length,y=RS.rows.
   b.textContent=n+' لم يُرصد'+(ONLYNEW?' ✕':'');b.title=ONLYNEW?'عرض الكل':'عرض التي لم تُرصد فقط';a.textContent=y+' رُصد · ✔ رصد الكل';a.disabled=!n;}
 function rRender(){if(RS.rows!==seenRows){seenRows=RS.rows;if(!seenSync())seenInit();}else if(!SEENSRV)seenInit();seenBar();const q=$('rFind').value.trim(),L=RS.rows.filter(r=>(!ONLYNEW||!SEEN.has(r.uid))&&(!q||(r.n+' '+r.id).includes(q)));$('rDelSel').disabled=!RS.sel.size;
   $('rList').innerHTML=L.length?L.map(r=>`<div class="rrow${SEEN.has(r.uid)?'':' rnew'}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${seenBtn(r)}${r.th?`<img class="rth" src="data:image/jpeg;base64,${esc(r.th)}" data-rimg="${esc(r.uid)}" alt="">`:'<div class="rth none">بلا صورة</div>'}
-    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${r.g&&EX[r.g.ex]?esc(EX[r.g.ex].n)+' · ':''}${fmtT(r.t)}</div>${r.s!==''&&r.s!=null?`<div style="font-weight:700">${esc(r.s)}<small style="color:var(--muted);font-weight:400">/20</small></div>`:''}<div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح الدائرة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${ONLYNEW&&RS.rows.length?'لا توجد نتائج لم تُرصد: رُصد الكل ✔':RS.rows.length?'لا نتائج مطابقة.':'لا توجد دوائر مرسلة.'}</p>`;}
+    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span></div><div class="rs">${r.g&&EX[r.g.ex]?esc(EX[r.g.ex].n)+' · ':''}${fmtT(r.t)}</div>${r.s!==''&&r.s!=null?`<div style="font-weight:700">${esc(r.s)}<small style="color:var(--muted);font-weight:400">/20</small>${r.q?` <span class="rqz">🧠 نظري ${r.q.c}/${r.q.n}</span>`:''}</div>`:''}<div class="ra"><button data-ropen="${esc(r.uid)}">👁 فتح الدائرة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${ONLYNEW&&RS.rows.length?'لا توجد نتائج لم تُرصد: رُصد الكل ✔':RS.rows.length?'لا نتائج مطابقة.':'لا توجد دوائر مرسلة.'}</p>`;}
 /* the results list: Google sometimes answers with an empty sheet for a moment (a slow or busy spreadsheet); when the last load had
    results, an empty answer is asked again twice before it is believed, and the count of the last good load is kept on this device */
 async function cloudList(key){const LK='wsRowsN';let last=0;try{last=+localStorage.getItem(LK)||0;}catch(_){}
@@ -1129,7 +1138,7 @@ async function cloudList(key){const LK='wsRowsN';let last=0;try{last=+localStora
   const n=(j.rows||[]).length;if(!n&&last>0){const E=new Error('empty');E.last=last;throw E;}try{localStorage.setItem(LK,String(n));}catch(_){}return j;}
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة السر.';return;}try{localStorage.setItem('wsKey',key);}catch(_){}$('rMsg').textContent='جارٍ التحميل…';
   try{const j=await cloudList(key);RS.rows=(j.rows||[]).filter(r=>r.ex==='pn').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' دائرة محفوظة';rRender();
-    for(const r of RS.rows){try{const o=await decodeCode(r.code);if(o.st&&o.st.g)r.g=o.st.g;}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='empty'?'أعاد خادم Google صفر نتائج مع أن آخر تحميل كان فيه '+e.last+' نتيجة. غالبًا انشغال مؤقت في Google: اضغط «تحديث» بعد دقيقة. إن تكرر فراجع ملف «نتائج المحاكي» في Google Drive.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
+    for(const r of RS.rows){try{const o=await decodeCode(r.code);if(o.st&&o.st.g)r.g=o.st.g;if(o.st&&o.st.q)r.q=o.st.q;}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='empty'?'أعاد خادم Google صفر نتائج مع أن آخر تحميل كان فيه '+e.last+' نتيجة. غالبًا انشغال مؤقت في Google: اضغط «تحديث» بعد دقيقة. إن تكرر فراجع ملف «نتائج المحاكي» في Google Drive.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
 async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});try{localStorage.setItem('wsRowsN',String(Math.max(0,(+localStorage.getItem('wsRowsN')||0)-u.length)));}catch(_){}u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
 $('bResults').onclick=()=>{rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>{RS.back=false;rM.classList.remove('open');};
@@ -1592,10 +1601,141 @@ function gLocate(a,b,miss){gM.classList.remove('open');if(!miss){const t=S.tubes
   if(P[0]){const r=svg.getBoundingClientRect(),k=r.width/W,x=(P[0].x+(P[1]||P[0]).x)/2,y=(P[0].y+(P[1]||P[0]).y)/2,wr=wrap.getBoundingClientRect();
     wrap.scrollBy({left:r.left+x*k-wr.left-wrap.clientWidth/2,top:r.top+y*k-wr.top-wrap.clientHeight/2,behavior:'smooth'});}
   const pn=k=>{try{return pnPort(k);}catch(_){return k;}};say((miss?'خرطوم ناقص بين ':'خرطوم خاطئ بين ')+pn(a)+' و'+pn(b));}
+const QZB=[
+[['الأسطوانة مفردة الفعل تخرج بالهواء وترجع بالنابض.',0,0],
+ ['الصمام 3/2 معناه:',['3 منافذ ووضعان','3 أوضاع ومنفذان','3 أسطوانات','ضغط 3 بار'],0],
+ ['في الصمام 3/2: المنفذ 1 للهواء المضغوط، و2 للشغل (الأسطوانة)، والمنفذ 3:',['للعادم','لإشارة التحكم','للضغط العالي','مسدود دائمًا'],0],
+ ['الصمام 1S1 مفتوح في الوضع الطبيعي: يمر الهواء دائمًا حتى نضغط عليه.',0,1],
+ ['عند ترك الضاغط ترجع الأسطوانة لأن هواءها يخرج من المنفذ 3.',0,0],
+ ['التحكم المباشر يعني أن الضاغط يتحكم في صمام رئيسي، والصمام الرئيسي يغذي الأسطوانة.',0,1],
+ ['وحدة الخدمة 0Z تحتوي غالبًا على:',['مرشح ومنظم ضغط ومقياس','أسطوانة','مؤقت','عداد'],0]],
+[['الأسطوانة مزدوجة الفعل ترجع بالنابض.',0,1],
+ ['الصمام 5/2 له:',['5 منافذ ووضعان','5 أوضاع ومنفذان','منفذان للعادم فقط','منفذ واحد للشغل'],0],
+ ['منفذا الشغل في الصمام 5/2 هما:',['2 و 4','1 و 3','3 و 5','12 و 14'],0],
+ ['المنفذان 3 و 5 في الصمام 5/2 هما:',['منفذا العادم','منفذا الإشارة','منفذا الضغط','منفذا الشغل'],0],
+ ['الصمام 5/2 بذراع يدوي ثابت يبقى في آخر وضع حتى يُحرّك مرة أخرى.',0,0],
+ ['المنفذ 3 يوصل إلى خلف المكبس فتخرج الأسطوانة.',0,1],
+ ['صمام 3/2 واحد يكفي للتحكم في أسطوانة مزدوجة الفعل في الاتجاهين.',0,1]],
+[['في التحكم غير المباشر يتحكم صمام إشارة صغير (1S1) في صمام رئيسي (1V1) يغذي الأسطوانة.',0,0],
+ ['المنفذ 14 في الصمام 1V1 هو:',['منفذ إشارة يحوّل الصمام ليوصل 1 بـ 4','منفذ عادم','منفذ شغل','منفذ ضغط رئيسي'],0],
+ ['ميزة التحكم غير المباشر:',['الضاغط صغير ولا يمرر هواء الأسطوانة الكبير','يلغي الحاجة إلى الهواء','يجعل الأسطوانة مفردة الفعل','يلغي العادم'],0],
+ ['الصمام 1V1 في هذا التمرين يبقى في وضعه بعد زوال الإشارة 14.',0,1],
+ ['عند ترك 1S1 تبقى الأسطوانة خارجة.',0,1],
+ ['يغذى الضاغط 1S1 من P2 والصمام 1V1 من P1 في وحدة التوزيع.',0,0]],
+[['صمام الاختيار (OR) يمرر الإشارة إذا وصل الهواء من أي من مدخليه.',0,0],
+ ['لماذا لا نوصل خرجي 1S1 و 1S2 مباشرة بنقطة تفرّع (T)؟',['لأن الهواء يخرج من عادم الضاغط الآخر غير المضغوط','لأن الضغط يرتفع','لأنه أغلى','لا مشكلة في ذلك'],0],
+ ['في هذا التمرين تخرج الأسطوانة بالضغط على:',['1S1 أو 1S2','1S1 و 1S2 معًا فقط','1S1 فقط','لا تخرج'],0],
+ ['خرج صمام الاختيار يوصل مباشرة إلى الأسطوانة دون صمام رئيسي.',0,1],
+ ['صمام الاختيار يكافئ في الكهرباء توصيل ضاغطين على التوالي.',0,1]],
+[['صمام الضغط المزدوج (AND) لا يمرر الإشارة إلا إذا وصل الهواء إلى مدخليه معًا.',0,0],
+ ['الهدف من التشغيل باليدين:',['حماية يدي العامل من منطقة الخطر','زيادة السرعة','توفير الهواء','تقليل الضوضاء'],0],
+ ['بالضغط على ضاغط واحد فقط تخرج الأسطوانة ببطء.',0,1],
+ ['صمام AND يكافئ في الكهرباء توصيل ضاغطين على:',['التوالي','التوازي','العكس','لا يوجد مكافئ'],0],
+ ['خرج صمام AND يوصل إلى الإشارة 14 للصمام الرئيسي.',0,0]],
+[['الخانق أحادي الاتجاه يخنق الهواء في اتجاه، ويمرره حرًا في الاتجاه الآخر عبر صمام عدم رجوع.',0,0],
+ ['في هذا التمرين يُخنق:',['هواء العادم الخارج من الأسطوانة (Meter-out)','هواء الدخول إلى الأسطوانة','هواء وحدة الخدمة','الإشارة 14'],0],
+ ['خنق العادم يعطي حركة أنعم وأثبت من خنق الدخول في الأسطوانة مزدوجة الفعل.',0,0],
+ ['لتغيير سرعة خروج الأسطوانة نغيّر فتحة الخانق:',['1V3 على خط الأمام (العادم أثناء الخروج)','1V2 على خط الخلف','في وحدة الخدمة','في الضاغط'],0],
+ ['إغلاق الخانق أكثر يزيد السرعة.',0,1]],
+[['صمام الذاكرة 5/2 (هوائي من الجهتين) يبقى في آخر وضع حتى تصل إشارة الجهة الأخرى.',0,0],
+ ['الإشارة 12 تُخرج الأسطوانة، والإشارة 14 ترجعها.',0,1],
+ ['الصمام 1S2 ذو البكرة عند نهاية المشوار (+) يعمل عندما:',['تصل الأسطوانة إلى نهاية الخروج','يضغطه العامل','ينقطع الهواء','ترجع الأسطوانة'],0],
+ ['لو بقي 1S1 مضغوطًا عند وصول الأسطوانة إلى النهاية:',['لا ترجع لأن الإشارتين 14 و 12 موجودتان معًا','ترجع بسرعة','تتوقف في المنتصف','تخرج مرة أخرى'],0],
+ ['ضغطة قصيرة واحدة على 1S1 تكفي لدورة كاملة (خروج ثم رجوع).',0,0]],
+[['الحركة المستمرة تتوقف فورًا في منتصف المشوار عند إطفاء 1S3.',0,1],
+ ['شرط الخروج: 1S3 مفعّل و 1S1 (عند −) مضغوط، عبر صمام:',['AND','OR','خانق','تأخير'],0],
+ ['1S1 يبين أن الأسطوانة خارجة، و 1S2 يبين أنها راجعة.',0,1],
+ ['1S3 مفتاح يبقى في وضعه، وليس ضاغطًا يرجع بالنابض.',0,0],
+ ['عند وصول الأسطوانة إلى + يرسل 1S2 الإشارة 12 فترجع.',0,0]],
+[['صمام التأخير الزمني يتكون من خانق وخزان صغير وصمام 3/2.',0,0],
+ ['زمن التأخير يزيد كلما:',['أُغلق الخانق أكثر','فُتح الخانق أكثر','قصر الخرطوم','زاد عدد الأسطوانات'],0],
+ ['يبدأ التأخير عند الضغط على ضاغط البدء، قبل خروج الأسطوانة.',0,1],
+ ['خرج صمام التأخير يوصل إلى الإشارة 14 فتخرج الأسطوانة مرة أخرى.',0,1],
+ ['صمام التأخير يرجع الأسطوانة فورًا دون انتظار.',0,1]],
+[['الترتيب في هذا التمرين:',['A+ ثم B+ ثم A− ثم B−','A+ ثم A− ثم B+ ثم B−','الأسطوانتان معًا','B+ ثم A+'],0],
+ ['كل خطوة تبدأ بإشارة من مفتاح نهاية الخطوة التي قبلها.',0,0],
+ ['B+ يبدأ عندما يعمل 1S2، أي أن A خارجة.',0,0],
+ ['A+ يحتاج الضاغط 1S3 و 2S1 (B راجعة) معًا عبر AND.',0,0],
+ ['الرمز A− يعني خروج الأسطوانة A.',0,1],
+ ['في هذا التتابع تصل إشارتان متعاكستان إلى الصمام نفسه في الوقت نفسه.',0,1]],
+[['ملف الصمام 1Y1 يعمل على 24V DC.',0,0],
+ ['في الدائرة الكهربائية: +24V ← S1 (13-14) ← الملف A1، و A2 ← 0V.',0,0],
+ ['عند ترك S1 ينقطع التيار عن الملف فيرجع الصمام بالنابض وترجع الأسطوانة.',0,0],
+ ['الرمز Y في 1Y1 يعني:',['ملف صمام','مرحل','مفتاح نهاية','لمبة'],0],
+ ['الضاغط S1 من نوع:',['NO','NC','مفتاح ثابت','نهاية مشوار'],0],
+ ['الكهرباء هي التي تحرك مكبس الأسطوانة مباشرة دون هواء.',0,1]],
+[['صمام 5/2 بملف واحد يرجع بالنابض عند انقطاع التيار عن الملف.',0,0],
+ ['تبقى الأسطوانة خارجة بعد ترك S1 حتى يُضغط ضاغط آخر.',0,1],
+ ['المنفذ 4 للخروج والمنفذ 2 للرجوع.',0,0],
+ ['لو انقطعت الكهرباء أثناء خروج الأسطوانة فإنها:',['ترجع لأن النابض يعيد الصمام','تبقى خارجة','تتوقف في المنتصف','تخرج أسرع'],0],
+ ['هذا الصمام يحتاج ملفين لتحريك الأسطوانة في الاتجاهين.',0,1]],
+[['المرحل K1 له تلامس واحد فقط.',0,1],
+ ['تلامس المسك للمرحل يوصل على التوالي مع S1.',0,1],
+ ['ضاغط الإيقاف S0 من نوع:',['NC','NO','مفتاح ثابت','نهاية مشوار'],0],
+ ['في تلامس المرحل 11-14: الرقم 1 هو المشترك، والرقم 4 هو المفتوح NO.',0,0],
+ ['التلامس 21-24 يغذي ملف الصمام 1Y1، و 31-34 يغذي اللمبة H1.',0,0],
+ ['الضغط على S0 يفصل K1 فترجع الأسطوانة وتنطفئ H1.',0,0]],
+[['ضاغطان موصلان على التوالي يكافئان دالة OR.',0,1],
+ ['لا يعمل الملف 1Y1 إلا بالضغط على S1 و S2 معًا.',0,0],
+ ['لو وُصل الضاغطان على التوازي تصبح الدالة:',['OR','AND','NOT','تأخير'],0],
+ ['الهدف من التشغيل باليدين حماية يدي العامل.',0,0],
+ ['ضغط أحد الضاغطين يكفي لخروج الأسطوانة.',0,1]],
+[['الصمام 5/2 بملفين (ذاكر) يبقى في آخر وضع حتى يعمل الملف الآخر.',0,0],
+ ['1Y1 للرجوع و 1Y2 للخروج.',0,1],
+ ['مفتاح النهاية 1B2 عند + يغذي 1Y2 فترجع الأسطوانة آليًا.',0,0],
+ ['لو انقطعت الكهرباء والأسطوانة خارجة:',['تبقى في وضعها لأن الصمام ذاكر','ترجع بالنابض','تخرج أكثر','تهتز'],0],
+ ['إذا بقي الملفان 1Y1 و 1Y2 يعملان معًا لا ينفّذ الصمام الأمر الجديد.',0,0]],
+[['S1 في هذا التمرين مفتاح اختيار يبقى في وضعه.',0,0],
+ ['1B1 يبين أن الأسطوانة راجعة (عند −)، و 1B2 أنها خارجة (عند +).',0,0],
+ ['مسار الملف 1Y1: S1 ثم 1B1 على التوالي.',0,0],
+ ['عند إطفاء S1 تتوقف الأسطوانة فورًا في مكانها.',0,1],
+ ['مفتاح النهاية الكهربائي 1B2 يغذي الملف:',['1Y2 (الرجوع)','1Y1 (الخروج)','اللمبة','المؤقت'],0]],
+[['المؤقت KT1 من نوع تأخير التشغيل: تتغير تلامساته بعد الزمن من وصول الجهد إلى ملفه.',0,0],
+ ['ملف المؤقت يُغذى عبر 1B2 عند وصول الأسطوانة إلى +.',0,0],
+ ['التلامس 15-18 للمؤقت:',['مفتوح ويغلق بعد الزمن','مغلق ويفتح بعد الزمن','ملف المؤقت','للتصفير'],0],
+ ['تلامس المؤقت 15-18 يغذي 1Y2 فترجع الأسطوانة بعد الزمن.',0,0],
+ ['طرفا ملف المؤقت هما 15 و 18.',0,1]],
+[['العداد يزيد قيمته مع كل نبضة على مدخل العد A1.',0,0],
+ ['عند الوصول إلى العدد المضبوط يغلق التلامس 11-12 فتستمر الدورات.',0,1],
+ ['يُغذى مدخل العد من 1B2، أي مع كل خروج كامل للأسطوانة.',0,0],
+ ['تصفير العداد يكون بالضغط على:',['S2 الموصل إلى R1-R2','S1','1B1','1B2'],0],
+ ['اللمبة H1 تضيء عند:',['انتهاء العد','بداية كل دورة','انقطاع الهواء','رجوع الأسطوانة'],0],
+ ['بعد انتهاء العد تستمر الدورات حتى يُطفأ S1.',0,1]],
+[['الترتيب: A+ ثم B+ ثم A− ثم B−.',0,0],
+ ['A+ يحتاج S1 و 2B1 (B راجعة).',0,0],
+ ['B+ يبدأ من 1B2، أي بعد خروج A.',0,0],
+ ['A− يبدأ من:',['2B2 (B خارجة)','1B1','S1','2B1'],0],
+ ['B− يبدأ من 2B2، أي بعد خروج B.',0,1],
+ ['في هذا التمرين صمام كل أسطوانة 5/2 بملفين (ذاكر).',0,0]]];
+const QZSK='pnQuiz',qzAllP=()=>{try{return JSON.parse(localStorage.getItem(QZSK)||'{}')||{};}catch(_){return{};}};
+const qzQ=k=>QZB[+k]||null,qzGet=k=>qzAllP()[k]||null,qzPut=(k,v)=>{const A=qzAllP();A[k]=v;try{localStorage.setItem(QZSK,JSON.stringify(A));}catch(_){}},qzAfter=()=>gRender();
+const qzNeed=k=>k!==''&&!!qzQ(k)&&!qzGet(k)&&!document.body.classList.contains('trainer');
+/* ===== theory test (shared): every app supplies qzQ(k) questions, qzGet(k) / qzPut(k,v) the saved result, qzAfter(k) to redraw.
+   A question is [text, options (none = true/false), index of the right answer]; one mark for every right answer ===== */
+let QZD={};const qzOpts=q=>q[1]||['صح','خطأ'];
+function qzOrder(k){const Q=qzQ(k);let h=2166136261;for(const c of String((document.getElementById('stId')||{}).value||'')+k)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;
+  const r=()=>{h=Math.imul(h^(h>>>15),2246822507)>>>0;h=Math.imul(h^(h>>>13),3266489909)>>>0;return ((h^(h>>>16))>>>0)/4294967296;};
+  const ix=Q.map((_,i)=>i);for(let i=ix.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ix[i],ix[j]]=[ix[j],ix[i]];}return ix;}
+function qzPerm(k,i,n){let h=2166136261;for(const c of String((document.getElementById('stId')||{}).value||'')+k+'#'+i)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;
+  const r=()=>{h=Math.imul(h^(h>>>15),2246822507)>>>0;h=Math.imul(h^(h>>>13),3266489909)>>>0;return ((h^(h>>>16))>>>0)/4294967296;};const ix=[...Array(n).keys()];for(let a=n-1;a>0;a--){const b=Math.floor(r()*(a+1));[ix[a],ix[b]]=[ix[b],ix[a]];}return ix;}
+function qzHTML(k){const Q=qzQ(k);if(!Q)return '';const R=qzGet(k),e=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  if(R)return `<div class="qz done" data-qzk="${e(k)}"><div class="qzh">🧠 الاختبار النظري: <b>${R.c} من ${R.n}</b><span>درجة لكل إجابة صحيحة، منفصلة عن درجة التمرين</span></div>
+    <details><summary>مراجعة الإجابات</summary><ol>${Q.map((q,i)=>{const a=R.a[i],ok=a===q[2];return `<li class="${ok?'ok':'no'}">${ok?'✔':'✖'} ${e(q[0])}<br><small>إجابتك: ${a==null?'—':e(qzOpts(q)[a])}${ok?'':' · الصحيحة: <b>'+e(qzOpts(q)[q[2]])+'</b>'}</small></li>`;}).join('')}</ol></details></div>`;
+  const D=QZD[k]||{};
+  return `<div class="qz" data-qzk="${e(k)}"><div class="qzh">🧠 الاختبار النظري (${Q.length} ${Q.length>10?'سؤالًا':'أسئلة'})<span>لكل إجابة صحيحة درجة، منفصلة عن درجة التمرين. أجب عن كل الأسئلة ثم اضغط «تصحيح الاختبار». لا يُرسل التمرين قبل حل الاختبار، ولا يُعدّل بعد التصحيح.</span></div><ol>${qzOrder(k).map(i=>{const q=Q[i];
+    return `<li id="qzq${i}"><div class="qzt">${q[1]?'':'<i>صح أم خطأ؟</i> '}${e(q[0])}</div><div class="qzo">${(q[1]?qzPerm(k,i,q[1].length):[0,1]).map(j=>[qzOpts(q)[j],j]).map(([o,j])=>`<label><input type="radio" name="qz${i}" data-qz="${i}" value="${j}"${D[i]===j?' checked':''}> ${e(o)}</label>`).join('')}</div></li>`;}).join('')}</ol>
+    <p id="qzMsg" class="qzm"></p><button class="btn prim" id="qzGo" type="button">✅ تصحيح الاختبار</button></div>`;}
+function qzGrade(k){const Q=qzQ(k),D=QZD[k]||{},miss=Q.map((_,i)=>i).filter(i=>D[i]==null);
+  if(miss.length){document.getElementById('qzMsg').textContent='بقي '+miss.length+' '+(miss.length>2&&miss.length<11?'أسئلة':'سؤال')+' بلا إجابة (معلّمة بالأحمر).';miss.forEach(i=>{const x=document.getElementById('qzq'+i);if(x)x.classList.add('miss');});const x=document.getElementById('qzq'+miss[0]);if(x)x.scrollIntoView({block:'center',behavior:'smooth'});return;}
+  if(!confirm('تصحيح الاختبار الآن؟ لا يمكن تعديل الإجابات بعد التصحيح.'))return;
+  const a=Q.map((_,i)=>D[i]),c=Q.filter((q,i)=>a[i]===q[2]).length;qzPut(k,{a,c,n:Q.length,t:Date.now()});delete QZD[k];qzAfter(k);}
+document.addEventListener('change',ev=>{const r=ev.target.closest&&ev.target.closest('[data-qz]');if(!r)return;const b=r.closest('.qz');if(!b)return;const k=b.dataset.qzk;
+  (QZD[k]=QZD[k]||{})[+r.dataset.qz]=+r.value;const li=document.getElementById('qzq'+r.dataset.qz);if(li)li.classList.remove('miss');});
+document.addEventListener('click',ev=>{if(!ev.target.closest)return;const g=ev.target.closest('#qzGo');if(!g)return;const b=g.closest('.qz');if(b)qzGrade(b.dataset.qzk);});
 function gRender(){const x=PNX,A=pgAll(),G=x!==''&&A[x];let h='';
   if(x===''||!EX[+x])h=`<p class="gnote">اختر التمرين الذي نفّذته، ثم يُقيَّم مباشرة:</p><select class="btn" id="gEx" style="width:100%;height:42px"><option value="">اختر التمرين…</option>${EX.map((e,i)=>`<option value="${i}">${esc(e.n)}</option>`).join('')}</select>`;
-  else if(G){const T=G.top||G;h=`<p style="margin:0 0 4px"><b>${esc(EX[+x].n)}</b></p><p class="gnote">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b>، ودائرتها محفوظة، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت.</p>`+gResHTML(G)+
-    `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p><div class="gbtns"><button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20) للمدرب</button><button class="btn" id="gGo">🔁 إعادة التقييم بالدائرة الحالية</button></div>`;}
+  else if(G){const T=G.top||G;h=`<p style="margin:0 0 4px"><b>${esc(EX[+x].n)}</b></p><p class="gnote">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b>، ودائرتها محفوظة، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت.</p>`+gResHTML(G)+qzHTML(x)+
+    `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p><div class="gbtns">${qzNeed(x)?`<button class="btn prim" disabled title="حل الاختبار النظري أعلاه أولًا">📤 الإرسال بعد حل الاختبار النظري</button>`:`<button class="btn prim" id="gSend">📤 إرسال أعلى محاولة (${T.s}/20)${qzGet(x)?' والاختبار ('+qzGet(x).c+'/'+qzGet(x).n+')':''} للمدرب</button>`}<button class="btn" id="gGo">🔁 إعادة التقييم بالدائرة الحالية</button></div>`;}
   else h=`<p style="margin:0 0 4px"><b>${esc(EX[+x].n)}</b></p><p class="gnote">${esc((EXPL[+x]||{}).idea||'')}<br>تُحسب الدرجة من خراطيمك: 20 × الصحيحة ÷ (المطلوبة + الخاطئة). يمكنك إعادة التقييم بعد تصحيح أخطائك، وتُحفظ أعلى محاولة لك وهي التي تُرسل للمدرب.</p>
     <p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p><div class="gbtns"><button class="btn prim" id="gGo">🎯 ابدأ التقييم الآن</button></div>`;
   $('gBody').innerHTML=h;}

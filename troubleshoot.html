@@ -258,6 +258,14 @@ g.clfoc{filter:drop-shadow(0 0 3px #ff9800) drop-shadow(0 0 7px #ff9800)}
 .rrow.rnew{border-inline-start:4px solid #d62b22;background:rgba(214,43,34,.05)}
 .rgnew{background:#d62b22;color:#fff;border-radius:999px;padding:1px 8px;font-size:.75rem;font-weight:700;white-space:nowrap}
 #rNew.on{background:#d62b22;border-color:#d62b22;color:#fff}
+.qz{margin:10px 0;border:1.5px solid #7c5cd6;border-radius:12px;padding:10px 12px;background:rgba(124,92,214,.06);text-align:right}
+.qz .qzh{font-weight:800;font-size:1rem}.qz .qzh span{display:block;font-weight:400;font-size:.82rem;color:var(--muted);margin-top:2px}
+.qz ol{margin:8px 0 4px;padding-inline-start:22px}.qz li{margin:0 0 10px;font-size:.92rem;line-height:1.5}.qz li.miss{outline:2px solid #d8322b;outline-offset:3px;border-radius:6px}
+.qz .qzt i{font-style:normal;font-size:.75rem;background:#7c5cd6;color:#fff;border-radius:6px;padding:0 6px;margin-inline-end:4px}
+.qz .qzo{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.qz .qzo label{display:flex;align-items:center;gap:5px;border:1px solid var(--line,#ccd);border-radius:8px;padding:5px 9px;cursor:pointer;background:rgba(255,255,255,.6)}
+.qz .qzo label:has(input:checked){border-color:#7c5cd6;background:rgba(124,92,214,.14);font-weight:700}
+.qz.done li.no{color:#b3261e}.qz .qzm{color:var(--warn);font-size:.88rem;min-height:1.1em;margin:4px 0}
+.qz details summary{cursor:pointer;font-size:.88rem;margin-top:6px}.rqz{font-size:.75rem;font-weight:700;color:#5b3fc4;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1074,8 +1082,63 @@ function hint(){$('hint').textContent=S.diag?(isTr()?'وضع العطل: الم�
   :'اسحب الملتميتر الأصفر لأي مكان، واضغط مقبس المجس فيه ثم الطرف (●) في المخطط، أو المس طرفين متتاليين. شغّل Q1 وQ2 واضغط الضواغط من لوحة الشنطة.';
   $('dDiagT').textContent=isTr()?'وضع عطل':'تحديد العطل';}
 function report(x){return{c:x.c,f:x.f.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?fDesc(e):id;}),fd:x.f.map(id=>x.found.includes(id)),found:x.found.length,wrong:x.wrong.map(id=>{const e=CIRC[x.c].E.find(q=>q.id===id);return e?elName(e):id;}),
-  meas:x.meas,secs:secs(x),score:score(x),view:!!x.viewUsed,gaveUp:!!x.gaveUp,k:x.k};}
+  meas:x.meas,secs:secs(x),score:score(x),view:!!x.viewUsed,gaveUp:!!x.gaveUp,k:x.k,...(x.q?{q:x.q}:{})};}
 let REP=null;
+const QZG=[['قياس الجهد يكون والدائرة موصولة بالكهرباء، وقياس المقاومة (الاستمرارية) يكون والكهرباء مفصولة.',0,0],
+ ['تلامس مغلق سليم يمر فيه التيار، الجهد بين طرفيه تقريبًا:',['0 V','24 V','12 V','لا يمكن قياسه'],0],
+ ['قراءة 24V بين طرفي تلامس يُفترض أنه مغلق والدائرة تعمل تعني:',['أن التلامس مفتوح (معطل أو غير مُفعّل)','أنه سليم','أن الملف محترق','أن المصهر سليم'],0],
+ ['مقاومة تلامس مغلق سليم تقريبًا:',['0 Ω','لا نهاية (∞)','24 Ω','1 MΩ'],0],
+ ['الطريقة الصحيحة لتتبع العطل: تغيير القطع واحدة بعد الأخرى حتى تعمل الدائرة.',0,1]];
+const QZC={
+'5.1':[['تلامس المسك في هذه الدائرة هو K1 (13-14).',0,0],
+ ['S1 في هذه الدائرة ضاغط:',['الإيقاف','التشغيل','الطوارئ','العكس'],0],
+ ['تلامس F5 (95-96) مفتوح في الوضع الطبيعي ويغلق عند الحمل الزائد.',0,1],
+ ['ضُغط S2 فلم يعمل K1، والجهد عند A1 للملف 24V وعند A2 0V. العطل غالبًا:',['ملف K1 نفسه (مقطوع)','الضاغط S2','المصهر F1','القاطع Q1'],0]],
+'5.2':[['K1 للدوران يمينًا و K2 للدوران يسارًا.',0,0],
+ ['التأمين المتبادل بالتلامسات المغلقة 31-32 يمنع:',['عمل K1 و K2 معًا','المسك الذاتي','عمل المحرك','إضاءة اللمبات'],0],
+ ['لا يمكن العكس في هذه الدائرة إلا بعد الضغط على S1.',0,1],
+ ['K2 يعكس الدوران بتبديل:',['L1 و L3','L1 و N','الأطوار الثلاثة','لا يبدّل شيئًا'],0]],
+'5.3':[['عند S5 يتوقف K2 ويعمل K1.',0,1],
+ ['S4 و S5 في هذه الدائرة:',['مفتاحا نهاية مشوار','ضاغطا تشغيل','مؤقتان','أوفرلود'],0],
+ ['الضغط على S1 يوقف الحركة في أي لحظة.',0,0],
+ ['إذا لم ينعكس الحامل عند S5 واستمر K1 يعمل، فقد يكون العطل في تلامس S5 (21-22) الذي لا يفتح.',0,0]],
+'5.4':[['K7 الكونتاكتور الرئيسي، و K9 النجمة، و K10 الدلتا.',0,1],
+ ['المؤقت K8T من نوع:',['تأخير عند التشغيل','تأخير عند الفصل','عداد','نبضي'],0],
+ ['بعد زمن المؤقت يفتح 15-16 فيفصل K10، ويغلق 15-18 فيعمل K9.',0,0],
+ ['يجوز أن يعمل K10 و K9 معًا لحظة التحويل.',0,1],
+ ['إذا بقي المحرك نجمة ولم يتحول إلى دلتا، فقد يكون العطل في المؤقت K8T أو تلامسه 15-18.',0,0]],
+'5.5':[['K3 للسرعة المنخفضة (دلتا على 1U 1V 1W).',0,0],
+ ['في السرعة العالية: K5 يقصر 1U 1V 1W، و K4 يغذي 2U 2V 2W.',0,0],
+ ['F5 و F6 يحميان السرعة العالية فقط.',0,1],
+ ['S3 في هذه الدائرة:',['للسرعة العالية','للإيقاف','للسرعة المنخفضة','للعكس'],0]],
+'5.7':[['يبدأ كل اتجاه بالسرعة المنخفضة K3، ثم ينتقل بعد زمن المؤقت K6T إلى العالية.',0,0],
+ ['K1 و K2 لاختيار:',['الاتجاه','السرعة','الزمن','الإيقاف'],0],
+ ['عند نهاية المشوار يتوقف المحرك ولا يتحرك حتى يُضغط S2 من جديد.',0,1],
+ ['K4 (13-14) يمسك السرعة العالية.',0,0]]};
+const qzQ=k=>QZC[k]?[...QZC[k],...QZG]:null,qzGet=()=>S.ex&&S.ex.q||null,qzPut=(k,v)=>{if(S.ex){S.ex.q=v;save();}},qzAfter=()=>showReport();
+const qzNeed=()=>!!(S.ex&&S.ex.done&&qzQ(S.ex.c)&&!S.ex.q&&!isTr());
+/* ===== theory test (shared): every app supplies qzQ(k) questions, qzGet(k) / qzPut(k,v) the saved result, qzAfter(k) to redraw.
+   A question is [text, options (none = true/false), index of the right answer]; one mark for every right answer ===== */
+let QZD={};const qzOpts=q=>q[1]||['صح','خطأ'];
+function qzOrder(k){const Q=qzQ(k);let h=2166136261;for(const c of String((document.getElementById('stId')||{}).value||'')+k)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;
+  const r=()=>{h=Math.imul(h^(h>>>15),2246822507)>>>0;h=Math.imul(h^(h>>>13),3266489909)>>>0;return ((h^(h>>>16))>>>0)/4294967296;};
+  const ix=Q.map((_,i)=>i);for(let i=ix.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[ix[i],ix[j]]=[ix[j],ix[i]];}return ix;}
+function qzPerm(k,i,n){let h=2166136261;for(const c of String((document.getElementById('stId')||{}).value||'')+k+'#'+i)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;
+  const r=()=>{h=Math.imul(h^(h>>>15),2246822507)>>>0;h=Math.imul(h^(h>>>13),3266489909)>>>0;return ((h^(h>>>16))>>>0)/4294967296;};const ix=[...Array(n).keys()];for(let a=n-1;a>0;a--){const b=Math.floor(r()*(a+1));[ix[a],ix[b]]=[ix[b],ix[a]];}return ix;}
+function qzHTML(k){const Q=qzQ(k);if(!Q)return '';const R=qzGet(k),e=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  if(R)return `<div class="qz done" data-qzk="${e(k)}"><div class="qzh">🧠 الاختبار النظري: <b>${R.c} من ${R.n}</b><span>درجة لكل إجابة صحيحة، منفصلة عن درجة التمرين</span></div>
+    <details><summary>مراجعة الإجابات</summary><ol>${Q.map((q,i)=>{const a=R.a[i],ok=a===q[2];return `<li class="${ok?'ok':'no'}">${ok?'✔':'✖'} ${e(q[0])}<br><small>إجابتك: ${a==null?'—':e(qzOpts(q)[a])}${ok?'':' · الصحيحة: <b>'+e(qzOpts(q)[q[2]])+'</b>'}</small></li>`;}).join('')}</ol></details></div>`;
+  const D=QZD[k]||{};
+  return `<div class="qz" data-qzk="${e(k)}"><div class="qzh">🧠 الاختبار النظري (${Q.length} ${Q.length>10?'سؤالًا':'أسئلة'})<span>لكل إجابة صحيحة درجة، منفصلة عن درجة التمرين. أجب عن كل الأسئلة ثم اضغط «تصحيح الاختبار». لا يُرسل التمرين قبل حل الاختبار، ولا يُعدّل بعد التصحيح.</span></div><ol>${qzOrder(k).map(i=>{const q=Q[i];
+    return `<li id="qzq${i}"><div class="qzt">${q[1]?'':'<i>صح أم خطأ؟</i> '}${e(q[0])}</div><div class="qzo">${(q[1]?qzPerm(k,i,q[1].length):[0,1]).map(j=>[qzOpts(q)[j],j]).map(([o,j])=>`<label><input type="radio" name="qz${i}" data-qz="${i}" value="${j}"${D[i]===j?' checked':''}> ${e(o)}</label>`).join('')}</div></li>`;}).join('')}</ol>
+    <p id="qzMsg" class="qzm"></p><button class="btn prim" id="qzGo" type="button">✅ تصحيح الاختبار</button></div>`;}
+function qzGrade(k){const Q=qzQ(k),D=QZD[k]||{},miss=Q.map((_,i)=>i).filter(i=>D[i]==null);
+  if(miss.length){document.getElementById('qzMsg').textContent='بقي '+miss.length+' '+(miss.length>2&&miss.length<11?'أسئلة':'سؤال')+' بلا إجابة (معلّمة بالأحمر).';miss.forEach(i=>{const x=document.getElementById('qzq'+i);if(x)x.classList.add('miss');});const x=document.getElementById('qzq'+miss[0]);if(x)x.scrollIntoView({block:'center',behavior:'smooth'});return;}
+  if(!confirm('تصحيح الاختبار الآن؟ لا يمكن تعديل الإجابات بعد التصحيح.'))return;
+  const a=Q.map((_,i)=>D[i]),c=Q.filter((q,i)=>a[i]===q[2]).length;qzPut(k,{a,c,n:Q.length,t:Date.now()});delete QZD[k];qzAfter(k);}
+document.addEventListener('change',ev=>{const r=ev.target.closest&&ev.target.closest('[data-qz]');if(!r)return;const b=r.closest('.qz');if(!b)return;const k=b.dataset.qzk;
+  (QZD[k]=QZD[k]||{})[+r.dataset.qz]=+r.value;const li=document.getElementById('qzq'+r.dataset.qz);if(li)li.classList.remove('miss');});
+document.addEventListener('click',ev=>{if(!ev.target.closest)return;const g=ev.target.closest('#qzGo');if(!g)return;const b=g.closest('.qz');if(b)qzGrade(b.dataset.qzk);});
 function showReport(r,st){r=r||report(S.ex);REP={r,st};const ok=r.found>=r.f.length;
   $('repBody').innerHTML=(st?backHTML():'')+(st?`<p><b>${esc(st.n)}</b> · <span dir="ltr">${esc(st.id)}</span> · ${esc(fmtT(st.t))}</p>`:'')+
    `<div class="score" style="color:${ok?'var(--ok)':'var(--warn)'}">${s20(r.score)}<small style="font-size:1rem;color:var(--muted)"> / 20 · ${r.score}%</small></div>`+
@@ -1083,8 +1146,8 @@ function showReport(r,st){r=r||report(S.ex);REP={r,st};const ok=r.found>=r.f.len
    `<table class="rtab"><tr><td>الدائرة</td><td>${esc(r.c)} — ${esc((INFO[r.c]||{}).n||'')}</td></tr>`+
    `<tr><td>الأعطال</td><td>${r.f.map((d,i)=>r.fd?`<span style="color:${r.fd[i]?'var(--ok)':'var(--warn)'}">${r.fd[i]?'✔ وجده':'✖ لم يجده'}: ${esc(d)}</span>`:esc(d)).join('<br>')}</td></tr><tr><td>وُجد</td><td>${r.found} من ${r.f.length}</td></tr>`+
    `<tr><td>محاولات خاطئة</td><td>${r.wrong.length?r.wrong.map(w=>'<span style="color:var(--warn)">✖ '+esc(w)+'</span>').join('<br>'):'لا يوجد'}</td></tr><tr><td>عدد القياسات</td><td>${r.meas}</td></tr>`+
-   `<tr><td>الزمن</td><td>${mmss(r.secs)}</td></tr><tr><td>عرض الجهد</td><td>${r.view?'استُخدم':'لم يُستخدم'}</td></tr></table>`;
-  $('repSend').style.display=st?'none':'';$('repLoad').style.display=st?'':'none';$('repModal').classList.add('open');}
+   `<tr><td>الزمن</td><td>${mmss(r.secs)}</td></tr><tr><td>عرض الجهد</td><td>${r.view?'استُخدم':'لم يُستخدم'}</td></tr>${st&&r.q?`<tr><td>الاختبار النظري</td><td><b>${r.q.c} من ${r.q.n}</b></td></tr>`:''}</table>`+(!st&&S.ex&&S.ex.done?qzHTML(S.ex.c):'');
+  $('repSend').style.display=st?'none':'';$('repSend').disabled=!st&&qzNeed();$('repSend').textContent=!st&&qzNeed()?'📤 الإرسال بعد حل الاختبار النظري':'📤 إرسال النتيجة للمدرب'+(S.ex&&S.ex.q?' والاختبار ('+S.ex.q.c+'/'+S.ex.q.n+')':'');$('repLoad').style.display=st?'':'none';$('repModal').classList.add('open');}
 $('repClose').onclick=()=>$('repModal').classList.remove('open');
 $('repNew').onclick=()=>{$('repModal').classList.remove('open');if(isTr()){openFaults();return;}$('dRand').click();};
 $('repLoad').onclick=()=>{if(!REP||!REP.full)return;$('repModal').classList.remove('open');rM.classList.remove('open');setCircuit(REP.full.c,true);S.F=new Set(REP.full.f||[]);trainerFaultsChanged();};
@@ -1159,10 +1222,10 @@ function openSend(){$('sendMsg').textContent='';sM.classList.add('open');}
 $('bSend').onclick=()=>{if(!S.ex){say('لا يوجد تمرين لتقييمه. ابدأ بـ 🎲 عطل عشوائي أو افتح تمرين المدرب.','wn');return;}
   if(!S.ex.done){if(!confirm('تقييم التمرين الآن؟ سيُنهى التمرين وتُكشف الأعطال، ثم ترسل النتيجة للمدرب.'))return;S.ex.done=true;S.ex.t1=Date.now();S.ex.gaveUp=S.ex.found.length<S.ex.f.length;setDiag(false);update();}showReport();};
 $('sClose').onclick=()=>sM.classList.remove('open');
-function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();if(!n||!id){okMsg('اكتب اسمك ورقمك التدريبي أولًا.',1);return null;}if(!S.ex){okMsg('لا يوجد تمرين.',1);return null;}return{n,id};}
+function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();if(!n||!id){okMsg('اكتب اسمك ورقمك التدريبي أولًا.',1);return null;}if(!S.ex){okMsg('لا يوجد تمرين.',1);return null;}if(qzNeed()){okMsg('حل الاختبار النظري أولًا: اضغط 🎯 تقييم وإرسال وأجب عن أسئلته، ثم أرسل.',1);return null;}return{n,id};}
 async function buildMsg(st){const r=report(S.ex),code=await encodeCode({app:'ft',v:1,c:S.ex.c,f:S.ex.f,r,st:{n:st.n,id:st.id,t:Date.now()}});
   const link=isHosted()&&code.startsWith('Z1')?FT_URL()+'#t='+code.slice(2):'';
-  return{code,r,text:`نتيجة شنطة اكتشاف الأعطال\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالدائرة: ${r.c} — ${(INFO[r.c]||{}).n||''}\nالأعطال الموجودة: ${r.found} من ${r.f.length} · الدرجة: ${s20(r.score)} من 20 (${r.score}%)\nالقياسات: ${r.meas} · محاولات خاطئة: ${r.wrong.length} · الزمن: ${mmss(r.secs)}${S.ex.done?'':' (لم ينته)'}\n${r.f.map((d,i)=>(r.fd[i]?'✔ وجد: ':'✖ لم يجد: ')+d).join('\n')}${r.wrong.length?'\n'+r.wrong.map(w=>'✖ حدّد خطأً: '+w).join('\n'):''}\n`+(link?`\nافتح النتيجة:\n${link}\n`:'')+`\nالكود (للمدرب: ⋯ ← فتح بالكود):\n${code}`};}
+  return{code,r,text:`نتيجة شنطة اكتشاف الأعطال\nالمتدرب: ${st.n}\nالرقم التدريبي: ${st.id}\nالدائرة: ${r.c} — ${(INFO[r.c]||{}).n||''}\nالأعطال الموجودة: ${r.found} من ${r.f.length} · الدرجة: ${s20(r.score)} من 20 (${r.score}%)\nالقياسات: ${r.meas} · محاولات خاطئة: ${r.wrong.length} · الزمن: ${mmss(r.secs)}${S.ex.done?'':' (لم ينته)'}${r.q?'\nالاختبار النظري: '+r.q.c+' من '+r.q.n:''}\n${r.f.map((d,i)=>(r.fd[i]?'✔ وجد: ':'✖ لم يجد: ')+d).join('\n')}${r.wrong.length?'\n'+r.wrong.map(w=>'✖ حدّد خطأً: '+w).join('\n'):''}\n`+(link?`\nافتح النتيجة:\n${link}\n`:'')+`\nالكود (للمدرب: ⋯ ← فتح بالكود):\n${code}`};}
 function openLink(u){const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
 $('sWa').onclick=async()=>{const st=sendReady();if(!st)return;const{text}=await buildMsg(st);openLink('https://wa.me/?text='+encodeURIComponent(text));okMsg('فُتح واتساب.');};
 function repImg(st,r,w){const c=document.createElement('canvas'),h=Math.round(w*1.25),k=w/600;c.width=w;c.height=h;const g=c.getContext('2d');
@@ -1201,7 +1264,7 @@ function seenBar(){const n=RS.rows.filter(r=>!SEEN.has(r.uid)).length,y=RS.rows.
   b.textContent=n+' لم يُرصد'+(ONLYNEW?' ✕':'');b.title=ONLYNEW?'عرض الكل':'عرض التي لم تُرصد فقط';a.textContent=y+' رُصد · ✔ رصد الكل';a.disabled=!n;}
 function rRender(){if(RS.rows!==seenRows){seenRows=RS.rows;if(!seenSync())seenInit();}else if(!SEENSRV)seenInit();seenBar();const q=$('rFind').value.trim(),L=RS.rows.filter(r=>(!ONLYNEW||!SEEN.has(r.uid))&&(!q||(r.n+' '+r.id).includes(q)));$('rDelSel').disabled=!RS.sel.size;
   $('rList').innerHTML=L.length?L.map(r=>`<div class="rrow${SEEN.has(r.uid)?'':' rnew'}"><input type="checkbox" data-rsel="${esc(r.uid)}"${RS.sel.has(r.uid)?' checked':''} aria-label="تحديد">${seenBtn(r)}
-    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span> ${r.g!=null?`<span style="color:var(--accent)">· ${r.g}/20</span>`:''}</div><div class="rs">${fmtT(r.t)}</div><div class="ra"><button data-ropen="${esc(r.uid)}">👁 عرض النتيجة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${ONLYNEW&&RS.rows.length?'لا توجد نتائج لم تُرصد: رُصد الكل ✔':RS.rows.length?'لا نتائج مطابقة.':'لا توجد نتائج مرسلة.'}</p>`;}
+    <div><div class="rn">${esc(r.n)} <span dir="ltr" style="font-weight:400">· ${esc(r.id)}</span> ${r.g!=null?`<span style="color:var(--accent)">· ${r.g}/20</span>`:''}${r.q?` <span class="rqz">· 🧠 نظري ${r.q.c}/${r.q.n}</span>`:''}</div><div class="rs">${fmtT(r.t)}</div><div class="ra"><button data-ropen="${esc(r.uid)}">👁 عرض النتيجة</button><button class="danger" data-rdel="${esc(r.uid)}">🗑 حذف</button></div></div></div>`).join(''):`<p>${ONLYNEW&&RS.rows.length?'لا توجد نتائج لم تُرصد: رُصد الكل ✔':RS.rows.length?'لا نتائج مطابقة.':'لا توجد نتائج مرسلة.'}</p>`;}
 /* the results list: Google sometimes answers with an empty sheet for a moment (a slow or busy spreadsheet); when the last load had
    results, an empty answer is asked again twice before it is believed, and the count of the last good load is kept on this device */
 async function cloudList(key){const LK='wsRowsN';let last=0;try{last=+localStorage.getItem(LK)||0;}catch(_){}
@@ -1211,7 +1274,7 @@ async function cloudList(key){const LK='wsRowsN';let last=0;try{last=+localStora
 async function rLoad(){const key=$('rKey').value.trim();if(!key){$('rMsg').textContent='اكتب كلمة السر.';return;}try{localStorage.setItem('wsKey',key);}catch(_){}$('rMsg').textContent='جارٍ التحميل…';
   try{const j=await cloudList(key);RS.rows=(j.rows||[]).filter(r=>r.ex==='ft').sort((a,b)=>b.t-a.t);$('rMsg').textContent=RS.rows.length+' نتيجة محفوظة';
     RS.rows.forEach(r=>{if(r.s!==''&&isFinite(+r.s))r.g=+r.s;});rRender();
-    for(const r of RS.rows){if(r.g!=null)continue;try{const o=await decodeCode(r.code);if(o.r&&o.r.score!=null)r.g=s20(o.r.score);}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='empty'?'أعاد خادم Google صفر نتائج مع أن آخر تحميل كان فيه '+e.last+' نتيجة. غالبًا انشغال مؤقت في Google: اضغط «تحديث» بعد دقيقة. إن تكرر فراجع ملف «نتائج المحاكي» في Google Drive.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
+    for(const r of RS.rows){try{const o=await decodeCode(r.code);if(r.g==null&&o.r&&o.r.score!=null)r.g=s20(o.r.score);if(o.r&&o.r.q)r.q=o.r.q;}catch(_){}}rRender();}catch(e){$('rMsg').textContent=e.message==='empty'?'أعاد خادم Google صفر نتائج مع أن آخر تحميل كان فيه '+e.last+' نتيجة. غالبًا انشغال مؤقت في Google: اضغط «تحديث» بعد دقيقة. إن تكرر فراجع ملف «نتائج المحاكي» في Google Drive.':e.message==='key'?'كلمة السر غير صحيحة.':'تعذّر الاتصال.';}}
 const arm=(b,fn)=>{if(b.dataset.arm){delete b.dataset.arm;fn();return;}const t=b.textContent;b.dataset.arm=1;b.textContent='اضغط مرة أخرى للتأكيد';setTimeout(()=>{if(b.dataset.arm){delete b.dataset.arm;b.textContent=t;}},3000);};
 async function rDelete(u){try{await cloud({action:'del',key:$('rKey').value.trim(),uids:u});try{localStorage.setItem('wsRowsN',String(Math.max(0,(+localStorage.getItem('wsRowsN')||0)-u.length)));}catch(_){}u.forEach(x=>RS.sel.delete(x));await rLoad();}catch(_){$('rMsg').textContent='تعذّر الحذف.';}}
 $('bResults').onclick=()=>{document.querySelector('.more').open=false;rM.classList.add('open');if($('rKey').value)rLoad();};$('rClose').onclick=()=>{RS.back=false;rM.classList.remove('open');};
