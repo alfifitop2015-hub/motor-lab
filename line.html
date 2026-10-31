@@ -143,7 +143,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 const IN=[['S1','تشغيل الخط','NO'],['S0','إيقاف الخط','NC'],['B1','قطعة تحت المكبس','PNP'],['1B1','المكبس فوق','PNP'],['1B2','المكبس تحت','PNP'],
   ['B2','قطعة معيبة عند الطرد','PNP'],['B3','صندوق تحت المزلق','PNP'],['B4','قطعة تسقط في الصندوق','PNP'],['B5','صندوق عند التعبئة','PNP'],
   ['SQ1','المصعد تحت','LS'],['SQ2','المصعد فوق','LS'],['S2','تشغيل الخلاط','NO'],['F','الأوفرلودات (NC على التوالي)','OL'],['S3','إيقاف الخلاط','NC']];
-const OUT=[['K1','محرك السير M1'],['Y1','إنزال المكبس 1A'],['Y2','بوابة الطرد 2A'],['K2','سير الصناديق M2'],['Y3','صمام التعبئة'],
+const OUT=[['K1','محرك السير M1'],['Y1','إنزال المكبس 1A'],['Y2','بوابة الطرد 2A'],['K2','سير الصناديق M2'],['Y3','بوابة قادوس الحشو'],
   ['K3','المصعد صعود M4'],['K4','المصعد نزول M4'],['KM','الخلاط: الرئيسي'],['KY','الخلاط: نجمة'],['KD','الخلاط: دلتا']];
 const IA=i=>'I'+(i>>3)+'.'+(i&7),QA=i=>'Q'+(i>>3)+'.'+(i&7);
 const INI={},OUTI={};IN.forEach((d,i)=>INI[d[0]]=i);OUT.forEach((d,i)=>OUTI[d[0]]=i);
@@ -168,7 +168,7 @@ const EXS=[
   d:'الحساس اللوني B2 يكشف القطعة المعيبة (الحمراء). عندها تُفتح بوابة الطرد بالأسطوانة 2A (Y2) لمدة 0.8 ثانية فتسقط القطعة المعيبة في صندوق المرفوضات، وتمر السليمة.',
   goals:['run','reject3','nogoodrej']},
  {id:'e6',n:'6. العد والتعبئة في الصناديق',in:['S1','S0','B3','B4','B5','F'],out:['K1','K2','Y3'],mot:['M1','M2'],plant:{belt:1,boxes:1},
-  d:'كل صندوق تحت المزلق (B3) يأخذ 5 قطع يعدّها B4. عند اكتمال العدد يقف السير M1 ويتحرك سير الصناديق M2 حتى يصل الصندوق إلى التعبئة (B5)، فيفتح صمام التعبئة Y3 أربع ثوانٍ. السير M1 لا يعمل إلا وصندوق فارغ تحته.',
+  d:'كل صندوق تحت المزلق (B3) يأخذ 5 قطع يعدّها B4. عند اكتمال العدد يقف السير M1 ويتحرك سير الصناديق M2 حتى يصل الصندوق إلى التعبئة (B5)، فتُفتح بوابة القادوس Y3 أربع ثوانٍ فتنزل حبيبات الحشو حول القطع لتحميها أثناء الشحن. السير M1 لا يعمل إلا وصندوق فارغ تحته.',
   goals:['box2','fill2','nospill']},
  {id:'e7',n:'7. مصعد الصناديق (عكس حركة)',in:['S1','S0','SQ1','SQ2','F'],out:['K3','K4'],mot:['M4'],plant:{lift:1,liftSelf:1},
   d:'S1 يرفع المصعد بمحرك M4 (K3) حتى نهاية المشوار العلوية SQ2، فيُدفع الصندوق إلى الرف، ثم بعد ثانيتين ينزل (K4) حتى SQ1. لا يعمل K3 وK4 معًا أبدًا، وS0 يوقف الحركة.',
@@ -179,7 +179,7 @@ const EXS=[
 const GOALS={run:'S1 يشغّل M1 ويبقى يعمل بعد رفع الإصبع',stop:'S0 يوقف M1',ol:'فصل الأوفرلود يوقف المحرك (جرّب زر «اختبار الأوفرلود»)',deliver5:'وصلت 5 قطع إلى آخر السير',
   seqStart:'M2 يبدأ قبل M1 بثلاث ثوانٍ تقريبًا',seqStop:'عند S0 يقف M1 أولًا ثم M2 بعده بثلاث ثوانٍ تقريبًا',star:'الخلاط بدأ نجمة',delta:'الخلاط تحول إلى دلتا بعد زمن النجمة',mixStop:'S3 يوقف الخلاط',
   stamp5:'خُتمت 5 قطع',nojam:'لم تنحشر أي قطعة تحت المكبس',reject3:'طُردت 3 قطع معيبة',nogoodrej:'لم تُطرد أي قطعة سليمة',box2:'امتلأ صندوقان بخمس قطع',fill2:'عُبئ صندوقان',
-  nospill:'لا قطع خارج الصندوق ولا انسكاب',lift2:'أكمل المصعد دورتين (صعود ونزول)',nocrash:'لم يصطدم المصعد بنهاية المشوار',store2:'وصل صندوقان إلى الرف'};
+  nospill:'لا قطع خارج الكرتون ولا حبيبات حشو متناثرة',lift2:'أكمل المصعد دورتين (صعود ونزول)',nocrash:'لم يصطدم المصعد بنهاية المشوار',store2:'وصل صندوقان إلى الرف'};
 
 /* ===================== devices & terminals of the wiring board ===================== */
 /* each device: id, type, terminals; the PLC is one device with DI, DQ, supply terminals */
@@ -316,7 +316,7 @@ const P_BOX=(lift)=>[NW('B4 يعدّ القطع الساقطة في الصندو
   ...(lift?[NW('الصندوق المعبأ ذاهب إلى المصعد',[['P:M0.5','M0.7']],['S:M1.3'])]:[]),
   NW('وصل صندوق إلى التعبئة B5: أوقف النقل',[['P:I1.0']],['R:M0.5']),NW('سير الصناديق M2',[['M0.5','M0.0','I1.4']],['=Q0.3']),
   NW('الصندوق غادر التعبئة',[['/I1.0']],['R:M0.7']),NW('زمن التعبئة 4 ثوانٍ',[['I1.0','/M0.7','/M0.5']],['TON:T6:4']),
-  NW('صمام التعبئة Y3',[['I1.0','/M0.7','/M0.5','/T6']],['=Q0.4']),NW('انتهت التعبئة',[['T6']],['S:M0.7'])];
+  NW('بوابة الحشو Y3',[['I1.0','/M0.7','/M0.5','/T6']],['=Q0.4']),NW('انتهت التعبئة',[['T6']],['S:M0.7'])];
 const P_LIFTUD=()=>[NW('المصعد فوق SQ2: أوقف الصعود',[['I1.2']],['R:M1.1']),NW('انتظر ثانيتين فوق',[['I1.2']],['TON:T7:2']),NW('ابدأ النزول',[['T7']],['S:M1.2']),
   NW('المصعد تحت SQ1: أوقف النزول',[['I1.1']],['R:M1.2']),NW('صعود K3 مع إعاقة K4',[['M1.1','/I1.2','/Q0.6','I1.4']],['=Q0.5']),NW('نزول K4 مع إعاقة K3',[['M1.2','/I1.1','/Q0.5','I1.4']],['=Q0.6'])];
 const SOL={
@@ -385,7 +385,7 @@ function plantStep(ex,PL,EL,dt,kOn){const p=ex.plant,C=PL.cnt,trip=[];PL.t+=dt;P
     const belt=PL.boxes.filter(b=>b.st==='belt');const minx=belt.reduce((a,b)=>Math.min(a,b.x),1e9);
     if(belt.length&&minx>660){PL.boxes.push({id:PL.nid++,x:minx-150,n:0,fill:0,st:'belt'});}
     /* filling */
-    if(p.boxes&&coil('Y3')){const b=belt.find(b=>Math.abs(b.x-GX.fill)<10);if(b){b.fill+=dt/4;if(b.fill>1.15&&!b.sp){b.sp=1;C.spill++;}}else{PL.spillT+=dt;if(PL.spillT>0.3){PL.spillT=0;C.spill++;}}PL.msg=PL.msg||(b?'':'⚠ صمام التعبئة مفتوح ولا يوجد صندوق تحته: انسكاب');}
+    if(p.boxes&&coil('Y3')){const b=belt.find(b=>Math.abs(b.x-GX.fill)<10);if(b){b.fill+=dt/4;if(b.fill>1.15&&!b.sp){b.sp=1;C.spill++;}}else{PL.spillT+=dt;if(PL.spillT>0.3){PL.spillT=0;C.spill++;}}PL.msg=PL.msg||(b?'':'⚠ بوابة الحشو Y3 مفتوحة ولا يوجد كرتون تحتها: الحبيبات تتناثر على السير');}
     PL.boxes=PL.boxes.filter(b=>b.st!=='done'||b.x<1500);PL.boxes.forEach(b=>{if(b.st==='done'){b.x+=80*dt;}});PL.boxes=PL.boxes.filter(b=>!(b.st==='done'&&b.x>1290));}
   /* lift */
   if(p.lift){const m4=motRun(EL,'M4');const v=m4?m4.dir/3:0;const np=PL.lift+v*dt;
@@ -471,6 +471,40 @@ function renderAll(){$('m300').classList.toggle('on',MODEL==='300');$('m1200').c
 
 /* ===================== the line scene ===================== */
 const BY=330,BB=540;
+/* ---- packing station: a carton with open flaps (cut-away front shows what is inside) and a hopper of packing fill ---- */
+const GR='#f3efe6';
+function grains(x0,y0,w,h,seed){let g='';const n=Math.floor(w*h/40);for(let i=0;i<n;i++){const a=Math.sin((i+1)*12.9898+seed)*43758.5453,b=Math.sin((i+1)*78.233+seed)*12345.678;const px=x0+(a-Math.floor(a))*w,py=y0+(b-Math.floor(b))*h;g+=`<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="2.6" ry="1.7" fill="${GR}" stroke="#c9bfa8" stroke-width=".5"/>`;}return g;}
+function CARTON(b,x,y){x=+x.toFixed(1);y=+y.toFixed(1);const closed=b.st==='lift',f=Math.min(1.15,b.fill||0),n=Math.min(b.n||0,6);let s='<g>';
+  if(!closed){/* back flap and side flaps standing open */
+    s+=`<path d="M${x-44} ${y+8}L${x-40} ${y-16}H${x+40}L${x+44} ${y+8}Z" fill="#b88a4d" stroke="#6d4f22" stroke-width="1.2"/>`+
+      `<path d="M${x-45} ${y+8}L${x-64} ${y-10}L${x-58} ${y-16}L${x-40} ${y+4}Z" fill="#a97c42" stroke="#6d4f22" stroke-width="1.2"/>`+
+      `<path d="M${x+45} ${y+8}L${x+64} ${y-10}L${x+58} ${y-16}L${x+40} ${y+4}Z" fill="#a97c42" stroke="#6d4f22" stroke-width="1.2"/>`+
+      `<rect x="${x-43}" y="${y+3}" width="86" height="8" fill="#5e4524"/>`;}
+  /* front panel */
+  s+=`<rect x="${x-45}" y="${y+8}" width="90" height="62" fill="#c69a5b" stroke="#6d4f22" stroke-width="2"/><path d="M${x-45} ${y+20}H${x+45}" stroke="#b5884a" stroke-width="1"/>`;
+  /* cut-away window: the pieces lie at the bottom and the packing fill rises around them */
+  const wx=x-36,wy=y+22,ww=72,wh=42;s+=`<rect x="${wx}" y="${wy}" width="${ww}" height="${wh}" fill="#4d3818"/>`;
+  for(let i=0;i<n;i++){const r=i<3?0:1,c=r?i-3:i,cx=wx+8+c*(r?24:22)+(r?11:0),cy=wy+wh-12-r*11;s+=`<rect x="${cx}" y="${cy}" width="18" height="11" rx="2" fill="#6f8fb3" stroke="#2a3540" stroke-width="1"/>`;}
+  if(f>0){const fh=Math.min(wh,wh*f);s+=`<rect x="${wx}" y="${(wy+wh-fh).toFixed(1)}" width="${ww}" height="${fh.toFixed(1)}" fill="${GR}" opacity=".78"/>`+grains(wx,wy+wh-fh,ww,fh,b.id);}
+  s+=`<path d="M${wx} ${wy}l6 -3l7 4l8 -4l7 3l9 -3l7 4l8 -4l7 3l6 -3l7 3V${wy+wh}H${wx}Z" fill="none" stroke="#8a6532" stroke-width="1.4"/>`;
+  if(f>1){s+=`<ellipse cx="${x}" cy="${y+4}" rx="${36*(f-1)/0.15+8}" ry="${(f-1)/0.15*7+2}" fill="${GR}" stroke="#c9bfa8"/>`+grains(x-30,y-4,60,10,b.id+7);}
+  if(closed)s+=`<rect x="${x-46}" y="${y}" width="92" height="10" fill="#b88a4d" stroke="#6d4f22" stroke-width="1.5"/><rect x="${x-7}" y="${y}" width="14" height="28" fill="#d9c9a3" opacity=".9"/>`;
+  s+=`<text x="${x}" y="${y+17}" text-anchor="middle" direction="rtl" style="font:800 10px sans-serif;fill:#3b2a10">${n?n+' قطع':'فارغ'}${f>=0.9?' + حشو':''}</text>`;
+  /* little "this side up" arrows printed on the carton */
+  s+=`<path d="M${x+38} ${y+66}v-8m-3 3l3 -3l3 3M${x+31} ${y+66}v-8m-3 3l3 -3l3 3" stroke="#6d4f22" stroke-width="1.2" fill="none"/>`;
+  return s+'</g>';}
+function HOP(){const PL=L.PL,X=GX.fill,open=!!(L.kOn&&L.kOn.Y3),gx=open?18:0;let s='';
+  /* hopper with a sight glass showing the packing fill inside */
+  s+=`<path d="M${X-48} 272H${X+48}L${X+14} 342H${X-14}Z" fill="#c7cfd6" stroke="#5f6a74" stroke-width="2"/><path d="M${X-40} 280H${X+40}L${X+12} 334H${X-12}Z" fill="${GR}"/>`+grains(X-36,282,72,26,3)+
+    `<rect x="${X-48}" y="266" width="96" height="8" rx="2" fill="#8d969e"/><text x="${X}" y="258" text-anchor="middle" style="font:800 11px sans-serif;fill:#1c2833;paint-order:stroke;stroke:#fff;stroke-width:3px">قادوس حبيبات الحشو</text>`;
+  /* neck, slide gate driven by the Y3 cylinder, outlet */
+  s+=`<rect x="${X-10}" y="342" width="20" height="20" fill="#8d969e" stroke="#5f6a74"/><rect x="${X-24}" y="362" width="48" height="8" fill="#5f6a74"/><rect x="${X-14+gx}" y="363" width="30" height="6" fill="#2b2f33"/>`+
+    `<rect x="${X+26}" y="358" width="34" height="16" rx="3" fill="#c9d3dc" stroke="#45515c" stroke-width="1.5"/><rect x="${X+16}" y="364" width="${10+0}" height="4" fill="#999"/><rect x="${X-8}" y="370" width="16" height="22" fill="#8d969e" stroke="#5f6a74"/><text x="${X+43}" y="392" text-anchor="middle" style="font:800 11px sans-serif;fill:${open?'#0b6b20':'#555'}">Y3</text>`;
+  if(open){const bx=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-X)<40),to=bx?BB-70+20:BB-4,off=(PL.t*260)%10;
+    for(let yy=394+off;yy<to;yy+=10)for(const dx of[-4,0,4])s+=`<ellipse cx="${(X+dx+Math.sin(yy*.7+dx)*1.5).toFixed(1)}" cy="${(yy+dx*.6).toFixed(1)}" rx="2.4" ry="1.6" fill="${GR}" stroke="#c9bfa8" stroke-width=".5"/>`;}
+  /* fill spilled on the belt when the gate opened with no carton under it */
+  const sp=Math.min(PL.cnt.spill,12);if(sp)s+=`<ellipse cx="${X}" cy="${BB-2}" rx="${10+sp*3}" ry="${3+sp*.6}" fill="${GR}" stroke="#c9bfa8"/>`+grains(X-8-sp*2,BB-6,16+sp*4,5,9);
+  return s;}
 function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{mode:'off'},kOn=L.kOn||{};let s='';
   const T=(x,y,t,sz,c,w,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:${w||700} ${sz||12}px sans-serif;fill:${c||'#1c2833'}">${t}</text>`;
   const led=(x,y,on,c)=>`<circle cx="${x}" cy="${y}" r="5" fill="${on?(c||'#39d353'):'#3a3f44'}" stroke="#111"/>`;
@@ -499,14 +533,13 @@ function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{
   if(p.boxes){const r=mot('M2'),off=((PL.t*(r.mode==='star'||r.mode==='delta'?r.dir*60:0))%24+24)%24;
     s+=`<path d="M900 ${BY+4}L950 430" stroke="#8a949d" stroke-width="10" stroke-linecap="round"/><rect x="760" y="${BB}" width="${GX.boxEnd-760}" height="20" rx="10" fill="#2b2f33"/><line x1="770" y1="${BB+10}" x2="${GX.boxEnd-10}" y2="${BB+10}" stroke="#5a6168" stroke-width="10" stroke-dasharray="12 12" stroke-dashoffset="${(-off).toFixed(1)}"/>${mlab(800,BB+44,'M2')}
       ${T(GX.chute,BB+40,'B3',10)}<rect x="${GX.chute-4}" y="${BB+20}" width="8" height="8" fill="#2d6cdf"/>${T(GX.fill,BB+40,'B5',10)}<rect x="${GX.fill-4}" y="${BB+20}" width="8" height="8" fill="#2d6cdf"/>${T(905,420,'B4',10,'#222',700,'end')}
-      <rect x="${GX.fill-40}" y="300" width="80" height="60" rx="8" fill="#5b8fc9" stroke="#2b4d75" stroke-width="2"/>${T(GX.fill,335,'سائل',11,'#fff')}<rect x="${GX.fill-6}" y="360" width="12" height="40" fill="#555"/>${T(GX.fill+55,390,'Y3',11,kOn.Y3?'#0b6b20':'#555')}
-      ${kOn.Y3?`<rect x="${GX.fill-3}" y="400" width="6" height="${BB-400-50}" fill="#4aa3ff" opacity=".85"/>`:''}`;
+      ${HOP()}`;
     const sn=plantSensors(EX,PL).S;s+=led(GX.chute,BB+56,sn.B3,'#ffcc00')+led(GX.fill,BB+56,sn.B5,'#ffcc00')+led(915,410,sn.B4,'#ffcc00');
-    PL.boxes.forEach(b=>{const y=b.st==='lift'?BB-70-320*PL.lift:BB-70;if(b.x<760)return;s+=`<g><rect x="${(b.x-45).toFixed(1)}" y="${y.toFixed(1)}" width="90" height="70" fill="#c69a5b" stroke="#6d4f22" stroke-width="2"/>${b.fill>0?`<rect x="${(b.x-41).toFixed(1)}" y="${(y+66-60*Math.min(1.1,b.fill)).toFixed(1)}" width="82" height="${(60*Math.min(1.1,b.fill)).toFixed(1)}" fill="#4aa3ff" opacity=".7"/>`:''}${T(b.x.toFixed(1),y+40,b.n?b.n+' قطع':'',11,'#3b2a10')}</g>`;});}
+    PL.boxes.forEach(b=>{const y=b.st==='lift'?BB-70-320*PL.lift:BB-70;if(b.x<760)return;s+=CARTON(b,b.x,y);});}
   /* lift */
   if(p.lift){const y=BB-320*PL.lift;s+=`<rect x="1212" y="160" width="8" height="${BB-140}" fill="#556"/><rect x="1300" y="160" width="8" height="${BB-140}" fill="#556"/><rect x="1215" y="${y.toFixed(1)}" width="90" height="12" fill="#3d4650"/>${mlab(1260,130,'M4')}
       <rect x="1310" y="${BB-320}" width="105" height="10" fill="#6b4f2a"/>${T(1362,BB-330,'الرف: '+PL.cnt.stored,11)}${led(1325,BB-6,PL.lift<=0.01,'#ffcc00')}${T(1340,BB-2,'SQ1',10,'#222',700,'start')}${led(1325,BB-312,PL.lift>=0.99,'#ffcc00')}${T(1340,BB-296,'SQ2',10,'#222',700,'start')}`;
-    if(!p.boxes)PL.boxes.forEach(b=>{const yy=BB-70-320*PL.lift;s+=`<rect x="${b.x-45}" y="${yy.toFixed(1)}" width="90" height="70" fill="#c69a5b" stroke="#6d4f22" stroke-width="2"/>`;});}
+    if(!p.boxes)PL.boxes.forEach(b=>{s+=CARTON(b,b.x,BB-70-320*PL.lift);});}
   /* pieces */
   PL.pieces.forEach(q=>{let x=q.x,y=BY-26,o=1;
     if(q.st==='chute'){x=900+(GX.chute-900)*q.f;y=BY-26+(BB-70-(BY-26))*q.f;}else if(q.st==='rej'){x=GX.gate;y=BY+q.f*80;o=Math.max(0,1-q.f);}else if(q.st==='bin'){x=950;y=BY+30+q.f*60;o=Math.max(0,1-q.f);}else if(q.st==='floor'){y=BB+q.f*10;o=Math.max(0,1-q.f);}
@@ -533,7 +566,7 @@ function renderLine(){$('sc').innerHTML=scene();camApply();const E=L.EL||{};let 
   Object.keys(L.olTrip).forEach(f=>{if(L.olTrip[f])c+=`<span class="bad">الأوفرلود ${f} فاصل</span>`;});
   if(L.PL.msg)c+=`<span class="bad">${esc(L.PL.msg)}</span>`;
   const C=L.PL.cnt,P=EX.plant,st=[];if(P.belt&&!P.boxes)st.push('وصلت '+C.deliver);if(P.press)st.push('خُتمت '+C.stamped);if(P.sort)st.push('رُفضت '+C.badRej);if(P.boxes)st.push('صناديق '+C.boxFull+' · عُبئت '+C.boxFill);if(P.lift)st.push('الرف '+C.stored);if(st.length)c+=`<span>${st.join(' · ')}</span>`;
-  if(C.floor+C.spill+C.over)c+=`<span class="bad">أخطاء: ${C.floor?C.floor+' قطعة على الأرض ':''}${C.spill?C.spill+' انسكاب ':''}${C.over?C.over+' زيادة عن 5':''}</span>`;
+  if(C.floor+C.spill+C.over)c+=`<span class="bad">أخطاء: ${C.floor?C.floor+' قطعة على الأرض ':''}${C.spill?C.spill+' تناثر حشو ':''}${C.over?C.over+' زيادة عن 5':''}</span>`;
   $('chips').innerHTML=c;
   {const n=EX.goals.filter(k=>L.g[k]).length;$('gSum').textContent=(n===EX.goals.length?'🎉 اكتمل المطلوب ':'المطلوب ')+n+' / '+EX.goals.length;}
   $('goals').innerHTML='<ul>'+EX.goals.map(k=>`<li>${L.g[k]?'✅':L.gx[k]?'❌':'⬜'} ${esc(GOALS[k])}</li>`).join('')+'</ul>'+(EX.goals.every(k=>L.g[k])?'<div class="note" style="color:var(--ok);font-weight:700">🎉 أحسنت! أنجزت كل مطالب التمرين.</div>':'');
@@ -790,7 +823,7 @@ $('zIn').onclick=()=>zoomAt(1.35);$('zOut').onclick=()=>zoomAt(1/1.35);$('zFit')
 function capNow(){const p=EX.plant,PL=L.PL,E=L.EL||{},K=L.kOn||{},sn=plantSensors(EX,PL).S,run=m=>runOf(L,m),mo=m=>(E.mot&&E.mot[m]||{}).mode;
   if(L.brk||E.mix||E.dcShort)return (E.err&&E.err[0])||'القاطع Q0 مفصول';if(PL.msg)return PL.msg;
   if(p.lift&&run('M4'))return (E.mot.M4.dir||0)>0?'المصعد يصعد (K3) حتى SQ2':'المصعد ينزل (K4) حتى SQ1';
-  if(p.boxes&&K.Y3){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.fill)<10);return 'التعبئة: Y3 مفتوح · '+(b?Math.round(Math.min(1,b.fill)*100):0)+'%';}
+  if(p.boxes&&K.Y3){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.fill)<10);return 'تعبئة الحشو: Y3 مفتوحة · '+(b?Math.round(Math.min(1,b.fill)*100):0)+'%';}
   if(p.boxes&&run('M2'))return 'سير الصناديق M2 ينقل الصندوق الممتلئ إلى التعبئة';
   if(p.press&&(PL.press>0.03||sn.B1))return PL.press>0.97?'المكبس تحت (1B2): يضغط القطعة':PL.press>0.03?(K.Y1?'المكبس ينزل (Y1) والسير واقف':'المكبس يرتفع حتى 1B1'):'B1 كشف قطعة تحت المكبس: السير يقف';
   if(p.sort&&(PL.gate>0.05||sn.B2))return PL.gate>0.05?'بوابة الطرد مفتوحة (Y2): القطعة المعيبة تسقط':'B2 كشف قطعة معيبة';
@@ -836,7 +869,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793440385';
+const LNV='1793452613';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
