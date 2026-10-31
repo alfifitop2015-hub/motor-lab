@@ -623,7 +623,12 @@ function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="$
 function tDuct(k){const P=LAY.pos[k.split('.')[0]],p=tPos(k);if(!P||!p)return 0;return p.y<P.y+P.h/2?P.r:P.r+1;}
 let COV=new Set((ls('ln2:cov')||'').split(',').filter(Boolean));const covSave=()=>ls('ln2:cov',[...COV].join(','));
 function renderBoard(){if(!L)return;layout();const u=staticNets();const D=LAY.ducts,W=LAY.W;
-  let base=`<rect width="${W}" height="${LAY.H}" fill="#d9dee3"/>`,cover='';
+  let base=`<defs><linearGradient id="gPl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3e7ea"/><stop offset=".5" stop-color="#cfd5da"/><stop offset="1" stop-color="#dde2e6"/></linearGradient><linearGradient id="gDin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f7"/><stop offset=".25" stop-color="#b9c0c6"/><stop offset=".5" stop-color="#e8ebed"/><stop offset=".8" stop-color="#9da5ac"/><stop offset="1" stop-color="#cdd2d6"/></linearGradient></defs><rect width="${W}" height="${LAY.H}" fill="url(#gPl)"/>`,cover='';
+  /* galvanized mounting plate with 35 mm DIN rails under the rail-mounted devices (breaker, supply, PLC, contactors, overloads) */
+  {const DT={};devList(EX).forEach(d=>DT[d.id]=d.t);DT.PLC='plc';const seg={};
+    Object.entries(LAY.pos).forEach(([id,P])=>{if(!['sup','ps','plc','k','ol'].includes(DT[id]))return;const g=seg[P.r]||(seg[P.r]={a:1e9,b:0,y:P.y});g.a=Math.min(g.a,P.x);g.b=Math.max(g.b,P.x+P.w);});
+    Object.values(seg).forEach(g=>{const y=g.y+62,x=g.a-16,w=g.b-g.a+32;let sl='';for(let xx=x+10;xx<x+w-14;xx+=24)sl+=`<rect x="${xx}" y="${y+8}" width="13" height="6" rx="3" fill="#7d868d"/>`;
+      base+=`<rect x="${x}" y="${y}" width="${w}" height="22" rx="2" fill="url(#gDin)" stroke="#8a939a"/>${sl}<circle cx="${x+6}" cy="${y+11}" r="3" fill="#6f777d"/><circle cx="${x+w-6}" cy="${y+11}" r="3" fill="#6f777d"/>`;});}
   /* the ducts: grey slotted trunking, horizontal between rows and one vertical on the left */
   const duct=(x,y,w,h,v,id)=>{base+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#8f9aa3" stroke="#6d7880"/>`;
     if(COV.has(id)){/* cover taken off: the wires lie open in the duct; tap the duct to put the cover back */
@@ -829,7 +834,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793420737';
+const LNV='1793437512';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
