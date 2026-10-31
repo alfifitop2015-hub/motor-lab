@@ -29,7 +29,7 @@ button,select,input{font:inherit;color:inherit}
 .msg{padding:6px 10px;font-size:.88rem;font-weight:700;color:#fff;background:#1a3a5c}.msg.err{background:var(--warn)}.msg:empty{display:none}
 .scene{overflow-x:auto;direction:ltr;background:#cfd6dc}
 .scene svg{display:block;width:100%;height:auto}
-.scene.free svg{min-width:880px}
+#sc{cursor:grab;touch-action:none}
 #stage{position:relative;background:#cfd6dc}
 .cap{position:absolute;top:8px;right:8px;left:8px;display:flex;gap:6px;align-items:flex-start;pointer-events:none;z-index:2}
 .cap span{background:rgba(10,20,32,.82);color:#fff;border-radius:10px;padding:5px 10px;font-size:.88rem;font-weight:700;line-height:1.4;max-width:80%}
@@ -111,7 +111,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 <div class="pane" id="p-line">
   <div id="stage"><div class="scene"><svg id="sc" viewBox="0 0 1420 600" role="img" aria-label="خط الإنتاج"></svg></div>
     <div class="cap"><span id="capT"></span><span class="gp" id="capG"></span></div>
-    <div class="camb"><button id="camM" title="الكاميرا: تتبع تلقائي لمكان العمل، أو الخط كله، أو تحريك يدوي">🎥 تلقائي</button><button id="thB" title="عرض كامل الشاشة بالعرض مثل الفيديو">⛶ عرض</button></div>
+    <div class="camb"><button id="zIn" title="تكبير">＋</button><button id="zOut" title="تصغير">－</button><button id="zFit" title="الخط كله">⤢</button><button id="thB" title="عرض كامل الشاشة بالعرض مثل الفيديو">⛶ عرض</button></div>
     <div class="rot">🔄 أدر الجوال للوضع الأفقي</div>
     <div class="tbar" id="tbar"></div></div>
   <div class="ops" id="ops"></div>
@@ -511,8 +511,8 @@ function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{
 function bindPB(root){root.querySelectorAll('[data-pb]').forEach(b=>{const k=b.dataset.pb,dn=e=>{e.preventDefault();L.press.add(k);b.classList.add('dn');try{b.setPointerCapture(e.pointerId);}catch(_){}},up=()=>{L.press.delete(k);b.classList.remove('dn');};
     b.addEventListener('pointerdown',dn);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);});}
 function pbHTML(){return [['S1','#2aa84a','I','تشغيل S1'],['S0','#d8322b','O','إيقاف S0'],['S2','#2aa84a','I','تشغيل الخلاط S2'],['S3','#d8322b','O','إيقاف الخلاط S3']].filter(b=>EX.in.includes(b[0])).map(([k,c,t,n])=>`<button class="ob" data-pb="${k}" title="${n}"><i style="background:${c}">${t}</i>${n}</button>`).join('');}
-function renderOps(){const o=$('ops');let h='';$('tbar').innerHTML=pbHTML()+`<button class="ob" id="tOlR"><i style="background:#1f5fbf">↺</i>أوفرلود</button><button class="ob" id="tRst"><i style="background:#6b747d">⟲</i>تفريغ</button><button class="ob" id="tCam"><i style="background:#0b3d91">🎥</i>الكاميرا</button><button class="ob" id="tX"><i style="background:#444">✕</i>خروج</button>`;bindPB($('tbar'));
-  $('tOlR').onclick=()=>{L.olTrip={};L.brk=false;};$('tRst').onclick=()=>{L.PL=plantNew(EX);L.g={};L.gx={};L.h={};L.err=[];};$('tCam').onclick=camNext;$('tX').onclick=thOff;
+function renderOps(){const o=$('ops');let h='';$('tbar').innerHTML=pbHTML()+`<button class="ob" id="tOlR"><i style="background:#1f5fbf">↺</i>أوفرلود</button><button class="ob" id="tRst"><i style="background:#6b747d">⟲</i>تفريغ</button><button class="ob" id="tZi"><i style="background:#0b3d91">＋</i>تكبير</button><button class="ob" id="tZo"><i style="background:#0b3d91">－</i>تصغير</button><button class="ob" id="tCam"><i style="background:#0b3d91">⤢</i>الخط كله</button><button class="ob" id="tX"><i style="background:#444">✕</i>خروج</button>`;bindPB($('tbar'));
+  $('tOlR').onclick=()=>{L.olTrip={};L.brk=false;};$('tRst').onclick=()=>{L.PL=plantNew(EX);L.g={};L.gx={};L.h={};L.err=[];};$('tCam').onclick=zFit;$('tZi').onclick=()=>zoomAt(1.35);$('tZo').onclick=()=>zoomAt(1/1.35);$('tX').onclick=thOff;
   const btns=[['S1','#2aa84a','I','تشغيل S1'],['S0','#d8322b','O','إيقاف S0'],['S2','#2aa84a','I','تشغيل الخلاط S2'],['S3','#d8322b','O','إيقاف الخلاط S3']].filter(b=>EX.in.includes(b[0]));
   btns.forEach(([k,c,t,n])=>{h+=`<button class="ob" data-pb="${k}" title="${n}"><i style="background:${c}">${t}</i>${n}</button>`;});
   h+=`<details class="mm" style="align-self:center"><summary>⋯ أدوات</summary><div><button class="ob" id="oOlT"><i style="background:#ff9f1a">!</i>اختبار الأوفرلود</button><button class="ob" id="oOlR"><i style="background:#1f5fbf">↺</i>إعادة الأوفرلود</button><button class="ob" id="oQ0"><i style="background:#555">Q0</i>إعادة القاطع Q0</button><button class="ob" id="oRst"><i style="background:#6b747d">⟲</i>تفريغ الخط</button></div></details>`;
@@ -749,48 +749,50 @@ function stlOf(P){let out='';let fp=0;
       const a=dispA(o.a);if(o.t==='=')s+=`=  ${a}\n`;else if(o.t==='S')s+=`S  ${a}\n`;else if(o.t==='R')s+=`R  ${a}\n`;
       else if(o.t==='TON')s+=`L  ${tFmt(o.v)}\nSD ${a}\n`;else if(o.t==='TOF')s+=`L  ${tFmt(o.v)}\nSF ${a}\n`;else if(o.t==='CU')s+=`CU ${a}\n`+(o.r?`A  ${dispA(o.r)}\nR  ${a}\n`:'');
       out+=s;});out+='\n';});return out;}
-/* ===================== the camera: follows where the work is, like a video ===================== */
-let CAMM=ls('ln2:cam')||'auto';const CAM={x:710,y:300,w:1420,f:'all',t0:0};
-function camNext(){CAMM=CAMM==='auto'?'all':CAMM==='all'?'free':'auto';ls('ln2:cam',CAMM);camBtn();if(CAMM!=='auto'){CAM.x=710;CAM.y=300;CAM.w=1420;}camApply(true);}
-function camBtn(){$('camM').textContent=CAMM==='auto'?'🎥 تلقائي':CAMM==='all'?'▣ الخط كله':'✋ يدوي';document.querySelector('#stage .scene').classList.toggle('free',CAMM==='free'&&!$('stage').classList.contains('th'));}
-$('camM').onclick=camNext;
-/* what deserves the camera now, by priority, with a sentence that says what is happening */
-function camWant(){const p=EX.plant,PL=L.PL,E=L.EL||{},K=L.kOn||{},sn=plantSensors(EX,PL).S,run=m=>runOf(L,m),mo=m=>(E.mot&&E.mot[m]||{}).mode,C=PL.cnt;
-  const W=(f,x,y,w,cap)=>({f,x,y,w,cap});
-  if(L.brk||E.mix||E.dcShort)return W('all',710,300,1420,(E.err&&E.err[0])||'القاطع Q0 مفصول');
-  if(PL.msg)return W('all',710,300,1420,PL.msg);
-  if(p.lift&&run('M4')){const up=(E.mot.M4.dir||0)>0;return W('lift',1240,BB-320*PL.lift-40,620,up?'المصعد يصعد (K3) حتى نهاية المشوار العلوية SQ2':'المصعد ينزل (K4) حتى SQ1');}
-  if(p.lift&&PL.lift>0.98&&PL.liftBox)return W('lift',1240,BB-330,620,'المصعد فوق (SQ2): الصندوق يُدفع إلى الرف');
-  if(p.boxes&&K.Y3){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.fill)<10);return W('fill',GX.fill,430,560,'التعبئة: الصمام Y3 مفتوح · '+(b?Math.round(Math.min(1,b.fill)*100):0)+'%');}
-  if(p.boxes&&run('M2'))return W('box',1010,470,700,'سير الصناديق M2 ينقل الصندوق الممتلئ إلى التعبئة ويأتي صندوق فارغ تحت المزلق');
-  if(p.press&&(PL.press>0.03||sn.B1)){return W('press',GX.press,240,560,PL.press>0.97?'المكبس تحت (1B2): يضغط القطعة':PL.press>0.03?(K.Y1?'المكبس ينزل (Y1) والسير واقف':'المكبس يرتفع حتى 1B1'):'B1 كشف قطعة تحت المكبس: السير يقف');}
-  if(p.sort&&(PL.gate>0.05||sn.B2||PL.pieces.some(q=>q.st==='rej')))return W('gate',GX.gate,330,640,PL.gate>0.05?'بوابة الطرد مفتوحة (Y2): القطعة المعيبة تسقط في المرفوضات':'الحساس اللوني B2 كشف قطعة معيبة (حمراء)');
-  if(p.boxes&&PL.pieces.some(q=>q.st==='chute')){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.chute)<22);return W('chute',GX.chute-20,420,600,'B4 يعدّ القطعة الساقطة في الصندوق · '+(b?Math.min(5,b.n+1):'?')+' من 5');}
-  if(p.mixer&&mo('M3')==='star')return W('mix',220,150,620,'الخلاط M3 يبدأ نجمة (KM + KY) لتخفيف تيار البدء');
-  if(p.mixer&&mo('M3')==='delta'&&L.h.starT==null&&PL.mixDelta<4)return W('mix',220,150,620,'الخلاط تحول إلى دلتا (KM + KD) بقدرته الكاملة');
-  if(p.belt&&run('M1')){const ps=PL.pieces.filter(q=>q.st==='belt');const lead=ps.length?ps.reduce((a,q)=>q.x>a?q.x:a,0):400;return W('belt',Math.max(420,Math.min(lead,720)),260,900,'السير الناقل M1 يحمل القطع'+(p.press?' إلى المكبس':p.boxes?' إلى الصناديق':''));}
-  if(p.mixer&&run('M3'))return W('mix',220,150,620,'الخلاط يعمل دلتا ويغذي السير بالقطع');
-  const st=EX.in.includes('S1')?'S1':'S2';return W('all',710,300,1420,'الخط متوقف: اضغط '+st+' للتشغيل');}
-function camApply(snap){const sv=$('sc'),th=$('stage').classList.contains('th');let asp=1420/600;
-  if(th){const r=document.querySelector('#stage .scene').getBoundingClientRect();if(r.width>50&&r.height>50)asp=r.width/r.height;}
-  let T={x:710,y:300,w:1420,cap:''};
-  if(CAMM==='auto'){const w=camWant(),now=L.t;if(w.f!==CAM.f){if(now-CAM.t0>2.2||CAM.f==='all'||w.f==='all'&&now-CAM.t0>1.2){CAM.f=w.f;CAM.t0=now;CAM.tg=w;}}else CAM.tg=w;T=CAM.tg||w;}
-  else T.cap=camWant().cap;
-  $('capT').textContent=T.cap||'';
-  let w=T.w*(th&&CAMM==='auto'?1.25:1),h=w/asp;if(h>600&&CAMM!=='auto'){h=600;w=h*asp;}if(CAMM!=='auto'&&th){w=Math.max(1420,600*asp);h=w/asp;}
-  const k=snap?1:0.12;CAM.x+=(T.x-CAM.x)*k;CAM.y+=(T.y-CAM.y)*k;CAM.w+=(w-CAM.w)*k;
-  const cw=CAM.w,ch=cw/asp;let x=CAM.x-cw/2,y=CAM.y-ch/2;x=Math.max(Math.min(x,1420-cw),Math.min(0,1420-cw)/1);if(cw>=1420)x=(1420-cw)/2;y=Math.max(Math.min(y,600-ch),0);if(ch>=600)y=(600-ch)/2;
-  sv.setAttribute('viewBox',`${x.toFixed(1)} ${y.toFixed(1)} ${cw.toFixed(1)} ${ch.toFixed(1)}`);}
+/* ===================== view: pinch or buttons to zoom, drag to move; a caption says what is happening ===================== */
+const VB={x:0,y:0,w:1420};
+function asp(){const th=$('stage').classList.contains('th');if(th){const r=document.querySelector('#stage .scene').getBoundingClientRect();if(r.width>50&&r.height>50)return r.width/r.height;}return 1420/600;}
+function fitW(){const a=asp();return Math.max(1420,600*a);}
+function vbClamp(){const a=asp(),W=fitW();VB.w=Math.max(260,Math.min(W,VB.w));const h=VB.w/a;
+  if(VB.w>=1420)VB.x=(1420-VB.w)/2;else VB.x=Math.max(0,Math.min(1420-VB.w,VB.x));if(h>=600)VB.y=(600-h)/2;else VB.y=Math.max(0,Math.min(600-h,VB.y));}
+function camApply(){vbClamp();const h=VB.w/asp();$('sc').setAttribute('viewBox',`${VB.x.toFixed(1)} ${VB.y.toFixed(1)} ${VB.w.toFixed(1)} ${h.toFixed(1)}`);$('capT').textContent=capNow();}
+function zoomAt(f,cx,cy){const h=VB.w/asp();if(cx==null){cx=VB.x+VB.w/2;cy=VB.y+h/2;}const nw=Math.max(260,Math.min(fitW(),VB.w/f)),k=nw/VB.w;VB.x=cx-(cx-VB.x)*k;VB.y=cy-(cy-VB.y)*k;VB.w=nw;camApply();}
+function zFit(){VB.w=fitW();camApply();}
+/* screen point to scene point */
+function svgXY(e){const r=$('sc').getBoundingClientRect(),h=VB.w/asp();return{x:VB.x+(e.clientX-r.left)/r.width*VB.w,y:VB.y+(e.clientY-r.top)/r.height*h};}
+{const sv=$('sc'),P=new Map();let last=null;sv.style.touchAction='none';
+  sv.addEventListener('pointerdown',e=>{P.set(e.pointerId,{x:e.clientX,y:e.clientY});try{sv.setPointerCapture(e.pointerId);}catch(_){}last=null;});
+  sv.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;const r=sv.getBoundingClientRect(),s=VB.w/r.width,o=P.get(e.pointerId);
+    if(P.size===1){VB.x-=(e.clientX-o.x)*s;VB.y-=(e.clientY-o.y)*s;P.set(e.pointerId,{x:e.clientX,y:e.clientY});camApply();return;}
+    P.set(e.pointerId,{x:e.clientX,y:e.clientY});const [a,b]=[...P.values()],d=Math.hypot(a.x-b.x,a.y-b.y),m={clientX:(a.x+b.x)/2,clientY:(a.y+b.y)/2};
+    if(last){const p=svgXY(m);zoomAt(d/last,p.x,p.y);}last=d;});
+  const up=e=>{P.delete(e.pointerId);last=null;};sv.addEventListener('pointerup',up);sv.addEventListener('pointercancel',up);
+  sv.addEventListener('wheel',e=>{e.preventDefault();const p=svgXY(e);zoomAt(e.deltaY<0?1.15:1/1.15,p.x,p.y);},{passive:false});
+  sv.addEventListener('dblclick',e=>{const p=svgXY(e);if(VB.w<fitW()-1)zFit();else zoomAt(2.2,p.x,p.y);});}
+$('zIn').onclick=()=>zoomAt(1.35);$('zOut').onclick=()=>zoomAt(1/1.35);$('zFit').onclick=zFit;
+/* one sentence about what the line is doing now */
+function capNow(){const p=EX.plant,PL=L.PL,E=L.EL||{},K=L.kOn||{},sn=plantSensors(EX,PL).S,run=m=>runOf(L,m),mo=m=>(E.mot&&E.mot[m]||{}).mode;
+  if(L.brk||E.mix||E.dcShort)return (E.err&&E.err[0])||'القاطع Q0 مفصول';if(PL.msg)return PL.msg;
+  if(p.lift&&run('M4'))return (E.mot.M4.dir||0)>0?'المصعد يصعد (K3) حتى SQ2':'المصعد ينزل (K4) حتى SQ1';
+  if(p.boxes&&K.Y3){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.fill)<10);return 'التعبئة: Y3 مفتوح · '+(b?Math.round(Math.min(1,b.fill)*100):0)+'%';}
+  if(p.boxes&&run('M2'))return 'سير الصناديق M2 ينقل الصندوق الممتلئ إلى التعبئة';
+  if(p.press&&(PL.press>0.03||sn.B1))return PL.press>0.97?'المكبس تحت (1B2): يضغط القطعة':PL.press>0.03?(K.Y1?'المكبس ينزل (Y1) والسير واقف':'المكبس يرتفع حتى 1B1'):'B1 كشف قطعة تحت المكبس: السير يقف';
+  if(p.sort&&(PL.gate>0.05||sn.B2))return PL.gate>0.05?'بوابة الطرد مفتوحة (Y2): القطعة المعيبة تسقط':'B2 كشف قطعة معيبة';
+  if(p.boxes&&PL.pieces.some(q=>q.st==='chute')){const b=PL.boxes.find(b=>b.st==='belt'&&Math.abs(b.x-GX.chute)<22);return 'B4 يعدّ القطعة · '+(b?Math.min(5,b.n+1):'?')+' من 5';}
+  if(p.mixer&&mo('M3')==='star')return 'الخلاط يبدأ نجمة (KM + KY)';
+  if(p.belt&&run('M1'))return 'السير الناقل M1 يعمل';if(p.mixer&&run('M3'))return 'الخلاط يعمل دلتا (KM + KD)';
+  return 'الخط متوقف: اضغط '+(EX.in.includes('S1')?'S1':'S2')+' للتشغيل';}
 /* full screen, sideways, like a video */
-function thOn(){const st=$('stage');st.classList.add('th');document.body.style.overflow='hidden';camBtn();$('thB').textContent='✕ خروج';
-  const fs=st.requestFullscreen||st.webkitRequestFullscreen;if(fs){try{const pr=fs.call(st,{navigationUI:'hide'});if(pr&&pr.then)pr.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(_){}}).catch(()=>{});}catch(_){}}
-  CAM.w=1420;camApply(true);}
+function thOn(){const st=$('stage');st.classList.add('th');document.body.style.overflow='hidden';$('thB').textContent='✕ خروج';
+  const fs=st.requestFullscreen||st.webkitRequestFullscreen;if(fs){try{const pr=fs.call(st,{navigationUI:'hide'});if(pr&&pr.then)pr.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(_){}setTimeout(zFit,200);}).catch(()=>{});}catch(_){}}
+  setTimeout(zFit,60);}
 function thOff(){const st=$('stage');st.classList.remove('th');document.body.style.overflow='';$('thB').textContent='⛶ عرض';try{screen.orientation&&screen.orientation.unlock&&screen.orientation.unlock();}catch(_){}
-  if(document.fullscreenElement||document.webkitFullscreenElement){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document);}catch(_){}}camBtn();camApply(true);}
+  if(document.fullscreenElement||document.webkitFullscreenElement){try{(document.exitFullscreen||document.webkitExitFullscreen).call(document);}catch(_){}}setTimeout(zFit,60);}
+function camNext(){zFit();}
 $('thB').onclick=()=>{$('stage').classList.contains('th')?thOff():thOn();};
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&$('stage').classList.contains('th'))thOff();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('stage').classList.contains('th'))thOff();});
-camBtn();
+addEventListener('resize',()=>camApply());
 /* ===================== the exercise sheet ===================== */
 function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${esc(ex.d)}</p>`;
 
