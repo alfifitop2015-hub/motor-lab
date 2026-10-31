@@ -108,7 +108,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
     <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: الجهاز القديم الكلاسيكي، يُبرمج ببرنامج Step 7 (CPU 317-2 PN/DP مع SM321 وSM322)"><b>S7-300</b><small>CPU 317 · قديم</small></button><button id="m1200" title="SIMATIC S7-1200: الجهاز الحديث، يُبرمج ببرنامج TIA Portal (CPU 1214C)"><b>S7-1200</b><small>CPU 1214C · حديث</small></button></div>
     <details class="mm"><summary title="خيارات التمرين">⋯</summary><div><button class="btn red" id="bClear">🧹 امسح وابدأ بنفسي</button><button class="btn" id="bReady">✨ أرجعه جاهزًا</button></div></details>
   </div>
-  <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="ex">📋 التمرين</button></div>
+  <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="ex">📖 الشرح</button></div>
   <div class="msg" id="msg"></div>
 </div>
 <div class="pane" id="p-line">
@@ -835,7 +835,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793440108';
+const LNV='1793440342';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
