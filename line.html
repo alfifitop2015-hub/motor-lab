@@ -566,7 +566,9 @@ setInterval(()=>{const now=performance.now();acc+=Math.min(0.5,(now-lastT)/1000)
   while(acc>=0.05&&n<8){const mon=MON&&TAB==='prog'?[]:null;lineTick(L,0.05,mon);if(mon)MONS=mon;acc-=0.05;n++;}
   if(TAB==='line')renderLine();else if(TAB==='prog'&&MON)monUpd();},50);
 /* ===================== wiring board ===================== */
-const DSZ={sup:[170,90],ps:[160,96],pbno:[78,100],pbnc:[78,100],ls:[78,100],pnp:[96,100],k:[132,150],ol:[132,130],mot:[150,130],sol:[90,100]};
+const DSZ={sup:[110,180],ps:[120,242],pbno:[86,132],pbnc:[86,132],ls:[110,122],pnp:[100,132],k:[140,195],ol:[140,140],mot:[165,174],sol:[86,132]};
+/* real photos of the devices; small ones keep a terminal strip under the photo */
+const DIMG={sup:'d-sup',ps:'d-ps',pbno:'d-pbno',pbnc:'d-pbnc',ls:'d-ls',pnp:'d-pnp',k:'d-k',ol:'d-ol',mot:'d-mot',sol:'d-sol'},DSMALL=['pbno','pbnc','ls','pnp','sol'];
 let LAY=null;
 /* devices in rows, with a wiring duct above and below every row and one down the left side, as in a real panel */
 const DG=64,DH=26,VX=26;
@@ -583,14 +585,14 @@ function layout(){const D=devList(EX),pos={},W=1180,rows=[];let x=60,y=20+DG,rh=
 /* where each terminal sits */
 function tPos(k){const [d,n]=k.split('.'),P=LAY.pos[d];if(!P)return null;const dv=devList(EX).find(x=>x.id===d);const t=d==='PLC'?'plc':dv&&dv.t;
   const at=(fx,fy)=>({x:P.x+fx,y:P.y+fy});
-  switch(t){case'sup':return at(40+['L1','L2','L3'].indexOf(n)*45,P.h-16);
-    case'ps':return at(n[0]==='L'?(n==='L+'?30:62):(n==='M'?100:132),P.h-16);
-    case'pbno':case'ls':return at(n==='13'?22:56,P.h-14);case'pbnc':return at(n==='11'?22:56,P.h-14);
-    case'pnp':return at(18+['BN','BK','BU'].indexOf(n)*30,P.h-14);
-    case'sol':return at(n==='A1'?24:66,P.h-14);
-    case'k':{const top=['A1','1','3','5'],bot=['A2','2','4','6'];return top.includes(n)?at(18+top.indexOf(n)*32,16):at(18+bot.indexOf(n)*32,P.h-16);}
-    case'ol':{const top=['1','3','5','95'],bot=['2','4','6','96'];return top.includes(n)?at(18+top.indexOf(n)*32,16):at(18+bot.indexOf(n)*32,P.h-16);}
-    case'mot':{const top=['W2','U2','V2'],bot=['U1','V1','W1'];return top.includes(n)?at(30+top.indexOf(n)*45,56):at(30+bot.indexOf(n)*45,100);}
+  switch(t){case'sup':return at([25,57,90][['L1','L2','L3'].indexOf(n)],161);
+    case'ps':return at([20,47,73,100][['L+','L+2','M','M2'].indexOf(n)],194);
+    case'pbno':case'ls':return at(n==='13'?22:P.w-22,P.h-14);case'pbnc':return at(n==='11'?22:P.w-22,P.h-14);
+    case'pnp':return at(20+['BN','BK','BU'].indexOf(n)*30,P.h-14);
+    case'sol':return at(n==='A1'?22:P.w-22,P.h-14);
+    case'k':{const K={A1:[124,58],1:[37,27],3:[70,27],5:[107,27],A2:[124,149],2:[37,174],4:[75,174],6:[110,174]}[n];return K?at(...K):null;}
+    case'ol':{const K={1:[38,12],3:[70,12],5:[105,12],95:[44,93],96:[66,93],2:[38,130],4:[68,130],6:[107,130]}[n];return K?at(...K):null;}
+    case'mot':{const K={U1:[56,64],V1:[88,64],W1:[120,64],W2:[56,94],U2:[88,94],V2:[120,94]}[n];return K?at(...K):null;}
     case'plc':{const top=['L+','M','DIM',...usedI(EX).map(i=>'I'+i)],bot=['DOL','DOM',...usedQ(EX).map(i=>'Q'+i)];const sp=(P.w-30)/Math.max(bot.length,top.length);
       return top.includes(n)?at(22+top.indexOf(n)*sp,22):at(22+bot.indexOf(n)*((P.w-30)/Math.max(bot.length,top.length)),P.h-20);}}
   return null;}
@@ -600,22 +602,22 @@ function wColor(w,u){const a=w[0];if(isAC(a)){const r=u.f(a);return r===u.f('SUP
 function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:${w||700} ${s}px sans-serif;fill:${c||'#1c2833'}">${t}</text>`;let s=`<g transform="translate(${P.x} ${P.y})">`;
   const box=(f,st)=>`<rect width="${P.w}" height="${P.h}" rx="8" fill="${f}" stroke="${st||'#6d7780'}" stroke-width="1.5"/>`;
   const lab=(t,sub)=>T(P.w/2,18,t,12)+(sub?T(P.w/2,32,sub,9,'#4b5966','middle',600):'');
-  switch(d.t){case'sup':s+=box('#e9e4d8')+lab('Q0 · 3~ 400V','القاطع الرئيسي');break;
-    case'ps':s+=box('#cfd6dc')+lab(MODEL==='300'?'PS 307 5A':'مصدر 24V DC','دخل 230V · خرج 24V');break;
-    case'pbno':case'pbnc':s+=box('#e7ebef')+`<circle cx="${P.w/2}" cy="44" r="16" fill="${d.t==='pbno'?'#2aa84a':'#d8322b'}" stroke="#333" stroke-width="2"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,74,d.t==='pbno'?'NO':'NC',9,'#4b5966');break;
-    case'ls':s+=box('#e7ebef')+`<rect x="${P.w/2-14}" y="30" width="28" height="30" rx="4" fill="#d9cfa9" stroke="#555"/><circle cx="${P.w/2}" cy="28" r="7" fill="#999" stroke="#444"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,74,'NO',9,'#4b5966');break;
-    case'pnp':s+=box('#e7ebef')+`<rect x="${P.w/2-10}" y="26" width="20" height="40" rx="5" fill="#4a6fa5" stroke="#223"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,78,'PNP',9,'#4b5966');break;
-    case'sol':s+=box('#e7ebef')+`<rect x="${P.w/2-18}" y="26" width="36" height="40" rx="4" fill="#3b4652"/><path d="M${P.w/2-12} 36h24M${P.w/2-12} 46h24M${P.w/2-12} 56h24" stroke="#d9a05b" stroke-width="3"/>`+T(P.w/2,18,d.id,12)+T(P.w/2,80,'ملف 24V',9,'#4b5966');break;
-    case'k':s+=box('#e3e5df')+T(P.w/2,P.h/2-4,d.id,14)+T(P.w/2,P.h/2+12,OUT[OUTI[d.id]]?OUT[OUTI[d.id]][1]:'',8.5,'#4b5966','middle',600);break;
-    case'ol':s+=box('#e3e5df')+T(P.w/2,P.h/2,d.id+' أوفرلود',12)+(L.olTrip[d.id]?T(P.w/2,P.h/2+16,'فاصل',10,'#c42b22'):'');break;
-    case'mot':s+=box('#cfd6dc')+T(P.w/2,18,d.id,13)+T(P.w/2,32,MOT[d.id].n,8.5,'#4b5966','middle',600)+`<rect x="10" y="40" width="${P.w-20}" height="78" rx="6" fill="#2f353b"/>`;break;
-    case'plc':{const M=PLCIMG[MODEL],ah=P.h-84,aw=Math.min(P.w-20,ah*M.w/M.h);s+=box('#e9edf0','#3c4650')+`<image href="${M.src}" x="${(P.w-aw)/2}" y="40" width="${aw}" height="${aw*M.h/M.w}" preserveAspectRatio="xMidYMid meet"/>`;}break;}
+  if(DIMG[d.t]){const sm=DSMALL.includes(d.t),ih=sm?P.h-30:P.h;
+    const sub={pbno:'NO',pbnc:'NC',ls:'NO',pnp:'PNP',sol:'24V',ps:MODEL==='300'?'PS 307':'24V DC',sup:'400V'}[d.t]||'';
+    const tip=d.t==='k'&&OUT[OUTI[d.id]]?OUT[OUTI[d.id]][1]:d.t==='mot'?MOT[d.id].n:'';
+    s+=box('#fff')+`<image href="img/${DIMG[d.t]}.jpg" x="1" y="1" width="${P.w-2}" height="${ih-2}" preserveAspectRatio="xMidYMid meet"/><rect width="${P.w}" height="${P.h}" rx="8" fill="none" stroke="#6d7780" stroke-width="1.5"/>`;
+    const bt=d.id+(sub?' · '+sub:''),bw=bt.length*6.6+12;
+    s+=`<g><rect x="3" y="3" width="${bw}" height="17" rx="4" fill="#1c2833" opacity=".86"/>`+T(9,15.5,esc(bt),10.5,'#fff','start')+(tip?`<title>${esc(tip)}</title>`:'')+`</g>`;
+    if(d.t==='mot')s+=`<rect x="3" y="${P.h-20}" width="${P.w-6}" height="17" rx="4" fill="#1c2833" opacity=".86"/>`+T(P.w/2,P.h-7.5,esc(MOT[d.id].n),9.5,'#fff');
+    if(d.t==='k'&&tip)s+=`<rect x="3" y="${P.h/2+4}" width="${P.w-6}" height="16" rx="4" fill="#fff" opacity=".9"/>`+T(P.w/2,P.h/2+15.5,esc(tip),9,'#1c2833');
+    if(d.t==='ol'&&L.olTrip[d.id])s+=`<rect x="${P.w/2-26}" y="${P.h/2-28}" width="52" height="20" rx="5" fill="#c42b22"/>`+T(P.w/2,P.h/2-13.5,'فاصل',11,'#fff');}
+  else if(d.t==='plc'){const M=PLCIMG[MODEL],ah=P.h-84,aw=Math.min(P.w-20,ah*M.w/M.h);s+=box('#e9edf0','#3c4650')+`<image href="${M.src}" x="${(P.w-aw)/2}" y="40" width="${aw}" height="${aw*M.h/M.w}" preserveAspectRatio="xMidYMid meet"/>`;}
   s+='</g>';
   (d.t==='plc'?plcTerms(EX):TERM[d.t]).forEach(n=>{if(d.t==='ps'&&(n==='L+2'||n==='M2'))0;const k=d.id+'.'+n,p=tPos(k);if(!p)return;const pend=PEND===k;
-    const lb=d.t==='plc'?tName(k).replace('PLC:',''):d.t==='ps'?n.replace('2',''):n;const up=(d.t==='k'||d.t==='ol')&&p.y-P.y<30||d.t==='plc'&&p.y-P.y<30;
+    const lb=d.t==='plc'?tName(k).replace('PLC:',''):d.t==='ps'?n.replace('2',''):n;const up=(d.t==='k'||d.t==='ol'||d.t==='plc')&&p.y-P.y<30||d.t==='mot'&&p.y-P.y>80;
     const fill=d.t==='pnp'?{BN:'#7a4a22',BK:'#111',BU:'#1f5fbf'}[n]:'#c9ced3';
     s+=`<g class="term" data-t="${k}"><circle cx="${p.x}" cy="${p.y}" r="14" fill="transparent"/><circle class="tc" cx="${p.x}" cy="${p.y}" r="8" fill="${pend?'#fff1c2':fill}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><circle cx="${p.x}" cy="${p.y}" r="2.6" fill="#333"/>`+
-      T(p.x,up?p.y+22:p.y-13,esc(lb),d.t==='plc'?8.5:9.5,'#0b1d33','middle',700)+`</g>`;});
+      `<text x="${d.t==='mot'?p.x+10:p.x}" y="${d.t==='mot'?p.y+4:up?p.y+22:p.y-13}" text-anchor="${d.t==='mot'?'start':'middle'}" style="font:800 ${d.t==='plc'?8.5:9.5}px sans-serif;fill:#0b1d33;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round">${esc(lb)}</text>`+`</g>`;});
   return s;}
 /* which duct a terminal's wire goes into: up from the upper terminals, down from the lower ones */
 function tDuct(k){const P=LAY.pos[k.split('.')[0]],p=tPos(k);if(!P||!p)return 0;return p.y<P.y+P.h/2?P.r:P.r+1;}
@@ -827,7 +829,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793420085';
+const LNV='1793420737';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
