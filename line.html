@@ -566,10 +566,10 @@ setInterval(()=>{const now=performance.now();acc+=Math.min(0.5,(now-lastT)/1000)
   while(acc>=0.05&&n<8){const mon=MON&&TAB==='prog'?[]:null;lineTick(L,0.05,mon);if(mon)MONS=mon;acc-=0.05;n++;}
   if(TAB==='line')renderLine();else if(TAB==='prog'&&MON)monUpd();},50);
 /* ===================== wiring board ===================== */
-const DSZ={sup:[110,180],ps:[120,242],pbno:[86,132],pbnc:[86,132],ls:[110,122],pnp:[100,132],k:[140,195],ol:[140,140],mot:[165,174],sol:[86,132]};
+const DSZ={sup:[110,180],ps:[120,242],pbno:[100,140],pbnc:[100,140],ls:[112,132],pnp:[104,140],k:[140,195],ol:[140,140],mot:[165,174],sol:[100,140]};
 /* real photos of the devices; small ones keep a terminal strip under the photo */
 const DIMG={sup:'d-sup',ps:'d-ps',pbno:'d-pbno',pbnc:'d-pbnc',ls:'d-ls',pnp:'d-pnp',k:'d-k',ol:'d-ol',mot:'d-mot',sol:'d-sol'},DSMALL=['pbno','pbnc','ls','pnp','sol'];
-let LAY=null;
+let LAY=null,OVL='';
 /* devices in rows, with a wiring duct above and below every row and one down the left side, as in a real panel */
 const DG=64,DH=26,VX=26;
 function layout(){const D=devList(EX),pos={},W=1180,rows=[];let x=60,y=20+DG,rh=0,r=-1;
@@ -603,13 +603,14 @@ function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="$
   const box=(f,st)=>`<rect width="${P.w}" height="${P.h}" rx="8" fill="${f}" stroke="${st||'#6d7780'}" stroke-width="1.5"/>`;
   const lab=(t,sub)=>T(P.w/2,18,t,12)+(sub?T(P.w/2,32,sub,9,'#4b5966','middle',600):'');
   if(DIMG[d.t]){const sm=DSMALL.includes(d.t),ih=sm?P.h-30:P.h;
-    const sub={pbno:'NO',pbnc:'NC',ls:'NO',pnp:'PNP',sol:'24V',ps:MODEL==='300'?'PS 307':'24V DC',sup:'400V'}[d.t]||'';
-    const tip=d.t==='k'&&OUT[OUTI[d.id]]?OUT[OUTI[d.id]][1]:d.t==='mot'?MOT[d.id].n:'';
     s+=box('#fff')+`<image href="img/${DIMG[d.t]}.jpg" x="1" y="1" width="${P.w-2}" height="${ih-2}" preserveAspectRatio="xMidYMid meet"/><rect width="${P.w}" height="${P.h}" rx="8" fill="none" stroke="#6d7780" stroke-width="1.5"/>`;
-    const bt=d.id+(sub?' · '+sub:''),bw=bt.length*6.6+12;
-    s+=`<g><rect x="3" y="3" width="${bw}" height="17" rx="4" fill="#1c2833" opacity=".86"/>`+T(9,15.5,esc(bt),10.5,'#fff','start')+(tip?`<title>${esc(tip)}</title>`:'')+`</g>`;
-    if(d.t==='mot')s+=`<rect x="3" y="${P.h-20}" width="${P.w-6}" height="17" rx="4" fill="#1c2833" opacity=".86"/>`+T(P.w/2,P.h-7.5,esc(MOT[d.id].n),9.5,'#fff');
-    if(d.t==='k'&&tip)s+=`<rect x="3" y="${P.h/2+4}" width="${P.w-6}" height="16" rx="4" fill="#fff" opacity=".9"/>`+T(P.w/2,P.h/2+15.5,esc(tip),9,'#1c2833');
+    /* plain explanation on every device: what it is (line 1) and what it does on this line (line 2) */
+    const typ={sup:'قاطع رئيسي 3 أطوار',ps:'مصدر تغذية 24V',pbno:'ضاغط مفتوح (NO)',pbnc:'ضاغط مغلق (NC)',ls:'مفتاح نهاية مشوار',pnp:'حساس تقاربي PNP',sol:'ملف صمام هوائي 24V',k:'كونتاكتور',ol:'أوفرلود حراري',mot:'محرك 3 أطوار'}[d.t];
+    const mOf=Object.keys(MOT).find(m=>MOT[m].f===d.id);
+    const fn=INI[d.id]!=null?IN[INI[d.id]][1]:OUTI[d.id]!=null?OUT[OUTI[d.id]][1]:d.t==='ol'?'حماية '+(mOf?MOT[mOf].n:'المحرك'):d.t==='mot'?MOT[d.id].n:d.t==='sup'?'يغذي المحركات 400V':d.t==='ps'?'يغذي الـ PLC والحساسات':'';
+    const sy=sm?ih-32:{sup:92,ps:58,k:P.h/2-4,ol:39,mot:P.h-32}[d.t],fit=(x,y,t,f,c,wt)=>{const est=t.length*f*.52,av=P.w-14;return `<text x="${x}" y="${y}" text-anchor="middle" direction="rtl" style="font:${wt} ${f}px sans-serif;fill:${c}"${est>av?` textLength="${av}" lengthAdjust="spacingAndGlyphs"`:''}>${esc(t)}</text>`;};
+    OVL+=`<g pointer-events="none" transform="translate(${P.x} ${P.y})"><rect x="3" y="${sy}" width="${P.w-6}" height="${fn?30:18}" rx="4" fill="#fff" opacity=".93" stroke="#9aa5ae" stroke-width=".6"/>`+fit(P.w/2,sy+12.5,typ,9.5,'#0b1d33',800)+(fn?fit(P.w/2,sy+25,fn,8.5,'#3c5a7a',700):'')+`</g>`;
+    s+=`<g><rect x="3" y="3" width="${d.id.length*7.4+12}" height="17" rx="4" fill="#1c2833" opacity=".86"/>`+T(9,15.5,esc(d.id),10.5,'#fff','start')+`<title>${esc(typ+(fn?' — '+fn:''))}</title></g>`;
     if(d.t==='ol'&&L.olTrip[d.id])s+=`<rect x="${P.w/2-26}" y="${P.h/2-28}" width="52" height="20" rx="5" fill="#c42b22"/>`+T(P.w/2,P.h/2-13.5,'فاصل',11,'#fff');}
   else if(d.t==='plc'){const M=PLCIMG[MODEL],ah=P.h-84,aw=Math.min(P.w-20,ah*M.w/M.h);s+=box('#e9edf0','#3c4650')+`<image href="${M.src}" x="${(P.w-aw)/2}" y="40" width="${aw}" height="${aw*M.h/M.w}" preserveAspectRatio="xMidYMid meet"/>`;}
   s+='</g>';
@@ -649,7 +650,7 @@ function renderBoard(){if(!L)return;layout();const u=staticNets();const D=LAY.du
       stubs+=`<path d="M${p.x} ${p.y}L${x} ${p.y+(up?-9:9)}V${y2}" fill="none" stroke="${c}" stroke-width="3" stroke-linejoin="round"/><path d="M${x} ${p.y}V${y2}" stroke="transparent" stroke-width="12" data-w="${i}" style="cursor:pointer"/>`;
       const tag=esc(tName(o).replace('مصدر 24V:','24V ')),ty=up?y2+3:y2-3,len=Math.min(8+tag.length*4.3,Math.abs(p.y-y2)-12);
       if(len>14)stubs+=`<g transform="translate(${x} ${ty}) rotate(-90)" pointer-events="none"><rect x="${up?-len:0}" y="-4.5" width="${len}" height="9" rx="2" fill="#fff" stroke="#9aa5ae" stroke-width=".6"/><text x="${up?-len/2:len/2}" y="3" text-anchor="middle" style="font:700 6.6px sans-serif;fill:#22303c">${tag}</text></g>`;});});
-  let s=base+inner+cover;devList(EX).forEach(d=>{s+=devSVG(d);});s+=stubs+sel;
+  OVL='';let s=base+inner+cover;devList(EX).forEach(d=>{s+=devSVG(d);});s+=stubs+OVL+sel;
   const sv=$('bd');sv.setAttribute('viewBox',`0 0 ${W} ${LAY.H}`);sv.setAttribute('width',W*ZOOM);sv.setAttribute('height',LAY.H*ZOOM);sv.innerHTML=s;$('wDel').disabled=WSEL==null;const all=COV.size>=D.length+1;$('wFull').textContent=all?'🔩 تركيب كل الأغطية':'🔧 فك كل الأغطية';}
 $('bd').addEventListener('click',e=>{const t=e.target.closest('[data-t]'),w=e.target.closest('[data-w]'),dc=e.target.closest('[data-duct]');
   if(dc&&!t&&!w){const id=dc.dataset.duct;if(COV.has(id)){COV.delete(id);say('رُكّب غطاء المجرى');}else{COV.add(id);say('فُك غطاء المجرى: الأسلاك ظاهرة داخله. اضغط المجرى مرة أخرى لتركيب الغطاء');}covSave();renderBoard();return;}
@@ -834,7 +835,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793437512';
+const LNV='1793440108';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
