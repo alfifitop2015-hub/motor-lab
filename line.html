@@ -58,7 +58,9 @@ button,select,input{font:inherit;color:inherit}
 .chips span{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.82rem}
 .chips .ok{color:var(--ok);border-color:var(--ok)}.chips .bad{color:var(--warn);border-color:var(--warn)}
 .goals{padding:4px 12px}.goals li{font-size:.9rem;margin:2px 0;list-style:none}.goals ul{padding:0;margin:4px 0}
-.plcv{direction:ltr;padding:4px 10px;overflow-x:auto}.plcv svg{display:block;max-width:760px;width:100%;height:auto}
+.plcv{direction:ltr;padding:4px 10px;overflow-x:auto}.plcv svg{display:block;max-width:760px;width:100%;height:auto;border-radius:8px}
+.plgs{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0;direction:ltr;font-size:.75rem}.plg{border:1px solid var(--line);border-radius:6px;padding:1px 5px;background:var(--chip)}.plg b{color:var(--s7)}.plg.on{background:#d7f9dd;border-color:#3cbf5a}.plgsep{width:12px}
+.plccap{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.85rem;padding:4px 2px;direction:rtl}
 .btn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:6px 10px;cursor:pointer;white-space:nowrap;font-weight:700;font-size:.86rem}
 .btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.s7{background:var(--s7);color:#fff;border-color:var(--s7)}.btn.red{color:var(--warn)}
 .btn:disabled{opacity:.45}
@@ -103,7 +105,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
   </div>
   <div class="bar2">
     <select id="exSel" aria-label="التمرين"></select>
-    <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: الجهاز القديم الكلاسيكي، يُبرمج ببرنامج Step 7 (CPU 314 مع DI16 وDO16)"><b>S7-300</b><small>CPU 314 · قديم</small></button><button id="m1200" title="SIMATIC S7-1200: الجهاز الحديث، يُبرمج ببرنامج TIA Portal (CPU 1214C DC/DC/DC)"><b>S7-1200</b><small>CPU 1214C · حديث</small></button></div>
+    <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: الجهاز القديم الكلاسيكي، يُبرمج ببرنامج Step 7 (CPU 317-2 PN/DP مع SM321 وSM322)"><b>S7-300</b><small>CPU 317 · قديم</small></button><button id="m1200" title="SIMATIC S7-1200: الجهاز الحديث، يُبرمج ببرنامج TIA Portal (CPU 1214C)"><b>S7-1200</b><small>CPU 1214C · حديث</small></button></div>
     <details class="mm"><summary title="خيارات التمرين">⋯</summary><div><button class="btn red" id="bClear">🧹 امسح وابدأ بنفسي</button><button class="btn" id="bReady">✨ أرجعه جاهزًا</button></div></details>
   </div>
   <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="ex">📋 التمرين</button></div>
@@ -538,22 +540,24 @@ function renderLine(){$('sc').innerHTML=scene();camApply();const E=L.EL||{};let 
   document.querySelectorAll('#ops [data-pb],#tbar [data-pb]').forEach(b=>b.classList.toggle('dn',L.press.has(b.dataset.pb)));
   const n=EX.goals.filter(k=>L.g[k]).length;$('capG').textContent=n===EX.goals.length?'🎉 اكتمل التمرين':'✅ '+n+' / '+EX.goals.length;}
 /* ---------- the PLC as it looks in the workshop: S7-300 rack or S7-1200 compact CPU ---------- */
-function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L.Q;const T=(x,y,t,s,c,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:700 ${s}px sans-serif;fill:${c}">${t}</text>`;
-  const led=(x,y,on,c)=>`<rect x="${x}" y="${y}" width="9" height="6" rx="1" fill="${on?c:'#2e3338'}"/>`;
-  let s='';
-  if(MODEL==='300'){s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="6" y="20" width="628" height="12" fill="#8c949b"/>`;
-    s+=`<text x="320" y="14" text-anchor="middle" style="font:700 11px sans-serif;fill:#1c2833">S7-300 (قديم) · النوع: CPU 314 + SM321 DI16 + SM322 DO16 · برنامج Step 7</text>`;const mod=(x,w,c,lab,sub)=>`<rect x="${x}" y="30" width="${w}" height="170" rx="3" fill="${c}" stroke="#55606a"/>${T(x+w/2,46,lab,10,'#fff')}${T(x+w/2,58,sub,8,'#e8eef3')}`;
-    s+=mod(10,70,'#6c7680','PS 307','5A')+`<rect x="22" y="70" width="46" height="20" rx="3" fill="${pw?'#39d353':'#2e3338'}"/>${T(45,84,'24V DC',8,'#111')}`;
-    s+=mod(84,120,'#6c7680','CPU 314','Step 7')+led(96,72,!pw?false:false,'#ff3b30')+T(122,78,'SF',8,'#fff','start')+led(96,88,run,'#39d353')+T(122,94,'RUN',8,'#fff','start')+led(96,104,pw&&!L.plcRun,'#ffcc00')+T(122,110,'STOP',8,'#fff','start');
-    s+=`<g class="rs" style="cursor:pointer" data-rs="1"><rect x="160" y="70" width="30" height="50" rx="4" fill="#2e3338"/><rect x="166" y="${L.plcRun?74:96}" width="18" height="20" rx="3" fill="#cfd6dc"/>${T(175,134,L.plcRun?'RUN':'STOP',9,'#fff')}</g>`;
-    s+=mod(208,200,'#4f5a64','SM 321','DI16 × DC24V');usedI(EX).forEach((i,j)=>{const d=IN[i],x=220+(j>>3)*92,y=72+(j&7)*15;s+=led(x,y,I[i],'#39d353')+T(x+14,y+6,'I'+(i>>3)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
-    s+=mod(412,200,'#4f5a64','SM 322','DO16 × DC24V');usedQ(EX).forEach((i,j)=>{const d=OUT[i],x=424+(j>>3)*92,y=72+(j&7)*15;s+=led(x,y,Q[i],'#39d353')+T(x+14,y+6,'Q'+((i>>3)+4)+'.'+(i&7),8,'#fff','start')+T(x+50,y+6,d[0],8,'#bfe3ff','start');});
-    s+='</svg>';}
-  else{s+=`<svg viewBox="0 0 640 210"><rect width="640" height="210" fill="#d9dee3"/><rect x="60" y="14" width="520" height="186" rx="6" fill="#76828c" stroke="#47525c" stroke-width="2"/><rect x="60" y="14" width="520" height="28" fill="#5c6872"/>${T(320,33,'S7-1200 (حديث) · النوع: CPU 1214C DC/DC/DC · برنامج TIA Portal',11,'#fff')}`;
-    s+=led(76,56,run,'#39d353')+T(90,62,'RUN/STOP',8,'#fff','start')+led(76,72,pw&&!L.plcRun,'#ffcc00')+T(90,78,'STOP',8,'#fff','start')+led(76,88,false,'#ff3b30')+T(90,94,'ERROR',8,'#fff','start');
-    s+=`<g style="cursor:pointer" data-rs="1"><rect x="76" y="108" width="70" height="26" rx="5" fill="#2e3338"/>${T(111,126,L.plcRun?'RUN ▸':'STOP ■',10,L.plcRun?'#39d353':'#ffcc00')}</g>`;
-    s+=T(330,58,'المداخل DI',9,'#e8eef3');{const U=usedI(EX),sp=Math.min(36,380/Math.max(1,U.length)),x0=375-U.length*sp/2;U.forEach((i,j)=>{const d=IN[i],x=x0+j*sp,y=66;s+=led(x,y,I[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});}
-    s+=T(330,130,'المخارج DQ',9,'#e8eef3');{const U=usedQ(EX),sp=Math.min(40,380/Math.max(1,U.length)),x0=375-U.length*sp/2;U.forEach((i,j)=>{const d=OUT[i],x=x0+j*sp,y=140;s+=led(x,y,Q[i],'#39d353')+T(x+4,y+18,(i>>3)+'.'+(i&7),7.5,'#fff')+T(x+4,y+29,d[0],7,'#bfe3ff');});}s+='</svg>';}
+/* the PLC as a photo of the real device, with its LEDs lit where they really are */
+const PLCIMG={'300':{src:'img/s7-300.jpg',w:1142,h:594},'1200':{src:'img/s7-1200.jpg',w:1186,h:550}};
+function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L.Q,M=PLCIMG[MODEL];
+  const led=(x,y,on,c,w,h)=>on?`<rect x="${x-(w||9)/2}" y="${y-(h||7)/2}" width="${w||9}" height="${h||7}" rx="1.5" fill="${c}" stroke="#fff" stroke-width=".8"/><rect x="${x-(w||9)/2-4}" y="${y-(h||7)/2-4}" width="${(w||9)+8}" height="${(h||7)+8}" rx="5" fill="${c}" opacity=".35"/>`:'';
+  const tag=(x,y,t,a)=>`<text x="${x}" y="${y}" text-anchor="${a||'middle'}" style="font:800 11px sans-serif;fill:#0b3d91;paint-order:stroke;stroke:#fff;stroke-width:3px">${t}</text>`;
+  let s=`<svg viewBox="0 0 ${M.w} ${M.h}"><image href="${M.src}" x="0" y="0" width="${M.w}" height="${M.h}"/>`;
+  if(MODEL==='300'){s+=led(72,128,pw,'#3cff5a',7,22);
+    s+=led(506,112,pw&&false,'#ff3b30')+led(506,152,pw,'#3cff5a')+led(506,192,run,'#3cff5a')+led(506,212,pw&&!L.plcRun,'#ffcc00');
+    /* mode selector RUN / STOP: tap it */
+    s+=`<g data-rs="1" style="cursor:pointer"><rect x="520" y="250" width="90" height="52" fill="transparent"/><rect x="538" y="${L.plcRun?258:272}" width="16" height="12" rx="2" fill="#ffcc00" opacity=".9"/></g>`;
+    usedI(EX).forEach(i=>{const by=i>>3,bit=i&7,y=(by?374:132)+bit*20.2;s+=led(664,y,I[i],'#3cff5a',8,7)+tag(733,y+4,IN[i][0]);});
+    usedQ(EX).forEach(i=>{const by=i>>3,bit=i&7,y=(by?374:132)+bit*20.2;s+=led(822,y,Q[i],'#3cff5a',8,7)+tag(891,y+4,OUT[i][0]);});}
+  else{s+=led(187.5,246.5,run,'#3cff5a',7,6)+led(187.5,246.5,pw&&!L.plcRun,'#ffcc00',7,6)+led(201,246.5,false,'#ff3b30',7,6);
+    s+=`<g data-rs="1" style="cursor:pointer"><rect x="165" y="232" width="70" height="110" fill="transparent"/></g>`;
+    usedI(EX).forEach(i=>{const x=i<8?431.5+i*13.6:552.5+(i-8)*13.7;s+=led(x,246.5,I[i],'#3cff5a',7,6);});
+    usedQ(EX).forEach(i=>{const x=i<8?431.5+i*13.6:552.5+(i-8)*13.7;s+=led(x,360,Q[i],'#3cff5a',7,6);});}
+  if(MODEL==='1200'){const ch=(a,n,on)=>`<span class="plg${on?' on':''}"><b>${a}</b> ${n}</span>`;s+=`</svg><div class="plgs">`+usedI(EX).map(i=>ch((i>>3?'b':'a')+'.'+(i&7),IN[i][0],I[i])).join('')+`<span class="plgsep"></span>`+usedQ(EX).map(i=>ch((i>>3?'b':'a')+'.'+(i&7),OUT[i][0],Q[i])).join('')+`</div><svg width="0" height="0">`;}
+  s+=`</svg><div class="plccap"><b>${MODEL==='300'?'S7-300 (قديم) · Step 7':'S7-1200 (حديث) · TIA Portal'}</b> · <button class="btn" data-rs="1">${L.plcRun?'■ STOP':'▸ RUN'}</button> <span>${!pw?'غير مغذى':L.plcRun?'RUN':'STOP'}</span></div>`;
   return s;}
 $('plcv').addEventListener('click',e=>{if(e.target.closest('[data-rs]')){L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');}});
 /* ---------- the clock ---------- */
@@ -605,7 +609,7 @@ function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="$
     case'k':s+=box('#e3e5df')+T(P.w/2,P.h/2-4,d.id,14)+T(P.w/2,P.h/2+12,OUT[OUTI[d.id]]?OUT[OUTI[d.id]][1]:'',8.5,'#4b5966','middle',600);break;
     case'ol':s+=box('#e3e5df')+T(P.w/2,P.h/2,d.id+' أوفرلود',12)+(L.olTrip[d.id]?T(P.w/2,P.h/2+16,'فاصل',10,'#c42b22'):'');break;
     case'mot':s+=box('#cfd6dc')+T(P.w/2,18,d.id,13)+T(P.w/2,32,MOT[d.id].n,8.5,'#4b5966','middle',600)+`<rect x="10" y="40" width="${P.w-20}" height="78" rx="6" fill="#2f353b"/>`;break;
-    case'plc':s+=box(MODEL==='300'?'#58636d':'#76828c','#3c4650')+T(P.w/2,P.h/2,MODEL==='300'?'S7-300 · CPU 314 + SM321 DI16 + SM322 DO16':'S7-1200 · CPU 1214C DC/DC/DC',13,'#fff')+T(P.w/2,P.h/2+18,'المداخل في الأعلى · المخارج في الأسفل',10,'#e3e9ee','middle',600);break;}
+    case'plc':s+=box(MODEL==='300'?'#58636d':'#76828c','#3c4650')+T(P.w/2,P.h/2,MODEL==='300'?'S7-300 · CPU 317-2 PN/DP + SM321 DI32 + SM322 DO32':'S7-1200 · CPU 1214C',13,'#fff')+T(P.w/2,P.h/2+18,'المداخل في الأعلى · المخارج في الأسفل',10,'#e3e9ee','middle',600);break;}
   s+='</g>';
   (d.t==='plc'?plcTerms(EX):TERM[d.t]).forEach(n=>{if(d.t==='ps'&&(n==='L+2'||n==='M2'))0;const k=d.id+'.'+n,p=tPos(k);if(!p)return;const pend=PEND===k;
     const lb=d.t==='plc'?tName(k).replace('PLC:',''):d.t==='ps'?n.replace('2',''):n;const up=(d.t==='k'||d.t==='ol')&&p.y-P.y<30||d.t==='plc'&&p.y-P.y<30;
@@ -728,7 +732,7 @@ $('nets').addEventListener('change',e=>{const t=e.target;if(t.dataset.nc!=null){
   else{const c=N.rows[SEL.r][SEL.c];if(!c)return;if(t.hasAttribute('data-ca'))c.a=t.value;if(t.hasAttribute('data-cn'))c.n=Math.max(0,Math.round(+t.value||0));}
   saveP();renderProg();});
 $('pAdd').onclick=()=>{EP.push(newNet());SEL={n:EP.length-1,r:0,c:0};saveP();renderProg();};
-$('pDl').onclick=()=>{const errs=progCheck(EP);if(errs.length){say(errs[0],1);return;}L.prog=clone(EP);L.P=plcNew();say('حُمّل البرنامج إلى '+(MODEL==='300'?'CPU 314':'CPU 1214C')+' ('+EP.length+' Network). الجهاز على '+(L.plcRun?'RUN':'STOP'));renderProg();};
+$('pDl').onclick=()=>{const errs=progCheck(EP);if(errs.length){say(errs[0],1);return;}L.prog=clone(EP);L.P=plcNew();say('حُمّل البرنامج إلى '+(MODEL==='300'?'CPU 317-2 PN/DP':'CPU 1214C')+' ('+EP.length+' Network). الجهاز على '+(L.plcRun?'RUN':'STOP'));renderProg();};
 $('pRun').onclick=()=>{L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');renderProg();};
 $('pMon').onclick=()=>{MON=!MON;renderProg();};$('pStl').onclick=()=>{STL=!STL;renderProg();};
 $('pClr').onclick=()=>{if(!confirm('مسح كل شبكات البرنامج في هذا التمرين؟'))return;EP=[newNet()];SEL=null;saveP();renderProg();};
@@ -799,7 +803,7 @@ addEventListener('resize',()=>camApply());
 /* ===================== the exercise sheet ===================== */
 function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${esc(ex.d)}</p>`;
 
-  h+=`<div class="note">${MODEL==='300'?'الجهاز المختار: <b>S7-300 القديم</b>، نوعه CPU 314 مع وحدة مداخل SM321 DI16 ووحدة مخارج SM322 DO16 (برنامج Step 7): المخارج من Q4.0، والمؤقت S_ODT والعداد S_CU، ويُعرض البرنامج بـ STL أيضًا.':'الجهاز المختار: <b>S7-1200 الحديث</b>، نوعه CPU 1214C DC/DC/DC: تغذية 24V DC، مداخل DC، مخارج DC ترانزستور (برنامج TIA Portal): العناوين %I و%Q، والمؤقت TON والعداد CTU.'} البرنامج يتحول تلقائيًا عند التبديل بينهما.</div>`;
+  h+=`<div class="note">${MODEL==='300'?'الجهاز المختار: <b>S7-300 القديم</b>، نوعه CPU 317-2 PN/DP مع وحدة مداخل SM321 DI32 ووحدة مخارج SM322 DO32 (برنامج Step 7): المخارج من Q4.0، والمؤقت S_ODT والعداد S_CU، ويُعرض البرنامج بـ STL أيضًا.':'الجهاز المختار: <b>S7-1200 الحديث</b>، نوعه CPU 1214C (برنامج TIA Portal): العناوين %I و%Q، والمؤقت TON والعداد CTU.'} البرنامج يتحول تلقائيًا عند التبديل بينهما.</div>`;
   h+=`<h3>جدول الرموز (المداخل والمخارج)</h3><table class="io"><tr><th>العنوان</th><th>الرمز</th><th>الوصف</th><th>النوع</th></tr>`;
   ex.in.forEach(n=>{const i=INI[n],d=IN[i];h+=`<tr><td class="a">${esc(dispA(IA(i)))}</td><td><b>${d[0]}</b></td><td>${esc(d[1])}</td><td>${{NO:'ضاغط مفتوح NO',NC:'ضاغط مغلق NC',PNP:'حساس PNP ثلاثي الأسلاك',LS:'نهاية مشوار NO',OL:'تلامسات 95-96 للأوفرلودات'}[d[2]]}</td></tr>`;});
   ex.out.forEach(n=>{const i=OUTI[n],d=OUT[i];h+=`<tr><td class="a">${esc(dispA(QA(i)))}</td><td><b>${d[0]}</b></td><td>${esc(d[1])}</td><td>${d[0][0]==='Y'?'ملف صمام هوائي 24V':'ملف كونتاكتور 24V'}</td></tr>`;});h+='</table>';
@@ -823,7 +827,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793418703';
+const LNV='1793419750';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
