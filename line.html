@@ -99,6 +99,39 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
    so the buttons under it stay in sight without scrolling */
 .top,.ops,.chips,.fold,.camb,.cap,.hint,#p-wire>.row,#p-prog>.row,.rep{zoom:var(--ui,1)}
 @media (min-width:900px) and (min-height:561px){#p-line.on #stage:not(.th) .scene svg{width:min(100%,calc((100vh - var(--toph,150px) - 160px) * 2.3667));margin:0 auto}}
+/* control room: a WinCC-style operator station (ISA-101 grey screens, colour only where it means something) */
+.hmon{background:#0b0e11;border-radius:10px;padding:12px 12px 4px;box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.hstand{height:14px;width:120px;margin:4px auto 0;background:#0b0e11;border-radius:0 0 8px 8px}
+.hmi2{position:relative;background:#c9cdd1;color:#1d2a36;font-size:.85rem;display:flex;flex-direction:column;min-height:560px;border:1px solid #6b7580}
+.hh{display:flex;align-items:center;gap:6px;background:#3a4652;color:#fff;padding:4px 6px;flex-wrap:wrap}
+.hlogo{background:#0b3d91;border-radius:4px;padding:2px 8px;font:800 .8rem sans-serif;direction:ltr}
+.htitle{font-weight:800;min-width:120px}
+.hal{flex:1 1 220px;min-width:160px;border-radius:4px;padding:3px 8px;font-weight:800;font-size:.8rem;background:#56626e;color:#dfe5ea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hal.p1{background:#c62828;color:#fff}.hal.p2{background:#f9a825;color:#1b1400}.hal.p3{background:#1f5fbf;color:#fff}.hal.blink{animation:alb 1s steps(2) infinite}
+.hbt{border:1px solid #20282f;background:linear-gradient(#eef0f2,#b9c0c6);color:#1d2a36;border-radius:4px;padding:3px 9px;font:700 .78rem sans-serif;cursor:pointer}
+.hbt.on{background:linear-gradient(#5b8fd6,#1f5fbf);color:#fff}
+.hclk{font:700 .85rem monospace;direction:ltr;background:#1d2a36;border-radius:4px;padding:2px 8px}
+.hbody{flex:1;background:#d7dadd;overflow:auto;min-height:420px}
+.hbody svg{display:block;width:100%;height:auto}
+.hstat{display:flex;gap:14px;flex-wrap:wrap;background:#b9bfc5;border-top:1px solid #8a939b;padding:3px 8px;font-size:.76rem;font-weight:700}
+.hstat b{font-family:monospace}
+.hnav{display:flex;gap:3px;flex-wrap:wrap;background:#3a4652;padding:5px}
+.hnav button{flex:1 1 92px;border:1px solid #20282f;background:linear-gradient(#eef0f2,#b9c0c6);border-radius:4px;padding:6px 4px;font:700 .76rem sans-serif;cursor:pointer;color:#1d2a36}
+.hnav button.on{background:linear-gradient(#5b8fd6,#1f5fbf);color:#fff}
+.hnav button.al{box-shadow:inset 0 -4px 0 #c62828}
+.hfp{position:absolute;top:60px;left:50%;transform:translateX(-50%);width:min(340px,92%);background:#e3e6e9;border:2px solid #3a4652;box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:5}
+.hfp .ft{display:flex;align-items:center;background:#3a4652;color:#fff;padding:4px 8px;font-weight:800}.hfp .ft button{margin-inline-start:auto;border:0;background:#c62828;color:#fff;border-radius:3px;cursor:pointer;font-weight:800}
+.hfp .fb{padding:8px 10px}.hfp table{width:100%;border-collapse:collapse}.hfp td{padding:3px 4px;border-bottom:1px solid #c3c8cd;font-size:.82rem}.hfp td:last-child{text-align:left;font-family:monospace;font-weight:700}
+.hfp .fbar{height:14px;background:#fff;border:1px solid #8a939b;position:relative}.hfp .fbar i{position:absolute;top:0;bottom:0;left:0;background:#1f5fbf}.hfp .fbar s{position:absolute;top:-2px;bottom:-2px;width:2px;background:#c62828}
+.hfp .fbtn{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.hfp .fbtn button{flex:1;padding:8px;font:800 .82rem sans-serif;border:1px solid #20282f;border-radius:4px;cursor:pointer}
+.hfp .cf{background:#fff3cd;border:1px solid #d9a400;padding:6px;margin-top:8px;font-weight:700;font-size:.82rem}
+.hbody .scr{color:#1d2a36}.hbody .scr th{background:#b9bfc5;color:#1d2a36}.hbody .scr td{border-bottom:1px solid #b9bfc5}.hbody .scr .a{color:#0b3d91}.hbody .v1{color:#1a7f37}.hbody .v0{color:#5b6670}.hbody .vx{color:#c62828}
+.hbody .scr input{background:#fff;color:#1d2a36;border-color:#8a939b}.hbody .oee div{background:#eef0f2;border-color:#b9bfc5}.hbody .oee small,.hbody .crn{color:#4b5966}.hbody .bar{background:#fff}.hbody .hb{background:linear-gradient(#eef0f2,#b9c0c6);color:#1d2a36;border-color:#20282f}
+.ast{width:100%;border-collapse:collapse;font-size:.8rem}.ast th{background:#b9bfc5;text-align:start;padding:4px 6px}.ast td{padding:3px 6px;border-bottom:1px solid #b9bfc5;vertical-align:top}.ast .tm{font-family:monospace;white-space:nowrap;direction:ltr;text-align:right}
+.ast tr.p1 .pr{background:#c62828;color:#fff}.ast tr.p2 .pr{background:#f9a825}.ast tr.p3 .pr{background:#1f5fbf;color:#fff}.ast .pr{text-align:center;font-weight:800;width:44px}.ast tr.un td.ds{animation:alb 1s steps(2) infinite;font-weight:800}
+.stt{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr);gap:8px;padding:8px}.stt .side{background:#eef0f2;border:1px solid #b9bfc5;padding:6px}.stt table{width:100%;border-collapse:collapse;font-size:.8rem}.stt td{padding:3px 4px;border-bottom:1px solid #c9cdd1}
+@media (max-width:700px){.stt{grid-template-columns:1fr}.hmi2,.hbody{min-height:0}.hbody>svg,.stt svg{min-width:640px}.hbody{direction:ltr}.hbody>div{direction:rtl}.hmon{padding:6px 6px 2px}}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid #333;vertical-align:middle}
 /* control room */
 #p-scada.on{background:#10161c}
 .cr{color:#dfe7ee;padding:10px 10px 30px;max-width:1500px;margin:0 auto}
@@ -115,7 +148,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 .mon::after{content:'';position:absolute;left:50%;bottom:-26px;width:60px;height:14px;transform:translateX(-50%);background:#05080b;border-radius:0 0 6px 6px}
 .alr{width:100%;border-collapse:collapse;font-size:.8rem}.alr td{padding:3px 6px;border-bottom:1px solid #1f2b37;vertical-align:top}.alr .tm{font-family:monospace;color:#8fa2b4;white-space:nowrap}
 .alr tr.p1 td:nth-child(2){color:#ff6b60}.alr tr.p2 td:nth-child(2){color:#ffbf3c}.alr tr.p3 td:nth-child(2){color:#7fc4ff}.alr tr.gone td{opacity:.55}
-.alr tr.nack td:nth-child(2){animation:alb 1s steps(2) infinite}@keyframes alb{50%{opacity:.35}}
+.alr tr.nack td:nth-child(2){animation:alb 1s steps(2) infinite}@keyframes alb{50%{opacity:.35}}.mtrip{animation:alb .8s steps(2) infinite}
 .fp{padding:8px 10px;font-size:.85rem}.fp table{width:100%;border-collapse:collapse}.fp td{padding:3px 4px;border-bottom:1px solid #1f2b37}.fp td:last-child{text-align:left;font-family:monospace;color:#fff}
 .fp .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .crs{margin:20px 0 6px;color:#c9d6e2}
@@ -174,17 +207,16 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
   <div id="stlBox"></div>
 </div>
 <div class="pane" id="p-scada"><div class="cr">
-  <div class="crh"><b>🖥 غرفة التحكم · خط الإنتاج 1</b><span id="crSt"></span><button class="lvl" id="crLvl"></button><span class="clk" id="crClk"></span></div>
-  <div class="kpis" id="crK"></div>
-  <div class="wall"><div class="mt scrn" id="crNav"></div><div class="mimic" id="crMim"></div></div>
-  <div class="hmi" id="crBtn"></div>
-  <div class="desk">
-    <div class="mon"><div class="mt">⚠ الإنذارات والأحداث<button class="hb" id="crAck" style="padding:2px 8px;font-size:.75rem">✔ إقرار الكل</button></div><div id="crAl"></div></div>
-    <div class="mon"><div class="mt">📈 تيار المحركات (أمبير) · آخر دقيقتين</div><div class="trd" id="crTr"></div></div>
-    <div class="mon"><div class="mt">⚙ لوحة المحرك المحدد</div><div class="fp" id="crFp"></div></div>
-  </div>
+  <div class="crh"><b>🖥 غرفة التحكم · محطة تشغيل SCADA</b><span style="color:#8fa2b4;font-size:.82rem">WinCC Runtime · خط الإنتاج 1 · الأوامر تُرسل إلى PLC عبر الشبكة</span></div>
+  <div class="hmon"><div class="hmi2" id="hmi">
+    <div class="hh"><div class="hlogo">LINE&nbsp;1</div><div class="htitle" id="hTitle"></div><div class="hal" id="hAl"></div><button class="hbt" id="hAck" title="إقرار كل الإنذارات">✔ إقرار</button><button class="hbt" id="hHorn" title="كتم صوت الإنذار"></button><button class="hbt" id="crLvl"></button><div class="hclk" id="crClk"></div></div>
+    <div class="hbody" id="crMim"></div>
+    <div class="hstat" id="hStat"></div>
+    <div class="hnav" id="crNav"></div>
+    <div class="hfp" id="hFp" hidden></div>
+  </div><div class="hstand"></div></div>
   <h4 class="crs">⚡ غرفة المحركات (MCC): خزائن تغذية المحركات</h4><div class="mcc" id="crMcc"></div>
-  <p class="crn">في المصانع يجلس المشغل في غرفة التحكم أمام شاشات SCADA: يرى الخط كله، ويشغّله ويوقفه من الشاشة، ويتابع الإنذارات وتيار المحركات. أوامر الشاشة هنا تعمل مثل ضغط ضواغط اللوحة. وفي غرفة المحركات (MCC) تُركّب خزائن الكونتاكتورات والأوفرلود والأمّيترات لكل محرك.</p>
+  <p class="crn">في المصانع يجلس المشغل في غرفة التحكم أمام محطة SCADA مثل WinCC: شاشة نظرة عامة، وشاشة لكل محطة، ولوحة (Faceplate) لكل محرك يُشغَّل منها ويُوقف بعد تأكيد، وملخص إنذارات يُقَر، وسجل أحداث يحفظ كل أمر ومن أعطاه، ومنحنيات وتقارير. الأوامر لا تشغّل المحرك مباشرة، بل تُكتب في PLC عبر الشبكة، وPLC هو الذي يقرر ويشغّل.</p>
 </div></div>
 <div class="pane" id="p-ex"><div class="doc" id="exDoc"></div></div>
 <script>
@@ -685,9 +717,10 @@ function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L
 $('plcv').addEventListener('click',e=>{if(e.target.closest('[data-rs]')){L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');}});
 
 /* ===================== control room: SCADA overview, alarms, trends and the MCC ===================== */
-const NOM={M1:4.2,M2:3.1,M3:11.5,M4:5.6},MCOL={M1:'#4fc3f7',M2:'#ffb74d',M3:'#81c784',M4:'#f06292'};
+const NOM={M1:4.2,M2:3.1,M3:11.5,M4:5.6},MCOL={M1:'#1f5fbf',M2:'#e07b00',M3:'#1a7f37',M4:'#c2185b'};
 let SC=null,SCN=0;
-function scNew(){return{ex:EX.id,t:0,ts:{},td:{},cur:{},rh:{},hist:[],hT:0,al:[],act:{},sel:EX.mot[0],prod:[],last:null,floor:0,scr:(SC&&SC.scr)||'ov',lvl:(SC&&SC.lvl)||'op',comm:true,rep:repNew()};}
+function scNew(){return{ex:EX.id,t:0,ts:{},td:{},cur:{},rh:{},hist:[],hT:0,al:[],act:{},sel:EX.mot[0],prod:[],last:null,floor:0,scr:(SC&&SC.scr)||'ov',lvl:(SC&&SC.lvl)||'op',comm:true,rep:repNew(),ev:(SC&&SC.ex===EX.id&&SC.ev)||[],fp:null,mute:false,run:{},cf:null};}
+function evLog(msg,who){if(!SC)return;SC.ev.unshift({t:new Date(),msg,who:who||'النظام'});if(SC.ev.length>120)SC.ev.length=120;}
 function repNew(){return{t0:null,run:0,stop:0,al:0,base:{...L.PL.cnt},start:new Date()};}
 const prodKey=()=>{const P=EX.plant;return P.lift?'stored':P.boxes?'boxFull':P.press?'stamped':P.belt?'deliver':null;};
 function scTick(dt){if(!SC||SC.ex!==EX.id)SC=scNew();const E=L.EL||{},t=SC.t+=dt;
@@ -697,6 +730,8 @@ function scTick(dt){if(!SC||SC.ex!==EX.id)SC=scNew();const E=L.EL||{},t=SC.t+=dt
       I*=1+.03*Math.sin(t*3.1+m.charCodeAt(1));SC.rh[m]=(SC.rh[m]||0)+dt;}
     SC.cur[m]=I;});
   SC.hT+=dt;if(SC.hT>=.5){SC.hT=0;const o={t};EX.mot.forEach(m=>o[m]=SC.cur[m]);SC.hist.push(o);if(SC.hist.length>240)SC.hist.shift();}
+  EX.mot.forEach(m=>{const on=runOf(L,m);if(SC.run[m]!=null&&on!==SC.run[m])evLog((on?'بدأ تشغيل ':'توقف ')+m+' · '+MOT[m].n);SC.run[m]=on;});
+  {const pr=!!(E.plcPw&&L.plcRun);if(SC.prun!=null&&pr!==SC.prun)evLog('جهاز PLC أصبح '+(pr?'RUN':'STOP'));SC.prun=pr;}
   const C=L.PL.cnt,k=prodKey();if(k){const v=C[k];if(SC.last!=null&&v>SC.last)for(let i=SC.last;i<v;i++)SC.prod.push(t);SC.last=v;}SC.prod=SC.prod.filter(x=>t-x<60);
   /* alarms: one per condition; it comes in when the condition starts and goes out when it ends */
   const cond={};if(L.brk)cond.brk=['قصر بين الأطوار: القاطع الرئيسي Q0 فصل',1];if(E.dcShort)cond.dc=['قصر في دائرة التحكم 24V',1];
@@ -704,13 +739,39 @@ function scTick(dt){if(!SC||SC.ex!==EX.id)SC=scNew();const E=L.EL||{},t=SC.t+=dt
   if(!E.plcPw&&!E.mix)cond.pw=['جهاز PLC غير مغذى بجهد 24V',2];else if(E.plcPw&&!L.plcRun)cond.stop=['جهاز PLC في وضع STOP',2];
   if(L.PL.msg)cond.pl=[L.PL.msg,2];if(!SC.comm)cond.comm=['انقطع الاتصال بين SCADA وجهاز PLC (شبكة Profinet)',1];
   {const R=SC.rep,on=EX.mot.some(m=>runOf(L,m));if(on&&R.t0==null)R.t0=t;if(R.t0!=null){if(on)R.run+=dt;else R.stop+=dt;}}
-  Object.entries(cond).forEach(([k,[m,p]])=>{const a=SC.act[k];if(a&&a.msg===m)return;if(a)a.t1=new Date();const n={msg:m,p,t0:new Date(),t1:null,ack:false};SC.act[k]=n;SC.al.unshift(n);SC.rep.al++;});
+  Object.entries(cond).forEach(([k,[m,p]])=>{const a=SC.act[k];if(a&&a.msg===m)return;if(a)a.t1=new Date();const n={msg:m,p,t0:new Date(),t1:null,ack:false,tag:k};SC.act[k]=n;SC.al.unshift(n);SC.rep.al++;SC.mute=false;});
   Object.keys(SC.act).forEach(k=>{if(!cond[k]){SC.act[k].t1=new Date();delete SC.act[k];}});
   if(C.floor>SC.floor){const d=new Date();SC.al.unshift({msg:'سقطت قطعة على الأرض',p:3,t0:d,t1:d,ack:false});}SC.floor=C.floor;
   if(SC.al.length>60)SC.al.length=60;}
 
 /* ---------- SCADA screens: overview, tags, setpoints, shift report, network ---------- */
-const SCRS=[['ov','🖼 نظرة عامة'],['tags','🏷 المتغيرات'],['sp','🎚 قيم الضبط'],['rep','📊 تقرير الوردية'],['net','🌐 الشبكة']];
+const SCRS=[['ov','🖼 نظرة عامة'],['st:mixer','الخلاط'],['st:press','المكبس'],['st:sort','الفرز'],['st:boxes','التعبئة'],['st:lift','المصعد'],['al','⚠ الإنذارات'],['tr','📈 المنحنيات'],['ev','📜 الأحداث'],['tags','🏷 المتغيرات'],['sp','🎚 قيم الضبط'],['rep','📊 التقارير'],['net','🌐 الشبكة']];
+/* each station screen: the part of the overview it shows, and the signals beside it */
+const STN={mixer:{n:'محطة الخلاط',c:'40 0 300 160',io:['S2','S3','KM','KY','KD'],m:['M3']},press:{n:'محطة المكبس',c:'180 0 330 260',io:['B1','1B1','1B2','Y1'],m:['M1']},
+  sort:{n:'محطة الفحص والفرز',c:'360 120 230 200',io:['B2','Y2'],m:['M1']},boxes:{n:'محطة العد والتعبئة',c:'470 180 420 250',io:['B3','B4','B5','Y3','K2'],m:['M2']},lift:{n:'محطة المصعد والتخزين',c:'760 20 240 400',io:['SQ1','SQ2','K3','K4'],m:['M4']}};
+const stOk=k=>{const P=EX.plant;return k==='mixer'?P.mixer:k==='press'?P.press:k==='sort'?P.sort:k==='boxes'?P.boxes:k==='lift'?P.lift:true;};
+const sigOn=n=>INI[n]!=null?!!(L.P.I&&L.P.I[INI[n]]):OUTI[n]!=null?!!L.Q[OUTI[n]]:false;
+function stHTML(k){const S=STN[k],c=SC.comm;let t=`<table><tr><td colspan="3" style="font-weight:800">${S.n}</td></tr>`;
+  S.io.filter(n=>INI[n]!=null?EX.in.includes(n):EX.out.includes(n)).forEach(n=>{const on=sigOn(n),isI=INI[n]!=null;t+=`<tr><td><span class="dot" style="background:${!c?'#bbb':on?(isI?'#1f5fbf':'#1a7f37'):'#fff'}"></span> <b>${n}</b></td><td>${esc(isI?IN[INI[n]][1]:OUT[OUTI[n]][1])}</td><td>${!c?'###':on?'1':'0'}</td></tr>`;});
+  S.m.filter(m=>EX.mot.includes(m)).forEach(m=>{const st=mstate(m);t+=`<tr data-mot="${m}" style="cursor:pointer"><td><b>${m}</b></td><td>${esc(MOT[m].n)}</td><td>${c?MSTN[st]+' · '+(SC.cur[m]||0).toFixed(1)+'A':'###'}</td></tr>`;});
+  return `<div class="stt"><div>${mimicSVG(S.c)}</div><div class="side">${t}</table><p class="crn" style="margin-top:8px">اضغط المحرك لفتح لوحته.</p></div></div>`;}
+const AST=a=>!a.t1?(a.ack?'نشط · مُقَر':'نشط · غير مُقَر'):(a.ack?'زال · مُقَر':'زال · غير مُقَر');
+function alHTML(){const F=SC.alf||'sum',L2=SC.al.filter(a=>F==='hist'||!(a.t1&&a.ack));
+  return `<div style="padding:8px"><div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap"><button class="hbt${F==='sum'?' on':''}" data-alf="sum">ملخص الإنذارات</button><button class="hbt${F==='hist'?' on':''}" data-alf="hist">سجل الإنذارات</button><span style="margin-inline-start:auto;font-size:.78rem">الأولوية: <span class="dot" style="background:#c62828"></span> عالية <span class="dot" style="background:#f9a825"></span> متوسطة <span class="dot" style="background:#1f5fbf"></span> معلومة</span></div>
+    <table class="ast"><tr><th>الوقت</th><th>الأولوية</th><th>الحالة</th><th>الوصف</th><th></th></tr>${L2.length?L2.slice(0,40).map((a,i)=>`<tr class="p${a.p}${a.ack?'':' un'}"><td class="tm">${a.t0.toLocaleDateString('en-GB')} ${hhmmss(a.t0)}</td><td class="pr">${a.p===1?'1':a.p===2?'2':'3'}</td><td>${AST(a)}</td><td class="ds">${esc(a.msg)}</td><td>${a.ack?'':`<button class="hbt" data-ack="${SC.al.indexOf(a)}">إقرار</button>`}</td></tr>`).join(''):`<tr><td colspan="5" style="padding:12px">لا توجد إنذارات${F==='sum'?' نشطة أو غير مُقَرّة':''}.</td></tr>`}</table>
+    <p class="crn">الإقرار يعني أن المشغل رأى الإنذار، ولا يزيل العطل. يبقى الإنذار في الملخص حتى يُقَر ويزول سببه معًا.</p></div>`;}
+function evHTML(){return `<div style="padding:8px"><table class="ast"><tr><th>الوقت</th><th>الحدث</th><th>المستخدم</th></tr>${SC.ev.length?SC.ev.slice(0,60).map(e=>`<tr><td class="tm">${hhmmss(e.t)}</td><td>${esc(e.msg)}</td><td>${esc(e.who)}</td></tr>`).join(''):'<tr><td colspan="3" style="padding:12px">لا أحداث بعد.</td></tr>'}</table><p class="crn">سجل الأحداث (Audit trail) يحفظ كل أمر أُعطي من الشاشة ومن أعطاه، وتغيّر حالة المحركات والجهاز، ليُرجع إليه عند التحقيق في أي مشكلة.</p></div>`;}
+const userName=()=>SC.lvl==='eng'?'مهندس':'مشغّل';
+/* the faceplate of a motor: state, current, contactors, and the commands, each asked to confirm */
+function fpHTML(){const m=SC.fp;if(!m)return '';const st=mstate(m),f=MOT[m].f,I=SC.cur[m]||0,n=NOM[m],c=SC.comm,cmd=m==='M3'?['S2','S3']:['S1','S0'],can=k=>EX.in.includes(k);
+  return `<div class="ft">⚙ ${m} · ${esc(MOT[m].n)}<button data-fpx="1">✕</button></div><div class="fb"><table>
+    <tr><td>الحالة</td><td style="color:${MSTC[st]}">${c?MSTN[st]:'###'}</td></tr><tr><td>التيار</td><td>${c?I.toFixed(1)+' A':'###'}</td></tr></table>
+    <div class="fbar" title="التيار من 0 إلى ضعف المقنن"><i style="width:${Math.min(100,I/(2*n)*100).toFixed(0)}%"></i><s style="left:50%"></s></div><small>الخط الأحمر: التيار المقنن ${n} A</small>
+    <table><tr><td>طريقة التشغيل</td><td>${m==='M3'?'نجمة / دلتا':m==='M4'?'عكس اتجاه':'مباشر DOL'}</td></tr><tr><td>الكونتاكتورات</td><td>${(MOT[m].k||[]).map(q=>q+(L.kOn&&L.kOn[q]?' ■':' □')).join('  ')}</td></tr><tr><td>الأوفرلود ${f}</td><td>${L.olTrip[f]?'فاصل':'سليم'}</td></tr><tr><td>ساعات التشغيل</td><td>${tmm(SC.rh[m]||0)}</td></tr></table>
+    ${SC.cf?`<div class="cf">تأكيد: ${SC.cf.t}؟<div class="fbtn"><button data-cfy="1" style="background:#1a7f37;color:#fff">نعم</button><button data-cfn="1">لا</button></div></div>`:
+    `<div class="fbtn"><button data-cmd="${cmd[0]}" ${can(cmd[0])&&c?'':'disabled'} style="background:#e8f5e9">▶ تشغيل</button><button data-cmd="${cmd[1]}" ${can(cmd[1])&&c?'':'disabled'} style="background:#ffebee">■ إيقاف</button><button data-olr="${f}" ${c?'':'disabled'}>↺ إعادة</button></div>`}
+    <p class="crn" style="margin:6px 0 0">${m==='M3'?'التشغيل والإيقاف هنا يرسلان أمر الخلاط (S2/S3)':'التشغيل والإيقاف هنا يرسلان أمر الخط (S1/S0)'} إلى PLC عبر الشبكة.</p></div>`;}
+
 function progAddrs(){const A=new Set();(L.prog||[]).forEach(N=>{N.rows.forEach(r=>r.forEach(c=>{if(c&&c.a&&/^[MTC]/.test(c.a))A.add(c.a);}));N.out.forEach(o=>{if(o&&o.a&&/^[MTC]/.test(o.a))A.add(o.a);if(o&&o.r&&/^M/.test(o.r))A.add(o.r);});});
   return [...A].sort((a,b)=>a[0]===b[0]?a.localeCompare(b,'en',{numeric:true}):'MTC'.indexOf(a[0])-'MTC'.indexOf(b[0]));}
 function tagsHTML(){const P=L.P,c=SC.comm,v=b=>!c?'<span class="vx">###</span>':b?'<span class="v1">1</span>':'<span class="v0">0</span>';
@@ -747,43 +808,45 @@ function netwSVG(){const c=SC.comm,E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,cpu=
   o+=T(500,350,'الميدان: الحساسات والضواغط (مداخل) · الكونتاكتورات والصمامات (مخارج)',11,'#8fa2b4',600);
   o+=T(500,385,c?'الاتصال سليم: SCADA يقرأ من PLC ويكتب إليه عبر شبكة Profinet':'⚠ الكابل مفصول: الخط يستمر بالعمل لأن PLC هو الذي يتحكم، لكن غرفة التحكم لا ترى ولا تأمر',12,c?'#7fe0a0':'#ff8a80');
   return `<svg viewBox="0 0 1000 430">${o}</svg>`;}
-function scrBody(force){const sc=SC.scr,el=$('crMim');el.classList.toggle('nocomm',!SC.comm&&sc==='ov');
-  if(sc==='ov')el.innerHTML=mimicSVG();else if(sc==='tags')el.innerHTML=`<div class="scr">${tagsHTML()}</div>`;else if(sc==='rep')el.innerHTML=`<div class="scr">${repHTML()}</div>`;
+function scrBody(force){const sc=SC.scr,el=$('crMim');el.classList.toggle('nocomm',!SC.comm&&(sc==='ov'||sc.startsWith('st:')));
+  if(sc==='ov')el.innerHTML=mimicSVG();else if(sc.startsWith('st:'))el.innerHTML=stHTML(sc.slice(3));else if(sc==='al')el.innerHTML=alHTML();else if(sc==='ev')el.innerHTML=evHTML();
+  else if(sc==='tr')el.innerHTML=`<div style="padding:8px">${trendSVG(900,320)}<p class="crn">منحنى تيار كل محرك في آخر دقيقتين: لاحظ قفزة تيار البدء ثم استقراره، وانخفاضه في النجمة ثم ارتفاعه لحظة التحول إلى دلتا.</p></div>`;
+  else if(sc==='tags')el.innerHTML=`<div class="scr">${tagsHTML()}</div>`;else if(sc==='rep')el.innerHTML=`<div class="scr">${repHTML()}</div>`;
   else if(sc==='net')el.innerHTML=`<div class="scr" style="padding:0">${netwSVG()}<div style="padding:8px"><button class="hb" data-a="comm">${SC.comm?'✂ افصل كابل الشبكة (محاكاة عطل اتصال)':'🔌 أعد توصيل الكابل'}</button></div></div>`;
   else if(sc==='sp'&&force)el.innerHTML=`<div class="scr">${spHTML()}</div>`;}
-function navHTML(){$('crNav').innerHTML=SCRS.map(([k,n])=>`<button data-scr="${k}" class="${SC.scr===k?'on':''}">${n}</button>`).join('')+`<span style="margin-inline-start:auto">SCADA · WinCC</span>`;
+function navHTML(){const un=SC.al.some(a=>!a.ack);$('crNav').innerHTML=SCRS.filter(([k])=>!k.startsWith('st:')||stOk(k.slice(3))).map(([k,n])=>`<button data-scr="${k}" class="${SC.scr===k?'on':''}${k==='al'&&un?' al':''}">${n}</button>`).join('');
   $('crLvl').textContent=SC.lvl==='eng'?'👷 مهندس':'🧑‍🏭 مشغّل';$('crLvl').title='مستوى المستخدم: اضغط للتبديل بين المشغّل والمهندس';}
-$('crNav').addEventListener('click',e=>{const b=e.target.closest('[data-scr]');if(!b)return;SC.scr=b.dataset.scr;navHTML();scrBody(true);});
-$('crLvl').onclick=()=>{if(SC.lvl==='op'){const p=prompt('دخول المهندس: اكتب كلمة المرور (للتدريب: 1234)');if(p!=='1234'){if(p!=null)say('كلمة مرور خاطئة',1);return;}SC.lvl='eng';say('دخلت كمهندس: يمكنك تغيير قيم الضبط');}else{SC.lvl='op';say('خرجت إلى مستوى المشغّل');}navHTML();scrBody(true);};
+$('crNav').addEventListener('click',e=>{const b=e.target.closest('[data-scr]');if(!b)return;SC.scr=b.dataset.scr;navHTML();scrBody(true);hdr();});
+$('crLvl').onclick=()=>{if(SC.lvl==='op'){const p=prompt('دخول المهندس: اكتب كلمة المرور (للتدريب: 1234)');if(p!=='1234'){if(p!=null)say('كلمة مرور خاطئة',1);return;}SC.lvl='eng';evLog('دخول مستخدم: مهندس','مهندس');say('دخلت كمهندس: يمكنك تغيير قيم الضبط');}else{SC.lvl='op';evLog('خروج المهندس، الدخول كمشغّل','مشغّل');say('خرجت إلى مستوى المشغّل');}navHTML();scrBody(true);};
 $('crMim').addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(!a)return;
-  if(a.dataset.a==='comm'){SC.comm=!SC.comm;say(SC.comm?'أُعيد توصيل الشبكة':'فُصل كابل الشبكة: راقب شاشات غرفة التحكم');scrBody(true);renderScada();}
-  if(a.dataset.a==='shift'){SC.rep=repNew();say('بدأت وردية جديدة');scrBody(true);}});
+  if(a.dataset.a==='comm'){SC.comm=!SC.comm;evLog(SC.comm?'أُعيد الاتصال بجهاز PLC':'انقطع الاتصال بجهاز PLC');say(SC.comm?'أُعيد توصيل الشبكة':'فُصل كابل الشبكة: راقب شاشات غرفة التحكم');scrBody(true);renderScada();}
+  if(a.dataset.a==='shift'){SC.rep=repNew();evLog('بدء وردية جديدة',userName());say('بدأت وردية جديدة');scrBody(true);}});
 $('crMim').addEventListener('change',e=>{const i=e.target.dataset.sp;if(i==null||SC.lvl!=='eng')return;const x=spList()[+i];if(!x)return;let v=+e.target.value;if(!(v>0))return;if(x.kind==='GE')v=Math.round(v);
   [L.prog,EP].forEach(P=>{const N=P&&P[x.ni];if(!N)return;if(x.kind==='GE'){const c=N.rows[x.r][x.k];if(c)c.n=v;}else{const o=N.out[x.r];if(o)o.v=v;}});try{saveP();}catch(_){}
-  say('كُتبت قيمة الضبط '+dispA(x.a,'box')+' = '+v+(x.kind==='GE'?'':' ث')+' في جهاز PLC');});
+  say('كُتبت قيمة الضبط '+dispA(x.a,'box')+' = '+v+(x.kind==='GE'?'':' ث')+' في جهاز PLC');evLog('قيمة ضبط '+dispA(x.a,'box')+' = '+v+(x.kind==='GE'?'':' ث'),userName());});
 const hhmmss=d=>d.toLocaleTimeString('en-GB');
 function mstate(m){const E=L.EL||{},r=(E.mot&&E.mot[m])||{mode:'off'},f=MOT[m].f;if(L.olTrip[f])return 'trip';return r.mode==='star'?(m==='M3'?'star':'run'):r.mode==='delta'?'run':r.mode==='fault'?'trip':'off';}
 const MSTC={run:'#2e7d32',star:'#f9a825',trip:'#c62828',off:'#546e7a'},MSTN={run:'يعمل',star:'بدء نجمة',trip:'فصل',off:'متوقف'};
-function mimicSVG(){const P=EX.plant,PL=L.PL,K=L.kOn||{},sn=plantSensors(EX,PL).S,X=x=>20+x*.67,Y=y=>16+y*.62;let o='';
-  const T=(x,y,t,sz,c,w,a)=>`<text x="${x.toFixed?x.toFixed(1):x}" y="${y.toFixed?y.toFixed(1):y}" text-anchor="${a||'middle'}" style="font:${w||700} ${sz||11}px sans-serif;fill:${c||'#cfe0ee'}">${t}</text>`;
-  const mot=(m,x,y)=>{const st=mstate(m),sel=SC.sel===m;return `<g data-mot="${m}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="transparent"/>${sel?`<circle cx="${x}" cy="${y}" r="19" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-dasharray="4 3"/>`:''}<circle cx="${x}" cy="${y}" r="14" fill="${MSTC[st]}" stroke="#e0e8ef" stroke-width="2"/>${T(x,y+4,'M',12,'#fff',800)}${T(x,y+30,m+' · '+(SC.cur[m]||0).toFixed(1)+'A',10,'#9fb3c6')}</g>`;};
-  const vlv=(k,x,y)=>{const on=!!K[k];return `<g><path d="M${x-10} ${y-7}L${x+10} ${y+7}V${y-7}L${x-10} ${y+7}Z" fill="${on?'#43a047':'#3b4754'}" stroke="#cfe0ee" stroke-width="1.5"/><rect x="${x-6}" y="${y-20}" width="12" height="9" fill="${on?'#ffd000':'#3b4754'}" stroke="#cfe0ee"/>${T(x,y+22,k,10,on?'#9fe3b4':'#8fa2b4')}</g>`;};
-  const sen=(k,x,y)=>`<g><rect x="${x-5}" y="${y-5}" width="10" height="10" rx="2" fill="${sn[k]?'#ffd000':'#2c3a48'}" stroke="#8fa2b4"/>${T(x,y+18,k,9,'#8fa2b4',600)}</g>`;
-  o+=`<rect width="1000" height="430" fill="#16202b"/>${Array.from({length:20},(_,i)=>`<line x1="${i*50}" y1="0" x2="${i*50}" y2="430" stroke="#1d2a37"/>`).join('')}`;
-  if(P.mixer){const a=PL.mixA;o+=`<rect x="${X(70)}" y="${Y(40)}" width="${160*.67}" height="${150*.62}" rx="10" fill="#22313f" stroke="#7d93a8" stroke-width="2"/>`+[0,1,2].map(i=>{const g=a+i*2.094;return `<line x1="${X(150)}" y1="${Y(115)}" x2="${(X(150)+Math.cos(g)*30).toFixed(1)}" y2="${(Y(115)+Math.sin(g)*16).toFixed(1)}" stroke="#7fc4ff" stroke-width="3"/>`;}).join('')+T(X(150),Y(40)-24,'الخلاط',11)+mot('M3',X(150)+70,Y(40)+10);}
-  if(P.belt){const run=runOf(L,'M1'),off=(PL.t*(run?40:0))%20;o+=`<rect x="${X(110)}" y="${Y(BY)}" width="${800*.67}" height="12" rx="6" fill="#2c3a48" stroke="#7d93a8"/><line x1="${X(110)+6}" y1="${Y(BY)+6}" x2="${X(910)-6}" y2="${Y(BY)+6}" stroke="${run?'#7fc4ff':'#4a5a6a'}" stroke-width="3" stroke-dasharray="8 12" stroke-dashoffset="${(-off).toFixed(1)}"/>`+T(X(510),Y(BY)+30,'السير الناقل',10,'#8fa2b4')+mot('M1',X(110)+4,Y(BY)+46);}
-  if(P.press){const y=Y(170+PL.press*108);o+=`<rect x="${X(380)}" y="${Y(58)}" width="${40*.67}" height="${112*.62}" fill="#22313f" stroke="#7d93a8" stroke-width="2"/><rect x="${X(396)}" y="${Y(170)}" width="6" height="${(y-Y(170)).toFixed(1)}" fill="#cfe0ee"/><rect x="${X(380)}" y="${y.toFixed(1)}" width="${40*.67}" height="6" fill="#cfe0ee"/>`+vlv('Y1',X(470),Y(110))+sen('B1',X(GX.press),Y(BY)+24)+sen('1B1',X(350),Y(70))+sen('1B2',X(350),Y(160))+T(X(400),Y(58)-8,'المكبس 1A',10);}
-  if(P.sort){const g=PL.gate;o+=`<line x1="${X(GX.gate-30)}" y1="${Y(BY)+12}" x2="${(X(GX.gate-30)+40*Math.cos(g*1.1)).toFixed(1)}" y2="${(Y(BY)+12+40*Math.sin(g*1.1)).toFixed(1)}" stroke="${g>.05?'#ffbf3c':'#7d93a8'}" stroke-width="4"/><rect x="${X(GX.gate-50)}" y="${Y(BY+56)}" width="67" height="40" fill="#3a1f1f" stroke="#c62828"/>`+T(X(GX.gate-50)+33,Y(BY+56)+25,'مرفوض '+L.PL.cnt.badRej,10,'#ff8a80')+vlv('Y2',X(GX.gate+60),Y(BY-40))+sen('B2',X(GX.gate-35),Y(BY-55));}
-  if(P.boxes){const run=runOf(L,'M2');o+=`<rect x="${X(760)}" y="${Y(BB)}" width="${(GX.boxEnd-760)*.67}" height="12" rx="6" fill="#2c3a48" stroke="#7d93a8"/>`+mot('M2',X(760)-30,Y(BB)+6)+sen('B3',X(GX.chute),Y(BB)+26)+sen('B5',X(GX.fill),Y(BB)+26)+sen('B4',X(915),Y(410))+vlv('Y3',X(GX.fill),Y(BB-150));
-    PL.boxes.forEach(b=>{if(b.x<760&&b.st!=='lift')return;const y=b.st==='lift'?Y(BB-70-320*PL.lift):Y(BB-70),x=X(b.x)-18,f=Math.min(1,b.fill||0);o+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="36" height="34" fill="#4e3a22" stroke="#c8a26b"/><rect x="${x.toFixed(1)}" y="${(y+34-34*f).toFixed(1)}" width="36" height="${(34*f).toFixed(1)}" fill="#e8dcc0" opacity=".8"/>${T(x+18,y+22,b.n||0,11,'#fff')}`;});
-    o+=T(X(980),Y(BB)+34,'سير الصناديق',10,'#8fa2b4');}
-  if(P.lift){const y=Y(BB-320*PL.lift);o+=`<rect x="${X(1212)}" y="${Y(160)}" width="5" height="${(Y(BB)-Y(160)).toFixed(1)}" fill="#7d93a8"/><rect x="${X(1300)}" y="${Y(160)}" width="5" height="${(Y(BB)-Y(160)).toFixed(1)}" fill="#7d93a8"/><rect x="${X(1215)}" y="${(y-4).toFixed(1)}" width="${(X(1300)-X(1215)).toFixed(1)}" height="6" fill="#cfe0ee"/><rect x="${X(1310)}" y="${Y(BB-320)}" width="60" height="5" fill="#c8a26b"/>`+T(X(1340),Y(BB-320)-8,'الرف '+L.PL.cnt.stored,10)+sen('SQ2',X(1325),Y(BB-320)+16)+sen('SQ1',X(1325),Y(BB)+6)+mot('M4',X(1260),Y(160)-26)+vlv('K3',X(1200)-22,Y(200))+vlv('K4',X(1200)-22,Y(280));}
-  PL.pieces.forEach(q=>{if(q.st!=='belt')return;o+=`<rect x="${(X(q.x)-6).toFixed(1)}" y="${(Y(BY)-11).toFixed(1)}" width="12" height="10" rx="2" fill="${q.bad?'#e53935':'#7fc4ff'}"/>`;});
-  const E=L.EL||{},bad=L.brk||E.mix||E.dcShort;o+=`<rect x="0" y="402" width="1000" height="28" fill="${bad?'#7a1c1c':'#0b1118'}"/>`+T(10,421,(bad?'⛔ ':'● ')+capNow(),12,bad?'#fff':'#9fe3b4',700,'start');
-  return `<svg viewBox="0 0 1000 430">${o}</svg>`;}
-function trendSVG(){const H=SC.hist,W=420,Hh=200,x0=34,y0=10,w=W-x0-8,h=Hh-y0-26;let mx=8;H.forEach(o=>EX.mot.forEach(m=>{mx=Math.max(mx,o[m]||0);}));mx=Math.ceil(mx*1.1);
-  let o=`<rect width="${W}" height="${Hh}" fill="#0f1720"/>`;for(let i=0;i<=4;i++){const y=y0+h-h*i/4;o+=`<line x1="${x0}" y1="${y}" x2="${x0+w}" y2="${y}" stroke="#1f2b37"/><text x="${x0-4}" y="${y+4}" text-anchor="end" style="font:10px monospace;fill:#8fa2b4">${(mx*i/4).toFixed(0)}</text>`;}
-  EX.mot.forEach((m,j)=>{const pts=H.map((q,i)=>`${(x0+w-(H.length-1-i)*w/239).toFixed(1)},${(y0+h-(q[m]||0)/mx*h).toFixed(1)}`).join(' ');if(pts)o+=`<polyline points="${pts}" fill="none" stroke="${MCOL[m]}" stroke-width="2"/>`;o+=`<rect x="${x0+j*80}" y="${Hh-14}" width="10" height="10" fill="${MCOL[m]}"/><text x="${x0+14+j*80}" y="${Hh-5}" style="font:700 10px sans-serif;fill:#cfe0ee">${m} ${(SC.cur[m]||0).toFixed(1)}A</text>`;});
+function mimicSVG(crop){const P=EX.plant,PL=L.PL,K=L.kOn||{},sn=plantSensors(EX,PL).S,X=x=>20+x*.67,Y=y=>16+y*.62;let o='';
+  const T=(x,y,t,sz,c,w,a)=>`<text x="${x.toFixed?x.toFixed(1):x}" y="${y.toFixed?y.toFixed(1):y}" text-anchor="${a||'middle'}" style="font:${w||700} ${sz||11}px sans-serif;fill:${c||'#1d2a36'}">${t}</text>`;
+  const mot=(m,x,y)=>{const st=mstate(m),sel=SC.fp===m;return `<g data-mot="${m}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="transparent"/>${sel?`<circle cx="${x}" cy="${y}" r="19" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-dasharray="4 3"/>`:''}<circle cx="${x}" cy="${y}" r="14" fill="${st==='off'?'#f0f2f4':MSTC[st]}" stroke="#1d2a36" stroke-width="2" class="${st==='trip'?'mtrip':''}"/>${T(x,y+4,'M',12,st==='off'?'#1d2a36':'#fff',800)}${T(x,y+30,m+' · '+(SC.cur[m]||0).toFixed(1)+'A',10,'#33414e')}</g>`;};
+  const vlv=(k,x,y)=>{const on=!!K[k];return `<g><path d="M${x-10} ${y-7}L${x+10} ${y+7}V${y-7}L${x-10} ${y+7}Z" fill="${on?'#43a047':'#f0f2f4'}" stroke="#1d2a36" stroke-width="1.5"/><rect x="${x-6}" y="${y-20}" width="12" height="9" fill="${on?'#ffd000':'#f0f2f4'}" stroke="#1d2a36"/>${T(x,y+22,k,10,on?'#1a7f37':'#4b5966')}</g>`;};
+  const sen=(k,x,y)=>`<g><rect x="${x-5}" y="${y-5}" width="10" height="10" rx="2" fill="${sn[k]?'#ffd000':'#9aa3ab'}" stroke="#4b5966"/>${T(x,y+18,k,9,'#4b5966',600)}</g>`;
+  o+=`<rect width="1000" height="430" fill="#d7dadd"/>${Array.from({length:20},(_,i)=>`<line x1="${i*50}" y1="0" x2="${i*50}" y2="430" stroke="#cfd3d7"/>`).join('')}`;
+  if(P.mixer){const a=PL.mixA;o+=`<rect x="${X(70)}" y="${Y(40)}" width="${160*.67}" height="${150*.62}" rx="10" fill="#eef0f2" stroke="#5b6670" stroke-width="2"/>`+[0,1,2].map(i=>{const g=a+i*2.094;return `<line x1="${X(150)}" y1="${Y(115)}" x2="${(X(150)+Math.cos(g)*30).toFixed(1)}" y2="${(Y(115)+Math.sin(g)*16).toFixed(1)}" stroke="#1f5fbf" stroke-width="3"/>`;}).join('')+T(X(150),Y(40)-24,'الخلاط',11)+mot('M3',X(150)+70,Y(40)+10);}
+  if(P.belt){const run=runOf(L,'M1'),off=(PL.t*(run?40:0))%20;o+=`<rect x="${X(110)}" y="${Y(BY)}" width="${800*.67}" height="12" rx="6" fill="#9aa3ab" stroke="#5b6670"/><line x1="${X(110)+6}" y1="${Y(BY)+6}" x2="${X(910)-6}" y2="${Y(BY)+6}" stroke="${run?'#1f5fbf':'#7d868d'}" stroke-width="3" stroke-dasharray="8 12" stroke-dashoffset="${(-off).toFixed(1)}"/>`+T(X(510),Y(BY)+30,'السير الناقل',10,'#4b5966')+mot('M1',X(110)+4,Y(BY)+46);}
+  if(P.press){const y=Y(170+PL.press*108);o+=`<rect x="${X(380)}" y="${Y(58)}" width="${40*.67}" height="${112*.62}" fill="#eef0f2" stroke="#5b6670" stroke-width="2"/><rect x="${X(396)}" y="${Y(170)}" width="6" height="${(y-Y(170)).toFixed(1)}" fill="#33414e"/><rect x="${X(380)}" y="${y.toFixed(1)}" width="${40*.67}" height="6" fill="#33414e"/>`+vlv('Y1',X(470),Y(110))+sen('B1',X(GX.press),Y(BY)+24)+sen('1B1',X(350),Y(70))+sen('1B2',X(350),Y(160))+T(X(400),Y(58)-8,'المكبس 1A',10);}
+  if(P.sort){const g=PL.gate;o+=`<line x1="${X(GX.gate-30)}" y1="${Y(BY)+12}" x2="${(X(GX.gate-30)+40*Math.cos(g*1.1)).toFixed(1)}" y2="${(Y(BY)+12+40*Math.sin(g*1.1)).toFixed(1)}" stroke="${g>.05?'#ffbf3c':'#5b6670'}" stroke-width="4"/><rect x="${X(GX.gate-50)}" y="${Y(BY+56)}" width="67" height="40" fill="#f6dcdc" stroke="#c62828"/>`+T(X(GX.gate-50)+33,Y(BY+56)+25,'مرفوض '+L.PL.cnt.badRej,10,'#9b1c1c')+vlv('Y2',X(GX.gate+60),Y(BY-40))+sen('B2',X(GX.gate-35),Y(BY-55));}
+  if(P.boxes){const run=runOf(L,'M2');o+=`<rect x="${X(760)}" y="${Y(BB)}" width="${(GX.boxEnd-760)*.67}" height="12" rx="6" fill="#9aa3ab" stroke="#5b6670"/>`+mot('M2',X(760)-30,Y(BB)+6)+sen('B3',X(GX.chute),Y(BB)+26)+sen('B5',X(GX.fill),Y(BB)+26)+sen('B4',X(915),Y(410))+vlv('Y3',X(GX.fill),Y(BB-150));
+    PL.boxes.forEach(b=>{if(b.x<760&&b.st!=='lift')return;const y=b.st==='lift'?Y(BB-70-320*PL.lift):Y(BB-70),x=X(b.x)-18,f=Math.min(1,b.fill||0);o+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="36" height="34" fill="#c8a26b" stroke="#c8a26b"/><rect x="${x.toFixed(1)}" y="${(y+34-34*f).toFixed(1)}" width="36" height="${(34*f).toFixed(1)}" fill="#e8dcc0" opacity=".8"/>${T(x+18,y+22,b.n||0,11,'#fff')}`;});
+    o+=T(X(980),Y(BB)+34,'سير الصناديق',10,'#4b5966');}
+  if(P.lift){const y=Y(BB-320*PL.lift);o+=`<rect x="${X(1212)}" y="${Y(160)}" width="5" height="${(Y(BB)-Y(160)).toFixed(1)}" fill="#5b6670"/><rect x="${X(1300)}" y="${Y(160)}" width="5" height="${(Y(BB)-Y(160)).toFixed(1)}" fill="#5b6670"/><rect x="${X(1215)}" y="${(y-4).toFixed(1)}" width="${(X(1300)-X(1215)).toFixed(1)}" height="6" fill="#33414e"/><rect x="${X(1310)}" y="${Y(BB-320)}" width="60" height="5" fill="#c8a26b"/>`+T(X(1340),Y(BB-320)-8,'الرف '+L.PL.cnt.stored,10)+sen('SQ2',X(1325),Y(BB-320)+16)+sen('SQ1',X(1325),Y(BB)+6)+mot('M4',X(1260),Y(160)-26)+vlv('K3',X(1200)-22,Y(200))+vlv('K4',X(1200)-22,Y(280));}
+  PL.pieces.forEach(q=>{if(q.st!=='belt')return;o+=`<rect x="${(X(q.x)-6).toFixed(1)}" y="${(Y(BY)-11).toFixed(1)}" width="12" height="10" rx="2" fill="${q.bad?'#e53935':'#1f5fbf'}"/>`;});
+  return `<svg viewBox="${crop||'0 0 1000 430'}">${o}</svg>`;}
+function trendSVG(W=420,Hh=200){const H=SC.hist,x0=34,y0=10,w=W-x0-8,h=Hh-y0-26;let mx=8;H.forEach(o=>EX.mot.forEach(m=>{mx=Math.max(mx,o[m]||0);}));mx=Math.ceil(mx*1.1);
+  let o=`<rect width="${W}" height="${Hh}" fill="#fff"/>`;for(let i=0;i<=4;i++){const y=y0+h-h*i/4;o+=`<line x1="${x0}" y1="${y}" x2="${x0+w}" y2="${y}" stroke="#d7dadd"/><text x="${x0-4}" y="${y+4}" text-anchor="end" style="font:10px monospace;fill:#4b5966">${(mx*i/4).toFixed(0)}</text>`;}
+  for(let s2=0;s2<=4;s2++){const x=x0+w*s2/4;o+=`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0+h}" stroke="#eceef0"/><text x="${x}" y="${y0+h+11}" text-anchor="middle" style="font:9px monospace;fill:#4b5966">-${(120-s2*30)}s</text>`;}
+  EX.mot.forEach((m,j)=>{const pts=H.map((q,i)=>`${(x0+w-(H.length-1-i)*w/239).toFixed(1)},${(y0+h-(q[m]||0)/mx*h).toFixed(1)}`).join(' ');if(pts)o+=`<polyline points="${pts}" fill="none" stroke="${MCOL[m]}" stroke-width="2"/>`;o+=`<rect x="${x0+j*80}" y="${Hh-12}" width="10" height="10" fill="${MCOL[m]}"/><text x="${x0+14+j*80}" y="${Hh-3}" style="font:700 10px sans-serif;fill:#1d2a36">${m} ${(SC.cur[m]||0).toFixed(1)}A</text>`;});
   return `<svg viewBox="0 0 ${W} ${Hh}">${o}</svg>`;}
 function mccSVG(){const ms=EX.mot,CW2=150,W=CW2*(ms.length+1)+20,H=330,E=L.EL||{};let o=`<rect width="${W}" height="${H}" fill="#2a2f35"/>`;
   const dial=(cx,cy,v,max,u,warn)=>{const a=-140+280*Math.min(1,v/max),r=26;return `<circle cx="${cx}" cy="${cy}" r="${r+4}" fill="#1b1e22"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="#f4f1e8"/>${[0,.25,.5,.75,1].map(f=>{const g=(-140+280*f-90)*Math.PI/180;return `<line x1="${(cx+Math.cos(g)*(r-6)).toFixed(1)}" y1="${(cy+Math.sin(g)*(r-6)).toFixed(1)}" x2="${(cx+Math.cos(g)*r).toFixed(1)}" y2="${(cy+Math.sin(g)*r).toFixed(1)}" stroke="#333"/>`;}).join('')}<line x1="${cx}" y1="${cy}" x2="${(cx+Math.cos((a-90)*Math.PI/180)*(r-4)).toFixed(1)}" y2="${(cy+Math.sin((a-90)*Math.PI/180)*(r-4)).toFixed(1)}" stroke="${warn?'#c62828':'#111'}" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="3" fill="#111"/><text x="${cx}" y="${cy+16}" text-anchor="middle" style="font:700 8px sans-serif;fill:#333">${u}</text>`;};
@@ -796,24 +859,29 @@ function mccSVG(){const ms=EX.mot,CW2=150,W=CW2*(ms.length+1)+20,H=330,E=L.EL||{
     o+=`<g data-olr="${f}" style="cursor:pointer"><rect x="${cx-36}" y="232" width="72" height="26" rx="5" fill="#1f5fbf" stroke="#0b3d91"/><text x="${cx}" y="249" text-anchor="middle" style="font:700 9px sans-serif;fill:#fff">↺ إعادة ${f}</text></g><text x="${cx}" y="284" text-anchor="middle" style="font:600 8.5px sans-serif;fill:#333">تشغيل ${tmm(SC.rh[m]||0)}</text>`;});
   return `<svg viewBox="0 0 ${W} ${H}" style="width:${W}px;max-width:100%">${o}</svg>`;}
 const tmm=v=>{v=Math.floor(v);return Math.floor(v/60)+':'+String(v%60).padStart(2,'0');};
-function renderScada(force){if(!SC||SC.ex!==EX.id)SC=scNew();if(!EX.mot.includes(SC.sel))SC.sel=EX.mot[0];const E=L.EL||{},C=L.PL.cnt,P=EX.plant;
-  $('crClk').textContent=hhmmss(new Date());
-  const k=[];k.push(['الحالة',capNow(),'st']);if(P.belt&&!P.boxes)k.push(['وصلت',C.deliver]);if(P.press)k.push(['خُتمت',C.stamped]);if(P.sort)k.push(['رُفضت',C.badRej]);if(P.boxes){k.push(['صناديق',C.boxFull]);k.push(['عُبئت',C.boxFill]);}if(P.lift)k.push(['على الرف',C.stored]);
-  if(prodKey())k.push(['الإنتاج / دقيقة',SC.prod.length]);k.push(['المحركات العاملة',EX.mot.filter(m=>runOf(L,m)).length+' / '+EX.mot.length]);k.push(['PLC',(MODEL==='300'?'S7-300':'S7-1200')+' · '+(E.plcPw?(L.plcRun?'RUN':'STOP'):'OFF')]);
-  const nAct=Object.keys(SC.act).length;k.push(['إنذارات نشطة',nAct]);
-  $('crK').innerHTML=k.map(([a,b,c])=>`<div class="kpi${c?' '+c:''}"><small>${a}</small><b>${SC.comm||a==='إنذارات نشطة'?esc(String(b)):'###'}</b></div>`).join('');
-  $('crSt').innerHTML=nAct?`<span style="color:#ff6b60;font-weight:700">⚠ ${nAct} إنذار نشط</span>`:`<span style="color:#7fe0a0;font-weight:700">● لا إنذارات</span>`;
-  scrBody(!!force);
-  $('crAl').innerHTML=SC.al.length?`<table class="alr">${SC.al.slice(0,14).map(a=>`<tr class="p${a.p}${a.t1?' gone':''}${a.ack?'':' nack'}"><td class="tm">${hhmmss(a.t0)}</td><td>${esc(a.msg)}</td><td class="tm">${a.t1?'زال':'نشط'}${a.ack?' ✓':''}</td></tr>`).join('')}</table>`:'<p style="padding:10px;color:#7fe0a0">لا توجد إنذارات. الخط يعمل بلا أعطال.</p>';
-  $('crTr').innerHTML=trendSVG();
-  {const m=SC.sel,st=mstate(m),f=MOT[m].f,I=SC.cur[m]||0;
-    $('crFp').innerHTML=`<div style="font-weight:800;font-size:1rem;color:${MSTC[st]==='#546e7a'?'#cfe0ee':MSTC[st]}">${m} · ${esc(MOT[m].n)}</div><table><tr><td>الحالة</td><td>${MSTN[st]}</td></tr><tr><td>التيار</td><td>${I.toFixed(1)} A</td></tr><tr><td>التيار المقنن</td><td>${NOM[m]} A</td></tr><tr><td>طريقة التشغيل</td><td>${m==='M3'?'نجمة / دلتا':m==='M4'?'عكس اتجاه':'مباشر DOL'}</td></tr><tr><td>الكونتاكتورات</td><td>${(MOT[m].k||[]).map(q=>q+(L.kOn&&L.kOn[q]?' ■':' □')).join('  ')}</td></tr><tr><td>الأوفرلود ${f}</td><td>${L.olTrip[f]?'فاصل':'سليم'}</td></tr><tr><td>زمن التشغيل</td><td>${tmm(SC.rh[m]||0)}</td></tr></table>`;}
-  $('crMcc').innerHTML=mccSVG();
-  if(force){navHTML();$('crBtn').innerHTML=`<span class="lbl">أوامر المشغل:</span>${pbHTML()}<button class="hb" id="crOl">↺ إعادة الأوفرلود</button><button class="hb" id="crQ0">⟲ إعادة Q0</button>`;$('crBtn').querySelectorAll('[data-pb]').forEach(b=>{const k=b.dataset.pb;b.addEventListener('pointerdown',e=>{e.preventDefault();if(!SC.comm){say('لا اتصال بجهاز PLC: الأمر لم يُرسل',1);return;}L.press.add(k);b.classList.add('dn');setTimeout(()=>{L.press.delete(k);b.classList.remove('dn');},350);});});
-    $('crOl').onclick=()=>{L.olTrip={};say('أُعيد ضبط الأوفرلود من غرفة التحكم');};$('crQ0').onclick=()=>{L.brk=false;say('أُعيد القاطع الرئيسي Q0');};}}
-$('crAck').onclick=()=>{if(SC)SC.al.forEach(a=>a.ack=true);renderScada();};
-$('p-scada').addEventListener('pointerdown',e=>{const m=e.target.closest('[data-mot]'),r=e.target.closest('[data-olr]');
-  if(r){L.olTrip[r.dataset.olr]=false;say('أُعيد ضبط الأوفرلود '+r.dataset.olr);renderScada();return;}if(m&&SC){SC.sel=m.dataset.mot;renderScada();}});
+function hdr(){const t=SCRS.find(x=>x[0]===SC.scr);$('hTitle').textContent=t?t[1].replace(/^[^\u0600-\u06FF]*\s/,''):'';$('crClk').textContent=new Date().toLocaleDateString('en-GB')+' '+hhmmss(new Date());
+  const L2=SC.al.filter(a=>!(a.t1&&a.ack)),top=L2.find(a=>!a.ack)||L2[0],el=$('hAl');
+  el.className='hal'+(top?' p'+top.p+(top.ack?'':' blink'):'');el.textContent=top?hhmmss(top.t0)+' · '+top.msg+(L2.length>1?'  (+'+(L2.length-1)+')':''):'لا توجد إنذارات';
+  $('hHorn').textContent=SC.mute?'🔕':'🔔';$('hHorn').classList.toggle('on',!SC.mute);}
+function renderScada(force){if(!SC||SC.ex!==EX.id)SC=scNew();const E=L.EL||{},C=L.PL.cnt,P=EX.plant,c=SC.comm;
+  hdr();scrBody(!!force);if(force||SCN%20===0)navHTML();
+  const st=[['PLC',(MODEL==='300'?'S7-300':'S7-1200')+' · '+(E.plcPw?(L.plcRun?'RUN':'STOP'):'OFF')],['الاتصال',c?'سليم':'مقطوع'],['المحركات',EX.mot.filter(m=>runOf(L,m)).length+'/'+EX.mot.length]];
+  if(P.press)st.push(['خُتمت',C.stamped]);if(P.sort)st.push(['رُفضت',C.badRej]);if(P.boxes)st.push(['صناديق',C.boxFull]);if(P.lift)st.push(['الرف',C.stored]);if(P.belt&&!P.boxes)st.push(['وصلت',C.deliver]);
+  if(prodKey())st.push(['قطعة/دقيقة',SC.prod.length]);
+  $('hStat').innerHTML=st.map(([a,b])=>`<span>${a}: <b>${c||a==='الاتصال'?esc(String(b)):'###'}</b></span>`).join('')+`<span style="margin-inline-start:auto">${esc(capNow())}</span>`;
+  const fp=$('hFp');if(SC.fp){fp.hidden=false;fp.innerHTML=fpHTML();}else fp.hidden=true;
+  $('crMcc').innerHTML=mccSVG();}
+$('hAck').onclick=()=>{if(!SC)return;const n=SC.al.filter(a=>!a.ack).length;SC.al.forEach(a=>a.ack=true);if(n)evLog('إقرار '+n+' إنذار',userName());renderScada(true);};
+$('hHorn').onclick=()=>{if(!SC)return;SC.mute=!SC.mute;hdr();};
+$('p-scada').addEventListener('pointerdown',e=>{if(!SC)return;const m=e.target.closest('[data-mot]'),r=e.target.closest('[data-olr]'),q=e.target.closest('[data-cmd]'),x=e.target.closest('[data-fpx]'),y=e.target.closest('[data-cfy]'),no=e.target.closest('[data-cfn]'),ak=e.target.closest('[data-ack]'),af=e.target.closest('[data-alf]');
+  if(x){SC.fp=null;SC.cf=null;renderScada();return;}
+  if(af){SC.alf=af.dataset.alf;scrBody(true);return;}
+  if(ak){const a=SC.al[+ak.dataset.ack];if(a&&!a.ack){a.ack=true;evLog('إقرار إنذار: '+a.msg,userName());}scrBody(true);hdr();return;}
+  if(q&&!q.disabled){const k=q.dataset.cmd;SC.cf={k,t:(k==='S1'||k==='S2'?'تشغيل ':'إيقاف ')+(k==='S2'||k==='S3'?'الخلاط':'الخط')};renderScada();return;}
+  if(no){SC.cf=null;renderScada();return;}
+  if(y&&SC.cf){const k=SC.cf.k,t=SC.cf.t;SC.cf=null;if(!SC.comm){say('لا اتصال بجهاز PLC: الأمر لم يُرسل',1);renderScada();return;}L.press.add(k);setTimeout(()=>L.press.delete(k),350);evLog('أمر من الشاشة: '+t+' ('+k+')',userName());say('أُرسل الأمر إلى PLC: '+t);renderScada();return;}
+  if(r&&!r.disabled){L.olTrip[r.dataset.olr]=false;evLog('إعادة ضبط الأوفرلود '+r.dataset.olr,userName());say('أُعيد ضبط الأوفرلود '+r.dataset.olr);renderScada();return;}
+  if(m){SC.fp=m.dataset.mot;SC.cf=null;renderScada();}});
 
 /* ===================== factory sounds, made live with Web Audio (no sound files) =====================
    motors hum while they run (the belts rattle, the mixer swishes, the lift whines), contactors click,
@@ -862,7 +930,7 @@ function sndUpdate(){if(!SND.ctx)return;const live=SND.on&&!sndHidden()&&SND.ctx
   if(C.badRej>pv.cnt.badRej||C.goodRej>pv.cnt.goodRej)sThump(.25,170);
   if(boxN>pv.boxN)sThump(.2,150);else if(C.deliver>pv.cnt.deliver)sThump(.2,190);
   if(C.floor>pv.cnt.floor)sThump(.45,210);if(C.stored>pv.cnt.stored)sThump(.3,120);
-  if(act.some(k=>!pv.act.includes(k)))sBuzz();}
+  if(act.some(k=>!pv.act.includes(k))&&!(SC&&SC.mute))sBuzz();}
 function sndBtn(){const b=$('bSnd');b.textContent=SND.on?'🔊':'🔇';b.title=SND.on?'أصوات المصنع تعمل: اضغط للكتم':'الأصوات مكتومة: اضغط للتشغيل';}
 $('bSnd').onclick=()=>{SND.on=!SND.on;ls('ln:snd',SND.on?'1':'0');if(SND.on&&sndInit())SND.ctx.resume();sndBtn();say(SND.on?'🔊 أصوات المصنع تعمل':'🔇 كُتمت الأصوات');};sndBtn();
 /* browsers start sound only after a tap: the first tap anywhere wakes it */
@@ -1213,7 +1281,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793465000';
+const LNV='1793466000';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
