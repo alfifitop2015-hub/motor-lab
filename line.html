@@ -673,7 +673,7 @@ function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L
     s+=`<g data-rs="1" style="cursor:pointer"><rect x="165" y="232" width="70" height="110" fill="transparent"/></g>`;
     usedI(EX).forEach(i=>{const x=i<8?431.5+i*13.6:552.5+(i-8)*13.7;s+=led(x,246.5,I[i],'#3cff5a',7,6);});
     usedQ(EX).forEach(i=>{const x=i<8?431.5+i*13.6:552.5+(i-8)*13.7;s+=led(x,360,Q[i],'#3cff5a',7,6);});}
-  if(MODEL==='1200'){const ch=(a,n,on)=>`<span class="plg${on?' on':''}"><b>${a}</b> ${n}</span>`;s+=`</svg><div class="plgs">`+usedI(EX).map(i=>ch((i>>3?'b':'a')+'.'+(i&7),IN[i][0],I[i])).join('')+`<span class="plgsep"></span>`+usedQ(EX).map(i=>ch((i>>3?'b':'a')+'.'+(i&7),OUT[i][0],Q[i])).join('')+`</div><svg width="0" height="0">`;}
+  if(MODEL==='1200'){const ch=(a,n,on)=>`<span class="plg${on?' on':''}"><b>${a}</b> ${n}</span>`;s+=`</svg><div class="plgs">`+usedI(EX).map(i=>ch('DI '+(i>>3?'b':'a')+'.'+(i&7),IN[i][0],I[i])).join('')+`<span class="plgsep"></span>`+usedQ(EX).map(i=>ch('DQ '+(i>>3?'b':'a')+'.'+(i&7),OUT[i][0],Q[i])).join('')+`</div><svg width="0" height="0">`;}
   s+=`</svg><div class="plccap"><b>${MODEL==='300'?'S7-300 (قديم) · Step 7':'S7-1200 (حديث) · TIA Portal'}</b> · <button class="btn" data-rs="1">${L.plcRun?'■ STOP':'▸ RUN'}</button> <span>${!pw?'غير مغذى':L.plcRun?'RUN':'STOP'}</span></div>`;
   return s;}
 $('plcv').addEventListener('click',e=>{if(e.target.closest('[data-rs]')){L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');}});
@@ -1136,7 +1136,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793461000';
+const LNV='1793462000';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
