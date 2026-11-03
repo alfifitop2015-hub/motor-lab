@@ -1233,9 +1233,9 @@ function repImg(st,r,w){const c=document.createElement('canvas'),h=Math.round(w*
 const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('cloud');
 async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JSON.stringify(d)});}catch(_){throw new Error('net');}const t=await r.text();let j;try{j=JSON.parse(t);}catch(_){throw new Error('setup');}if(!j.ok){const E=new Error(j.err||'fail');E.srv=j.msg||'';throw E;}return j;}
 let _qP=null;
-$('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
+$('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;{let P=null;try{P=window.parent!==window&&window.parent.wsTrPick;}catch(_){}if(P){const tr=await P();if(tr==null)return;}}const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
   try{const{code,r}=await buildMsg(st);let img,th;try{img=repImg(st,r,600);th=repImg(st,r,160);}catch(_){}
-    const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:'ft',s:s20(r.score),code,img,th});_qP=null;okMsg('✔ وصلت نتيجتك للمدرب. رقم المرجع: '+j.uid);}
+    const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:'ft',tr:(()=>{try{return localStorage.getItem('wsMyTr')||'';}catch(_){return '';}})(),s:s20(r.score),code,img,th});_qP=null;okMsg('✔ وصلت نتيجتك للمدرب. رقم المرجع: '+j.uid);}
   catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت النتيجة على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}
     okMsg(e.srv?'خطأ في خادم Google: '+e.srv+' — أرسل عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أرسل عبر واتساب.':'تعذّر الإرسال. تأكد من الإنترنت أو أرسل عبر واتساب.',1);}finally{b.disabled=false;}};
 const rM=$('resModal');let RS={rows:[],sel:new Set()};try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}

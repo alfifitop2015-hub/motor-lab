@@ -8,6 +8,35 @@ const KEY = '4178';
 const SHEET = 'التجارب';
 const FOLDER = 'صور تجارب المحاكي';
 const RATES = 'تقييم الاستفادة';
+const TRAINERS = 'المدربون';
+
+// ===== حسابات المدربين: كل مدرب يسجّل نفسه، والمدير (صاحب كلمة السر KEY) يوافق عليه، وكل مدرب يرى نتائج متدربيه فقط =====
+// ورقة المدربين: اسم المستخدم، الاسم، الرقم السري مشفّرًا، الحالة (pending بانتظار الموافقة / ok مقبول / no مرفوض)، وقت التسجيل
+function trainers_() {
+  const ss = ss_();
+  let t = ss.getSheetByName(TRAINERS);
+  if (!t) {
+    t = ss.insertSheet(TRAINERS);
+    t.appendRow(['اسم المستخدم', 'الاسم', 'الرقم السري (مشفر)', 'الحالة', 'وقت التسجيل']);
+    t.setFrozenRows(1);
+  }
+  return t;
+}
+function trFind_(u) {
+  const v = trainers_().getDataRange().getValues();
+  for (let i = 1; i < v.length; i++) if (String(v[i][0]).toLowerCase() === u) return { row: i + 1, u: String(v[i][0]), n: String(v[i][1]), h: String(v[i][2]), st: String(v[i][3]) };
+  return null;
+}
+// من يطلب؟ المدير بكلمة السر KEY، أو مدرب مقبول بمفتاح «u:اسم المستخدم:الرقم السري»
+function who_(d) {
+  const k = String(d.key || '');
+  if (k === KEY) return { admin: true };
+  const m = /^u:([a-z0-9_]{3,20}):(.+)$/.exec(k);
+  if (!m) return null;
+  const t = trFind_(m[1]);
+  if (!t || t.st !== 'ok' || t.h !== pinHash_(m[2])) return null;
+  return { tr: t.u, n: t.n };
+}
 
 // يعمل الكود سواء كان مربوطًا بجدول أو مشروعًا مستقلًا: يحفظ رقم الجدول ويعيد استخدامه
 // إذا تعثّر فتح الجدول المحفوظ (انشغال مؤقت في Google) يُعاد المحاولة، ولا يُنشأ جدول جديد فارغ أبدًا مكانه،
@@ -79,7 +108,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
   // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
-  const write = ['submit', 'del', 'setScores', 'rate', 'rasd'].indexOf(d.action) >= 0;
+  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
   if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
@@ -99,7 +128,8 @@ function doPost(e) {
       }
       const th = String(d.th || '').length < 45000 ? String(d.th || '') : '';
       s.appendRow([uid, new Date(), n, "'" + id, String(d.ex || ''), d.s === '' ? '' : Number(d.s),
-                   String(d.code || '').slice(0, 45000), th, fid]);
+                   String(d.code || '').slice(0, 45000), th, fid, '', '', String(d.tr || '').toLowerCase().slice(0, 20)]);
+      if (String(s.getRange(1, 12).getValue() || '') === '') s.getRange(1, 12).setValue('المدرب');
       return out_({ ok: true, uid: uid });
     }
 
@@ -108,19 +138,63 @@ function doPost(e) {
       const v = Math.round(Number(d.v));
       if (!(v >= 0 && v <= 100)) return out_({ ok: false, err: 'missing' });
       const r = rates_(), rid = String(d.rid || '').slice(0, 40);
-      const row = [rid, new Date(), String(d.n || '').trim().slice(0, 80), "'" + String(d.id || '').trim().slice(0, 30), v, String(d.c || '').slice(0, 500)];
+      const row = [rid, new Date(), String(d.n || '').trim().slice(0, 80), "'" + String(d.id || '').trim().slice(0, 30), v, String(d.c || '').slice(0, 500), String(d.tr || '').toLowerCase().slice(0, 20)];
       const vals = r.getDataRange().getValues();
       for (let i = 1; i < vals.length; i++) {
-        if (rid && String(vals[i][0]) === rid) { r.getRange(i + 1, 1, 1, 6).setValues([row]); return out_({ ok: true, upd: true }); }
+        if (rid && String(vals[i][0]) === rid) { r.getRange(i + 1, 1, 1, 7).setValues([row]); return out_({ ok: true, upd: true }); }
       }
       r.appendRow(row);
       return out_({ ok: true });
     }
 
-    if (String(d.key || '') !== KEY) return out_({ ok: false, err: 'key' });
+    // تسجيل مدرب جديد (بانتظار موافقة المدير)
+    if (d.action === 'trReg') {
+      const u = String(d.u || '').trim().toLowerCase(), n = String(d.n || '').trim().slice(0, 60), pin = String(d.pin || '').trim();
+      if (!/^[a-z0-9_]{3,20}$/.test(u)) return out_({ ok: false, err: 'bad', msg: 'اسم المستخدم من 3 إلى 20 حرفًا إنجليزيًا أو رقمًا' });
+      if (!n || !/^\S{4,32}$/.test(pin)) return out_({ ok: false, err: 'bad', msg: 'اكتب الاسم، والرقم السري 4 خانات على الأقل' });
+      if (trFind_(u)) return out_({ ok: false, err: 'taken', msg: 'اسم المستخدم مستخدم، اختر غيره' });
+      trainers_().appendRow([u, n, pinHash_(pin), 'pending', new Date()]);
+      return out_({ ok: true, st: 'pending' });
+    }
+    // دخول مدرب
+    if (d.action === 'trLogin') {
+      const C = CacheService.getScriptCache(), fk = 'TRF_' + String(d.u || '').toLowerCase(), f = +(C.get(fk) || 0);
+      if (f >= 10) return out_({ ok: false, err: 'busy', msg: 'محاولات خاطئة كثيرة، انتظر 10 دقائق' });
+      const t = trFind_(String(d.u || '').trim().toLowerCase());
+      if (!t || t.h !== pinHash_(String(d.pin || '').trim())) { C.put(fk, String(f + 1), 600); return out_({ ok: false, err: 'pin', msg: 'اسم المستخدم أو الرقم السري غير صحيح' }); }
+      if (t.st !== 'ok') return out_({ ok: false, err: t.st === 'no' ? 'rejected' : 'pending', msg: t.st === 'no' ? 'رُفض طلبك، راجع مدير النظام' : 'طلبك بانتظار موافقة مدير النظام' });
+      return out_({ ok: true, u: t.u, n: t.n });
+    }
+    // أسماء المدربين المقبولين: ليختار المتدرب مدربه
+    if (d.action === 'trNames') {
+      const v = trainers_().getDataRange().getValues().slice(1).filter(r => String(r[3]) === 'ok');
+      return out_({ ok: true, list: v.map(r => ({ u: String(r[0]), n: String(r[1]) })) });
+    }
+
+    const W = who_(d);
+    if (!W) return out_({ ok: false, err: 'key' });
+    const mine = r => W.admin || String(r[11] || '').toLowerCase() === W.tr;
+
+    // إدارة المدربين: للمدير فقط
+    if (d.action === 'trList') {
+      if (!W.admin) return out_({ ok: false, err: 'key' });
+      const v = trainers_().getDataRange().getValues().slice(1).filter(r => String(r[0]));
+      const cnt = {};
+      s.getDataRange().getValues().slice(1).forEach(r => { const k = String(r[11] || '').toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; });
+      return out_({ ok: true, list: v.map(r => ({ u: String(r[0]), n: String(r[1]), st: String(r[3]), t: r[4] instanceof Date ? r[4].getTime() : r[4], c: cnt[String(r[0]).toLowerCase()] || 0 })) });
+    }
+    if (d.action === 'trSet') {
+      if (!W.admin) return out_({ ok: false, err: 'key' });
+      const t = trFind_(String(d.u || '').toLowerCase());
+      if (!t) return out_({ ok: false, err: 'notfound' });
+      if (d.st === 'del') trainers_().deleteRow(t.row);
+      else trainers_().getRange(t.row, 4).setValue(d.st === 'ok' ? 'ok' : 'no');
+      return out_({ ok: true });
+    }
+    if (d.action === 'who') return out_({ ok: true, admin: !!W.admin, tr: W.tr || '', n: W.n || '' });
 
     if (d.action === 'rates') {
-      const v = rates_().getDataRange().getValues().slice(1).filter(r => r[4] !== '' && r[4] != null);
+      const v = rates_().getDataRange().getValues().slice(1).filter(r => r[4] !== '' && r[4] != null && (W.admin || String(r[6] || '').toLowerCase() === W.tr));
       return out_({ ok: true, rows: v.map(r => ({
         t: r[1] instanceof Date ? r[1].getTime() : r[1], n: String(r[2]), id: String(r[3]).replace(/^'/, ''), v: Number(r[4]), c: String(r[5] || '')
       })) });
@@ -128,17 +202,17 @@ function doPost(e) {
 
     if (d.action === 'list') {
       SpreadsheetApp.flush();
-      const v = s.getDataRange().getValues().slice(1).filter(r => String(r[0]));
-      return out_({ ok: true, n: v.length, rows: v.map(r => ({
+      const v = s.getDataRange().getValues().slice(1).filter(r => String(r[0]) && mine(r));
+      return out_({ ok: true, n: v.length, admin: !!W.admin, rows: v.map(r => ({
         uid: String(r[0]), t: r[1] instanceof Date ? r[1].getTime() : r[1],
         n: String(r[2]), id: String(r[3]), ex: String(r[4]), s: r[5], code: String(r[6]),
-        th: String(r[7] || ''), fid: String(r[8] || ''), rasd: r[10] === true || String(r[10]) === '1'
+        th: String(r[7] || ''), fid: String(r[8] || ''), rasd: r[10] === true || String(r[10]) === '1', tr: String(r[11] || '')
       })) });
     }
 
     if (d.action === 'img') {
       const fid = String(d.fid || '');
-      const ok = s.getDataRange().getValues().slice(1).some(r => String(r[8]) === fid);
+      const ok = s.getDataRange().getValues().slice(1).some(r => String(r[8]) === fid && mine(r));
       if (!fid || !ok) return out_({ ok: false, err: 'notfound' });
       const b = DriveApp.getFileById(fid).getBlob();
       return out_({ ok: true, b64: Utilities.base64Encode(b.getBytes()) });
@@ -148,7 +222,7 @@ function doPost(e) {
       const ids = new Set((d.uids || []).map(String));
       const v = s.getDataRange().getValues();
       for (let i = v.length - 1; i >= 1; i--) {
-        if (ids.has(String(v[i][0]))) {
+        if (ids.has(String(v[i][0])) && mine(v[i])) {
           if (v[i][8]) { try { DriveApp.getFileById(String(v[i][8])).setTrashed(true); } catch (err) {} }
           s.deleteRow(i + 1);
         }
@@ -163,7 +237,7 @@ function doPost(e) {
       if (v.length && String(v[0][10] || '') === '') s.getRange(1, 11).setValue('رُصد');
       let n = 0;
       for (let i = 1; i < v.length; i++) {
-        if (ids.has(String(v[i][0]))) { s.getRange(i + 1, 11).setValue(on ? 1 : ''); n++; }
+        if (ids.has(String(v[i][0])) && mine(v[i])) { s.getRange(i + 1, 11).setValue(on ? 1 : ''); n++; }
       }
       return out_({ ok: true, n: n });
     }
@@ -175,7 +249,7 @@ function doPost(e) {
       let n = 0;
       for (let i = 1; i < v.length; i++) {
         const u = String(v[i][0]);
-        if (Object.prototype.hasOwnProperty.call(m, u)) {
+        if (Object.prototype.hasOwnProperty.call(m, u) && mine(v[i])) {
           const x = m[u];
           s.getRange(i + 1, 6).setValue(x === '' || x == null || isNaN(Number(x)) ? '' : Number(x));
           n++;
