@@ -95,6 +95,29 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 .hint{color:var(--muted);font-size:.82rem;padding:0 10px 4px}
 .term{cursor:pointer}.term:hover circle.tc{stroke:#ff8a00}
 @media (max-width:600px){.bar1 h1{font-size:.9rem}.ob{min-width:56px;padding:5px 6px}.ob i{width:34px;height:34px;line-height:28px}}
+/* control room */
+#p-scada.on{background:#10161c}
+.cr{color:#dfe7ee;padding:10px 10px 30px;max-width:1500px;margin:0 auto}
+.crh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.crh b{font-size:1.05rem}.crh .clk{margin-inline-start:auto;font:700 1.05rem monospace;color:#7fe0a0;background:#05080b;border:1px solid #2a3846;border-radius:6px;padding:2px 10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;margin-bottom:10px}
+.kpi{background:#1a2430;border:1px solid #2c3a48;border-radius:8px;padding:6px 8px}.kpi small{display:block;color:#8fa2b4;font-size:.72rem}.kpi b{font:700 1.15rem monospace;color:#fff}.kpi.st b{font:700 .85rem 'IBM Plex Sans Arabic',sans-serif;color:#9fe3b4}
+.wall{border:12px solid #05080b;border-radius:8px;background:#16202b;box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 0 0 1px #2c3a48;margin-bottom:6px}
+.mt{display:flex;align-items:center;gap:8px;background:#0b1118;color:#9fb3c6;font-size:.8rem;font-weight:700;padding:3px 8px;border-bottom:1px solid #263442}.mt button{margin-inline-start:auto}
+.mimic{direction:ltr;overflow-x:auto}.mimic svg{display:block;width:100%;min-width:620px;height:auto}
+.hmi{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 10px;padding:8px;background:#1d2733;border:1px solid #2c3a48;border-radius:10px}.hmi .lbl{color:#8fa2b4;font-size:.8rem;font-weight:700}
+.hmi .ob{background:#26323f;border-color:#3a4a5a;color:#e5edf4}.hb{border:1px solid #3a4a5a;background:#26323f;color:#e5edf4;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer}
+.desk{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;padding:12px;border-radius:10px;background:linear-gradient(#2b2f35,#1b1e22);box-shadow:inset 0 2px 0 #3a4048}
+.mon{border:8px solid #05080b;border-bottom-width:12px;border-radius:6px;background:#0f1720;min-height:200px;position:relative}
+.mon::after{content:'';position:absolute;left:50%;bottom:-26px;width:60px;height:14px;transform:translateX(-50%);background:#05080b;border-radius:0 0 6px 6px}
+.alr{width:100%;border-collapse:collapse;font-size:.8rem}.alr td{padding:3px 6px;border-bottom:1px solid #1f2b37;vertical-align:top}.alr .tm{font-family:monospace;color:#8fa2b4;white-space:nowrap}
+.alr tr.p1 td:nth-child(2){color:#ff6b60}.alr tr.p2 td:nth-child(2){color:#ffbf3c}.alr tr.p3 td:nth-child(2){color:#7fc4ff}.alr tr.gone td{opacity:.55}
+.alr tr.nack td:nth-child(2){animation:alb 1s steps(2) infinite}@keyframes alb{50%{opacity:.35}}
+.fp{padding:8px 10px;font-size:.85rem}.fp table{width:100%;border-collapse:collapse}.fp td{padding:3px 4px;border-bottom:1px solid #1f2b37}.fp td:last-child{text-align:left;font-family:monospace;color:#fff}
+.fp .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.crs{margin:20px 0 6px;color:#c9d6e2}
+.mcc{direction:ltr;overflow-x:auto;background:#2a2f35;border-radius:8px;padding:8px}.mcc svg{display:block;height:auto;min-width:420px}
+.crn{color:#8fa2b4;font-size:.8rem;margin-top:12px}
+.trd{direction:ltr}.trd svg{display:block;width:100%;height:auto}
 </style>
 </head>
 <body>
@@ -108,7 +131,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
     <div class="mdl" role="group" aria-label="جهاز PLC"><button id="m300" title="SIMATIC S7-300: الجهاز القديم الكلاسيكي، يُبرمج ببرنامج Step 7 (CPU 317-2 PN/DP مع SM321 وSM322)"><b>S7-300</b><small>CPU 317 · قديم</small></button><button id="m1200" title="SIMATIC S7-1200: الجهاز الحديث، يُبرمج ببرنامج TIA Portal (CPU 1214C)"><b>S7-1200</b><small>CPU 1214C · حديث</small></button></div>
     <details class="mm"><summary title="خيارات التمرين">⋯</summary><div><button class="btn red" id="bClear">🧹 امسح وابدأ بنفسي</button><button class="btn" id="bReady">✨ أرجعه جاهزًا</button></div></details>
   </div>
-  <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="ex">📖 الشرح</button></div>
+  <div class="tabs" role="tablist"><button class="tab" data-t="line">🏭 الخط</button><button class="tab" data-t="wire">🔌 التوصيل</button><button class="tab" data-t="prog">🧠 البرنامج</button><button class="tab" data-t="scada">🖥 غرفة التحكم</button><button class="tab" data-t="ex">📖 الشرح</button></div>
   <div class="msg" id="msg"></div>
 </div>
 <div class="pane" id="p-line">
@@ -136,6 +159,19 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
   <div class="nets" id="nets"></div>
   <div id="stlBox"></div>
 </div>
+<div class="pane" id="p-scada"><div class="cr">
+  <div class="crh"><b>🖥 غرفة التحكم · خط الإنتاج 1</b><span id="crSt"></span><span class="clk" id="crClk"></span></div>
+  <div class="kpis" id="crK"></div>
+  <div class="wall"><div class="mt">SCADA · شاشة النظرة العامة على الخط (اضغط أي محرك لعرض بياناته)</div><div class="mimic" id="crMim"></div></div>
+  <div class="hmi" id="crBtn"></div>
+  <div class="desk">
+    <div class="mon"><div class="mt">⚠ الإنذارات والأحداث<button class="hb" id="crAck" style="padding:2px 8px;font-size:.75rem">✔ إقرار الكل</button></div><div id="crAl"></div></div>
+    <div class="mon"><div class="mt">📈 تيار المحركات (أمبير) · آخر دقيقتين</div><div class="trd" id="crTr"></div></div>
+    <div class="mon"><div class="mt">⚙ لوحة المحرك المحدد</div><div class="fp" id="crFp"></div></div>
+  </div>
+  <h4 class="crs">⚡ غرفة المحركات (MCC): خزائن تغذية المحركات</h4><div class="mcc" id="crMcc"></div>
+  <p class="crn">في المصانع يجلس المشغل في غرفة التحكم أمام شاشات SCADA: يرى الخط كله، ويشغّله ويوقفه من الشاشة، ويتابع الإنذارات وتيار المحركات. أوامر الشاشة هنا تعمل مثل ضغط ضواغط اللوحة. وفي غرفة المحركات (MCC) تُركّب خزائن الكونتاكتورات والأوفرلود والأمّيترات لكل محرك.</p>
+</div></div>
 <div class="pane" id="p-ex"><div class="doc" id="exDoc"></div></div>
 <script>
 (function(){
@@ -466,10 +502,48 @@ $('bReady').onclick=()=>{if(!confirm('إرجاع «'+EX.n+'» جاهزًا با�
 $('m300').onclick=()=>setModel('300');$('m1200').onclick=()=>setModel('1200');
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.t));
 function showTab(t){TAB=t;ls('ln2:tab',t);document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));
-  if(t==='wire')renderBoard();if(t==='prog')renderProg();if(t==='ex')renderDoc();}
+  if(t==='wire')renderBoard();if(t==='prog')renderProg();if(t==='ex')renderDoc();if(t==='scada')renderScada(true);}
 function renderAll(){$('m300').classList.toggle('on',MODEL==='300');$('m1200').classList.toggle('on',MODEL==='1200');renderOps();renderDoc();renderBoard();renderProg();showTab(TAB);}
 
 /* ===================== the line scene ===================== */
+/* ---------- the factory hall around the line, and the real-looking details on the machines ---------- */
+function hallBG(){let s=`<defs>
+  <linearGradient id="hWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9c4cd"/><stop offset=".75" stop-color="#d8dee3"/><stop offset="1" stop-color="#c3cbd2"/></linearGradient>
+  <pattern id="hRib" width="18" height="10" patternUnits="userSpaceOnUse"><rect x="0" width="4" height="10" fill="#000" opacity=".06"/><rect x="10" width="1.5" height="10" fill="#fff" opacity=".35"/></pattern>
+  <linearGradient id="hFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8b9890"/><stop offset="1" stop-color="#5f6b66"/></linearGradient>
+  <linearGradient id="hSS" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d98a2"/><stop offset=".3" stop-color="#f4f7f9"/><stop offset=".55" stop-color="#b7c1c9"/><stop offset="1" stop-color="#7c8792"/></linearGradient>
+  <linearGradient id="hYel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c99700"/><stop offset=".45" stop-color="#ffd23f"/><stop offset="1" stop-color="#b88a00"/></linearGradient>
+  <linearGradient id="hRail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#b9c2ca"/><stop offset="1" stop-color="#7f8a94"/></linearGradient>
+  <linearGradient id="hMot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86c6"/><stop offset=".5" stop-color="#2b5d9a"/><stop offset="1" stop-color="#1b3d66"/></linearGradient>
+  <radialGradient id="hGlow" cx=".5" cy="0" r=".9"><stop offset="0" stop-color="#fff8d6" stop-opacity=".7"/><stop offset="1" stop-color="#fff8d6" stop-opacity="0"/></radialGradient>
+  <pattern id="hHaz" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="16" fill="#f2c200"/><rect x="8" width="8" height="16" fill="#1d1d1d"/></pattern>
+  </defs><rect width="1420" height="600" fill="url(#hWall)"/><rect y="18" width="1420" height="452" fill="url(#hRib)"/><rect y="470" width="1420" height="90" fill="#8e99a2"/><rect y="468" width="1420" height="3" fill="#6f7a83"/>`;
+  for(let x=70;x<1400;x+=150)s+=`<rect x="${x}" y="26" width="118" height="30" fill="#a7c3da" stroke="#55626e" stroke-width="2"/><path d="M${x+39} 26v30M${x+79} 26v30" stroke="#55626e" stroke-width="2"/><path d="M${x+6} 50l18-20" stroke="#fff" stroke-width="3" opacity=".45"/>`;
+  s+=`<rect width="1420" height="18" fill="#37424e"/>${Array.from({length:30},(_,i)=>`<path d="M${i*48} 18l24-16l24 16" fill="none" stroke="#56626f" stroke-width="2"/>`).join('')}`;
+  [10,545,1000,1408].forEach(x=>{s+=`<rect x="${x-8}" y="18" width="16" height="542" fill="#2f5f8a"/><rect x="${x-11}" y="18" width="22" height="5" fill="#244b6d"/><rect x="${x-11}" y="553" width="22" height="7" fill="#244b6d"/><rect x="${x-2}" y="18" width="4" height="542" fill="#3d75a8"/>`;});
+  [230,700,1180].forEach(x=>{s+=`<line x1="${x}" y1="18" x2="${x}" y2="70" stroke="#333" stroke-width="2"/><path d="M${x-26} 86L${x-12} 70H${x+12}L${x+26} 86Z" fill="#46515c"/><ellipse cx="${x}" cy="88" rx="22" ry="5" fill="#fffbe0"/><path d="M${x-24} 90L${x-120} 330H${x+120}L${x+24} 90Z" fill="url(#hGlow)" opacity=".45"/>`;});
+  s+=`<rect x="0" y="98" width="1420" height="7" fill="#8a949d"/><rect x="0" y="98" width="1420" height="2" fill="#c7cdd2"/>`;
+  s+=`<rect y="560" width="1420" height="40" fill="url(#hFloor)"/><rect y="560" width="1420" height="5" fill="url(#hHaz)"/><rect y="586" width="1420" height="3" fill="#f2c200" opacity=".85"/>`;
+  s+=`<g><rect x="520" y="118" width="50" height="44" rx="3" fill="#f2c200" stroke="#1d1d1d" stroke-width="2"/><path d="M545 124l14 24h-28z" fill="none" stroke="#1d1d1d" stroke-width="2.5"/><text x="545" y="146" text-anchor="middle" style="font:900 12px sans-serif">!</text><text x="545" y="158" text-anchor="middle" style="font:700 6.5px sans-serif;fill:#1d1d1d">أجزاء متحركة</text></g>
+    <g><circle cx="1000" cy="138" r="18" fill="#1f5fbf" stroke="#fff" stroke-width="2"/><text x="1000" y="136" text-anchor="middle" style="font:700 7px sans-serif;fill:#fff">ارتدِ</text><text x="1000" y="146" text-anchor="middle" style="font:700 7px sans-serif;fill:#fff">النظارة</text></g>
+    <g><rect x="620" y="62" width="170" height="26" rx="4" fill="#0b3d91"/><text x="705" y="80" text-anchor="middle" style="font:800 13px sans-serif;fill:#fff">LINE 1 · خط الإنتاج 1</text></g>`;
+  return s;}
+/* a light tower on each station: green running, amber ready, red fault */
+function andon(x,y,st){const c=[['#e53935','fault'],['#ffb300','idle'],['#43a047','run']];return `<g><rect x="${x-2}" y="${y+54}" width="4" height="30" fill="#5d6770"/><rect x="${x-9}" y="${y+82}" width="18" height="6" rx="2" fill="#3a4148"/>${c.map(([col,k],i)=>`<rect x="${x-8}" y="${y+i*18}" width="16" height="17" rx="3" fill="${st===k?col:'#59636c'}" stroke="#2a3138"/>${st===k?`<rect x="${x-14}" y="${y+i*18-4}" width="28" height="25" rx="8" fill="${col}" opacity=".25"/>`:''}`).join('')}<rect x="${x-8}" y="${y-4}" width="16" height="5" rx="2" fill="#3a4148"/></g>`;}
+function gearMotor(x,y,run,flip){return `<g transform="translate(${x} ${y})${flip?' scale(-1 1)':''}"><rect x="0" y="0" width="46" height="30" rx="6" fill="url(#hMot)" stroke="#16324f"/>${[8,15,22,29,36].map(i=>`<line x1="${i}" y1="3" x2="${i}" y2="27" stroke="#173a61" stroke-width="2"/>`).join('')}<rect x="-8" y="4" width="9" height="22" rx="3" fill="#1b3d66"/><rect x="46" y="-2" width="22" height="34" rx="4" fill="#6f7b86" stroke="#3d464e"/><circle cx="57" cy="15" r="5" fill="#2a3138"/><rect x="14" y="-7" width="16" height="8" rx="2" fill="#3a4148"/>${run?`<circle cx="22" cy="-3" r="2.5" fill="#39d353"/>`:''}</g>`;}
+function stState(m,act){const E=L.EL||{};if(L.brk||E.mix||E.dcShort)return 'fault';const f=MOT[m]&&MOT[m].f;if(f&&L.olTrip[f])return 'fault';if(runOf(L,m)||act)return 'run';return E.plcPw?'idle':'off';}
+function plantDeco(){const p=EX.plant,PL=L.PL;let s='';
+  if(p.belt){[210,380,560,760,866].forEach(x=>{s+=`<rect x="${x}" y="${BY+28}" width="9" height="${556-BY-28}" fill="#a3adb6" stroke="#6f7a83"/><rect x="${x-6}" y="552" width="21" height="6" rx="1" fill="#4a5560"/>`;});
+    s+=`<rect x="104" y="${BY-5}" width="812" height="6" rx="2" fill="url(#hRail)" stroke="#7f8a94" stroke-width=".8"/><rect x="104" y="${BY+20}" width="812" height="8" rx="2" fill="url(#hRail)" stroke="#7f8a94" stroke-width=".8"/>`;
+    s+=gearMotor(46,BY+24,runOf(L,'M1'));}
+  if(p.boxes)s+=`<rect x="754" y="${BB-4}" width="${GX.boxEnd-748}" height="5" rx="2" fill="url(#hRail)"/><rect x="754" y="${BB+18}" width="${GX.boxEnd-748}" height="6" rx="2" fill="url(#hRail)"/>${gearMotor(690,BB-6,runOf(L,'M2'))}`;
+  if(p.mixer)s+=`<rect x="64" y="186" width="10" height="${556-186}" fill="#a3adb6"/><rect x="226" y="186" width="10" height="${556-186}" fill="#a3adb6"/><rect x="58" y="552" width="22" height="6" fill="#4a5560"/><rect x="220" y="552" width="22" height="6" fill="#4a5560"/>`+andon(46,40,stState('M3'));
+  if(p.press)s+=`<rect x="332" y="${BY-70}" width="7" height="70" fill="#2a3138"/><rect x="461" y="${BY-70}" width="7" height="70" fill="#2a3138"/>${[0,1,2,3,4,5].map(i=>`<line x1="339" y1="${BY-64+i*11}" x2="461" y2="${BY-64+i*11}" stroke="#ff3b30" stroke-width="1" stroke-dasharray="3 5" opacity=".55"/>`).join('')}<text x="400" y="${BY-74}" text-anchor="middle" style="font:700 8px sans-serif;fill:#b3261e">ستارة ضوئية للأمان</text>`+andon(318,40,stState('M1',PL.press>0.03));
+  if(p.sort)s+=andon(705,190,stState('M1',PL.gate>0.05));
+  if(p.boxes)s+=andon(1172,300,stState('M2',!!(L.kOn&&L.kOn.Y3)));
+  if(p.lift)s+=`<rect x="1206" y="160" width="108" height="${BB-150}" fill="none" stroke="#f2c200" stroke-width="2" stroke-dasharray="6 4" opacity=".7"/>`+gearMotor(1300,120,runOf(L,'M4'))+andon(1395,140,stState('M4'));
+  return s;}
+
 const BY=330,BB=540;
 /* ---- packing station: a carton with open flaps (cut-away front shows what is inside) and a hopper of packing fill ---- */
 const GR='#f3efe6';
@@ -510,9 +584,9 @@ function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{
   const led=(x,y,on,c)=>`<circle cx="${x}" cy="${y}" r="5" fill="${on?(c||'#39d353'):'#3a3f44'}" stroke="#111"/>`;
   const mlab=(x,y,m)=>{const r=mot(m),run=r.mode==='star'||r.mode==='delta';const txt=r.mode==='delta'?(m==='M3'?'دلتا':'يعمل'):r.mode==='star'?(m==='M3'?'نجمة':'يعمل'):r.mode==='fault'?'يطن!':'متوقف';
     return `<g><rect x="${x-34}" y="${y-18}" width="68" height="36" rx="6" fill="${run?'#2f7d3a':r.mode==='fault'?'#b3261e':'#5d6770'}" stroke="#222"/>${T(x,y-3,m,12,'#fff',800)}${T(x,y+12,txt+(run&&r.dir<0&&m!=='M4'?' ⟲':''),9.5,'#fff',600)}</g>`;};
-  s+=`<rect width="1420" height="600" fill="#cfd6dc"/><rect y="560" width="1420" height="40" fill="#9aa4ad"/>`;
+  s+=hallBG();
   /* mixer */
-  if(p.mixer){const r=mot('M3');s+=`<rect x="70" y="40" width="160" height="150" rx="14" fill="#8fa3b5" stroke="#38485a" stroke-width="3"/><g transform="rotate(${(PL.mixA*57.3%360).toFixed(1)} 150 115)"><path d="M150 60V170M95 115H205M111 76L189 154M189 76L111 154" stroke="#2e3e4f" stroke-width="8" stroke-linecap="round"/></g><circle cx="150" cy="115" r="14" fill="#2e3e4f"/>
+  if(p.mixer){const r=mot('M3');s+=`<rect x="70" y="40" width="160" height="150" rx="14" fill="url(#hSS)" stroke="#5d6a76" stroke-width="3"/><rect x="100" y="70" width="100" height="90" rx="10" fill="#203040" opacity=".55"/><g transform="rotate(${(PL.mixA*57.3%360).toFixed(1)} 150 115)"><path d="M150 60V170M95 115H205M111 76L189 154M189 76L111 154" stroke="#2e3e4f" stroke-width="8" stroke-linecap="round"/></g><circle cx="150" cy="115" r="14" fill="#2e3e4f"/>
       <path d="M130 190L140 250H160L170 190Z" fill="#7a8794" stroke="#38485a" stroke-width="2"/>${T(150,30,'الخلاط',13)}${mlab(272,80,'M3')}`;}
   else if(p.belt)s+=`<path d="M120 200h70l-20 60h-30z" fill="#aab4bd" stroke="#555"/>${T(150,190,'تغذية آلية',11)}`;
   /* conveyor 1 */
@@ -521,7 +595,7 @@ function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{
       <circle cx="122" cy="${BY+11}" r="11" fill="#777"/><circle cx="898" cy="${BY+11}" r="11" fill="#777"/><rect x="120" y="${BY+22}" width="10" height="${560-BY-22}" fill="#6b747d"/><rect x="880" y="${BY+22}" width="10" height="${560-BY-22}" fill="#6b747d"/>${mlab(150,BY+60,'M1')}`;
     if(!p.boxes)s+=`<path d="M905 ${BY+40}h90l-8 120h-74z" fill="#7d8f62" stroke="#444" stroke-width="2"/>${T(950,BY+120,'الحاوية',12,'#fff')}`;}
   /* press */
-  if(p.press){const y=170+PL.press*108;s+=`<rect x="345" y="40" width="110" height="18" fill="#4a5560"/><rect x="345" y="40" width="10" height="${BY-40}" fill="#4a5560"/><rect x="445" y="40" width="10" height="${BY-40}" fill="#4a5560"/>
+  if(p.press){const y=170+PL.press*108;s+=`<rect x="345" y="40" width="110" height="18" fill="url(#hYel)" stroke="#8a6a00"/><rect x="345" y="40" width="10" height="${BY-40}" fill="url(#hYel)" stroke="#8a6a00"/><rect x="445" y="40" width="10" height="${BY-40}" fill="url(#hYel)" stroke="#8a6a00"/>
       <rect x="380" y="58" width="40" height="112" rx="5" fill="#c9d3dc" stroke="#45515c" stroke-width="2"/>${T(400,52,'1A',11,'#fff')}<rect x="394" y="170" width="12" height="${(y-170).toFixed(1)}" fill="#d9dee3" stroke="#666"/><rect x="378" y="${y.toFixed(1)}" width="44" height="14" rx="3" fill="#59636d"/>
       ${led(372,70,PL.press<0.03,'#ffcc00')}${T(352,74,'1B1',9,'#222',700,'end')}${led(372,160,PL.press>0.97,'#ffcc00')}${T(352,164,'1B2',9,'#222',700,'end')}${T(470,110,'Y1',11,kOn.Y1?'#0b6b20':'#555')}
       <rect x="392" y="${BY+24}" width="16" height="14" fill="#333"/>${(()=>{const b=PL.pieces.some(q=>q.st==='belt'&&Math.abs(q.x-GX.press)<=6);return `<line x1="372" y1="${BY-14}" x2="428" y2="${BY-14}" stroke="${b?'#ff2d2d':'#ff9a9a'}" stroke-width="${b?2.5:1}" stroke-dasharray="${b?'':'3 3'}"/><rect x="364" y="${BY-24}" width="8" height="20" fill="#333"/><rect x="428" y="${BY-24}" width="8" height="20" fill="#333"/>${T(400,BY+52,'B1',10)}`;})()}`;}
@@ -540,6 +614,7 @@ function scene(){const p=EX.plant,PL=L.PL,E=L.EL||{},mot=m=>(E.mot&&E.mot[m])||{
   if(p.lift){const y=BB-320*PL.lift;s+=`<rect x="1212" y="160" width="8" height="${BB-140}" fill="#556"/><rect x="1300" y="160" width="8" height="${BB-140}" fill="#556"/><rect x="1215" y="${y.toFixed(1)}" width="90" height="12" fill="#3d4650"/>${mlab(1260,130,'M4')}
       <rect x="1310" y="${BB-320}" width="105" height="10" fill="#6b4f2a"/>${T(1362,BB-330,'الرف: '+PL.cnt.stored,11)}${led(1325,BB-6,PL.lift<=0.01,'#ffcc00')}${T(1340,BB-2,'SQ1',10,'#222',700,'start')}${led(1325,BB-312,PL.lift>=0.99,'#ffcc00')}${T(1340,BB-296,'SQ2',10,'#222',700,'start')}`;
     if(!p.boxes)PL.boxes.forEach(b=>{s+=CARTON(b,b.x,BB-70-320*PL.lift);});}
+  s+=plantDeco();
   /* pieces */
   PL.pieces.forEach(q=>{let x=q.x,y=BY-26,o=1;
     if(q.st==='chute'){x=900+(GX.chute-900)*q.f;y=BY-26+(BB-70-(BY-26))*q.f;}else if(q.st==='rej'){x=GX.gate;y=BY+q.f*80;o=Math.max(0,1-q.f);}else if(q.st==='bin'){x=950;y=BY+30+q.f*60;o=Math.max(0,1-q.f);}else if(q.st==='floor'){y=BB+q.f*10;o=Math.max(0,1-q.f);}
@@ -594,11 +669,87 @@ function plcSVG(){const E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,I=L.P.I||[],Q=L
   s+=`</svg><div class="plccap"><b>${MODEL==='300'?'S7-300 (قديم) · Step 7':'S7-1200 (حديث) · TIA Portal'}</b> · <button class="btn" data-rs="1">${L.plcRun?'■ STOP':'▸ RUN'}</button> <span>${!pw?'غير مغذى':L.plcRun?'RUN':'STOP'}</span></div>`;
   return s;}
 $('plcv').addEventListener('click',e=>{if(e.target.closest('[data-rs]')){L.plcRun=!L.plcRun;say(L.plcRun?'PLC على RUN':'PLC على STOP');}});
+
+/* ===================== control room: SCADA overview, alarms, trends and the MCC ===================== */
+const NOM={M1:4.2,M2:3.1,M3:11.5,M4:5.6},MCOL={M1:'#4fc3f7',M2:'#ffb74d',M3:'#81c784',M4:'#f06292'};
+let SC=null,SCN=0;
+function scNew(){return{ex:EX.id,t:0,ts:{},td:{},cur:{},rh:{},hist:[],hT:0,al:[],act:{},sel:EX.mot[0],prod:[],last:null,floor:0};}
+const prodKey=()=>{const P=EX.plant;return P.lift?'stored':P.boxes?'boxFull':P.press?'stamped':P.belt?'deliver':null;};
+function scTick(dt){if(!SC||SC.ex!==EX.id)SC=scNew();const E=L.EL||{},t=SC.t+=dt;
+  EX.mot.forEach(m=>{const r=(E.mot&&E.mot[m])||{mode:'off'},run=r.mode==='star'||r.mode==='delta';
+    if(run&&SC.ts[m]==null)SC.ts[m]=t;if(!run){delete SC.ts[m];delete SC.td[m];}if(r.mode==='delta'&&SC.td[m]==null)SC.td[m]=t;
+    let I=0;const n=NOM[m];if(run){const a=t-SC.ts[m];I=m==='M3'?(r.mode==='star'?n*.58*(1+1.6*Math.exp(-a/.5)):n*(1+1.3*Math.exp(-(t-SC.td[m])/.35))):n*(1+5*Math.exp(-a/.3));
+      I*=1+.03*Math.sin(t*3.1+m.charCodeAt(1));SC.rh[m]=(SC.rh[m]||0)+dt;}
+    SC.cur[m]=I;});
+  SC.hT+=dt;if(SC.hT>=.5){SC.hT=0;const o={t};EX.mot.forEach(m=>o[m]=SC.cur[m]);SC.hist.push(o);if(SC.hist.length>240)SC.hist.shift();}
+  const C=L.PL.cnt,k=prodKey();if(k){const v=C[k];if(SC.last!=null&&v>SC.last)for(let i=SC.last;i<v;i++)SC.prod.push(t);SC.last=v;}SC.prod=SC.prod.filter(x=>t-x<60);
+  /* alarms: one per condition; it comes in when the condition starts and goes out when it ends */
+  const cond={};if(L.brk)cond.brk=['قصر بين الأطوار: القاطع الرئيسي Q0 فصل',1];if(E.dcShort)cond.dc=['قصر في دائرة التحكم 24V',1];
+  Object.keys(L.olTrip).forEach(f=>{if(!L.olTrip[f])return;const m=Object.keys(MOT).find(q=>MOT[q].f===f);cond['ol'+f]=['فصل الأوفرلود '+f+(m?' · '+MOT[m].n+' '+m:''),1];});
+  if(!E.plcPw&&!E.mix)cond.pw=['جهاز PLC غير مغذى بجهد 24V',2];else if(E.plcPw&&!L.plcRun)cond.stop=['جهاز PLC في وضع STOP',2];
+  if(L.PL.msg)cond.pl=[L.PL.msg,2];
+  Object.entries(cond).forEach(([k,[m,p]])=>{const a=SC.act[k];if(a&&a.msg===m)return;if(a)a.t1=new Date();const n={msg:m,p,t0:new Date(),t1:null,ack:false};SC.act[k]=n;SC.al.unshift(n);});
+  Object.keys(SC.act).forEach(k=>{if(!cond[k]){SC.act[k].t1=new Date();delete SC.act[k];}});
+  if(C.floor>SC.floor){const d=new Date();SC.al.unshift({msg:'سقطت قطعة على الأرض',p:3,t0:d,t1:d,ack:false});}SC.floor=C.floor;
+  if(SC.al.length>60)SC.al.length=60;}
+const hhmmss=d=>d.toLocaleTimeString('en-GB');
+function mstate(m){const E=L.EL||{},r=(E.mot&&E.mot[m])||{mode:'off'},f=MOT[m].f;if(L.olTrip[f])return 'trip';return r.mode==='star'?(m==='M3'?'star':'run'):r.mode==='delta'?'run':r.mode==='fault'?'trip':'off';}
+const MSTC={run:'#2e7d32',star:'#f9a825',trip:'#c62828',off:'#546e7a'},MSTN={run:'يعمل',star:'بدء نجمة',trip:'فصل',off:'متوقف'};
+function mimicSVG(){const P=EX.plant,PL=L.PL,K=L.kOn||{},sn=plantSensors(EX,PL).S,X=x=>20+x*.67,Y=y=>16+y*.62;let o='';
+  const T=(x,y,t,sz,c,w,a)=>`<text x="${x.toFixed?x.toFixed(1):x}" y="${y.toFixed?y.toFixed(1):y}" text-anchor="${a||'middle'}" style="font:${w||700} ${sz||11}px sans-serif;fill:${c||'#cfe0ee'}">${t}</text>`;
+  const mot=(m,x,y)=>{const st=mstate(m),sel=SC.sel===m;return `<g data-mot="${m}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="20" fill="transparent"/>${sel?`<circle cx="${x}" cy="${y}" r="19" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-dasharray="4 3"/>`:''}<circle cx="${x}" cy="${y}" r="14" fill="${MSTC[st]}" stroke="#e0e8ef" stroke-width="2"/>${T(x,y+4,'M',12,'#fff',800)}${T(x,y+30,m+' · '+(SC.cur[m]||0).toFixed(1)+'A',10,'#9fb3c6')}</g>`;};
+  const vlv=(k,x,y)=>{const on=!!K[k];return `<g><path d="M${x-10} ${y-7}L${x+10} ${y+7}V${y-7}L${x-10} ${y+7}Z" fill="${on?'#43a047':'#3b4754'}" stroke="#cfe0ee" stroke-width="1.5"/><rect x="${x-6}" y="${y-20}" width="12" height="9" fill="${on?'#ffd000':'#3b4754'}" stroke="#cfe0ee"/>${T(x,y+22,k,10,on?'#9fe3b4':'#8fa2b4')}</g>`;};
+  const sen=(k,x,y)=>`<g><rect x="${x-5}" y="${y-5}" width="10" height="10" rx="2" fill="${sn[k]?'#ffd000':'#2c3a48'}" stroke="#8fa2b4"/>${T(x,y+18,k,9,'#8fa2b4',600)}</g>`;
+  o+=`<rect width="1000" height="430" fill="#16202b"/>${Array.from({length:20},(_,i)=>`<line x1="${i*50}" y1="0" x2="${i*50}" y2="430" stroke="#1d2a37"/>`).join('')}`;
+  if(P.mixer){const a=PL.mixA;o+=`<rect x="${X(70)}" y="${Y(40)}" width="${160*.67}" height="${150*.62}" rx="10" fill="#22313f" stroke="#7d93a8" stroke-width="2"/>`+[0,1,2].map(i=>{const g=a+i*2.094;return `<line x1="${X(150)}" y1="${Y(115)}" x2="${(X(150)+Math.cos(g)*30).toFixed(1)}" y2="${(Y(115)+Math.sin(g)*16).toFixed(1)}" stroke="#7fc4ff" stroke-width="3"/>`;}).join('')+T(X(150),Y(40)-24,'الخلاط',11)+mot('M3',X(150)+70,Y(40)+10);}
+  if(P.belt){const run=runOf(L,'M1'),off=(PL.t*(run?40:0))%20;o+=`<rect x="${X(110)}" y="${Y(BY)}" width="${800*.67}" height="12" rx="6" fill="#2c3a48" stroke="#7d93a8"/><line x1="${X(110)+6}" y1="${Y(BY)+6}" x2="${X(910)-6}" y2="${Y(BY)+6}" stroke="${run?'#7fc4ff':'#4a5a6a'}" stroke-width="3" stroke-dasharray="8 12" stroke-dashoffset="${(-off).toFixed(1)}"/>`+T(X(510),Y(BY)+30,'السير الناقل',10,'#8fa2b4')+mot('M1',X(110)+4,Y(BY)+46);}
+  if(P.press){const y=Y(170+PL.press*108);o+=`<rect x="${X(380)}" y="${Y(58)}" width="${40*.67}" height="${112*.62}" fill="#22313f" stroke="#7d93a8" stroke-width="2"/><rect x="${X(396)}" y="${Y(170)}" width="6" height="${(y-Y(170)).toFixed(1)}" fill="#cfe0ee"/><rect x="${X(380)}" y="${y.toFixed(1)}" width="${40*.67}" height="6" fill="#cfe0ee"/>`+vlv('Y1',X(470),Y(110))+sen('B1',X(GX.press),Y(BY)+24)+sen('1B1',X(350),Y(70))+sen('1B2',X(350),Y(160))+T(X(400),Y(58)-8,'المكبس 1A',10);}
+  if(P.sort){const g=PL.gate;o+=`<line x1="${X(GX.gate-30)}" y1="${Y(BY)+12}" x2="${(X(GX.gate-30)+40*Math.cos(g*1.1)).toFixed(1)}" y2="${(Y(BY)+12+40*Math.sin(g*1.1)).toFixed(1)}" stroke="${g>.05?'#ffbf3c':'#7d93a8'}" stroke-width="4"/><rect x="${X(GX.gate-50)}" y="${Y(BY+56)}" width="67" height="40" fill="#3a1f1f" stroke="#c62828"/>`+T(X(GX.gate-50)+33,Y(BY+56)+25,'مرفوض '+L.PL.cnt.badRej,10,'#ff8a80')+vlv('Y2',X(GX.gate+60),Y(BY-40))+sen('B2',X(GX.gate-35),Y(BY-55));}
+  if(P.boxes){const run=runOf(L,'M2');o+=`<rect x="${X(760)}" y="${Y(BB)}" width="${(GX.boxEnd-760)*.67}" height="12" rx="6" fill="#2c3a48" stroke="#7d93a8"/>`+mot('M2',X(760)-30,Y(BB)+6)+sen('B3',X(GX.chute),Y(BB)+26)+sen('B5',X(GX.fill),Y(BB)+26)+sen('B4',X(915),Y(410))+vlv('Y3',X(GX.fill),Y(BB-150));
+    PL.boxes.forEach(b=>{if(b.x<760&&b.st!=='lift')return;const y=b.st==='lift'?Y(BB-70-320*PL.lift):Y(BB-70),x=X(b.x)-18,f=Math.min(1,b.fill||0);o+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="36" height="34" fill="#4e3a22" stroke="#c8a26b"/><rect x="${x.toFixed(1)}" y="${(y+34-34*f).toFixed(1)}" width="36" height="${(34*f).toFixed(1)}" fill="#e8dcc0" opacity=".8"/>${T(x+18,y+22,b.n||0,11,'#fff')}`;});
+    o+=T(X(980),Y(BB)+34,'سير الصناديق',10,'#8fa2b4');}
+  if(P.lift){const y=Y(BB-320*PL.lift);o+=`<rect x="${X(1212)}" y="${Y(160)}" width="5" height="${(Y(BB)-Y(160)).toFixed(1)}" fill="#7d93a8"/><rect x="${X(1300)}" y="${Y(160)}" width="5" height="${(Y(BB)-Y(160)).toFixed(1)}" fill="#7d93a8"/><rect x="${X(1215)}" y="${(y-4).toFixed(1)}" width="${(X(1300)-X(1215)).toFixed(1)}" height="6" fill="#cfe0ee"/><rect x="${X(1310)}" y="${Y(BB-320)}" width="60" height="5" fill="#c8a26b"/>`+T(X(1340),Y(BB-320)-8,'الرف '+L.PL.cnt.stored,10)+sen('SQ2',X(1325),Y(BB-320)+16)+sen('SQ1',X(1325),Y(BB)+6)+mot('M4',X(1260),Y(160)-26)+vlv('K3',X(1200)-22,Y(200))+vlv('K4',X(1200)-22,Y(280));}
+  PL.pieces.forEach(q=>{if(q.st!=='belt')return;o+=`<rect x="${(X(q.x)-6).toFixed(1)}" y="${(Y(BY)-11).toFixed(1)}" width="12" height="10" rx="2" fill="${q.bad?'#e53935':'#7fc4ff'}"/>`;});
+  const E=L.EL||{},bad=L.brk||E.mix||E.dcShort;o+=`<rect x="0" y="402" width="1000" height="28" fill="${bad?'#7a1c1c':'#0b1118'}"/>`+T(10,421,(bad?'⛔ ':'● ')+capNow(),12,bad?'#fff':'#9fe3b4',700,'start');
+  return `<svg viewBox="0 0 1000 430">${o}</svg>`;}
+function trendSVG(){const H=SC.hist,W=420,Hh=200,x0=34,y0=10,w=W-x0-8,h=Hh-y0-26;let mx=8;H.forEach(o=>EX.mot.forEach(m=>{mx=Math.max(mx,o[m]||0);}));mx=Math.ceil(mx*1.1);
+  let o=`<rect width="${W}" height="${Hh}" fill="#0f1720"/>`;for(let i=0;i<=4;i++){const y=y0+h-h*i/4;o+=`<line x1="${x0}" y1="${y}" x2="${x0+w}" y2="${y}" stroke="#1f2b37"/><text x="${x0-4}" y="${y+4}" text-anchor="end" style="font:10px monospace;fill:#8fa2b4">${(mx*i/4).toFixed(0)}</text>`;}
+  EX.mot.forEach((m,j)=>{const pts=H.map((q,i)=>`${(x0+w-(H.length-1-i)*w/239).toFixed(1)},${(y0+h-(q[m]||0)/mx*h).toFixed(1)}`).join(' ');if(pts)o+=`<polyline points="${pts}" fill="none" stroke="${MCOL[m]}" stroke-width="2"/>`;o+=`<rect x="${x0+j*80}" y="${Hh-14}" width="10" height="10" fill="${MCOL[m]}"/><text x="${x0+14+j*80}" y="${Hh-5}" style="font:700 10px sans-serif;fill:#cfe0ee">${m} ${(SC.cur[m]||0).toFixed(1)}A</text>`;});
+  return `<svg viewBox="0 0 ${W} ${Hh}">${o}</svg>`;}
+function mccSVG(){const ms=EX.mot,CW2=150,W=CW2*(ms.length+1)+20,H=330,E=L.EL||{};let o=`<rect width="${W}" height="${H}" fill="#2a2f35"/>`;
+  const dial=(cx,cy,v,max,u,warn)=>{const a=-140+280*Math.min(1,v/max),r=26;return `<circle cx="${cx}" cy="${cy}" r="${r+4}" fill="#1b1e22"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="#f4f1e8"/>${[0,.25,.5,.75,1].map(f=>{const g=(-140+280*f-90)*Math.PI/180;return `<line x1="${(cx+Math.cos(g)*(r-6)).toFixed(1)}" y1="${(cy+Math.sin(g)*(r-6)).toFixed(1)}" x2="${(cx+Math.cos(g)*r).toFixed(1)}" y2="${(cy+Math.sin(g)*r).toFixed(1)}" stroke="#333"/>`;}).join('')}<line x1="${cx}" y1="${cy}" x2="${(cx+Math.cos((a-90)*Math.PI/180)*(r-4)).toFixed(1)}" y2="${(cy+Math.sin((a-90)*Math.PI/180)*(r-4)).toFixed(1)}" stroke="${warn?'#c62828':'#111'}" stroke-width="2"/><circle cx="${cx}" cy="${cy}" r="3" fill="#111"/><text x="${cx}" y="${cy+16}" text-anchor="middle" style="font:700 8px sans-serif;fill:#333">${u}</text>`;};
+  const lamp=(x,y,on,c,t)=>`<circle cx="${x}" cy="${y}" r="8" fill="${on?c:'#4a5056'}" stroke="#111"/>${on?`<circle cx="${x}" cy="${y}" r="13" fill="${c}" opacity=".25"/>`:''}<text x="${x}" y="${y+21}" text-anchor="middle" style="font:700 8px sans-serif;fill:#222">${t}</text>`;
+  const cab=(x,title,sub)=>`<rect x="${x}" y="10" width="${CW2-10}" height="${H-20}" rx="4" fill="#c9ced3" stroke="#6f777f" stroke-width="2"/><rect x="${x+6}" y="16" width="${CW2-22}" height="${H-32}" rx="3" fill="#d8dce0" stroke="#9aa1a8"/><rect x="${x+14}" y="22" width="${CW2-38}" height="30" rx="2" fill="#1b2a3a"/><text x="${x+(CW2-10)/2}" y="35" text-anchor="middle" style="font:700 10px sans-serif;fill:#fff">${title}</text><text x="${x+(CW2-10)/2}" y="47" text-anchor="middle" style="font:600 8px sans-serif;fill:#b9c8d6">${sub}</text><rect x="${x+CW2-22}" y="140" width="6" height="40" rx="2" fill="#6f777f"/>`;
+  const on=!L.brk&&!E.mix;o+=cab(10,'التغذية الرئيسية','400V · 3~ · Q0')+dial(80,100,on?400:0,500,'V')+`<rect x="58" y="150" width="44" height="50" rx="4" fill="#2a3138"/><rect x="74" y="${on?156:176}" width="12" height="18" rx="2" fill="${on?'#2e7d32':'#c62828'}"/><text x="80" y="214" text-anchor="middle" style="font:700 9px sans-serif;fill:#222">Q0 ${on?'ON':'TRIP'}</text>`+lamp(44,250,on,'#fff','L1')+lamp(80,250,on,'#fff','L2')+lamp(116,250,on,'#fff','L3');
+  ms.forEach((m,i)=>{const x=10+CW2*(i+1),st=mstate(m),cx=x+(CW2-10)/2,f=MOT[m].f,I=SC.cur[m]||0,ks=MOT[m].k||[];
+    o+=`<g data-mot="${m}" style="cursor:pointer">`+cab(x,m,MOT[m].n)+dial(cx,100,I,NOM[m]*2,'A',I>NOM[m]*1.5)+`</g>`+lamp(cx-38,160,st==='run'||st==='star','#43a047','يعمل')+lamp(cx,160,st==='off','#e53935','متوقف')+lamp(cx+38,160,st==='trip','#ffb300','فصل');
+    o+=`<text x="${cx}" y="226" text-anchor="middle" style="font:600 8px sans-serif;fill:#333">أوفرلود ${f}</text><text x="${cx}" y="212" text-anchor="middle" style="font:700 9px monospace;fill:#222">${ks.map(k=>k+(L.kOn&&L.kOn[k]?'■':'□')).join(' ')}</text>`;
+    o+=`<g data-olr="${f}" style="cursor:pointer"><rect x="${cx-36}" y="232" width="72" height="26" rx="5" fill="#1f5fbf" stroke="#0b3d91"/><text x="${cx}" y="249" text-anchor="middle" style="font:700 9px sans-serif;fill:#fff">↺ إعادة ${f}</text></g><text x="${cx}" y="284" text-anchor="middle" style="font:600 8.5px sans-serif;fill:#333">تشغيل ${tmm(SC.rh[m]||0)}</text>`;});
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:${W}px;max-width:100%">${o}</svg>`;}
+const tmm=v=>{v=Math.floor(v);return Math.floor(v/60)+':'+String(v%60).padStart(2,'0');};
+function renderScada(force){if(!SC||SC.ex!==EX.id)SC=scNew();if(!EX.mot.includes(SC.sel))SC.sel=EX.mot[0];const E=L.EL||{},C=L.PL.cnt,P=EX.plant;
+  $('crClk').textContent=hhmmss(new Date());
+  const k=[];k.push(['الحالة',capNow(),'st']);if(P.belt&&!P.boxes)k.push(['وصلت',C.deliver]);if(P.press)k.push(['خُتمت',C.stamped]);if(P.sort)k.push(['رُفضت',C.badRej]);if(P.boxes){k.push(['صناديق',C.boxFull]);k.push(['عُبئت',C.boxFill]);}if(P.lift)k.push(['على الرف',C.stored]);
+  if(prodKey())k.push(['الإنتاج / دقيقة',SC.prod.length]);k.push(['المحركات العاملة',EX.mot.filter(m=>runOf(L,m)).length+' / '+EX.mot.length]);k.push(['PLC',(MODEL==='300'?'S7-300':'S7-1200')+' · '+(E.plcPw?(L.plcRun?'RUN':'STOP'):'OFF')]);
+  const nAct=Object.keys(SC.act).length;k.push(['إنذارات نشطة',nAct]);
+  $('crK').innerHTML=k.map(([a,b,c])=>`<div class="kpi${c?' '+c:''}"><small>${a}</small><b>${esc(String(b))}</b></div>`).join('');
+  $('crSt').innerHTML=nAct?`<span style="color:#ff6b60;font-weight:700">⚠ ${nAct} إنذار نشط</span>`:`<span style="color:#7fe0a0;font-weight:700">● لا إنذارات</span>`;
+  $('crMim').innerHTML=mimicSVG();
+  $('crAl').innerHTML=SC.al.length?`<table class="alr">${SC.al.slice(0,14).map(a=>`<tr class="p${a.p}${a.t1?' gone':''}${a.ack?'':' nack'}"><td class="tm">${hhmmss(a.t0)}</td><td>${esc(a.msg)}</td><td class="tm">${a.t1?'زال':'نشط'}${a.ack?' ✓':''}</td></tr>`).join('')}</table>`:'<p style="padding:10px;color:#7fe0a0">لا توجد إنذارات. الخط يعمل بلا أعطال.</p>';
+  $('crTr').innerHTML=trendSVG();
+  {const m=SC.sel,st=mstate(m),f=MOT[m].f,I=SC.cur[m]||0;
+    $('crFp').innerHTML=`<div style="font-weight:800;font-size:1rem;color:${MSTC[st]==='#546e7a'?'#cfe0ee':MSTC[st]}">${m} · ${esc(MOT[m].n)}</div><table><tr><td>الحالة</td><td>${MSTN[st]}</td></tr><tr><td>التيار</td><td>${I.toFixed(1)} A</td></tr><tr><td>التيار المقنن</td><td>${NOM[m]} A</td></tr><tr><td>طريقة التشغيل</td><td>${m==='M3'?'نجمة / دلتا':m==='M4'?'عكس اتجاه':'مباشر DOL'}</td></tr><tr><td>الكونتاكتورات</td><td>${(MOT[m].k||[]).map(q=>q+(L.kOn&&L.kOn[q]?' ■':' □')).join('  ')}</td></tr><tr><td>الأوفرلود ${f}</td><td>${L.olTrip[f]?'فاصل':'سليم'}</td></tr><tr><td>زمن التشغيل</td><td>${tmm(SC.rh[m]||0)}</td></tr></table>`;}
+  $('crMcc').innerHTML=mccSVG();
+  if(force){$('crBtn').innerHTML=`<span class="lbl">أوامر المشغل:</span>${pbHTML()}<button class="hb" id="crOl">↺ إعادة الأوفرلود</button><button class="hb" id="crQ0">⟲ إعادة Q0</button>`;bindPB($('crBtn'));
+    $('crOl').onclick=()=>{L.olTrip={};say('أُعيد ضبط الأوفرلود من غرفة التحكم');};$('crQ0').onclick=()=>{L.brk=false;say('أُعيد القاطع الرئيسي Q0');};}}
+$('crAck').onclick=()=>{if(SC)SC.al.forEach(a=>a.ack=true);renderScada();};
+$('p-scada').addEventListener('pointerdown',e=>{const m=e.target.closest('[data-mot]'),r=e.target.closest('[data-olr]');
+  if(r){L.olTrip[r.dataset.olr]=false;say('أُعيد ضبط الأوفرلود '+r.dataset.olr);renderScada();return;}if(m&&SC){SC.sel=m.dataset.mot;renderScada();}});
 /* ---------- the clock ---------- */
 let lastT=performance.now(),acc=0;
 setInterval(()=>{const now=performance.now();acc+=Math.min(0.5,(now-lastT)/1000);lastT=now;let n=0;
-  while(acc>=0.05&&n<8){const mon=MON&&TAB==='prog'?[]:null;lineTick(L,0.05,mon);if(mon)MONS=mon;acc-=0.05;n++;}
-  if(TAB==='line')renderLine();else if(TAB==='prog'&&MON)monUpd();},50);
+  while(acc>=0.05&&n<8){const mon=MON&&TAB==='prog'?[]:null;lineTick(L,0.05,mon);scTick(0.05);if(mon)MONS=mon;acc-=0.05;n++;}
+  if(TAB==='line')renderLine();else if(TAB==='prog'&&MON)monUpd();else if(TAB==='scada'&&++SCN%5===0)renderScada();},50);
 /* ===================== wiring board ===================== */
 const DSZ={sup:[110,180],ps:[120,242],pbno:[100,140],pbnc:[100,140],ls:[112,132],pnp:[104,140],k:[140,195],ol:[140,140],mot:[165,174],sol:[100,140]};
 /* real photos of the devices; small ones keep a terminal strip under the photo */
@@ -869,7 +1020,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793452613';
+const LNV='1793453600';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
