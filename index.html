@@ -871,7 +871,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
   <div class="box" style="max-width:380px">
     <h2 id="trRegT" style="margin:0 0 6px;font-size:1.1rem">📝 تسجيل مدرب جديد</h2>
     <p style="margin:0 0 8px;color:var(--muted);font-size:.86rem">بعد التسجيل يوافق مدير النظام على حسابك، ثم تدخل وضع المدرب باسم المستخدم ورقمك السري، وترى نتائج متدربيك فقط.</p>
-    <div class="fld" style="flex-direction:column"><label>الاسم الكامل<input id="trN" autocomplete="name"></label><label>اسم المستخدم (حروف إنجليزية أو أرقام)<input id="trU" dir="ltr" autocomplete="username" placeholder="ahmed_ali"></label><label>الرقم السري<input id="trP" type="password" autocomplete="new-password" dir="ltr"></label><label>تأكيد الرقم السري<input id="trP2" type="password" autocomplete="new-password" dir="ltr"></label></div>
+    <div class="fld" style="flex-direction:column"><label>الاسم الكامل<input id="trN" autocomplete="name"></label><label>اسم المستخدم (حروف إنجليزية أو أرقام)<input id="trU" dir="ltr" autocomplete="username" placeholder="ahmed_ali"></label><label>بريدك في Google (Gmail): تصلك عليه نتائج متدربيك في Drive<input id="trE" type="email" dir="ltr" autocomplete="email" placeholder="name@gmail.com"></label><label>الرقم السري<input id="trP" type="password" autocomplete="new-password" dir="ltr"></label><label>تأكيد الرقم السري<input id="trP2" type="password" autocomplete="new-password" dir="ltr"></label></div>
     <p id="trRegMsg" style="min-height:1.2em;font-size:.88rem;margin:6px 0"></p>
     <div class="grp" style="justify-content:center"><button class="btn prim" id="trRegOk">تسجيل</button><button class="btn" id="trRegX">إغلاق</button></div>
   </div>
@@ -3205,7 +3205,7 @@ $('bTrainer').onclick=()=>{if(document.body.classList.contains('trainer')){setTr
 const pinIn=h=>{PINH=h;lsS('wsPinH2',h);$('pinMsg').textContent='';pinM.classList.remove('open');trEnter();setTrainer(true);say('وضع المدرب مفعّل');renderTop();};
 const tryPin=async()=>{const p=$('pinIn').value.trim(),h=hpin(p),bad=t=>{$('pinMsg').textContent=t||'الرمز غير صحيح';$('pinIn').select();};if(!p)return bad();
   const u=($('pinU').value||'').trim().toLowerCase();if(u){if(!CLOUD_ON)return bad('دخول المدربين يعمل من موقع المحاكي على الإنترنت.');$('pinMsg').textContent='جارٍ التحقق…';
-    try{const j=await cloud({action:'trLogin',u,pin:p});lsS('wsTrAcc',JSON.stringify({u:j.u,n:j.n}));lsS('wsKey','u:'+j.u+':'+p);try{$('rKey').value='u:'+j.u+':'+p;}catch(_){}$('pinMsg').textContent='';pinM.classList.remove('open');trEnter();setTrainer(true,j.u);say('أهلًا '+j.n+': وضع المدرب مفعّل، وترى نتائج متدربيك فقط');renderTop();}
+    try{const j=await cloud({action:'trLogin',u,pin:p});lsS('wsTrAcc',JSON.stringify({u:j.u,n:j.n,url:j.url||'',furl:j.furl||''}));lsS('wsKey','u:'+j.u+':'+p);try{$('rKey').value='u:'+j.u+':'+p;}catch(_){}$('pinMsg').textContent='';pinM.classList.remove('open');trEnter();setTrainer(true,j.u);say('أهلًا '+j.n+': وضع المدرب مفعّل، وترى نتائج متدربيك فقط');renderTop();}
     catch(e){bad(e.srv||(e.message==='pending'?'طلبك بانتظار موافقة مدير النظام.':e.message==='rejected'?'رُفض طلبك. راجع مدير النظام.':e.message==='busy'?'محاولات خاطئة كثيرة. انتظر 10 دقائق.':e.message==='net'?'لا يوجد اتصال بالإنترنت.':'اسم المستخدم أو الرقم السري غير صحيح.'));}return;}
   if(CLOUD_ON){$('pinMsg').textContent='جارٍ التحقق…';try{const j=await cloud({action:'pinCheck',pin:p});if(j.v!=null)lsS('wsPinV',String(j.v));return pinIn(h);}
     catch(e){if(e.message==='pin')return bad();if(e.message==='busy')return bad('محاولات خاطئة كثيرة. انتظر 10 دقائق.');$('pinMsg').textContent='';}}
@@ -3998,7 +3998,7 @@ const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('
    Trainees are tied to a trainer by the trainer's link (?tr=user) or by choosing once from the list when sending. */
 const TRA=()=>{try{return JSON.parse(lsG('wsTrAcc')||'null');}catch(_){return null;}};
 function trAccUI(){const a=TRA(),on=document.body.classList.contains('trainer')&&!!a;document.body.classList.toggle('tracc',on);
-  if(on){$('rWho').textContent='👨‍🏫 نتائج متدربي: '+a.n+' ('+a.u+')';$('rKey').value=lsG('wsKey')||'';}}
+  if(on){$('rWho').innerHTML='👨‍🏫 نتائج متدربي: '+esc(a.n)+' ('+esc(a.u)+')'+(a.url?` · <a href="${esc(a.url)}" target="_blank" rel="noopener">📄 جدول نتائجي في Drive</a>`:'')+(a.furl?` · <a href="${esc(a.furl)}" target="_blank" rel="noopener">🖼 مجلد الصور</a>`:'');$('rKey').value=lsG('wsKey')||'';}}
 {const q=new URLSearchParams(location.search).get('tr');if(q&&/^[a-z0-9_]{3,20}$/i.test(q)){lsS('wsMyTr',q.toLowerCase());lsS('wsMyTrN',null);}}
 let TRN=null;async function trNames(){if(TRN)return TRN;try{const j=await cloud({action:'trNames'});TRN=j.list||[];}catch(_){TRN=[];}return TRN;}
 async function trMyName(){const u=lsG('wsMyTr');if(!u)return '';let n=lsG('wsMyTrN');if(n)return n;const L=await trNames(),x=L.find(z=>z.u===u);if(x){lsS('wsMyTrN',x.n);return x.n;}return u;}
@@ -4013,22 +4013,24 @@ window.wsTrPick=()=>new Promise(async res=>{const u=lsG('wsMyTr');if(u!=null)ret
   $('trPickX').onclick=()=>done(null);});
 /* registration */
 {const M=$('trRegM'),msg=(t,ok)=>{const m=$('trRegMsg');m.textContent=t;m.style.color=ok?'var(--ok)':'var(--warn)';};
-  $('trRegB').onclick=()=>{$('pinModal').classList.remove('open');['trN','trU','trP','trP2'].forEach(i=>$(i).value='');msg('');M.classList.add('open');setTimeout(()=>$('trN').focus(),50);};
+  $('trRegB').onclick=()=>{$('pinModal').classList.remove('open');['trN','trU','trE','trP','trP2'].forEach(i=>$(i).value='');msg('');M.classList.add('open');setTimeout(()=>$('trN').focus(),50);};
   $('trRegX').onclick=()=>M.classList.remove('open');
-  $('trRegOk').onclick=async()=>{const n=$('trN').value.trim(),u=$('trU').value.trim().toLowerCase(),p=$('trP').value.trim();
-    if(!n)return msg('اكتب اسمك.');if(!/^[a-z0-9_]{3,20}$/.test(u))return msg('اسم المستخدم من 3 إلى 20 حرفًا إنجليزيًا أو رقمًا أو _');if(p.length<4)return msg('الرقم السري 4 خانات على الأقل.');if(p!==$('trP2').value.trim())return msg('تأكيد الرقم السري غير مطابق.');
-    $('trRegOk').disabled=true;msg('جارٍ التسجيل…',1);try{await cloud({action:'trReg',n,u,pin:p});msg('✔ سُجّل طلبك. انتظر موافقة مدير النظام، ثم ادخل وضع المدرب باسم المستخدم «'+u+'» ورقمك السري.',1);}
+  $('trRegOk').onclick=async()=>{const n=$('trN').value.trim(),u=$('trU').value.trim().toLowerCase(),em=$('trE').value.trim(),p=$('trP').value.trim();
+    if(!n)return msg('اكتب اسمك.');if(!/^[a-z0-9_]{3,20}$/.test(u))return msg('اسم المستخدم من 3 إلى 20 حرفًا إنجليزيًا أو رقمًا أو _');if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em))return msg('اكتب بريدك في Google (Gmail) لتصلك نتائج متدربيك في Drive.');if(p.length<4)return msg('الرقم السري 4 خانات على الأقل.');if(p!==$('trP2').value.trim())return msg('تأكيد الرقم السري غير مطابق.');
+    $('trRegOk').disabled=true;msg('جارٍ التسجيل…',1);try{await cloud({action:'trReg',n,u,e:em,pin:p});msg('✔ سُجّل طلبك. انتظر موافقة مدير النظام، ثم ادخل وضع المدرب باسم المستخدم «'+u+'» ورقمك السري.',1);}
     catch(e){msg(e.srv||(e.message==='taken'?'اسم المستخدم مستخدم، اختر غيره.':e.message==='net'?'لا يوجد اتصال بالإنترنت.':'تعذّر التسجيل. تأكد أن مدير النظام حدّث كود Google.'));}finally{$('trRegOk').disabled=false;}};}
 /* the manager's list of trainers */
 {const M=$('trMgrM');const load=async()=>{$('trMgrMsg').textContent='جارٍ التحميل…';$('trMgrL').innerHTML='';
     try{const j=await cloud({action:'trList',key:lsG('wsKey')||$('rKey').value.trim()});const L=(j.list||[]).sort((a,b)=>(a.st==='pending'?0:1)-(b.st==='pending'?0:1)||b.t-a.t);
       $('trMgrMsg').textContent=L.length?L.filter(x=>x.st==='pending').length+' بانتظار الموافقة · '+L.length+' مدرب':'لا يوجد مدربون مسجلون بعد. أرسل لهم رابط الموقع ليسجلوا من «وضع المدرب ← تسجيل مدرب جديد».';
-      $('trMgrL').innerHTML=L.map(x=>`<div class="trrow"><b>${esc(x.n)} <small dir="ltr" style="color:var(--muted)">${esc(x.u)}</small></b><span class="st ${x.st}">${x.st==='ok'?'مقبول':x.st==='no'?'مرفوض':'بانتظار الموافقة'}</span><small>${x.c} نتيجة</small>
+      $('trMgrL').innerHTML=L.map(x=>`<div class="trrow"><b>${esc(x.n)} <small dir="ltr" style="color:var(--muted)">${esc(x.u)}${x.e?' · '+esc(x.e):''}</small></b><span class="st ${x.st}">${x.st==='ok'?'مقبول':x.st==='no'?'مرفوض':'بانتظار الموافقة'}</span><small>${x.c} نتيجة</small>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">📄 جدوله</a>`:x.st==='ok'?`<button class="btn" data-trd="${esc(x.u)}">📄 إنشاء جدوله في Drive</button>`:''}
         ${x.st!=='ok'?`<button class="btn prim" data-trs="${esc(x.u)}:ok">✔ قبول</button>`:''}${x.st!=='no'?`<button class="btn" data-trs="${esc(x.u)}:no">✕ رفض</button>`:''}<button class="btn danger" data-trs="${esc(x.u)}:del">🗑 حذف</button></div>`).join('');}
     catch(e){$('trMgrMsg').textContent=e.message==='key'?'اكتب كلمة سر المدير في نافذة «نتائج المتدربين» أولًا (مرة واحدة).':e.srv||'تعذّر التحميل. تأكد أنك حدّثت كود Google بالنسخة الجديدة.';}};
   $('bTrMgr').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;M.classList.add('open');load();};$('trMgrX').onclick=()=>M.classList.remove('open');
-  $('trMgrL').addEventListener('click',async e=>{const b=e.target.closest('[data-trs]');if(!b)return;const [u,st]=b.dataset.trs.split(':');if(st==='del'&&!confirm('حذف حساب المدرب «'+u+'»؟ نتائج متدربيه تبقى وتراها أنت.'))return;
-    b.disabled=true;try{await cloud({action:'trSet',key:lsG('wsKey')||$('rKey').value.trim(),u,st});}catch(_){}load();});}
+  $('trMgrL').addEventListener('click',async e=>{const dv=e.target.closest('[data-trd]');if(dv){const em=prompt('بريد المدرب في Google (Gmail) لمشاركة جدوله معه (اتركه كما هو إن كان مسجلًا):','');if(em===null)return;dv.disabled=true;
+      try{await cloud({action:'trDrive',key:lsG('wsKey')||$('rKey').value.trim(),u:dv.dataset.trd,e:em.trim()});}catch(err){alert(err.srv||'تعذّر إنشاء الجدول: اكتب بريد المدرب.');}load();return;}
+    const b=e.target.closest('[data-trs]');if(!b)return;const [u,st]=b.dataset.trs.split(':');if(st==='del'&&!confirm('حذف حساب المدرب «'+u+'»؟ نتائج متدربيه تبقى وتراها أنت.'))return;
+    b.disabled=true;try{const j=await cloud({action:'trSet',key:lsG('wsKey')||$('rKey').value.trim(),u,st});if(j.warn)alert(j.warn);}catch(_){}load();});}
 if(CLOUD_ON)sTrShow();trAccUI();
 
 if(CLOUD_ON)setTimeout(()=>cloud({action:'pinGet'}).then(j=>{if(j.v==null)return;const v=String(j.v),old=lsG('wsPinV');lsS('wsPinV',v);

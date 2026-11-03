@@ -17,16 +17,51 @@ function trainers_() {
   let t = ss.getSheetByName(TRAINERS);
   if (!t) {
     t = ss.insertSheet(TRAINERS);
-    t.appendRow(['اسم المستخدم', 'الاسم', 'الرقم السري (مشفر)', 'الحالة', 'وقت التسجيل']);
+    t.appendRow(['اسم المستخدم', 'الاسم', 'الرقم السري (مشفر)', 'الحالة', 'وقت التسجيل', 'البريد (Gmail)', 'رقم جدول المدرب', 'رقم مجلد صور المدرب']);
     t.setFrozenRows(1);
   }
   return t;
 }
 function trFind_(u) {
   const v = trainers_().getDataRange().getValues();
-  for (let i = 1; i < v.length; i++) if (String(v[i][0]).toLowerCase() === u) return { row: i + 1, u: String(v[i][0]), n: String(v[i][1]), h: String(v[i][2]), st: String(v[i][3]) };
+  for (let i = 1; i < v.length; i++) if (String(v[i][0]).toLowerCase() === u) return { row: i + 1, u: String(v[i][0]), n: String(v[i][1]), h: String(v[i][2]), st: String(v[i][3]), e: String(v[i][5] || ''), sid: String(v[i][6] || ''), fid: String(v[i][7] || '') };
   return null;
 }
+// ===== نسخة نتائج كل مدرب في Google Drive الخاص به =====
+// عند موافقة المدير يُنشأ للمدرب جدول «نتائج المحاكي — اسمه» ومجلد لصور تجارب متدربيه، ويُشاركان مع بريده (Gmail)
+// فيجدهما في Drive عنده تحت «مشترك معي». كل نتيجة جديدة من متدربيه تُكتب في جدوله، وصورتها في مجلده،
+// والحذف والرصد وتعديل الدرجات من التطبيق تسري على جدوله أيضًا. الجدول الرئيسي يبقى عند المدير كاملًا.
+const TR_ROOT = 'نتائج المدربين';
+const HEAD = ['المعرف', 'الوقت', 'الاسم', 'الرقم التدريبي', 'التمرين', 'الدرجة', 'الكود', 'صورة مصغرة', 'ملف الصورة', '', 'رُصد'];
+function trRoot_() { const it = DriveApp.getFoldersByName(TR_ROOT); return it.hasNext() ? it.next() : DriveApp.createFolder(TR_ROOT); }
+const sheetUrl_ = id => id ? 'https://docs.google.com/spreadsheets/d/' + id : '';
+const folderUrl_ = id => id ? 'https://drive.google.com/drive/folders/' + id : '';
+// ينشئ جدول المدرب ومجلده (مرة واحدة) ويشاركهما مع بريده، وينقل إليه نتائج متدربيه السابقة
+function trProvision_(t) {
+  if (t.sid || !t.e) return t;
+  const root = trRoot_();
+  const ss = SpreadsheetApp.create('نتائج المحاكي — ' + t.n);
+  const sh = ss.getSheets()[0]; sh.setName(SHEET); sh.appendRow(HEAD); sh.setFrozenRows(1);
+  const old = sheet_().getDataRange().getValues().slice(1).filter(r => String(r[11] || '').toLowerCase() === t.u);
+  old.forEach(r => sh.appendRow(r.slice(0, 11)));
+  const f = root.createFolder('صور متدربي ' + t.n);
+  try { DriveApp.getFileById(ss.getId()).moveTo(root); } catch (err) {}
+  try { DriveApp.getFileById(ss.getId()).addEditor(t.e); f.addEditor(t.e); } catch (err) {}
+  trainers_().getRange(t.row, 7, 1, 2).setValues([[ss.getId(), f.getId()]]);
+  t.sid = ss.getId(); t.fid = f.getId(); return t;
+}
+function trSheet_(u) {
+  const t = u && trFind_(String(u).toLowerCase());
+  if (!t || t.st !== 'ok' || !t.sid) return null;
+  try { return SpreadsheetApp.openById(t.sid).getSheetByName(SHEET); } catch (err) { return null; }
+}
+// يطبّق تغييرًا على صف التجربة نفسه في جدول المدرب (بالمعرف): fn(sheet, row) أو حذف
+function trMirror_(u, uid, fn) {
+  const sh = trSheet_(u); if (!sh) return;
+  const v = sh.getDataRange().getValues();
+  for (let i = v.length - 1; i >= 1; i--) if (String(v[i][0]) === String(uid)) { fn(sh, i + 1); return; }
+}
+
 // من يطلب؟ المدير بكلمة السر KEY، أو مدرب مقبول بمفتاح «u:اسم المستخدم:الرقم السري»
 function who_(d) {
   const k = String(d.key || '');
@@ -108,7 +143,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
   // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
-  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet'].indexOf(d.action) >= 0;
+  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet', 'trDrive'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
   if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
@@ -120,16 +155,19 @@ function doPost(e) {
       if (!n || !id) return out_({ ok: false, err: 'missing' });
       const uid = Utilities.getUuid().slice(0, 8);
       let fid = '';
+      const trU = String(d.tr || '').toLowerCase().slice(0, 20), trT = trU ? trFind_(trU) : null, trOk = trT && trT.st === 'ok' && trT.fid;
       if (d.img && String(d.img).length < 8000000) {
         try {
           const blob = Utilities.newBlob(Utilities.base64Decode(String(d.img)), 'image/jpeg', id + '-' + uid + '.jpg');
-          fid = folder_().createFile(blob).getId();
+          let fo = null; if (trOk) { try { fo = DriveApp.getFolderById(trT.fid); } catch (err) { fo = null; } }
+          fid = (fo || folder_()).createFile(blob).getId();
         } catch (err) { fid = ''; }
       }
       const th = String(d.th || '').length < 45000 ? String(d.th || '') : '';
       s.appendRow([uid, new Date(), n, "'" + id, String(d.ex || ''), d.s === '' ? '' : Number(d.s),
                    String(d.code || '').slice(0, 45000), th, fid, '', '', String(d.tr || '').toLowerCase().slice(0, 20)]);
       if (String(s.getRange(1, 12).getValue() || '') === '') s.getRange(1, 12).setValue('المدرب');
+      if (trOk) { try { const ts = trSheet_(trU); if (ts) ts.appendRow([uid, new Date(), n, "'" + id, String(d.ex || ''), d.s === '' ? '' : Number(d.s), String(d.code || '').slice(0, 45000), th, fid, '', '']); } catch (err) {} }
       return out_({ ok: true, uid: uid });
     }
 
@@ -151,9 +189,11 @@ function doPost(e) {
     if (d.action === 'trReg') {
       const u = String(d.u || '').trim().toLowerCase(), n = String(d.n || '').trim().slice(0, 60), pin = String(d.pin || '').trim();
       if (!/^[a-z0-9_]{3,20}$/.test(u)) return out_({ ok: false, err: 'bad', msg: 'اسم المستخدم من 3 إلى 20 حرفًا إنجليزيًا أو رقمًا' });
+      const em = String(d.e || '').trim().toLowerCase();
       if (!n || !/^\S{4,32}$/.test(pin)) return out_({ ok: false, err: 'bad', msg: 'اكتب الاسم، والرقم السري 4 خانات على الأقل' });
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return out_({ ok: false, err: 'bad', msg: 'اكتب بريدك في Google (Gmail) لتصلك نتائج متدربيك في Drive' });
       if (trFind_(u)) return out_({ ok: false, err: 'taken', msg: 'اسم المستخدم مستخدم، اختر غيره' });
-      trainers_().appendRow([u, n, pinHash_(pin), 'pending', new Date()]);
+      trainers_().appendRow([u, n, pinHash_(pin), 'pending', new Date(), em, '', '']);
       return out_({ ok: true, st: 'pending' });
     }
     // دخول مدرب
@@ -163,7 +203,7 @@ function doPost(e) {
       const t = trFind_(String(d.u || '').trim().toLowerCase());
       if (!t || t.h !== pinHash_(String(d.pin || '').trim())) { C.put(fk, String(f + 1), 600); return out_({ ok: false, err: 'pin', msg: 'اسم المستخدم أو الرقم السري غير صحيح' }); }
       if (t.st !== 'ok') return out_({ ok: false, err: t.st === 'no' ? 'rejected' : 'pending', msg: t.st === 'no' ? 'رُفض طلبك، راجع مدير النظام' : 'طلبك بانتظار موافقة مدير النظام' });
-      return out_({ ok: true, u: t.u, n: t.n });
+      return out_({ ok: true, u: t.u, n: t.n, url: sheetUrl_(t.sid), furl: folderUrl_(t.fid) });
     }
     // أسماء المدربين المقبولين: ليختار المتدرب مدربه
     if (d.action === 'trNames') {
@@ -181,15 +221,26 @@ function doPost(e) {
       const v = trainers_().getDataRange().getValues().slice(1).filter(r => String(r[0]));
       const cnt = {};
       s.getDataRange().getValues().slice(1).forEach(r => { const k = String(r[11] || '').toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; });
-      return out_({ ok: true, list: v.map(r => ({ u: String(r[0]), n: String(r[1]), st: String(r[3]), t: r[4] instanceof Date ? r[4].getTime() : r[4], c: cnt[String(r[0]).toLowerCase()] || 0 })) });
+      return out_({ ok: true, list: v.map(r => ({ u: String(r[0]), n: String(r[1]), st: String(r[3]), t: r[4] instanceof Date ? r[4].getTime() : r[4], c: cnt[String(r[0]).toLowerCase()] || 0, e: String(r[5] || ''), url: sheetUrl_(String(r[6] || '')) })) });
     }
     if (d.action === 'trSet') {
       if (!W.admin) return out_({ ok: false, err: 'key' });
       const t = trFind_(String(d.u || '').toLowerCase());
       if (!t) return out_({ ok: false, err: 'notfound' });
       if (d.st === 'del') trainers_().deleteRow(t.row);
-      else trainers_().getRange(t.row, 4).setValue(d.st === 'ok' ? 'ok' : 'no');
-      return out_({ ok: true });
+      else {
+        trainers_().getRange(t.row, 4).setValue(d.st === 'ok' ? 'ok' : 'no');
+        if (d.st === 'ok') { try { trProvision_(t); } catch (err) { return out_({ ok: true, warn: 'قُبل المدرب، لكن تعذّر إنشاء جدوله في Drive: ' + String(err && err.message || err).slice(0, 200) }); } }
+      }
+      return out_({ ok: true, url: sheetUrl_(t.sid) });
+    }
+    if (d.action === 'trDrive') {
+      if (!W.admin) return out_({ ok: false, err: 'key' });
+      const t = trFind_(String(d.u || '').toLowerCase());
+      if (!t || t.st !== 'ok') return out_({ ok: false, err: 'notfound' });
+      if (d.e) { t.e = String(d.e).trim().toLowerCase(); trainers_().getRange(t.row, 6).setValue(t.e); }
+      trProvision_(t);
+      return out_({ ok: true, url: sheetUrl_(t.sid) });
     }
     if (d.action === 'who') return out_({ ok: true, admin: !!W.admin, tr: W.tr || '', n: W.n || '' });
 
@@ -224,6 +275,7 @@ function doPost(e) {
       for (let i = v.length - 1; i >= 1; i--) {
         if (ids.has(String(v[i][0])) && mine(v[i])) {
           if (v[i][8]) { try { DriveApp.getFileById(String(v[i][8])).setTrashed(true); } catch (err) {} }
+          try { trMirror_(v[i][11], v[i][0], (sh, r) => sh.deleteRow(r)); } catch (err) {}
           s.deleteRow(i + 1);
         }
       }
@@ -237,7 +289,7 @@ function doPost(e) {
       if (v.length && String(v[0][10] || '') === '') s.getRange(1, 11).setValue('رُصد');
       let n = 0;
       for (let i = 1; i < v.length; i++) {
-        if (ids.has(String(v[i][0])) && mine(v[i])) { s.getRange(i + 1, 11).setValue(on ? 1 : ''); n++; }
+        if (ids.has(String(v[i][0])) && mine(v[i])) { s.getRange(i + 1, 11).setValue(on ? 1 : ''); n++; try { trMirror_(v[i][11], v[i][0], (sh, r) => sh.getRange(r, 11).setValue(on ? 1 : '')); } catch (err) {} }
       }
       return out_({ ok: true, n: n });
     }
@@ -251,7 +303,9 @@ function doPost(e) {
         const u = String(v[i][0]);
         if (Object.prototype.hasOwnProperty.call(m, u) && mine(v[i])) {
           const x = m[u];
-          s.getRange(i + 1, 6).setValue(x === '' || x == null || isNaN(Number(x)) ? '' : Number(x));
+          const val = x === '' || x == null || isNaN(Number(x)) ? '' : Number(x);
+          s.getRange(i + 1, 6).setValue(val);
+          try { trMirror_(v[i][11], u, (sh, r) => sh.getRange(r, 6).setValue(val)); } catch (err) {}
           n++;
         }
       }
