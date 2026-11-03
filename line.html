@@ -892,20 +892,26 @@ function layout(){const D=devList(EX),pos={},W=1180,rows=[];let x=60,y=20+DG,rh=
   row();EX.mot.forEach(m=>{const M=MOT[m],gw=M.k.length*(DSZ.k[0]+14)-14,gh=DSZ.k[1]+KG+DSZ.ol[1];if(x+gw>W)row();
     M.k.forEach((k,i)=>{pos[k]={x:x+i*(DSZ.k[0]+14),y,w:DSZ.k[0],h:DSZ.k[1],r,grp:m};});pos[M.f]={x,y:y+DSZ.k[1]+KG,w:DSZ.ol[0],h:DSZ.ol[1],r,grp:m,ol:1};
     x+=gw+30;rh=Math.max(rh,gh);});
-  /* terminal strip: X1 control (24V field devices), X2 power (motors) */
-  const fd=D.filter(d=>FIELD.includes(d.t)),ctl=fd.filter(d=>d.t!=='mot'),pw=fd.filter(d=>d.t==='mot');row();
-  const strip=(list)=>{list.forEach(d=>{const n=TERM[d.t].length,w=n*TBW;if(x+w>W)row();pos[d.id]={x,y,w,h:74,r,tb:1};x+=w+12;rh=Math.max(rh,74);});};
-  strip(ctl);if(pw.length){x+=18;strip(pw);}
+  /* terminal strip and field devices in columns: every field device sits straight under its own terminal block, so its
+     cable runs straight down without crossing any other. With many devices: two strip rows, the far field row offset by half
+     a column so its cables pass between the near cards (brick pattern) */
+  const fd=D.filter(d=>FIELD.includes(d.t)),seq=[...fd.filter(d=>d.t!=='mot'),...fd.filter(d=>d.t==='mot')],nF=seq.length,AV=W-60;
+  let two=false,c=Math.min(140,AV/Math.max(1,nF));if(c<108&&nF>1){two=true;c=Math.min(140,AV/(Math.ceil(nF/2)+.5));}
+  const nA=two?Math.ceil(nF/2):nF,RA=seq.slice(0,nA),RB=seq.slice(nA),cw=Math.min(118,c-16);
+  const cx=(k,b)=>60+c/2+k*c+(b?c/2:0),blk=(d,k,b)=>{const tw=d.t==='mot'&&c<130?15:TBW,w=TERM[d.t].length*tw;pos[d.id]={x:cx(k,b)-w/2,y,w,h:74,r,tb:1,tw,cx:cx(k,b)};};
+  const fpos={};
+  if(nF){if(RB.length){row();rh=74;RB.forEach((d,k)=>blk(d,k,1));}row();rh=74;RA.forEach((d,k)=>blk(d,k,0));}
   rows[r].h=rh;const ducts=rows.map(q=>q.y-DG/2);ducts.push(rows[r].y+rows[r].h+DG/2);
   const PH=ducts[ducts.length-1]+DG/2+20;
-  /* the field outside the cabinet, under it */
-  /* in the same order as their terminal blocks, so the cables do not cross */
-  const fpos={};let fx=60,fy=PH+80,fh=0;[...ctl,...pw].forEach(d=>{const [w,h]=DSZ[d.t];if(fx+w>W){fx=60;fy+=fh+44;fh=0;}fpos[d.id]={x:fx,y:fy,w,h};fx+=w+18;fh=Math.max(fh,h);});
-  LAY={pos,fpos,rows,ducts,W:W+40,PH,H:fd.length?fy+fh+30:PH};return LAY;}
+  const ch=d=>Math.max(118,Math.round((cw-8)*.84)+36)+(d.t==='mot'?10:0),hA=Math.max(0,...RA.map(ch)),fyA=PH+58,fyB=fyA+hA+46;
+  RA.forEach((d,k)=>fpos[d.id]={x:cx(k,0)-cw/2,y:fyA,w:cw,h:ch(d),row:0});
+  RB.forEach((d,k)=>fpos[d.id]={x:cx(k,1)-cw/2,y:fyB,w:cw,h:ch(d),row:1});
+  const fy=RB.length?fyB:fyA,fh=Math.max(0,...(RB.length?RB:RA).map(ch));
+  LAY={pos,fpos,rows,ducts,W:W+40,PH,H:nF?fy+fh+58:PH};return LAY;}
 /* where each terminal sits (field devices: on their terminal blocks in the strip) */
 function tPos(k){const [d,n]=k.split('.'),P=LAY.pos[d];if(!P)return null;const dv=devList(EX).find(x=>x.id===d);const t=d==='PLC'?'plc':dv&&dv.t;
   const at=(fx,fy)=>({x:P.x+fx,y:P.y+fy});
-  if(FIELD.includes(t)){const i=TERM[t].indexOf(n);return i<0?null:at(TBW/2+i*TBW,12);}
+  if(FIELD.includes(t)){const i=TERM[t].indexOf(n),tw=P.tw||TBW;return i<0?null:at(tw/2+i*tw,12);}
   switch(t){case'sup':return at([16,42,68][['L1','L2','L3'].indexOf(n)],P.h-12);
     case'ps':return at([18,46,78,106][['L+','L+2','M','M2'].indexOf(n)],P.h-12);
     case'k':{const K={1:[14,13],3:[36,13],5:[58,13],A1:[80,13],A2:[98,13],2:[14,P.h-12],4:[36,P.h-12],6:[58,P.h-12]}[n];return K?at(...K):null;}
@@ -924,26 +930,62 @@ function devSVG(d){const P=LAY.pos[d.id],T=(x,y,t,s,c,a,w)=>`<text x="${x}" y="$
   else if(d.t==='ol'){const tr=!!L.olTrip[d.id];s+=`<rect width="${P.w}" height="${P.h}" rx="5" fill="#33383e" stroke="#15181b"/><rect x="6" y="20" width="${P.w-12}" height="${P.h-40}" rx="4" fill="#f2f3f4" stroke="#c4c9cd"/><circle cx="30" cy="46" r="11" fill="#2f6db5" stroke="#173a61"/><path d="M30 37v9" stroke="#fff" stroke-width="2"/><rect x="54" y="34" width="14" height="12" rx="2" fill="#1f5fbf"/><rect x="74" y="34" width="14" height="12" rx="2" fill="#c62828"/>`+T(80,64,esc(d.id),12,'#0b1d33',900)+(tr?`<rect x="20" y="58" width="44" height="16" rx="3" fill="#c62828"/>`+T(42,70,'فاصل',9,'#fff',800):'');}
   else if(d.t==='plc'){const M=PLCIMG[MODEL],ah=P.h-84,aw=Math.min(P.w-20,ah*M.w/M.h);s+=`<rect width="${P.w}" height="${P.h}" rx="6" fill="#e9edf0" stroke="#3c4650" stroke-width="1.5"/><image href="${M.src}" x="${(P.w-aw)/2}" y="40" width="${aw}" height="${aw*M.h/M.w}" preserveAspectRatio="xMidYMid meet"/>`;}
   else if(P.tb){/* the terminal blocks of one field device: grey slices with a marker strip, field cable entering at the bottom */
-    const n=TERM[d.t].length;for(let i=0;i<n;i++){const x=i*TBW;s+=`<rect x="${x}" y="0" width="${TBW-1}" height="${P.h}" rx="2" fill="${d.t==='mot'?'#c9ced3':'#aeb5bb'}" stroke="#6d777f"/><rect x="${x+3}" y="26" width="${TBW-7}" height="22" fill="#fff" stroke="#bfc5ca"/><text x="${x+TBW/2}" y="40" text-anchor="middle" style="font:700 6.5px sans-serif;fill:#222">${esc(TERM[d.t][i])}</text><circle cx="${x+TBW/2}" cy="${P.h-12}" r="5" fill="#2b3036"/>`;}
+    const n=TERM[d.t].length,tw=P.tw||TBW;for(let i=0;i<n;i++){const x=i*tw;s+=`<rect x="${x}" y="0" width="${tw-1}" height="${P.h}" rx="2" fill="${d.t==='mot'?'#c9ced3':'#aeb5bb'}" stroke="#6d777f"/><rect x="${x+3}" y="26" width="${TBW-7}" height="22" fill="#fff" stroke="#bfc5ca"/><text x="${x+TBW/2}" y="40" text-anchor="middle" style="font:700 6.5px sans-serif;fill:#222">${esc(TERM[d.t][i])}</text><circle cx="${x+TBW/2}" cy="${P.h-12}" r="5" fill="#2b3036"/>`;}
     s+=`<rect x="0" y="${P.h-3}" width="${P.w}" height="3" fill="#6d777f"/>`+T(P.w/2,P.h+14,esc(d.id),9,'#0b1d33',800);}
   s+='</g>';
   (d.t==='plc'?plcTerms(EX):TERM[d.t]).forEach(n=>{const k=d.id+'.'+n,p=tPos(k);if(!p)return;const pend=PEND===k;
     const lb=d.t==='plc'?tName(k).replace('PLC:',''):d.t==='ps'?n.replace('2',''):P.tb?'':n;const up=(d.t==='k'||d.t==='ol'||d.t==='plc')&&p.y-P.y<30;
     const fill=d.t==='pnp'?{BN:'#7a4a22',BK:'#111',BU:'#1f5fbf'}[n]:'#d8dde1';
-    s+=`<g class="term" data-t="${k}"><circle cx="${p.x}" cy="${p.y}" r="13" fill="transparent"/><circle class="tc" cx="${p.x}" cy="${p.y}" r="7" fill="${pend?'#fff1c2':fill}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><path d="M${p.x-3.5} ${p.y}h7M${p.x} ${p.y-3.5}v7" stroke="#333" stroke-width="1.4"/>`+
+    s+=`<g class="term" data-t="${k}"><circle cx="${p.x}" cy="${p.y}" r="13" fill="transparent"/><circle class="tc" cx="${p.x}" cy="${p.y}" r="${P.tw&&P.tw<18?6:7}" fill="${pend?'#fff1c2':fill}" stroke="${pend?'#ff7a00':'#2a3440'}" stroke-width="${pend?4:2}"/><path d="M${p.x-3.5} ${p.y}h7M${p.x} ${p.y-3.5}v7" stroke="#333" stroke-width="1.4"/>`+
       (lb?`<text x="${p.x}" y="${up?p.y+21:p.y-12}" text-anchor="middle" style="font:800 ${d.t==='plc'?8.5:9}px sans-serif;fill:#0b1d33;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round">${esc(lb)}</text>`:'')+`</g>`;});
   return s;}
-/* the field devices outside the cabinet, each with its cable up to its terminal blocks */
+/* clear vector drawings of the field devices (sharp at any zoom), drawn after the real ones, with their terminal markings */
+const ART_DEFS=`<linearGradient id="aChr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8d969e"/><stop offset=".35" stop-color="#f4f6f8"/><stop offset=".6" stop-color="#c3cad0"/><stop offset="1" stop-color="#7b848c"/></linearGradient>
+<linearGradient id="aBlk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#15181b"/><stop offset=".45" stop-color="#4a5158"/><stop offset="1" stop-color="#1b1f23"/></linearGradient>
+<radialGradient id="aGrn" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#9df0a8"/><stop offset=".45" stop-color="#20b33c"/><stop offset="1" stop-color="#0b6a1f"/></radialGradient>
+<radialGradient id="aRed" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#ffb0a8"/><stop offset=".45" stop-color="#e02b20"/><stop offset="1" stop-color="#8a1009"/></radialGradient>
+<linearGradient id="aMot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb6cc"/><stop offset=".3" stop-color="#5f7f9f"/><stop offset=".75" stop-color="#3b5774"/><stop offset="1" stop-color="#2a3f55"/></linearGradient>
+<linearGradient id="aAlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f3"/><stop offset=".5" stop-color="#b8c0c7"/><stop offset="1" stop-color="#8a939b"/></linearGradient>
+<linearGradient id="aYel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c99700"/><stop offset=".4" stop-color="#ffd54a"/><stop offset="1" stop-color="#b38500"/></linearGradient>`;
+/* each drawing in a 100 x 84 box */
+function devArt(t){const tx=(x,y,v,sz,c,w)=>`<text x="${x}" y="${y}" text-anchor="middle" style="font:${w||800} ${sz}px sans-serif;fill:${c||'#1c2833'}">${v}</text>`,sc=(x,y)=>`<circle cx="${x}" cy="${y}" r="3.6" fill="url(#aChr)" stroke="#555" stroke-width=".6"/><path d="M${x-2} ${y}h4M${x} ${y-2}v4" stroke="#444" stroke-width=".8"/>`;
+  if(t==='pbno'||t==='pbnc'){const no=t==='pbno',col=no?'#1f9d3a':'#d32f2f';
+    return `<rect x="30" y="42" width="40" height="38" rx="3" fill="#f4f5f6" stroke="#8a939b"/><rect x="30" y="42" width="40" height="7" rx="2" fill="${col}"/>`+tx(50,48,no?'NO':'NC',6,'#fff')+sc(39,58)+sc(61,58)+tx(39,70,no?'13':'11',8)+tx(61,70,no?'14':'12',8)+
+      `<path d="M39 76h6l8 ${no?-5:0}M53 76h8" stroke="#333" stroke-width="1.2" fill="none"/>`+
+      `<rect x="36" y="34" width="28" height="10" fill="url(#aBlk)"/><circle cx="50" cy="20" r="19" fill="url(#aChr)" stroke="#6d757c"/><circle cx="50" cy="20" r="14.5" fill="url(#${no?'aGrn':'aRed'})" stroke="#333" stroke-width=".8"/><ellipse cx="45" cy="14" rx="5" ry="3" fill="#fff" opacity=".45"/>`+tx(50,24,no?'I':'O',11,'#fff',900);}
+  if(t==='ls')return `<path d="M50 30L82 9" stroke="#3a4148" stroke-width="5" stroke-linecap="round"/><circle cx="82" cy="9" r="8" fill="#22272c"/><circle cx="82" cy="9" r="3" fill="url(#aChr)"/>
+    <rect x="30" y="22" width="36" height="16" rx="3" fill="url(#aChr)" stroke="#6d757c"/><circle cx="50" cy="30" r="5" fill="#2b3036"/><rect x="26" y="37" width="44" height="40" rx="4" fill="url(#aYel)" stroke="#8a6d00"/>
+    <rect x="31" y="44" width="34" height="22" rx="2" fill="#fff" stroke="#9a8a40"/>`+tx(48,53,'NO',7)+tx(48,63,'13 — 14',7.5)+`<rect x="44" y="77" width="8" height="6" fill="#2b3036"/>`;
+  if(t==='pnp')return `<path d="M44 3a8 4 0 0 1 12 0M41 -1a12 6 0 0 1 18 0" stroke="#1aa3c8" stroke-width="1.4" fill="none"/>
+    <rect x="40" y="5" width="20" height="6" rx="1.5" fill="#2bb7a8"/><rect x="40" y="11" width="20" height="40" fill="url(#aChr)" stroke="#6d757c" stroke-width=".7"/>${[...Array(12)].map((_,k)=>`<path d="M40 ${13+k*3.2}h20" stroke="#7b848c" stroke-width=".6"/>`).join('')}
+    <rect x="35" y="19" width="30" height="7" rx="1" fill="url(#aChr)" stroke="#555" stroke-width=".7"/><rect x="35" y="38" width="30" height="7" rx="1" fill="url(#aChr)" stroke="#555" stroke-width=".7"/>
+    <rect x="41" y="51" width="18" height="5" fill="#ff9800"/><rect x="45" y="56" width="10" height="8" fill="#3a3f45"/>
+    <path d="M50 64C50 70 26 70 26 77M50 64V77M50 64C50 70 74 70 74 77" fill="none" stroke-width="3" stroke-linecap="round" stroke="#666"/>
+    <path d="M50 66C47 71 26 70 26 77" fill="none" stroke="#7a4a22" stroke-width="2.4" stroke-linecap="round"/><path d="M50 66V77" stroke="#111" stroke-width="2.4" stroke-linecap="round"/><path d="M50 66C53 71 74 70 74 77" fill="none" stroke="#1f5fbf" stroke-width="2.4" stroke-linecap="round"/>`+
+    tx(26,84,'BN +',6.8,'#7a4a22')+tx(50,84,'BK',6.8,'#111')+tx(74,84,'BU −',6.8,'#1f5fbf');
+  if(t==='sol')return `<rect x="12" y="62" width="76" height="18" rx="2" fill="url(#aAlu)" stroke="#7b848c"/>${[24,40,60,76].map(x=>`<circle cx="${x}" cy="71" r="3.4" fill="#555"/>`).join('')}
+    <rect x="44" y="6" width="9" height="20" fill="url(#aChr)" stroke="#6d757c" stroke-width=".7"/><rect x="42" y="4" width="13" height="5" rx="1" fill="url(#aChr)" stroke="#555" stroke-width=".7"/>
+    <rect x="28" y="24" width="41" height="38" rx="3" fill="url(#aBlk)" stroke="#111"/>`+tx(48,40,'24V DC',7,'#e8edf1')+tx(48,51,'COIL',6,'#9aa5ae')+
+    `<rect x="69" y="28" width="22" height="30" rx="2" fill="#3a4148" stroke="#111"/><circle cx="80" cy="34" r="2.4" fill="url(#aChr)"/><rect x="73" y="40" width="14" height="11" rx="1.5" fill="#fff"/>`+tx(80,48,'A1 A2',4.8,'#111')+`<rect x="76" y="58" width="8" height="5" fill="#2b3036"/>`;
+  if(t==='mot')return `<path d="M24 70l-4 10h20l-4-10zM62 70l-4 10h20l-4-10z" fill="#2a3f55"/><rect x="14" y="78" width="70" height="4" rx="1" fill="#2a3f55"/>
+    <rect x="4" y="27" width="14" height="40" rx="5" fill="url(#aMot)" stroke="#22354a"/>${[0,1,2,3].map(k=>`<path d="M7 ${33+k*9}h8" stroke="#22354a" stroke-width="1.6"/>`).join('')}
+    <rect x="17" y="24" width="56" height="46" rx="4" fill="url(#aMot)" stroke="#22354a"/>${[0,1,2,3,4,5,6].map(k=>`<path d="M20 ${30+k*6}h50" stroke="#22354a" stroke-width="1.1" opacity=".75"/>`).join('')}
+    <rect x="73" y="28" width="7" height="38" rx="2" fill="url(#aMot)" stroke="#22354a"/><rect x="80" y="43" width="16" height="8" fill="url(#aChr)" stroke="#555" stroke-width=".7"/><rect x="85" y="44" width="7" height="2" fill="#555"/>
+    <rect x="31" y="8" width="28" height="17" rx="2" fill="url(#aMot)" stroke="#22354a"/><rect x="33" y="10" width="24" height="5" rx="1" fill="#9fb6cc" opacity=".6"/><rect x="36" y="25" width="18" height="2" fill="#22354a"/>
+    <rect x="30" y="44" width="30" height="13" rx="1.5" fill="#e9edf0" stroke="#22354a" stroke-width=".7"/>`+tx(45,53,'3~ 400V',6.4,'#1c2833');
+  return '';}
+/* the field devices outside the cabinet, each with its cable straight down from its terminal blocks */
 function fieldSVG(){let s='',c='';const D=devList(EX).filter(d=>FIELD.includes(d.t));
   const typ={pbno:'ضاغط مفتوح (NO)',pbnc:'ضاغط مغلق (NC)',ls:'مفتاح نهاية مشوار',pnp:'حساس تقاربي PNP',sol:'ملف صمام هوائي 24V',mot:'محرك 3 أطوار'};
   D.forEach(d=>{const F=LAY.fpos[d.id],P=LAY.pos[d.id];if(!F||!P)return;const fn=INI[d.id]!=null?IN[INI[d.id]][1]:OUTI[d.id]!=null?OUT[OUTI[d.id]][1]:d.t==='mot'?MOT[d.id].n:'';
-    const x1=P.x+P.w/2,y1=P.y+P.h,gx=x1,gy=LAY.PH-10,x2=F.x+F.w/2,y2=F.y;
-    c+=`<path d="M${x1} ${y1}V${gy}C${gx} ${gy+40} ${x2} ${y2-40} ${x2} ${y2}" fill="none" stroke="${d.t==='mot'?'#3a3f45':'#5a6168'}" stroke-width="${d.t==='mot'?7:5}" stroke-linecap="round"/><rect x="${x1-7}" y="${gy-6}" width="14" height="10" rx="2" fill="#2b3036"/>`;
-    s+=`<g transform="translate(${F.x} ${F.y})"><rect width="${F.w}" height="${F.h}" rx="8" fill="#fff" stroke="#6d7780" stroke-width="1.5"/><image href="img/${DIMG[d.t]}.jpg" x="2" y="2" width="${F.w-4}" height="${F.h-30}" preserveAspectRatio="xMidYMid meet"/>
-      <rect x="3" y="3" width="${d.id.length*7.4+10}" height="16" rx="4" fill="#1c2833" opacity=".86"/><text x="8" y="15" style="font:700 10px sans-serif;fill:#fff">${esc(d.id)}</text>
-      <text x="${F.w/2}" y="${F.h-16}" text-anchor="middle" direction="rtl" style="font:800 8.5px sans-serif;fill:#0b1d33">${esc(typ[d.t])}</text><text x="${F.w/2}" y="${F.h-5}" text-anchor="middle" direction="rtl" style="font:700 7.5px sans-serif;fill:#3c5a7a" textLength="${Math.min(F.w-8,(fn||'').length*4.4)}" lengthAdjust="spacingAndGlyphs">${esc(fn||'')}</text><title>${esc(typ[d.t]+(fn?' — '+fn:''))}</title></g>`;
-    if(d.t==='mot'){/* the motor runs when its contactor pulls in */}});
-  return c+`<g pointer-events="none"><rect x="${LAY.W-560}" y="${LAY.PH+14}" width="546" height="22" rx="6" fill="#fff" opacity=".92"/><text x="${LAY.W-22}" y="${LAY.PH+30}" text-anchor="end" style="font:800 12px sans-serif;fill:#3c4650">⬇ خارج اللوحة (الميدان): كل جهاز موصول بكابل إلى ترميناله في صف X1 / X2</text></g>`+s;}
+    const x=P.x+P.w/2,y1=P.y+P.h,gy=LAY.PH-10,mot=d.t==='mot';
+    c+=`<path d="M${x} ${y1}V${F.y}" fill="none" stroke="#1d2125" stroke-width="${mot?8.5:6.5}" stroke-linecap="round"/><path d="M${x} ${y1}V${F.y}" fill="none" stroke="${mot?'#4a5057':'#6b737b'}" stroke-width="${mot?6:4}" stroke-linecap="round"/><rect x="${x-8}" y="${gy-6}" width="16" height="11" rx="2" fill="#2b3036"/>`+
+      '';
+    const aw=F.w-8,ah=F.h-36,k=Math.min(aw/100,ah/84),ox=4+(aw-100*k)/2,oy=4+(ah-84*k)/2;
+    s+=`<g transform="translate(${F.x} ${F.y})"><rect width="${F.w}" height="${F.h}" rx="8" fill="#fff" stroke="#6d7780" stroke-width="1.5"/><rect x="2" y="2" width="${F.w-4}" height="${F.h-34}" rx="6" fill="#f3f6f8"/><g transform="translate(${ox} ${oy}) scale(${k})">${devArt(d.t)}</g>
+      <rect x="3" y="3" width="${d.id.length*7.4+10}" height="16" rx="4" fill="#1c2833" opacity=".88"/><text x="8" y="15" style="font:700 10px sans-serif;fill:#fff">${esc(d.id)}</text>
+      <text x="${F.w/2}" y="${F.h-18}" text-anchor="middle" direction="rtl" style="font:800 8.5px sans-serif;fill:#0b1d33" textLength="${Math.min(F.w-8,typ[d.t].length*5)}" lengthAdjust="spacingAndGlyphs">${esc(typ[d.t])}</text><text x="${F.w/2}" y="${F.h-6}" text-anchor="middle" direction="rtl" style="font:700 7.5px sans-serif;fill:#3c5a7a" textLength="${Math.min(F.w-8,(fn||'').length*4.4)}" lengthAdjust="spacingAndGlyphs">${esc(fn||'')}</text><title>${esc(typ[d.t]+(fn?' — '+fn:''))}</title></g>`;});
+  return `<defs>${ART_DEFS}</defs>`+`<g pointer-events="none"><rect x="${LAY.W-560}" y="${LAY.H-34}" width="546" height="22" rx="6" fill="#fff" opacity=".92"/><text x="${LAY.W-22}" y="${LAY.H-18}" text-anchor="end" style="font:800 12px sans-serif;fill:#3c4650">⬆ خارج اللوحة (الميدان): كل جهاز تحت ترميناله مباشرة، وكابله نازل منه بخط مستقيم</text></g>`+c+s;}
 /* which duct a terminal's wire goes into: up from the upper terminals, down from the lower ones (overload relays always down) */
 function tDuct(k){const P=LAY.pos[k.split('.')[0]],p=tPos(k);if(!P||!p)return 0;if(P.ol)return P.r+1;return p.y<P.y+P.h/2?P.r:P.r+1;}
 /* contactor bottom to the overload relay plugged under it (same motor): a short jumper across the gap */
