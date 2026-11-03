@@ -124,7 +124,7 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 <div class="top">
   <div class="bar1">
     <h1>خط الإنتاج · PLC Step 7<span class="credit">م. جابر الفيفي · Claude ©</span></h1>
-    <button class="ib" id="bUpd" title="تحديث صفحة خط الإنتاج إلى آخر نسخة دون الخروج">⟳</button><button class="ib" id="bBack" title="رجوع إلى المحاكي">رجوع ↩</button>
+    <button class="ib" id="bSnd" title="أصوات المصنع: تشغيل/كتم">🔊</button><button class="ib" id="bUpd" title="تحديث صفحة خط الإنتاج إلى آخر نسخة دون الخروج">⟳</button><button class="ib" id="bBack" title="رجوع إلى المحاكي">رجوع ↩</button>
   </div>
   <div class="bar2">
     <select id="exSel" aria-label="التمرين"></select>
@@ -745,11 +745,64 @@ function renderScada(force){if(!SC||SC.ex!==EX.id)SC=scNew();if(!EX.mot.includes
 $('crAck').onclick=()=>{if(SC)SC.al.forEach(a=>a.ack=true);renderScada();};
 $('p-scada').addEventListener('pointerdown',e=>{const m=e.target.closest('[data-mot]'),r=e.target.closest('[data-olr]');
   if(r){L.olTrip[r.dataset.olr]=false;say('أُعيد ضبط الأوفرلود '+r.dataset.olr);renderScada();return;}if(m&&SC){SC.sel=m.dataset.mot;renderScada();}});
+
+/* ===================== factory sounds, made live with Web Audio (no sound files) =====================
+   motors hum while they run (the belts rattle, the mixer swishes, the lift whines), contactors click,
+   valves hiss when they fill and exhaust, the press thumps at its ends, pieces knock into bins and boxes,
+   packing fill pours, and a new alarm sounds a buzzer; under it all a low room tone of the hall */
+const SND={on:ls('ln:snd')!=='0',ctx:null,m:null,nb:null,v:{},pv:null};
+function sndInit(){if(SND.ctx)return true;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
+  const c=SND.ctx=new AC();SND.m=c.createGain();SND.m.gain.value=0;const cp=c.createDynamicsCompressor();SND.m.connect(cp);cp.connect(c.destination);
+  const n=c.sampleRate*2,b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);let br=0;for(let i=0;i<n;i++)d[i]=Math.random()*2-1;SND.nb=b;
+  const bb=c.createBuffer(1,n,c.sampleRate),e=bb.getChannelData(0);for(let i=0;i<n;i++){br=(br+.02*(Math.random()*2-1))/1.02;e[i]=br*3.5;}SND.brown=bb;return true;}
+const sNoise=(brown)=>{const x=SND.ctx.createBufferSource();x.buffer=brown?SND.brown:SND.nb;x.loop=true;x.start();return x;};
+const sFlt=(type,f,q)=>{const x=SND.ctx.createBiquadFilter();x.type=type;x.frequency.value=f;if(q)x.Q.value=q;return x;};
+const sGain=v=>{const g=SND.ctx.createGain();g.gain.value=v;return g;};
+/* a running machine: a hum at its own pitch, plus noise shaped for its kind, faded in and out */
+function sVoice(k,o){if(SND.v[k])return SND.v[k];const c=SND.ctx,out=sGain(0);out.connect(SND.m);const V={out,o,f:[]};
+  if(o.f){const lp=sFlt('lowpass',o.lp||520);lp.connect(out);[[o.f,'sawtooth',.5],[o.f*2,'sine',.35],[o.f*3,'triangle',.12]].forEach(([f,t,g])=>{const x=c.createOscillator();x.type=t;x.frequency.value=f;const gg=sGain(g);x.connect(gg);gg.connect(lp);x.start();V.f.push([x,f]);});}
+  if(o.nf){const nz=sNoise(o.brown),bp=sFlt('bandpass',o.nf,o.nq||1),ng=sGain(o.ng||.5);nz.connect(bp);bp.connect(ng);ng.connect(out);
+    if(o.lfo){const l=c.createOscillator();l.frequency.value=o.lfo;const lg=sGain((o.ng||.5)*.8);l.connect(lg);lg.connect(ng.gain);l.start();}}
+  return SND.v[k]=V;}
+function sSet(k,o,vol,pitch){const V=sVoice(k,o),t=SND.ctx.currentTime;V.out.gain.setTargetAtTime(vol,t,vol>V.out.gain.value?.18:.25);V.f.forEach(([x,f])=>x.frequency.setTargetAtTime(f*(pitch||1),t,.35));}
+/* one-shot sounds */
+function sHiss(dur,vol,f){const c=SND.ctx,t=c.currentTime,x=c.createBufferSource();x.buffer=SND.nb;const h=sFlt('highpass',f||2200),g=sGain(0);x.connect(h);h.connect(g);g.connect(SND.m);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+dur);x.start(t,Math.random());x.stop(t+dur+.05);}
+function sThump(vol,f){const c=SND.ctx,t=c.currentTime,o=c.createOscillator(),g=sGain(0);o.frequency.setValueAtTime(f||110,t);o.frequency.exponentialRampToValueAtTime((f||110)/2.4,t+.18);o.connect(g);g.connect(SND.m);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);o.start(t);o.stop(t+.25);
+  const x=c.createBufferSource();x.buffer=SND.nb;const lp=sFlt('lowpass',900),ng=sGain(vol*.6);x.connect(lp);lp.connect(ng);ng.connect(SND.m);ng.gain.setValueAtTime(vol*.6,t);ng.gain.exponentialRampToValueAtTime(.001,t+.06);x.start(t,Math.random());x.stop(t+.08);}
+function sClick(vol){const c=SND.ctx,t=c.currentTime,x=c.createBufferSource();x.buffer=SND.nb;const bp=sFlt('bandpass',2600,2.5),g=sGain(vol);x.connect(bp);bp.connect(g);g.connect(SND.m);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+.035);x.start(t,Math.random());x.stop(t+.05);sThump(vol*.35,300);}
+function sBuzz(){const c=SND.ctx,t=c.currentTime;[0,.38,.76].forEach(d=>{const o=c.createOscillator();o.type='square';o.frequency.value=d===.38?660:880;const lp=sFlt('lowpass',2200),g=sGain(0);o.connect(lp);lp.connect(g);g.connect(SND.m);
+  g.gain.setValueAtTime(0,t+d);g.gain.linearRampToValueAtTime(.09,t+d+.01);g.gain.setValueAtTime(.09,t+d+.26);g.gain.linearRampToValueAtTime(0,t+d+.3);o.start(t+d);o.stop(t+d+.32);});}
+const SV={M1:{f:50,lp:480,nf:1700,nq:2,ng:.35,lfo:9},M2:{f:56,lp:480,nf:1500,nq:2,ng:.3,lfo:7},M3:{f:47,lp:420,nf:420,nq:.7,ng:.6,lfo:1.6},M4:{f:74,lp:1300,nf:900,nq:1.5,ng:.2},
+  pour:{nf:5200,nq:.6,ng:.7,lfo:13},room:{f:100,lp:160,nf:160,nq:.5,ng:.9,brown:1}};
+const VOL={M1:.13,M2:.11,M3:.17,M4:.13};
+function sndHidden(){try{if(document.hidden)return true;const f=window.frameElement;return !!f&&!f.getClientRects().length;}catch(_){return false;}}
+function sndUpdate(){if(!SND.ctx)return;const live=SND.on&&!sndHidden()&&SND.ctx.state==='running';SND.m.gain.setTargetAtTime(live?.8:0,SND.ctx.currentTime,.12);if(!live){SND.pv=null;return;}
+  const E=L.EL||{},PL=L.PL,K=L.kOn||{},C=PL.cnt;
+  sSet('room',SV.room,.035);
+  ['M1','M2','M3','M4'].forEach(m=>{const r=EX.mot.includes(m)&&E.mot&&E.mot[m],run=!!r&&(r.mode==='star'||r.mode==='delta');sSet(m,SV[m],run?(m==='M3'&&r.mode==='star'?VOL[m]*.7:VOL[m]):0,run?(m==='M3'&&r.mode==='star'?.72:1):.3);});
+  sSet('pour',SV.pour,EX.plant.boxes&&K.Y3?.07:0);
+  const boxN=PL.boxes.reduce((a,b)=>a+(b.n||0),0),act=SC?Object.keys(SC.act):[];
+  const now={K:{...K},press:PL.press,gate:PL.gate,lift:PL.lift,cnt:{...C},boxN,act,ex:EX.id},pv=SND.pv;SND.pv=now;if(!pv||pv.ex!==EX.id)return;
+  Object.keys(K).forEach(k=>{if(!!K[k]===!!pv.K[k])return;if(k[0]==='Y'){if(k==='Y3')sHiss(K[k]?.2:.3,.08,1400);else K[k]?sHiss(.3,.1,3200):sHiss(.55,.2,1900);}sClick(.22);});
+  if(pv.press<.97&&PL.press>=.97)sThump(.5,95);if(pv.press>.03&&PL.press<=.03)sThump(.22,140);
+  if(pv.gate<.9&&PL.gate>=.9)sThump(.18,160);if(pv.gate>.1&&PL.gate<=.1)sThump(.12,180);
+  if((pv.lift<.99&&PL.lift>=.99)||(pv.lift>.01&&PL.lift<=.01))sThump(.3,80);
+  if(C.badRej>pv.cnt.badRej||C.goodRej>pv.cnt.goodRej)sThump(.25,170);
+  if(boxN>pv.boxN)sThump(.2,150);else if(C.deliver>pv.cnt.deliver)sThump(.2,190);
+  if(C.floor>pv.cnt.floor)sThump(.45,210);if(C.stored>pv.cnt.stored)sThump(.3,120);
+  if(act.some(k=>!pv.act.includes(k)))sBuzz();}
+function sndBtn(){const b=$('bSnd');b.textContent=SND.on?'🔊':'🔇';b.title=SND.on?'أصوات المصنع تعمل: اضغط للكتم':'الأصوات مكتومة: اضغط للتشغيل';}
+$('bSnd').onclick=()=>{SND.on=!SND.on;ls('ln:snd',SND.on?'1':'0');if(SND.on&&sndInit())SND.ctx.resume();sndBtn();say(SND.on?'🔊 أصوات المصنع تعمل':'🔇 كُتمت الأصوات');};sndBtn();
+/* browsers start sound only after a tap: the first tap anywhere wakes it */
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(SND.on&&sndInit()&&SND.ctx.state!=='running')SND.ctx.resume();},true));
 /* ---------- the clock ---------- */
 let lastT=performance.now(),acc=0;
 setInterval(()=>{const now=performance.now();acc+=Math.min(0.5,(now-lastT)/1000);lastT=now;let n=0;
   while(acc>=0.05&&n<8){const mon=MON&&TAB==='prog'?[]:null;lineTick(L,0.05,mon);scTick(0.05);if(mon)MONS=mon;acc-=0.05;n++;}
-  if(TAB==='line')renderLine();else if(TAB==='prog'&&MON)monUpd();else if(TAB==='scada'&&++SCN%5===0)renderScada();},50);
+  if(TAB==='line')renderLine();else if(TAB==='prog'&&MON)monUpd();else if(TAB==='scada'&&++SCN%5===0)renderScada();try{sndUpdate();}catch(_){}},50);
 /* ===================== wiring board ===================== */
 const DSZ={sup:[110,180],ps:[120,242],pbno:[100,140],pbnc:[100,140],ls:[112,132],pnp:[104,140],k:[140,195],ol:[140,140],mot:[165,174],sol:[100,140]};
 /* real photos of the devices; small ones keep a terminal strip under the photo */
@@ -1020,7 +1073,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793453600';
+const LNV='1793460000';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
