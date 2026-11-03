@@ -17,14 +17,14 @@ function trainers_() {
   let t = ss.getSheetByName(TRAINERS);
   if (!t) {
     t = ss.insertSheet(TRAINERS);
-    t.appendRow(['اسم المستخدم', 'الاسم', 'الرقم السري (مشفر)', 'الحالة', 'وقت التسجيل', 'البريد (Gmail)', 'رقم جدول المدرب', 'رقم مجلد صور المدرب']);
+    t.appendRow(['اسم المستخدم', 'الاسم', 'الرقم السري (مشفر)', 'الحالة', 'وقت التسجيل', 'البريد (Gmail)', 'رقم جدول المدرب', 'رقم مجلد صور المدرب', 'الدور']);
     t.setFrozenRows(1);
   }
   return t;
 }
 function trFind_(u) {
   const v = trainers_().getDataRange().getValues();
-  for (let i = 1; i < v.length; i++) if (String(v[i][0]).toLowerCase() === u) return { row: i + 1, u: String(v[i][0]), n: String(v[i][1]), h: String(v[i][2]), st: String(v[i][3]), e: String(v[i][5] || ''), sid: String(v[i][6] || ''), fid: String(v[i][7] || '') };
+  for (let i = 1; i < v.length; i++) if (String(v[i][0]).toLowerCase() === u) return { row: i + 1, u: String(v[i][0]), n: String(v[i][1]), h: String(v[i][2]), st: String(v[i][3]), e: String(v[i][5] || ''), sid: String(v[i][6] || ''), fid: String(v[i][7] || ''), role: String(v[i][8] || '') };
   return null;
 }
 // ===== نسخة نتائج كل مدرب في Google Drive الخاص به =====
@@ -70,7 +70,7 @@ function who_(d) {
   if (!m) return null;
   const t = trFind_(m[1]);
   if (!t || t.st !== 'ok' || t.h !== pinHash_(m[2])) return null;
-  return { tr: t.u, n: t.n };
+  return { tr: t.u, n: t.n, admin: t.role === 'admin' };
 }
 
 // يعمل الكود سواء كان مربوطًا بجدول أو مشروعًا مستقلًا: يحفظ رقم الجدول ويعيد استخدامه
@@ -203,7 +203,7 @@ function doPost(e) {
       const t = trFind_(String(d.u || '').trim().toLowerCase());
       if (!t || t.h !== pinHash_(String(d.pin || '').trim())) { C.put(fk, String(f + 1), 600); return out_({ ok: false, err: 'pin', msg: 'اسم المستخدم أو الرقم السري غير صحيح' }); }
       if (t.st !== 'ok') return out_({ ok: false, err: t.st === 'no' ? 'rejected' : 'pending', msg: t.st === 'no' ? 'رُفض طلبك، راجع مدير النظام' : 'طلبك بانتظار موافقة مدير النظام' });
-      return out_({ ok: true, u: t.u, n: t.n, url: sheetUrl_(t.sid), furl: folderUrl_(t.fid) });
+      return out_({ ok: true, u: t.u, n: t.n, admin: t.role === 'admin', url: sheetUrl_(t.sid), furl: folderUrl_(t.fid) });
     }
     // أسماء المدربين المقبولين: ليختار المتدرب مدربه
     if (d.action === 'trNames') {
@@ -221,13 +221,14 @@ function doPost(e) {
       const v = trainers_().getDataRange().getValues().slice(1).filter(r => String(r[0]));
       const cnt = {};
       s.getDataRange().getValues().slice(1).forEach(r => { const k = String(r[11] || '').toLowerCase(); cnt[k] = (cnt[k] || 0) + 1; });
-      return out_({ ok: true, list: v.map(r => ({ u: String(r[0]), n: String(r[1]), st: String(r[3]), t: r[4] instanceof Date ? r[4].getTime() : r[4], c: cnt[String(r[0]).toLowerCase()] || 0, e: String(r[5] || ''), url: sheetUrl_(String(r[6] || '')) })) });
+      return out_({ ok: true, list: v.map(r => ({ u: String(r[0]), n: String(r[1]), st: String(r[3]), t: r[4] instanceof Date ? r[4].getTime() : r[4], c: cnt[String(r[0]).toLowerCase()] || 0, e: String(r[5] || ''), url: sheetUrl_(String(r[6] || '')), role: String(r[8] || '') })) });
     }
     if (d.action === 'trSet') {
       if (!W.admin) return out_({ ok: false, err: 'key' });
       const t = trFind_(String(d.u || '').toLowerCase());
       if (!t) return out_({ ok: false, err: 'notfound' });
       if (d.st === 'del') trainers_().deleteRow(t.row);
+      else if (d.st === 'admin' || d.st === 'noadmin') { if (t.st !== 'ok') return out_({ ok: false, err: 'bad', msg: 'اقبل المدرب أولًا' }); trainers_().getRange(t.row, 9).setValue(d.st === 'admin' ? 'admin' : ''); }
       else {
         trainers_().getRange(t.row, 4).setValue(d.st === 'ok' ? 'ok' : 'no');
         if (d.st === 'ok') { try { trProvision_(t); } catch (err) { return out_({ ok: true, warn: 'قُبل المدرب، لكن تعذّر إنشاء جدوله في Drive: ' + String(err && err.message || err).slice(0, 200) }); } }
