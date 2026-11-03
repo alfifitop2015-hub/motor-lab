@@ -118,6 +118,14 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 .mcc{direction:ltr;overflow-x:auto;background:#2a2f35;border-radius:8px;padding:8px}.mcc svg{display:block;height:auto;min-width:420px}
 .crn{color:#8fa2b4;font-size:.8rem;margin-top:12px}
 .trd{direction:ltr}.trd svg{display:block;width:100%;height:auto}
+.scrn{flex-wrap:wrap}.scrn button{border:1px solid #2c3a48;background:#16202b;color:#9fb3c6;border-radius:6px;padding:3px 9px;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}.scrn button.on{background:#1f5fbf;color:#fff;border-color:#4f8de0}
+.scr{padding:10px;color:#dfe7ee;font-size:.85rem;min-height:300px}.scr table{border-collapse:collapse;width:100%;max-width:900px}.scr td,.scr th{border-bottom:1px solid #263442;padding:4px 6px;text-align:start}.scr th{color:#8fa2b4;font-weight:700;background:#0b1118}
+.scr .a{font-family:monospace;direction:ltr;text-align:left;color:#7fc4ff}.v1{color:#7fe0a0;font:700 .9rem monospace}.v0{color:#6f8193;font:700 .9rem monospace}.vx{color:#ff6b60;font:700 .9rem monospace}
+.scr input{width:80px;background:#0b1118;color:#fff;border:1px solid #3a4a5a;border-radius:6px;padding:3px 6px;font:700 .9rem monospace}.scr input:disabled{opacity:.5}
+.oee{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}.oee div{background:#1a2430;border:1px solid #2c3a48;border-radius:8px;padding:8px}.oee b{display:block;font:700 1.4rem monospace}.oee small{color:#8fa2b4}
+.bar{height:8px;background:#0b1118;border-radius:4px;overflow:hidden;margin-top:4px}.bar i{display:block;height:100%}
+.lvl{border:1px solid #3a4a5a;background:#26323f;color:#e5edf4;border-radius:999px;padding:2px 10px;font-weight:700;cursor:pointer;font-size:.8rem}
+.nocomm{position:relative}.nocomm::after{content:'⚠ انقطع الاتصال بجهاز PLC: القيم غير محدَّثة';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(40,10,10,.72);color:#ff8a80;font-weight:800;font-size:1.05rem;text-align:center}
 </style>
 </head>
 <body>
@@ -160,9 +168,9 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
   <div id="stlBox"></div>
 </div>
 <div class="pane" id="p-scada"><div class="cr">
-  <div class="crh"><b>🖥 غرفة التحكم · خط الإنتاج 1</b><span id="crSt"></span><span class="clk" id="crClk"></span></div>
+  <div class="crh"><b>🖥 غرفة التحكم · خط الإنتاج 1</b><span id="crSt"></span><button class="lvl" id="crLvl"></button><span class="clk" id="crClk"></span></div>
   <div class="kpis" id="crK"></div>
-  <div class="wall"><div class="mt">SCADA · شاشة النظرة العامة على الخط (اضغط أي محرك لعرض بياناته)</div><div class="mimic" id="crMim"></div></div>
+  <div class="wall"><div class="mt scrn" id="crNav"></div><div class="mimic" id="crMim"></div></div>
   <div class="hmi" id="crBtn"></div>
   <div class="desk">
     <div class="mon"><div class="mt">⚠ الإنذارات والأحداث<button class="hb" id="crAck" style="padding:2px 8px;font-size:.75rem">✔ إقرار الكل</button></div><div id="crAl"></div></div>
@@ -673,7 +681,8 @@ $('plcv').addEventListener('click',e=>{if(e.target.closest('[data-rs]')){L.plcRu
 /* ===================== control room: SCADA overview, alarms, trends and the MCC ===================== */
 const NOM={M1:4.2,M2:3.1,M3:11.5,M4:5.6},MCOL={M1:'#4fc3f7',M2:'#ffb74d',M3:'#81c784',M4:'#f06292'};
 let SC=null,SCN=0;
-function scNew(){return{ex:EX.id,t:0,ts:{},td:{},cur:{},rh:{},hist:[],hT:0,al:[],act:{},sel:EX.mot[0],prod:[],last:null,floor:0};}
+function scNew(){return{ex:EX.id,t:0,ts:{},td:{},cur:{},rh:{},hist:[],hT:0,al:[],act:{},sel:EX.mot[0],prod:[],last:null,floor:0,scr:(SC&&SC.scr)||'ov',lvl:(SC&&SC.lvl)||'op',comm:true,rep:repNew()};}
+function repNew(){return{t0:null,run:0,stop:0,al:0,base:{...L.PL.cnt},start:new Date()};}
 const prodKey=()=>{const P=EX.plant;return P.lift?'stored':P.boxes?'boxFull':P.press?'stamped':P.belt?'deliver':null;};
 function scTick(dt){if(!SC||SC.ex!==EX.id)SC=scNew();const E=L.EL||{},t=SC.t+=dt;
   EX.mot.forEach(m=>{const r=(E.mot&&E.mot[m])||{mode:'off'},run=r.mode==='star'||r.mode==='delta';
@@ -687,11 +696,65 @@ function scTick(dt){if(!SC||SC.ex!==EX.id)SC=scNew();const E=L.EL||{},t=SC.t+=dt
   const cond={};if(L.brk)cond.brk=['قصر بين الأطوار: القاطع الرئيسي Q0 فصل',1];if(E.dcShort)cond.dc=['قصر في دائرة التحكم 24V',1];
   Object.keys(L.olTrip).forEach(f=>{if(!L.olTrip[f])return;const m=Object.keys(MOT).find(q=>MOT[q].f===f);cond['ol'+f]=['فصل الأوفرلود '+f+(m?' · '+MOT[m].n+' '+m:''),1];});
   if(!E.plcPw&&!E.mix)cond.pw=['جهاز PLC غير مغذى بجهد 24V',2];else if(E.plcPw&&!L.plcRun)cond.stop=['جهاز PLC في وضع STOP',2];
-  if(L.PL.msg)cond.pl=[L.PL.msg,2];
-  Object.entries(cond).forEach(([k,[m,p]])=>{const a=SC.act[k];if(a&&a.msg===m)return;if(a)a.t1=new Date();const n={msg:m,p,t0:new Date(),t1:null,ack:false};SC.act[k]=n;SC.al.unshift(n);});
+  if(L.PL.msg)cond.pl=[L.PL.msg,2];if(!SC.comm)cond.comm=['انقطع الاتصال بين SCADA وجهاز PLC (شبكة Profinet)',1];
+  {const R=SC.rep,on=EX.mot.some(m=>runOf(L,m));if(on&&R.t0==null)R.t0=t;if(R.t0!=null){if(on)R.run+=dt;else R.stop+=dt;}}
+  Object.entries(cond).forEach(([k,[m,p]])=>{const a=SC.act[k];if(a&&a.msg===m)return;if(a)a.t1=new Date();const n={msg:m,p,t0:new Date(),t1:null,ack:false};SC.act[k]=n;SC.al.unshift(n);SC.rep.al++;});
   Object.keys(SC.act).forEach(k=>{if(!cond[k]){SC.act[k].t1=new Date();delete SC.act[k];}});
   if(C.floor>SC.floor){const d=new Date();SC.al.unshift({msg:'سقطت قطعة على الأرض',p:3,t0:d,t1:d,ack:false});}SC.floor=C.floor;
   if(SC.al.length>60)SC.al.length=60;}
+
+/* ---------- SCADA screens: overview, tags, setpoints, shift report, network ---------- */
+const SCRS=[['ov','🖼 نظرة عامة'],['tags','🏷 المتغيرات'],['sp','🎚 قيم الضبط'],['rep','📊 تقرير الوردية'],['net','🌐 الشبكة']];
+function progAddrs(){const A=new Set();(L.prog||[]).forEach(N=>{N.rows.forEach(r=>r.forEach(c=>{if(c&&c.a&&/^[MTC]/.test(c.a))A.add(c.a);}));N.out.forEach(o=>{if(o&&o.a&&/^[MTC]/.test(o.a))A.add(o.a);if(o&&o.r&&/^M/.test(o.r))A.add(o.r);});});
+  return [...A].sort((a,b)=>a[0]===b[0]?a.localeCompare(b,'en',{numeric:true}):'MTC'.indexOf(a[0])-'MTC'.indexOf(b[0]));}
+function tagsHTML(){const P=L.P,c=SC.comm,v=b=>!c?'<span class="vx">###</span>':b?'<span class="v1">1</span>':'<span class="v0">0</span>';
+  let h=`<table><tr><th>العنوان</th><th>اسم المتغير</th><th>الوصف</th><th>القيمة</th></tr>`;
+  usedI(EX).forEach(i=>{h+=`<tr><td class="a">${esc(dispA(IA(i)))}</td><td class="a">${IN[i][0]}</td><td>${esc(IN[i][1])}</td><td>${v(P.I&&P.I[i])}</td></tr>`;});
+  usedQ(EX).forEach(i=>{h+=`<tr><td class="a">${esc(dispA(QA(i)))}</td><td class="a">${OUT[i][0]}</td><td>${esc(OUT[i][1])}</td><td>${v(L.Q[i])}</td></tr>`;});
+  progAddrs().forEach(a=>{const k=a[0];let val;if(k==='M')val=v(P.M[a]);else if(k==='T'){const q=P.T[a]||{};val=!c?'<span class="vx">###</span>':`<span class="${q.q?'v1':'v0'}">${q.q?1:0}</span> <span class="v0">ET ${(q.acc||0).toFixed(1)}s</span>`;}else{const q=P.C[a]||{};val=!c?'<span class="vx">###</span>':`<span class="v1">CV ${q.cv||0}</span>`;}
+    h+=`<tr><td class="a">${esc(dispA(a,k==='C'?'box':'box'))}</td><td class="a">${k==='M'?'Mem_'+a.slice(1).replace('.','_'):k==='T'?'Timer_'+a.slice(1):'Count_'+a.slice(1)}</td><td>${k==='M'?'ذاكرة داخلية في البرنامج':k==='T'?'مؤقت':'عداد'}</td><td>${val}</td></tr>`;});
+  EX.mot.forEach(m=>{h+=`<tr><td class="a">SCADA</td><td class="a">${m}_Current</td><td>تيار ${esc(MOT[m].n)} (أمبير)</td><td>${c?`<span class="v1">${(SC.cur[m]||0).toFixed(1)} A</span>`:'<span class="vx">###</span>'}</td></tr>`;});
+  return h+`</table><p class="crn">كل عنصر على شاشات SCADA مربوط بمتغير (Tag) له عنوان في جهاز PLC. SCADA يقرأ هذه العناوين عبر الشبكة كل جزء من الثانية، ويكتب فيها عند الأوامر وقيم الضبط.</p>`;}
+function spList(){const L2=[];(L.prog||[]).forEach((N,ni)=>{N.out.forEach((o,r)=>{if(o&&(o.t==='TON'||o.t==='TOF'))L2.push({ni,r,kind:o.t,a:o.a,v:o.v,c:N.c});});N.rows.forEach((row,r)=>row.forEach((c,k)=>{if(c&&c.t==='GE')L2.push({ni,r,k,kind:'GE',a:c.a,v:c.n,c:N.c});}));});return L2;}
+function spHTML(){const eng=SC.lvl==='eng',Lp=spList();if(!Lp.length)return '<p>لا توجد قيم ضبط في برنامج هذا التمرين (لا مؤقتات ولا مقارنات).</p>';
+  let h=`${eng?'':'<p class="crn">🔒 تغيير قيم الضبط يحتاج دخول <b>مهندس</b> (الزر في أعلى غرفة التحكم).</p>'}<table><tr><th>Network</th><th>الوصف</th><th>المتغير</th><th>القيمة</th></tr>`;
+  Lp.forEach((x,i)=>{h+=`<tr><td class="a">${x.ni+1}</td><td>${esc(x.c||'')}</td><td class="a">${esc(dispA(x.a,'box'))} ${x.kind==='GE'?'≥':x.kind==='TON'?'تأخير تشغيل':'تأخير فصل'}</td><td><input type="number" data-sp="${i}" min="${x.kind==='GE'?1:.1}" step="${x.kind==='GE'?1:.1}" value="${x.v}" ${eng?'':'disabled'}> ${x.kind==='GE'?'قطعة':'ث'}</td></tr>`;});
+  return h+`</table><p class="crn">قيمة الضبط (Setpoint) تُكتب من الشاشة مباشرة إلى برنامج PLC وهو يعمل، دون إيقاف الخط. جرّب تغيير زمن مؤقت وراقب أثره على الخط.</p>`;}
+const IDEAL={stamped:8,deliver:12,boxFull:1.2,stored:.8};
+function repHTML(){const R=SC.rep,C=L.PL.cnt,B=R.base,d=k=>Math.max(0,(C[k]||0)-(B[k]||0)),k=prodKey(),good=k?d(k):0,bad=d('badRej')+d('goodRej')+d('floor')+d('unstamped')+d('over')+d('spill');
+  const tot=R.run+R.stop,A=tot?R.run/tot:0,Q=good+bad?good/(good+bad):1,Pf=k&&R.run>5?Math.min(1,good/(R.run/60*IDEAL[k])):0,O=A*Pf*Q,pc=x=>(x*100).toFixed(0)+'%';
+  const card=(n,v,c,sub)=>`<div><small>${n}</small><b style="color:${c}">${v}</b>${sub||''}</div>`,bar=(x,c)=>`<div class="bar"><i style="width:${(x*100).toFixed(0)}%;background:${c}"></i></div>`;
+  let h=`<div class="row" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>الوردية من ${hhmmss(R.start)}</b><button class="hb" data-a="shift">⟲ بدء وردية جديدة</button></div><div class="oee">`+
+    card('كفاءة الخط OEE',pc(O),O>.6?'#7fe0a0':O>.3?'#ffbf3c':'#ff6b60',bar(O,'#4fc3f7'))+card('التوافر',pc(A),'#fff',bar(A,'#81c784'))+card('الأداء (تقديري)',pc(Pf),'#fff',bar(Pf,'#ffb74d'))+card('الجودة',pc(Q),'#fff',bar(Q,'#f06292'))+`</div>`;
+  h+=`<table><tr><td>زمن التشغيل</td><td class="a">${tmm(R.run)}</td></tr><tr><td>زمن التوقف (بعد بدء الوردية)</td><td class="a">${tmm(R.stop)}</td></tr><tr><td>الإنتاج السليم</td><td class="a">${good}</td></tr><tr><td>المرفوض والأخطاء</td><td class="a">${bad}</td></tr><tr><td>عدد الإنذارات</td><td class="a">${R.al}</td></tr>`+EX.mot.map(m=>`<tr><td>زمن تشغيل ${m}</td><td class="a">${tmm(SC.rh[m]||0)}</td></tr>`).join('')+`</table>
+    <p class="crn">OEE = التوافر × الأداء × الجودة. التوافر: نسبة زمن التشغيل. الأداء: الإنتاج الفعلي مقارنة بالسرعة المثالية للخط. الجودة: نسبة القطع السليمة. المصانع العالمية تستهدف 85% تقريبًا.</p>`;return h;}
+function netwSVG(){const c=SC.comm,E=L.EL||{},pw=!!E.plcPw,run=pw&&L.plcRun,cpu=MODEL==='300'?'CPU 317-2 PN/DP':'CPU 1214C DC/DC/DC',T=(x,y,t,sz,col,w)=>`<text x="${x}" y="${y}" text-anchor="middle" direction="rtl" style="font:${w||700} ${sz||11}px sans-serif;fill:${col||'#cfe0ee'};unicode-bidi:plaintext">${t}</text>`,off=(SC.t*30)%20;
+  const link=(x1,y1,x2,y2,ok)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ok?'#1f8f4a':'#7a1c1c'}" stroke-width="5"/>${ok?`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#7fe0a0" stroke-width="2" stroke-dasharray="6 14" stroke-dashoffset="${(-off).toFixed(1)}"/>`:`<text x="${(x1+x2)/2}" y="${(y1+y2)/2+6}" text-anchor="middle" style="font:900 20px sans-serif;fill:#ff6b60">✕</text>`}`;
+  let o=`<rect width="1000" height="430" fill="#16202b"/>`;
+  o+=`<rect x="60" y="40" width="150" height="100" rx="6" fill="#0b1118" stroke="#7d93a8" stroke-width="3"/><rect x="72" y="52" width="126" height="70" fill="#1f5fbf" opacity=".5"/><rect x="120" y="140" width="30" height="16" fill="#7d93a8"/>${T(135,176,'كمبيوتر SCADA')}${T(135,192,'WinCC · 192.168.0.10',10,'#8fa2b4',600)}`;
+  o+=`<rect x="420" y="70" width="160" height="44" rx="5" fill="#2c3a48" stroke="#7d93a8"/>${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${432+i*18}" y="86" width="12" height="10" fill="#0b1118"/><circle cx="${438+i*18}" cy="80" r="2" fill="${c&&i<2?'#39d353':'#3a4148'}"/>`).join('')}${T(500,132,'سويتش صناعي (Profinet)')}`;
+  o+=`<rect x="780" y="40" width="160" height="110" rx="6" fill="#4a5560" stroke="#7d93a8"/><rect x="792" y="52" width="60" height="86" fill="#2c3a48"/>${[['RUN',run,'#39d353'],['STOP',pw&&!L.plcRun,'#ffb300'],['SF',!c,'#e53935']].map(([n,on,col],i)=>`<circle cx="804" cy="${66+i*22}" r="5" fill="${on?col:'#3a4148'}"/>${T(828,70+i*22,n,9,'#cfe0ee')}`).join('')}<rect x="860" y="52" width="70" height="86" fill="#3a4550"/>${T(895,96,'I/O',12,'#cfe0ee')}${T(860,176,'جهاز PLC · '+cpu,11)}${T(860,192,'192.168.0.1',10,'#8fa2b4',600)}`;
+  o+=link(210,90,420,92,c)+link(580,92,780,92,true);
+  o+=`<line x1="860" y1="150" x2="860" y2="230" stroke="#c9a227" stroke-width="3"/>${T(912,222,'أسلاك 24V',10,'#c9a227')}`;
+  const dv=[...EX.in.filter(n=>n!=='F').slice(0,7).map(n=>[n,'in']),...EX.out.slice(0,7).map(n=>[n,'out'])];const W2=Math.min(110,900/Math.max(1,dv.length));
+  dv.forEach(([n,k],i)=>{const x=50+i*W2+W2/2,on=k==='in'?!!(L.P.I&&L.P.I[INI[n]]):!!L.Q[OUTI[n]];o+=`<line x1="860" y1="230" x2="${x}" y2="270" stroke="#c9a227" stroke-width="1.5" opacity=".6"/><rect x="${x-W2/2+6}" y="270" width="${W2-12}" height="46" rx="6" fill="${on?'#1f4d2e':'#22313f'}" stroke="${on?'#39d353':'#4a5a6a'}"/>${T(x,292,n,11,'#fff')}${T(x,308,k==='in'?'مدخل':'مخرج',9,'#8fa2b4',600)}`;});
+  o+=T(500,350,'الميدان: الحساسات والضواغط (مداخل) · الكونتاكتورات والصمامات (مخارج)',11,'#8fa2b4',600);
+  o+=T(500,385,c?'الاتصال سليم: SCADA يقرأ من PLC ويكتب إليه عبر شبكة Profinet':'⚠ الكابل مفصول: الخط يستمر بالعمل لأن PLC هو الذي يتحكم، لكن غرفة التحكم لا ترى ولا تأمر',12,c?'#7fe0a0':'#ff8a80');
+  return `<svg viewBox="0 0 1000 430">${o}</svg>`;}
+function scrBody(force){const sc=SC.scr,el=$('crMim');el.classList.toggle('nocomm',!SC.comm&&sc==='ov');
+  if(sc==='ov')el.innerHTML=mimicSVG();else if(sc==='tags')el.innerHTML=`<div class="scr">${tagsHTML()}</div>`;else if(sc==='rep')el.innerHTML=`<div class="scr">${repHTML()}</div>`;
+  else if(sc==='net')el.innerHTML=`<div class="scr" style="padding:0">${netwSVG()}<div style="padding:8px"><button class="hb" data-a="comm">${SC.comm?'✂ افصل كابل الشبكة (محاكاة عطل اتصال)':'🔌 أعد توصيل الكابل'}</button></div></div>`;
+  else if(sc==='sp'&&force)el.innerHTML=`<div class="scr">${spHTML()}</div>`;}
+function navHTML(){$('crNav').innerHTML=SCRS.map(([k,n])=>`<button data-scr="${k}" class="${SC.scr===k?'on':''}">${n}</button>`).join('')+`<span style="margin-inline-start:auto">SCADA · WinCC</span>`;
+  $('crLvl').textContent=SC.lvl==='eng'?'👷 مهندس':'🧑‍🏭 مشغّل';$('crLvl').title='مستوى المستخدم: اضغط للتبديل بين المشغّل والمهندس';}
+$('crNav').addEventListener('click',e=>{const b=e.target.closest('[data-scr]');if(!b)return;SC.scr=b.dataset.scr;navHTML();scrBody(true);});
+$('crLvl').onclick=()=>{if(SC.lvl==='op'){const p=prompt('دخول المهندس: اكتب كلمة المرور (للتدريب: 1234)');if(p!=='1234'){if(p!=null)say('كلمة مرور خاطئة',1);return;}SC.lvl='eng';say('دخلت كمهندس: يمكنك تغيير قيم الضبط');}else{SC.lvl='op';say('خرجت إلى مستوى المشغّل');}navHTML();scrBody(true);};
+$('crMim').addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(!a)return;
+  if(a.dataset.a==='comm'){SC.comm=!SC.comm;say(SC.comm?'أُعيد توصيل الشبكة':'فُصل كابل الشبكة: راقب شاشات غرفة التحكم');scrBody(true);renderScada();}
+  if(a.dataset.a==='shift'){SC.rep=repNew();say('بدأت وردية جديدة');scrBody(true);}});
+$('crMim').addEventListener('change',e=>{const i=e.target.dataset.sp;if(i==null||SC.lvl!=='eng')return;const x=spList()[+i];if(!x)return;let v=+e.target.value;if(!(v>0))return;if(x.kind==='GE')v=Math.round(v);
+  [L.prog,EP].forEach(P=>{const N=P&&P[x.ni];if(!N)return;if(x.kind==='GE'){const c=N.rows[x.r][x.k];if(c)c.n=v;}else{const o=N.out[x.r];if(o)o.v=v;}});try{saveP();}catch(_){}
+  say('كُتبت قيمة الضبط '+dispA(x.a,'box')+' = '+v+(x.kind==='GE'?'':' ث')+' في جهاز PLC');});
 const hhmmss=d=>d.toLocaleTimeString('en-GB');
 function mstate(m){const E=L.EL||{},r=(E.mot&&E.mot[m])||{mode:'off'},f=MOT[m].f;if(L.olTrip[f])return 'trip';return r.mode==='star'?(m==='M3'?'star':'run'):r.mode==='delta'?'run':r.mode==='fault'?'trip':'off';}
 const MSTC={run:'#2e7d32',star:'#f9a825',trip:'#c62828',off:'#546e7a'},MSTN={run:'يعمل',star:'بدء نجمة',trip:'فصل',off:'متوقف'};
@@ -732,15 +795,15 @@ function renderScada(force){if(!SC||SC.ex!==EX.id)SC=scNew();if(!EX.mot.includes
   const k=[];k.push(['الحالة',capNow(),'st']);if(P.belt&&!P.boxes)k.push(['وصلت',C.deliver]);if(P.press)k.push(['خُتمت',C.stamped]);if(P.sort)k.push(['رُفضت',C.badRej]);if(P.boxes){k.push(['صناديق',C.boxFull]);k.push(['عُبئت',C.boxFill]);}if(P.lift)k.push(['على الرف',C.stored]);
   if(prodKey())k.push(['الإنتاج / دقيقة',SC.prod.length]);k.push(['المحركات العاملة',EX.mot.filter(m=>runOf(L,m)).length+' / '+EX.mot.length]);k.push(['PLC',(MODEL==='300'?'S7-300':'S7-1200')+' · '+(E.plcPw?(L.plcRun?'RUN':'STOP'):'OFF')]);
   const nAct=Object.keys(SC.act).length;k.push(['إنذارات نشطة',nAct]);
-  $('crK').innerHTML=k.map(([a,b,c])=>`<div class="kpi${c?' '+c:''}"><small>${a}</small><b>${esc(String(b))}</b></div>`).join('');
+  $('crK').innerHTML=k.map(([a,b,c])=>`<div class="kpi${c?' '+c:''}"><small>${a}</small><b>${SC.comm||a==='إنذارات نشطة'?esc(String(b)):'###'}</b></div>`).join('');
   $('crSt').innerHTML=nAct?`<span style="color:#ff6b60;font-weight:700">⚠ ${nAct} إنذار نشط</span>`:`<span style="color:#7fe0a0;font-weight:700">● لا إنذارات</span>`;
-  $('crMim').innerHTML=mimicSVG();
+  scrBody(!!force);
   $('crAl').innerHTML=SC.al.length?`<table class="alr">${SC.al.slice(0,14).map(a=>`<tr class="p${a.p}${a.t1?' gone':''}${a.ack?'':' nack'}"><td class="tm">${hhmmss(a.t0)}</td><td>${esc(a.msg)}</td><td class="tm">${a.t1?'زال':'نشط'}${a.ack?' ✓':''}</td></tr>`).join('')}</table>`:'<p style="padding:10px;color:#7fe0a0">لا توجد إنذارات. الخط يعمل بلا أعطال.</p>';
   $('crTr').innerHTML=trendSVG();
   {const m=SC.sel,st=mstate(m),f=MOT[m].f,I=SC.cur[m]||0;
     $('crFp').innerHTML=`<div style="font-weight:800;font-size:1rem;color:${MSTC[st]==='#546e7a'?'#cfe0ee':MSTC[st]}">${m} · ${esc(MOT[m].n)}</div><table><tr><td>الحالة</td><td>${MSTN[st]}</td></tr><tr><td>التيار</td><td>${I.toFixed(1)} A</td></tr><tr><td>التيار المقنن</td><td>${NOM[m]} A</td></tr><tr><td>طريقة التشغيل</td><td>${m==='M3'?'نجمة / دلتا':m==='M4'?'عكس اتجاه':'مباشر DOL'}</td></tr><tr><td>الكونتاكتورات</td><td>${(MOT[m].k||[]).map(q=>q+(L.kOn&&L.kOn[q]?' ■':' □')).join('  ')}</td></tr><tr><td>الأوفرلود ${f}</td><td>${L.olTrip[f]?'فاصل':'سليم'}</td></tr><tr><td>زمن التشغيل</td><td>${tmm(SC.rh[m]||0)}</td></tr></table>`;}
   $('crMcc').innerHTML=mccSVG();
-  if(force){$('crBtn').innerHTML=`<span class="lbl">أوامر المشغل:</span>${pbHTML()}<button class="hb" id="crOl">↺ إعادة الأوفرلود</button><button class="hb" id="crQ0">⟲ إعادة Q0</button>`;bindPB($('crBtn'));
+  if(force){navHTML();$('crBtn').innerHTML=`<span class="lbl">أوامر المشغل:</span>${pbHTML()}<button class="hb" id="crOl">↺ إعادة الأوفرلود</button><button class="hb" id="crQ0">⟲ إعادة Q0</button>`;$('crBtn').querySelectorAll('[data-pb]').forEach(b=>{const k=b.dataset.pb;b.addEventListener('pointerdown',e=>{e.preventDefault();if(!SC.comm){say('لا اتصال بجهاز PLC: الأمر لم يُرسل',1);return;}L.press.add(k);b.classList.add('dn');setTimeout(()=>{L.press.delete(k);b.classList.remove('dn');},350);});});
     $('crOl').onclick=()=>{L.olTrip={};say('أُعيد ضبط الأوفرلود من غرفة التحكم');};$('crQ0').onclick=()=>{L.brk=false;say('أُعيد القاطع الرئيسي Q0');};}}
 $('crAck').onclick=()=>{if(SC)SC.al.forEach(a=>a.ack=true);renderScada();};
 $('p-scada').addEventListener('pointerdown',e=>{const m=e.target.closest('[data-mot]'),r=e.target.closest('[data-olr]');
@@ -1073,7 +1136,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793460000';
+const LNV='1793461000';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
