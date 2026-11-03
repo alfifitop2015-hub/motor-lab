@@ -95,6 +95,10 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 .hint{color:var(--muted);font-size:.82rem;padding:0 10px 4px}
 .term{cursor:pointer}.term:hover circle.tc{stroke:#ff8a00}
 @media (max-width:600px){.bar1 h1{font-size:.9rem}.ob{min-width:56px;padding:5px 6px}.ob i{width:34px;height:34px;line-height:28px}}
+/* big screens: the bars and buttons grow with the screen, and the line itself never grows taller than the window,
+   so the buttons under it stay in sight without scrolling */
+.top,.ops,.chips,.fold,.camb,.cap,.hint,#p-wire>.row,#p-prog>.row,.rep{zoom:var(--ui,1)}
+@media (min-width:900px) and (min-height:561px){#p-line.on #stage:not(.th) .scene svg{width:min(100%,calc((100vh - var(--toph,150px) - 160px) * 2.3667));margin:0 auto}}
 /* control room */
 #p-scada.on{background:#10161c}
 .cr{color:#dfe7ee;padding:10px 10px 30px;max-width:1500px;margin:0 auto}
@@ -129,6 +133,8 @@ details.fold{margin:4px 10px;border:1px solid var(--line);border-radius:10px;bac
 </style>
 </head>
 <body>
+<script>/* on big screens the bars and buttons grow with the screen; phones and tablets stay at 1 */
+(function(){var f=function(){var u=Math.min(innerWidth/1400,innerHeight/850);u=Math.max(1,Math.min(2,Math.round(u*20)/20));document.documentElement.style.setProperty('--ui',u);};f();addEventListener('resize',f);})();</script>
 <div class="top">
   <div class="bar1">
     <h1>خط الإنتاج · PLC Step 7<span class="credit">م. جابر الفيفي · Claude ©</span></h1>
@@ -1109,6 +1115,8 @@ $('thB').onclick=()=>{$('stage').classList.contains('th')?thOff():thOn();};
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&$('stage').classList.contains('th'))thOff();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('stage').classList.contains('th'))thOff();});
 addEventListener('resize',()=>camApply());
+/* the height of the top bar, so the line can be sized to fit under it */
+{const th=()=>{const t=document.querySelector('.top');if(t)document.documentElement.style.setProperty('--toph',Math.round(t.getBoundingClientRect().height)+'px');};th();addEventListener('resize',th);setTimeout(th,300);}
 /* ===================== the exercise sheet ===================== */
 function renderDoc(){if(!L)return;const ex=EX;let h=`<h3>${esc(ex.n)}</h3><p>${esc(ex.d)}</p>`;
 
@@ -1136,7 +1144,7 @@ loadEx();
 /* the ⋯ menus close after a choice or a tap elsewhere */
 document.addEventListener('click',e=>{document.querySelectorAll('details.mm[open]').forEach(d=>{if(!d.contains(e.target)||(e.target.closest('button')&&d.querySelector(':scope>div').contains(e.target)))setTimeout(()=>{d.open=false;},0);});});
 /* update from inside the line page: reload just this page (the simulator behind stays open); a newer version is announced */
-const LNV='1793462000';
+const LNV='1793463000';
 $('bUpd').onclick=async()=>{say('جارٍ التحديث…');try{const r=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration();if(r)await r.update();}catch(_){}
   try{await fetch(location.pathname,{cache:'reload'});}catch(_){}location.reload();};
 async function updCheck(){try{const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text();const m=/const LNV='(\d+)'/.exec(t);
