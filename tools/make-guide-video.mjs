@@ -3,13 +3,14 @@
    اللوحة الكهربائية، وورشة النيوماتيك، وشنطة الأعطال، وخط الإنتاج، ثم أدوات المدرب ونتائج المتدربين.
    المتطلبات: Node، وplaywright مع Chromium، وffmpeg، وedge-tts (pip install edge-tts).
    الاستخدام:  SSL_CERT_FILE=… NODE_PATH=… node tools/make-guide-video.mjs
+   الصوت: المحفوظ في audio/guide (صوت المدرب) افتراضيًا، أو GUIDE_VOICE=hamed لصوت حامد.
    متغيرات اختيارية: GUIDE=trainee أو trainer (الافتراضي الاثنان، المتدرب أولًا لأن ما يرسله يظهر عند المدرب)،
    DRY=1 (بلا صوت، مدة ثابتة لكل مشهد، للتجربة)، SHOTS=مجلد (صورة في آخر كل مشهد)
    خادم Google مُحاكى داخل الأداة، فالنتائج في الفيديو أمثلة لا بيانات حقيقية. */
 import {createRequire} from 'node:module';
 import {createServer} from 'node:http';
 import {readFile, mkdtemp, rm} from 'node:fs/promises';
-import {mkdirSync} from 'node:fs';
+import {mkdirSync, readFileSync, existsSync} from 'node:fs';
 import {execFileSync, execFile} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
@@ -17,6 +18,10 @@ const {chromium} = createRequire(import.meta.url)('playwright');
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const W = 1280, H = 720, VOICE = process.env.VOICE || 'ar-SA-HamedNeural', DRY = !!process.env.DRY, SHOTS = process.env.SHOTS || '';
+/* the voice: «saved» (default) uses the recorded voice the trainer chose, kept per scene in audio/guide/<guide>/<scene>.mp3
+   with the text it reads in index.json; a scene whose text has changed since is read by Hamed until a new recording is saved.
+   GUIDE_VOICE=hamed reads every scene with Hamed. */
+const VSET = process.env.GUIDE_VOICE || 'saved';
 const TYPES = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4', '.png': 'image/png', '.json': 'application/json', '.webmanifest': 'application/manifest+json'};
 const server = createServer(async (req, res) => {
   const f = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/\/$/, '/index.html'));
@@ -124,8 +129,15 @@ const OVERLAY = () => { if (window !== top) return; addEventListener('DOMContent
 
 async function record(SC, OUT, tmp, tag) {
   /* 1. the voice of every scene */
+  const gname = tag === 'T' ? 'trainee' : 'trainer', saved = path.join(ROOT, 'audio', 'guide', gname);
+  let sidx = {}; try { sidx = JSON.parse(readFileSync(path.join(saved, 'index.json'), 'utf8')); } catch {}
   for (let i = 0; i < SC.length; i++) {
     if (DRY) { SC[i].len = 5; continue; }
+    const own = path.join(saved, SC[i].run + '.mp3');
+    if (VSET !== 'hamed' && existsSync(own)) {
+      if (sidx[SC[i].run] === SC[i].t) { SC[i].mp3 = own; SC[i].len = dur(own); console.log(`${tag} صوت محفوظ ${i + 1}/${SC.length}: ${SC[i].len.toFixed(1)} ث`); continue; }
+      console.log(`${tag} تنبيه: نص المشهد ${i + 1} (${SC[i].run}) تغيّر عن الصوت المحفوظ، فيقرؤه حامد`);
+    }
     const f = path.join(tmp, `${tag}${i}.mp3`);
     for (let k = 0; ; k++) { try { await tts(SC[i].v || SC[i].t, f); break; } catch (e) { if (k > 3) throw e; await sleep(2000 * (k + 1)); } }
     SC[i].mp3 = f; SC[i].len = dur(f); console.log(`${tag} صوت ${i + 1}/${SC.length}: ${SC[i].len.toFixed(1)} ث`);
