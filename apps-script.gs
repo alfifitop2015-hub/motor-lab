@@ -160,7 +160,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
   // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
-  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet', 'trDrive', 'lkSet', 'setMan'].indexOf(d.action) >= 0;
+  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet', 'trDrive', 'lkSet', 'setMan', 'trName'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
   if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
@@ -270,6 +270,18 @@ function doPost(e) {
       return out_({ ok: true, url: sheetUrl_(t.sid) });
     }
     if (d.action === 'who') return out_({ ok: true, admin: !!W.admin, tr: W.tr || '', n: W.n || '', lk: lockOn_(W.tr || '') });
+    // تعديل الاسم الظاهر للمتدربين: المدرب لاسمه، والمدير لأي مدرب. يُعاد تسمية جدوله في Drive أيضًا
+    if (d.action === 'trName') {
+      const n = String(d.n || '').trim().slice(0, 60);
+      if (!n) return out_({ ok: false, err: 'bad', msg: 'اكتب الاسم' });
+      const u = String(d.u || '').toLowerCase();
+      if (u && !W.admin && u !== W.tr) return out_({ ok: false, err: 'key', msg: 'تعديل أسماء المدربين الآخرين للمدير فقط' });
+      const t = trFind_(u && W.admin ? u : (W.tr || ''));
+      if (!t) return out_({ ok: false, err: u && !W.admin ? 'key' : 'notfound', msg: W.tr ? '' : 'ادخل بحساب مدرب، أو اختر المدرب من قائمة «المدربون»' });
+      trainers_().getRange(t.row, 2).setValue(n);
+      if (t.sid) { try { DriveApp.getFileById(t.sid).setName('نتائج المحاكي — ' + n); } catch (err) {} }
+      return out_({ ok: true, u: t.u, n: n });
+    }
     // المدرب يفعّل القفل أو يوقفه لمتدربيه (والمدير بكلمة المرور الرئيسية: للمتدربين بلا مدرب)
     if (d.action === 'lkSet') {
       const on = !!d.on;

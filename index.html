@@ -575,6 +575,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
         <button class="mi trainer-only" id="bShare">⇪ مشاركة التوصيلات</button>
         <button class="mi trainer-only cloud-only" id="bLock" title="عند تفعيله: التمرين الذي يرسله المتدرب يُقفل، فلا يعدّله ولا يعيد تقييمه أو إرساله. إيقافه يفتح التمارين من جديد">🔒 قفل التمرين بعد إرساله</button>
+        <button class="mi trainer-only cloud-only" id="bTrName" hidden>✏️ تعديل اسمي الظاهر للمتدربين</button>
         <button class="mi trainer-only admin-only cloud-only" id="bTrMgr">👥 المدربون (موافقة وإدارة)</button>
         <button class="mi trainer-only admin-only" id="bPinChg">🔑 تغيير الرقم السري للمدير</button>
         <hr class="msep trainer-only">
@@ -4023,7 +4024,7 @@ const CLOUD_ON=!!CLOUD_URL&&isHosted();if(CLOUD_ON)document.body.classList.add('
    every request and the server keeps to that trainer's rows). The manager logs in as before (no user name) and sees all.
    Trainees are tied to a trainer by the trainer's link (?tr=user) or by choosing once from the list when sending. */
 const TRA=()=>{try{return JSON.parse(lsG('wsTrAcc')||'null');}catch(_){return null;}};
-function trAccUI(){const a=TRA(),on=document.body.classList.contains('trainer')&&!!a;document.body.classList.toggle('tracc',on&&!a.admin);$('rWho').classList.toggle('acc-only',!(a&&a.admin));
+function trAccUI(){const a=TRA(),on=document.body.classList.contains('trainer')&&!!a;$('bTrName').hidden=!on;document.body.classList.toggle('tracc',on&&!a.admin);$('rWho').classList.toggle('acc-only',!(a&&a.admin));
   if(on){$('rWho').innerHTML=(a.admin?'👑 المدير: '+esc(a.n):'👨‍🏫 نتائج متدربي: '+esc(a.n))+' ('+esc(a.u)+')'+(a.url?` · <a href="${esc(a.url)}" target="_blank" rel="noopener">📄 جدول نتائجي في Drive</a>`:'')+(a.furl?` · <a href="${esc(a.furl)}" target="_blank" rel="noopener">🖼 مجلد الصور</a>`:'')+(a.admin?'<br><small>ترى نتائج الجميع. لترى متدربيك أنت فقط اختر اسمك من قائمة «المدرب».</small>':'');$('rKey').value=lsG('wsKey')||'';}}
 {const q=new URLSearchParams(location.search).get('tr');if(q&&/^[a-z0-9_]{3,20}$/i.test(q)){lsS('wsMyTr',q.toLowerCase());lsS('wsMyTrN',null);}}
 let TRN=null;async function trNames(){if(TRN)return TRN;try{const j=await cloud({action:'trNames'});TRN=j.list||[];}catch(_){TRN=[];}return TRN;}
@@ -4050,13 +4051,21 @@ window.wsTrPick=()=>new Promise(async res=>{const u=lsG('wsMyTr');if(u!=null)ret
     try{const j=await cloud({action:'trList',key:lsG('wsKey')||$('rKey').value.trim()});const L=(j.list||[]).sort((a,b)=>(a.st==='pending'?0:1)-(b.st==='pending'?0:1)||b.t-a.t);
       $('trMgrMsg').textContent=L.length?L.filter(x=>x.st==='pending').length+' بانتظار الموافقة · '+L.length+' مدرب':'لا يوجد مدربون مسجلون بعد. أرسل لهم رابط الموقع ليسجلوا من «وضع المدرب ← تسجيل مدرب جديد».';
       $('trMgrL').innerHTML=L.map(x=>`<div class="trrow"><b>${esc(x.n)} <small dir="ltr" style="color:var(--muted)">${esc(x.u)}${x.e?' · '+esc(x.e):''}</small></b><span class="st ${x.st}">${x.st==='ok'?(x.role==='admin'?'👑 مدير':'مقبول'):x.st==='no'?'مرفوض':'بانتظار الموافقة'}</span><small>${x.c} نتيجة</small>${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">📄 جدوله</a>`:x.st==='ok'?`<button class="btn" data-trd="${esc(x.u)}">📄 إنشاء جدوله في Drive</button>`:''}
-        ${x.st!=='ok'?`<button class="btn prim" data-trs="${esc(x.u)}:ok">✔ قبول</button>`:''}${x.st==='ok'?(x.role==='admin'?`<button class="btn" data-trs="${esc(x.u)}:noadmin">إلغاء صلاحية المدير</button>`:`<button class="btn" data-trs="${esc(x.u)}:admin" title="يرى نتائج الجميع ويدير المدربين، ومتدربوه يصلونه باسمه">👑 اجعله مديرًا</button>`):''}${x.st!=='no'?`<button class="btn" data-trs="${esc(x.u)}:no">✕ رفض</button>`:''}<button class="btn danger" data-trs="${esc(x.u)}:del">🗑 حذف</button></div>`).join('');}
+        ${x.st!=='ok'?`<button class="btn prim" data-trs="${esc(x.u)}:ok">✔ قبول</button>`:''}${x.st==='ok'?(x.role==='admin'?`<button class="btn" data-trs="${esc(x.u)}:noadmin">إلغاء صلاحية المدير</button>`:`<button class="btn" data-trs="${esc(x.u)}:admin" title="يرى نتائج الجميع ويدير المدربين، ومتدربوه يصلونه باسمه">👑 اجعله مديرًا</button>`):''}${x.st!=='no'?`<button class="btn" data-trs="${esc(x.u)}:no">✕ رفض</button>`:''}<button class="btn" data-trn="${esc(x.u)}" data-trnn="${esc(x.n)}">✏️ الاسم</button><button class="btn danger" data-trs="${esc(x.u)}:del">🗑 حذف</button></div>`).join('');}
     catch(e){$('trMgrMsg').textContent=e.message==='key'?'اكتب كلمة سر المدير في نافذة «نتائج المتدربين» أولًا (مرة واحدة).':e.srv||'تعذّر التحميل. تأكد أنك حدّثت كود Google بالنسخة الجديدة.';}};
   $('bTrMgr').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;M.classList.add('open');load();};$('trMgrX').onclick=()=>M.classList.remove('open');
-  $('trMgrL').addEventListener('click',async e=>{const dv=e.target.closest('[data-trd]');if(dv){const em=prompt('بريد المدرب في Google (Gmail) لمشاركة جدوله معه (اتركه كما هو إن كان مسجلًا):','');if(em===null)return;dv.disabled=true;
+  $('trMgrL').addEventListener('click',async e=>{{const rn=e.target.closest('[data-trn]');if(rn){if(await trRename(rn.dataset.trn,rn.dataset.trnn))load();return;}}const dv=e.target.closest('[data-trd]');if(dv){const em=prompt('بريد المدرب في Google (Gmail) لمشاركة جدوله معه (اتركه كما هو إن كان مسجلًا):','');if(em===null)return;dv.disabled=true;
       try{await cloud({action:'trDrive',key:lsG('wsKey')||$('rKey').value.trim(),u:dv.dataset.trd,e:em.trim()});}catch(err){alert(err.srv||'تعذّر إنشاء الجدول: اكتب بريد المدرب.');}load();return;}
     const b=e.target.closest('[data-trs]');if(!b)return;const [u,st]=b.dataset.trs.split(':');if(st==='del'&&!confirm('حذف حساب المدرب «'+u+'»؟ نتائج متدربيه تبقى وتراها أنت.'))return;
     b.disabled=true;try{const j=await cloud({action:'trSet',key:lsG('wsKey')||$('rKey').value.trim(),u,st});if(j.warn)alert(j.warn);}catch(_){}load();});}
+/* a trainer changes the name trainees see (the manager can change any trainer's from «المدربون») */
+async function trRename(u,cur){const n=(prompt(u?'الاسم الجديد للمدرب «'+u+'» كما يظهر للمتدربين:':'اسمك كما يظهر للمتدربين عند اختيار المدرب:',cur||'')||'').trim();if(!n||n===cur)return null;
+  try{const j=await cloud({action:'trName',key:lsG('wsKey')||$('rKey').value.trim(),n,...(u?{u}:{})});TRN=null;
+    if(!u||(TRA()&&TRA().u===j.u)){const a=TRA();if(a){a.n=j.n;lsS('wsTrAcc',JSON.stringify(a));}trAccUI();}say('✏️ صار الاسم: '+j.n+'. يراه المتدربون عند اختيار المدرب، ويُحدَّث عند من اختارك سابقًا.');return j.n;}
+  catch(e){alert(e.message==='action'?'حدّث كود Google Apps Script بآخر نسخة لتعمل هذه الميزة.':e.message==='net'?'لا يوجد اتصال بالإنترنت.':e.srv||'تعذّر حفظ الاسم.');return null;}}
+$('bTrName').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;const a=TRA();trRename('',a&&a.n);};
+/* a trainee's saved trainer name follows a rename */
+if(CLOUD_ON&&lsG('wsMyTr'))trNames().then(L=>{const x=L.find(z=>z.u===lsG('wsMyTr'));if(x&&x.n!==lsG('wsMyTrN')){lsS('wsMyTrN',x.n);sTrShow();}}).catch(()=>{});
 if(CLOUD_ON)sTrShow();trAccUI();
 
 if(CLOUD_ON)setTimeout(()=>cloud({action:'pinGet'}).then(j=>{if(j.v==null)return;const v=String(j.v),old=lsG('wsPinV');lsS('wsPinV',v);
