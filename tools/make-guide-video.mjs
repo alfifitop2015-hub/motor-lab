@@ -234,7 +234,8 @@ async function record(SC, OUT, tmp, tag) {
   const marks = [];
   for (let i = 0; i < SC.length; i++) {
     const s = SC[i];
-    await page.evaluate(([t, ti]) => { __g.cap(t); __g.title(ti || ''); }, [s.t, s.title || '']);
+    /* the narration is heard, not written: a caption would hide the pointer (CAPS=1 shows it) */
+    await page.evaluate(([t, ti]) => { __g.cap(t); __g.title(ti || ''); }, [process.env.CAPS ? s.t : '', s.title || '']);
     if (s.title) setTimeout(() => page.evaluate(() => __g.title('')).catch(() => {}), 2600);
     const start = Date.now() - tRec; marks.push(start);
     const act = ACT[s.run]().catch(e => console.log(tag, 'مشهد', i + 1, e.message.split('\n')[0]));
@@ -253,6 +254,8 @@ async function record(SC, OUT, tmp, tag) {
   args.push('-c:v', 'libx264', '-preset', 'medium', '-crf', '27', '-pix_fmt', 'yuv420p', '-r', '25', '-movflags', '+faststart', OUT);
   execFileSync('ffmpeg', args, {stdio: 'ignore'});
   console.log(`تم: ${OUT} (${dur(OUT).toFixed(0)} ث)`);
+  /* where each scene starts in the finished video, to lay another voice over it later */
+  console.log(`${tag} بدايات المشاهد: ` + JSON.stringify(marks.map(m => +((m - ss * 1000) / 1000).toFixed(2))));
 }
 
 const tmp = await mkdtemp(path.join(tmpdir(), 'guide-'));
