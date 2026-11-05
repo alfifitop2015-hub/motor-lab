@@ -711,7 +711,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
 <div class="modal" id="gdModal" role="dialog" aria-modal="true" aria-labelledby="gdT">
   <div class="box appbox" style="max-width:980px">
     <div class="ah"><h2 id="gdT">🎬 دليل استخدام التطبيق</h2><button class="btn" id="gdClose">إغلاق</button></div>
-    <div class="grp" role="tablist" style="margin:0 0 8px"><button class="btn" data-gd="trainee" role="tab">🧑‍🎓 دليل المتدرب</button><button class="btn" data-gd="trainer" role="tab">👨‍🏫 دليل المدرب</button></div>
+    <div class="grp trainer-only" role="tablist" style="margin:0 0 8px"><button class="btn" data-gd="trainee" role="tab">🧑‍🎓 دليل المتدرب</button><button class="btn" data-gd="trainer" role="tab">👨‍🏫 دليل المدرب</button></div>
     <p id="gdNote" style="margin:0 0 8px;color:var(--muted);font-size:.86rem"></p>
     <video id="gdV" controls playsinline preload="none" poster="" style="width:100%;aspect-ratio:16/9;border-radius:10px;background:#000"></video>
   </div>
@@ -3682,7 +3682,7 @@ $('bWork').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();$('wk
 /* the usage guide video: recorded on the app itself (tools/make-guide-video.mjs) */
 {const gM=$('gdModal'),v=$('gdV'),close=()=>{v.pause();gM.classList.remove('open');};
   const NOTE={trainee:'جولة على التطبيق نفسه للمتدرب: الاسم والتمرين، وأيقونات اللوحة، والتقييم والإرسال، ثم ورشة النيوماتيك، وشنطة الأعطال، وخط الإنتاج.',trainer:'جولة على أدوات المدرب: التسجيل والدخول، وإدارة المدربين، ونتائج المتدربين وتعديل الدرجات، وقفل التمارين، والمدرب في النيوماتيك والشنطة.'};
-  const pick=(k,play)=>{gM.querySelectorAll('[data-gd]').forEach(b=>{const on=b.dataset.gd===k;b.classList.toggle('prim',on);b.setAttribute('aria-selected',on);});$('gdNote').textContent=NOTE[k];
+  const pick=(k,play)=>{if(!document.body.classList.contains('trainer'))k='trainee';/* the trainer's guide is shown in trainer mode only */gM.querySelectorAll('[data-gd]').forEach(b=>{const on=b.dataset.gd===k;b.classList.toggle('prim',on);b.setAttribute('aria-selected',on);});$('gdNote').textContent=NOTE[k];
     const src='video/guide-'+k+'.mp4';if(v.getAttribute('src')!==src){v.src=src;}if(play)v.play().catch(()=>{});};
   gM.addEventListener('click',e=>{const b=e.target.closest('[data-gd]');if(b)pick(b.dataset.gd,true);});
   $('bGuide').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;if(document.body.classList.contains('fs'))exitFS();pick(document.body.classList.contains('trainer')?'trainer':'trainee',false);gM.classList.add('open');v.play().catch(()=>{});};
