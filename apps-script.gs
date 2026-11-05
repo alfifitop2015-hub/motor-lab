@@ -17,15 +17,32 @@ function trainers_() {
   let t = ss.getSheetByName(TRAINERS);
   if (!t) {
     t = ss.insertSheet(TRAINERS);
-    t.appendRow(['اسم المستخدم', 'الاسم', 'الرقم السري (مشفر)', 'الحالة', 'وقت التسجيل', 'البريد (Gmail)', 'رقم جدول المدرب', 'رقم مجلد صور المدرب', 'الدور']);
+    t.appendRow(['اسم المستخدم', 'الاسم', 'الرقم السري (مشفر)', 'الحالة', 'وقت التسجيل', 'البريد (Gmail)', 'رقم جدول المدرب', 'رقم مجلد صور المدرب', 'الدور', 'قفل التمارين بعد إرسالها']);
     t.setFrozenRows(1);
   }
   return t;
 }
 function trFind_(u) {
   const v = trainers_().getDataRange().getValues();
-  for (let i = 1; i < v.length; i++) if (String(v[i][0]).toLowerCase() === u) return { row: i + 1, u: String(v[i][0]), n: String(v[i][1]), h: String(v[i][2]), st: String(v[i][3]), e: String(v[i][5] || ''), sid: String(v[i][6] || ''), fid: String(v[i][7] || ''), role: String(v[i][8] || '') };
+  for (let i = 1; i < v.length; i++) if (String(v[i][0]).toLowerCase() === u) return { row: i + 1, u: String(v[i][0]), n: String(v[i][1]), h: String(v[i][2]), st: String(v[i][3]), e: String(v[i][5] || ''), sid: String(v[i][6] || ''), fid: String(v[i][7] || ''), role: String(v[i][8] || ''), lk: String(v[i][9] || '') === '1' };
   return null;
+}
+// قفل التمرين بعد إرساله (اختياري، يفعّله المدرب ويوقفه): لكل مدرب في عمود «قفل التمارين بعد إرسالها»،
+// وللمتدربين بلا مدرب في إعداد المدير (LOCK0). المتدرب لا يحتاج رمزًا: إيقاف القفل أو حذف نتيجته يفتح التمرين من جديد
+function lockOn_(tr) {
+  if (tr) { const t = trFind_(tr); return !!t && t.st === 'ok' && t.lk; }
+  return PropertiesService.getScriptProperties().getProperty('LOCK0') === '1';
+}
+// التمارين الكهربائية التي أرسلها هذا الرقم التدريبي لهذا المدرب (بتوصيلها، لا مراجعة اللوحة الحقيقية ولا النيوماتك أو الأعطال)
+function sentEx_(s, tr, id) {
+  const seen = {}, out = [];
+  s.getDataRange().getValues().slice(1).forEach(r => {
+    const ex = String(r[4] || '');
+    if (!ex || ex === 'pn' || ex === 'ft' || !String(r[6] || '') || seen[ex]) return;
+    if (String(r[11] || '').toLowerCase() !== tr || String(r[3]).replace(/^'/, '').trim() !== id) return;
+    seen[ex] = 1; out.push(ex);
+  });
+  return out;
 }
 // ===== نسخة نتائج كل مدرب في Google Drive الخاص به =====
 // عند موافقة المدير يُنشأ للمدرب جدول «نتائج المحاكي — اسمه» ومجلد لصور تجارب متدربيه، ويُشاركان مع بريده (Gmail)
@@ -143,7 +160,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
   // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
-  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet', 'trDrive'].indexOf(d.action) >= 0;
+  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet', 'trDrive', 'lkSet'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
   if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
@@ -153,9 +170,12 @@ function doPost(e) {
       const n = String(d.n || '').trim().slice(0, 80);
       const id = String(d.id || '').trim().slice(0, 30);
       if (!n || !id) return out_({ ok: false, err: 'missing' });
+      const trU = String(d.tr || '').toLowerCase().slice(0, 20), trT = trU ? trFind_(trU) : null, trOk = trT && trT.st === 'ok' && trT.fid;
+      const exS = String(d.ex || '');
+      if (exS && exS !== 'pn' && exS !== 'ft' && d.code && !d.rv && lockOn_(trU) && sentEx_(s, trU, id.replace(/^'/, '')).indexOf(exS) >= 0)
+        return out_({ ok: false, err: 'locked', msg: 'أرسلت هذا التمرين من قبل، والمدرب فعّل قفل التمارين بعد إرسالها: لا يُرسل مرة أخرى. اطلب من مدربك إيقاف القفل إن احتجت إعادته.' });
       const uid = Utilities.getUuid().slice(0, 8);
       let fid = '';
-      const trU = String(d.tr || '').toLowerCase().slice(0, 20), trT = trU ? trFind_(trU) : null, trOk = trT && trT.st === 'ok' && trT.fid;
       if (d.img && String(d.img).length < 8000000) {
         try {
           const blob = Utilities.newBlob(Utilities.base64Decode(String(d.img)), 'image/jpeg', id + '-' + uid + '.jpg');
@@ -205,6 +225,12 @@ function doPost(e) {
       if (t.st !== 'ok') return out_({ ok: false, err: t.st === 'no' ? 'rejected' : 'pending', msg: t.st === 'no' ? 'رُفض طلبك، راجع مدير النظام' : 'طلبك بانتظار موافقة مدير النظام' });
       return out_({ ok: true, u: t.u, n: t.n, admin: t.role === 'admin', url: sheetUrl_(t.sid), furl: folderUrl_(t.fid) });
     }
+    // حالة القفل للمتدرب: هل فعّله مدربه، وأي التمارين أرسلها فصارت مقفلة
+    if (d.action === 'lkGet') {
+      const tr = String(d.tr || '').toLowerCase().slice(0, 20), id = String(d.id || '').trim().slice(0, 30);
+      const lk = lockOn_(tr);
+      return out_({ ok: true, lk: lk, ex: lk && id ? sentEx_(s, tr, id) : [] });
+    }
     // أسماء المدربين المقبولين: ليختار المتدرب مدربه
     if (d.action === 'trNames') {
       const v = trainers_().getDataRange().getValues().slice(1).filter(r => String(r[3]) === 'ok');
@@ -243,7 +269,14 @@ function doPost(e) {
       trProvision_(t);
       return out_({ ok: true, url: sheetUrl_(t.sid) });
     }
-    if (d.action === 'who') return out_({ ok: true, admin: !!W.admin, tr: W.tr || '', n: W.n || '' });
+    if (d.action === 'who') return out_({ ok: true, admin: !!W.admin, tr: W.tr || '', n: W.n || '', lk: lockOn_(W.tr || '') });
+    // المدرب يفعّل القفل أو يوقفه لمتدربيه (والمدير بكلمة المرور الرئيسية: للمتدربين بلا مدرب)
+    if (d.action === 'lkSet') {
+      const on = !!d.on;
+      if (W.tr) { const t = trFind_(W.tr); const sh = trainers_(); if (String(sh.getRange(1, 10).getValue() || '') === '') sh.getRange(1, 10).setValue('قفل التمارين بعد إرسالها'); sh.getRange(t.row, 10).setValue(on ? '1' : ''); }
+      else PropertiesService.getScriptProperties().setProperty('LOCK0', on ? '1' : '');
+      return out_({ ok: true, lk: on });
+    }
 
     if (d.action === 'rates') {
       const v = rates_().getDataRange().getValues().slice(1).filter(r => r[4] !== '' && r[4] != null && (W.admin || String(r[6] || '').toLowerCase() === W.tr));

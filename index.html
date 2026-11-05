@@ -573,6 +573,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
         <button class="mi trainer-only" id="bReal">📷 تقييم لوحة حقيقية بالصور</button>
         <button class="mi" id="bQR2">▦ باركود دخول المتدربين</button>
         <button class="mi trainer-only" id="bShare">⇪ مشاركة التوصيلات</button>
+        <button class="mi trainer-only cloud-only" id="bLock" title="عند تفعيله: التمرين الذي يرسله المتدرب يُقفل، فلا يعدّله ولا يعيد تقييمه أو إرساله. إيقافه يفتح التمارين من جديد">🔒 قفل التمرين بعد إرساله</button>
         <button class="mi trainer-only admin-only cloud-only" id="bTrMgr">👥 المدربون (موافقة وإدارة)</button>
         <button class="mi trainer-only admin-only" id="bPinChg">🔑 تغيير الرقم السري للمدير</button>
         <hr class="msep trainer-only">
@@ -2490,7 +2491,7 @@ function partial(){const C=2*Math.PI*26;try{xsTick(true);}catch(_){}if(S.selDev&
   ofType('ol').forEach(f=>{const o=S.ol[f],hb=document.getElementById('heat-'+f);if(hb)hb.setAttribute('width',(+hb.dataset.w||68)*o.heat);
     const it=document.getElementById('iTxt-'+f);if(it)it.textContent='I = '+o.I.toFixed(1)+' A';});
   const cr=document.getElementById('carr');if(cr)cr.setAttribute('transform',`translate(${carX()} 0)`);}
-function update(){try{autoColor();}catch(e){console.warn(e);}solve();render();}
+function update(){try{lkGuard();}catch(_){}try{autoColor();}catch(e){console.warn(e);}solve();render();}
 
 /* ---------- actions ---------- */
 function snap(){S.ran=false;S.power=true;S.fault=null;S.hist.push(JSON.stringify(serial()));if(S.hist.length>60)S.hist.shift();}
@@ -3153,7 +3154,7 @@ function qzGrade(ex){const Q=QZ[ex],D=QZD[ex]||{},miss=Q.map((_,i)=>i).filter(i=
   if(!confirm('تصحيح الاختبار الآن؟ لا يمكن تعديل الإجابات بعد التصحيح.'))return;
   const a=Q.map((_,i)=>D[i]),c=Q.filter((q,i)=>a[i]===q[2]).length,A=qzAll();A[ex]={a,c,n:Q.length,t:Date.now()};qzSave(A);delete QZD[ex];
   say('الاختبار النظري: '+c+' من '+Q.length);gRender();}
-function sendReady(){const n=$('stName2').value.trim(),id=$('stId2').value.trim();
+function sendReady(){{const G=curGrade();if(G&&lkOn(G.ex)){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='🔒 أرسلت هذا التمرين من قبل، والمدرب فعّل القفل: لا يُرسل مرة أخرى.';return null;}}const n=$('stName2').value.trim(),id=$('stId2').value.trim();
   if(!n||!id){[['stName','stName2',n],['stId','stId2',id]].forEach(([a,b,v])=>{if(!v){$(a).classList.add('bad');$(b).classList.add('bad');}});
     const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='اكتب اسمك ورقمك التدريبي أولًا.';(n?$('stId2'):$('stName2')).focus();return null;}
   if(!S.wires.length){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='لا توجد توصيلات بعد. نفّذ التجربة ثم أرسلها.';return null;}
@@ -3169,7 +3170,7 @@ let DL=null;if(window.claude&&window.claude.use)window.claude.use('downloads').t
 async function saveBlob(b,name){if(DL){try{await DL.save({filename:name,data:b});return 'saved';}catch(e){return e&&e.code==='declined'?'declined':'failed';}}
   const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return 'saved';}
 const sendM=$('sendModal');
-function openSend(){if(document.body.classList.contains('fs'))exitFS();$('sendSum').textContent=sendSummary()+(curGrade()&&!sameAsGraded()?' · سيُرسل توصيل أعلى محاولة لك في التقييم ('+curGrade().s+'/20)، لا التوصيل الحالي.':'');$('sendMsg').textContent='';sendM.classList.add('open');
+function openSend(){if(document.body.classList.contains('fs'))exitFS();{const G=curGrade();if(G&&lkOn(G.ex)){GV.ex=G.ex;gRender();gM.classList.add('open');return;}}$('sendSum').textContent=sendSummary()+(curGrade()&&!sameAsGraded()?' · سيُرسل توصيل أعلى محاولة لك في التقييم ('+curGrade().s+'/20)، لا التوصيل الحالي.':'');$('sendMsg').textContent='';sendM.classList.add('open');
   const o=stGet();$('stName2').value=o.n||$('stName').value;$('stId2').value=o.id||$('stId').value;if(!$('stName2').value)$('stName2').focus();}
 /* sending goes through grading only: «🎯 تقييم وإرسال» grades the board, then «📤 إرسال» is in the result */
 $('sClose').onclick=()=>sendM.classList.remove('open');sendM.addEventListener('click',e=>{if(e.target===sendM)sendM.classList.remove('open');});
@@ -3593,6 +3594,7 @@ async function gGuess(){const R=$('gGuessR');if(!R)return;R.textContent='جار�
 function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classList.contains('trainer');
   /* the exercise picked above the board is the one graded; the list appears only when none was picked there */
   let h=EXP.ex&&ex===EXP.ex?`<p class="gexn">التمرين: <b>${Object.keys(PNAME).indexOf(ex)+1}. ${esc(PNAME[ex])}</b>${A[ex]?' — '+(A[ex].top||A[ex]).s+'/20':''}<span>لتقييم تمرين آخر اختره من قائمة التمارين أعلى اللوحة.</span></p>`:`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+(A[k].top||A[k]).s+'/20':''}</option>`).join('')}</select></label>`;
+  if(lkOn(ex)){const L=A[ex];h+=`<div class="glock">🔒 أرسلت هذا التمرين للمدرب${L?' بدرجة <b>'+(L.top||L).s+' من 20</b>':''}، والمدرب فعّل قفل التمارين بعد إرسالها: لا يمكنك تعديله ولا إعادة تقييمه أو إرساله. يمكنك تشغيل لوحتك ومشاهدتها، وإذا احتجت إعادته فاطلب من مدربك إيقاف القفل.</div>`+(L?gResHTML(L.top||L):'');$('gBody').innerHTML=h;return;}
   if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. تُحسب الدرجة من توصيلاتك: 20 × التوصيلات الصحيحة ÷ (المطلوبة + الخاطئة أو الزائدة)، ويُجبر الكسر لصالحك. يُقبل التوصيل المكافئ: سلك على أي طرف من نفس النقطة، أو تلامس مساعد آخر من نفس النوع، أو المحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد. أسلاك لمبات البيان محسوبة في التمرين الأول، وفي باقي التمارين هي درجة إضافية حتى درجة واحدة، ولا يتعدى المجموع 20. بعد التقييم يشغّل المحاكي لوحتك آليًا ويريك هل تعمل وأين أخطاؤك خطوة بخطوة، للتعلّم دون أن يؤثر في الدرجة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
   else if(G){const T=G.top||G;
     h+=`<div class="glock">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b> (المحاولة ${T.try||1})، وتوصيلها محفوظ، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت: لا تضيع عليك الدرجة الأعلى.</div>`+gResHTML(G)+qzHTML(ex)+
@@ -3621,6 +3623,7 @@ $('gBody').addEventListener('change',e=>{const r=e.target.closest('[data-qz]');i
 $('gBody').addEventListener('click',e=>{if(e.target.id==='qzGo'&&GV.ex)qzGrade(GV.ex);});
 function gDo(){const tr=document.body.classList.contains('trainer'),n=$('stName').value.trim()||(tr?'المدرب':''),sid=$('stId').value.trim()||(tr?'-':'');
     if(!GV.ex)return false;
+    if(lkOn(GV.ex)){gRender();return false;}
     if(!n||!sid){if(!n)$('stName').classList.add('bad');if(!sid)$('stId').classList.add('bad');$('gMsg').textContent='اكتب اسمك ورقمك التدريبي في أعلى اللوحة أولًا.';return false;}
     if(!S.wires.length){$('gMsg').textContent='لا توجد توصيلات بعد.';return false;}
     /* every attempt is graded; the highest one (the newest on a tie) keeps its wiring so it is the one sent, even if a later attempt scores less */
@@ -3634,7 +3637,7 @@ function ulkApply(raw){const c=String(raw||'').toUpperCase().replace(/[^0-9A-Z]/
   const ex=Object.keys(A).find(k=>k!=='_cur'&&A[k]&&ulkCode(A[k].id,k,A[k].t)===c);if(!ex)return null;
   delete A[ex];if(A._cur===ex)delete A._cur;gSave(A);{const Z=qzAll();delete Z[ex];qzSave(Z);}gUpdBtn();say('فُك قفل '+PNAME[ex]+'. يمكنك إعادة التقييم الآن.');renderTop();return ex;}
 $('bClrGrades').onclick=()=>{try{localStorage.removeItem(GK);}catch(_){}GV.ex=EXP.ex;gUpdBtn();say('مُسحت الدرجات من هذا الجهاز');renderTop();};
-function gUpdBtn(){const G=curGrade();$('bGrade').textContent=G?'🎯 '+G.s+'/20 · إرسال':'🎯 تقييم وإرسال';}
+function gUpdBtn(){const G=curGrade(),k=(G&&G.ex)||(()=>{try{return EXP.ex;}catch(_){return '';}})();$('bGrade').textContent=lkOn(k)?'🔒 '+(G?G.s+'/20 · ':'')+'أُرسل':G?'🎯 '+G.s+'/20 · إرسال':'🎯 تقييم وإرسال';}
 gUpdBtn();
 /* ---------- exercise picker (top of the board) + step-by-step wiring clip ----------
    The picked exercise is the one graded, so the trainee does not choose it again in 🎯.
@@ -4043,9 +4046,41 @@ async function cloud(d){let r;try{r=await fetch(CLOUD_URL,{method:'POST',body:JS
   const t=await r.text();let j;try{j=JSON.parse(t);}catch(_){throw new Error('setup');}if(!j.ok){const E=new Error(j.err||'fail');E.srv=j.msg||'';throw E;};return j;}
 $('sCloud').onclick=async()=>{const st=sendReady();if(!st)return;const tr=await window.wsTrPick();if(tr==null)return;sTrShow();const G=curGrade();const b=$('sCloud');b.disabled=true;okMsg('جارٍ الإرسال…');
   try{const {code}=await buildMsg(st);okMsg('جارٍ تجهيز صورة اللوحة…');const im=await cloudImgs(st);okMsg('جارٍ الإرسال…');const j=await cloud(_qP={action:'submit',n:st.n,id:st.id,ex:G?G.ex:'',s:G?G.s:'',code,img:im.img,th:im.th,tr});
+    if(G&&LKS.on&&lkMine()&&!(LKS.ex||[]).includes(G.ex)){LKS.ex=[...(LKS.ex||[]),G.ex];lkSave();gUpdBtn();}lkRefresh();
     okMsg('✔ وصلت تجربتك للمدرب'+(G?' مع درجتك '+G.s+' من 20'+(qzGet(G.ex)?' والاختبار النظري '+qzGet(G.ex).c+' من '+qzGet(G.ex).n:''):'')+'. رقم المرجع: '+j.uid);}
-  catch(e){if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}const m=$('sendMsg');m.style.color='var(--warn)';m.textContent=(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أبلغ المدرب، وأرسل الآن عبر واتساب.':'تعذّر الوصول لخادم الحفظ. تأكد من الإنترنت وحاول مرة أخرى، أو أرسل عبر واتساب.');}
+  catch(e){if(e.message==='locked'){const m=$('sendMsg');m.style.color='var(--warn)';m.textContent='🔒 '+(e.srv||'هذا التمرين أُرسل من قبل، والمدرب فعّل القفل.');lkRefresh();return;}if(e.message==='net'&&_qP&&qAdd(_qP)){_qP=null;okMsg('📥 لا يوجد اتصال الآن — حُفظت تجربتك على هذا الجهاز وستُرسل للمدرب تلقائيًا عند عودة الإنترنت.');return;}const m=$('sendMsg');m.style.color='var(--warn)';m.textContent=(e.srv?'خطأ في خادم Google: '+e.srv+' — أبلغ المدرب، وأرسل الآن عبر واتساب.':e.message==='setup'?'خادم الحفظ لم يستجب بشكل صحيح. أبلغ المدرب، وأرسل الآن عبر واتساب.':'تعذّر الوصول لخادم الحفظ. تأكد من الإنترنت وحاول مرة أخرى، أو أرسل عبر واتساب.');}
   finally{b.disabled=false;}};
+/* ---------- optional lock after sending (the trainer turns it on or off; no unlock code) ----------
+   The setting is kept on the server for each trainer. When it is on, an exercise this trainee number already sent to that trainer
+   cannot be edited, regraded or sent again, here or from another device (the server refuses a second send too).
+   Turning it off, or deleting that result in «نتائج المتدربين», opens the exercise again. Trainer mode is never locked. */
+const LKK='wsLk';var LKS={};try{LKS=JSON.parse(localStorage.getItem(LKK)||'null')||{};}catch(_){}
+const lkSave=()=>{try{localStorage.setItem(LKK,JSON.stringify(LKS));}catch(_){}};
+const lkMine=()=>LKS.tr===(lsG('wsMyTr')||'')&&LKS.id===$('stId').value.trim();
+function lkOn(ex){try{return !!ex&&!!PNAME[ex]&&!document.body.classList.contains('trainer')&&!!LKS.on&&lkMine()&&(LKS.ex||[]).includes(ex);}catch(_){return false;}}
+let lkBusy=null;async function lkRefresh(){if(!CLOUD_ON||document.body.classList.contains('trainer'))return;const id=$('stId').value.trim(),tr=lsG('wsMyTr')||'';if(!id)return;
+  const was=JSON.stringify(LKS);try{const j=await cloud({action:'lkGet',tr,id});LKS={tr,id,on:!!j.lk,ex:Array.isArray(j.ex)?j.ex.map(String):[]};lkSave();}catch(_){return;}
+  if(JSON.stringify(LKS)!==was){gUpdBtn();update();if(gM.classList.contains('open'))gRender();if(lkOn(EXP.ex))say('🔒 التمرين '+(Object.keys(PNAME).indexOf(EXP.ex)+1)+' أُرسل للمدرب ومقفل: يمكنك تشغيل لوحتك ومشاهدتها دون تعديلها.');}}
+/* the board of a locked exercise is held as it was sent: any edit (wire, part, program, undo, delete) is put back at once */
+var LKB={ex:'',ref:'',o:null,t:0};
+const lkSig=()=>{const o=serial();return JSON.stringify([o.devs,o.w,o.plc&&o.plc.prog,o.plc&&o.plc.tm,o.px||null,o.mt||null]);};
+function lkGuard(){const ex=EXP.ex;if(!lkOn(ex)){LKB.ex='';return;}
+  if(LKB.ex!==ex){LKB.ex=ex;const G=gAll()[ex],W=G&&(G.top||G).w;if(W){const cur=serial();try{applyObj(W);}catch(_){applyObj(cur);}}LKB.o=serial();LKB.ref=lkSig();return;}
+  if(lkSig()===LKB.ref)return;applyObj(LKB.o);S.hist=[];S.sel=null;S.pending=null;LKB.ref=lkSig();
+  if(Date.now()-LKB.t>2500){LKB.t=Date.now();say('🔒 هذا التمرين أُرسل للمدرب ومقفل: لا يمكن تعديله. يمكنك تشغيله ومشاهدته فقط.');}}
+$('stId').addEventListener('change',()=>lkRefresh());
+setTimeout(lkRefresh,300);document.addEventListener('visibilitychange',()=>{if(!document.hidden)lkRefresh();});
+/* the trainer's switch: shows the current state when the ⋮ menu opens, and toggles it on the server */
+const lkKey=()=>lsG('wsKey')||($('rKey')&&$('rKey').value.trim())||'';
+let LKT=null;const lkLbl=()=>{$('bLock').textContent='🔒 قفل التمرين بعد إرساله: '+(LKT==null?'…':LKT?'مفعّل ✓':'معطّل');};
+async function lkTrGet(){if(!CLOUD_ON||!document.body.classList.contains('trainer')||!lkKey())return;try{const j=await cloud({action:'who',key:lkKey()});LKT=!!j.lk;}catch(_){}lkLbl();}
+document.querySelector('.more').addEventListener('toggle',e=>{if(e.target.open)lkTrGet();});lkLbl();
+$('bLock').onclick=async()=>{let k=lkKey();if(!k){k=(prompt('اكتب كلمة مرور النتائج (أو ادخل بحساب المدرب):')||'').trim();if(!k)return;lsS('wsKey',k);try{$('rKey').value=k;}catch(_){}}
+  const b=$('bLock');b.disabled=true;b.textContent='🔒 جارٍ الحفظ…';
+  try{if(LKT==null){const j=await cloud({action:'who',key:k});LKT=!!j.lk;}const j=await cloud({action:'lkSet',key:k,on:!LKT});LKT=!!j.lk;
+    say(LKT?'🔒 فُعّل القفل: التمرين الذي يرسله متدربوك يُقفل، فلا يعدّلونه ولا يعيدون إرساله حتى توقفه.':'🔓 أُوقف القفل: يستطيع متدربوك تعديل تمارينهم وإعادة إرسالها.');renderTop();}
+  catch(e){alert(e.message==='key'?'كلمة المرور غير صحيحة.':e.message==='net'?'لا يوجد اتصال بالإنترنت.':'تعذّر الحفظ. تأكد أن كود Google Apps Script محدّث بآخر نسخة.');}
+  finally{b.disabled=false;lkLbl();}};
 const rM=$('resModal');let RS={rows:[],sel:new Set(),chk:{},open:new Set(),ready:false};
 try{$('rKey').value=localStorage.getItem('wsKey')||'';}catch(_){}
 const exName=ex=>PNAME[ex]?'تمرين '+(Object.keys(PNAME).indexOf(ex)+1)+': '+PNAME[ex]:'بدون تقييم';
