@@ -3683,7 +3683,7 @@ $('bWork').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();$('wk
 {const gM=$('gdModal'),v=$('gdV'),close=()=>{v.pause();gM.classList.remove('open');};
   const NOTE={trainee:'جولة على التطبيق نفسه للمتدرب: الاسم والتمرين، وأيقونات اللوحة، والتقييم والإرسال، ثم ورشة النيوماتيك، وشنطة الأعطال، وخط الإنتاج.',trainer:'جولة على أدوات المدرب: التسجيل والدخول، وإدارة المدربين، ونتائج المتدربين وتعديل الدرجات، وقفل التمارين، والمدرب في النيوماتيك والشنطة.'};
   const pick=(k,play)=>{if(!document.body.classList.contains('trainer'))k='trainee';/* the trainer's guide is shown in trainer mode only */gM.querySelectorAll('[data-gd]').forEach(b=>{const on=b.dataset.gd===k;b.classList.toggle('prim',on);b.setAttribute('aria-selected',on);});$('gdNote').textContent=NOTE[k];
-    const src='video/guide-'+k+'.mp4';if(v.getAttribute('src')!==src){v.src=src;}if(play)v.play().catch(()=>{});};
+    const src='video/guide-'+k+'.mp4?v=7';/* raise v whenever a guide video is replaced, so no device keeps the old one */if(v.getAttribute('src')!==src){v.src=src;}if(play)v.play().catch(()=>{});};
   gM.addEventListener('click',e=>{const b=e.target.closest('[data-gd]');if(b)pick(b.dataset.gd,true);});
   $('bGuide').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;if(document.body.classList.contains('fs'))exitFS();pick(document.body.classList.contains('trainer')?'trainer':'trainee',false);gM.classList.add('open');v.play().catch(()=>{});};
   $('gdClose').onclick=close;gM.addEventListener('click',e=>{if(e.target===gM)close();});}
