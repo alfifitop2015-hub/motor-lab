@@ -174,12 +174,13 @@ body.dmin .drow .full,body.dmin .dstat{display:none}
 .note2{background:var(--chip);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:.88rem}.note2.warn{background:color-mix(in srgb,var(--warn) 12%,transparent)}.note2.good{background:color-mix(in srgb,var(--ok) 14%,transparent)}
 .door{background:#e9ecef;color:#1b2530;border:4px solid #7d97b8;border-radius:10px;padding:10px;direction:ltr}
 .door .dt{direction:rtl;font-size:.8rem;color:#4b5866;margin-bottom:6px}
-.tgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px 4px}
+.tgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px 4px}@media (min-width:900px){.tgrid{grid-template-columns:repeat(23,minmax(0,1fr))}}
 .tg{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.72rem;cursor:pointer;border:0;background:none;padding:2px 0;color:#1b2530}
 .tg .lv{width:12px;height:30px;border-radius:6px;background:linear-gradient(#cfd5db,#8e98a2);position:relative;border:1px solid #6b7580}
 .tg .lv::after{content:"";position:absolute;left:-3px;width:16px;height:12px;border-radius:50%;background:#e3e7eb;border:1px solid #6b7580;top:-4px;transition:top .12s}
 .tg.on .lv{background:linear-gradient(#ffcf66,#e09a00)}.tg.on .lv::after{top:20px;background:#ffd54a}
 .tg:focus-visible{outline:2px solid var(--accent)}
+.tg.na{cursor:not-allowed;opacity:.38;color:#6b7580}.tg.na .lv{background:repeating-linear-gradient(45deg,#c9ced3 0 3px,#b3bac1 3px 6px)}
 .fsw{margin:6px 0 2px;background:#e9ecef;color:#1b2530;border:3px solid #7d97b8;border-radius:10px;padding:6px 10px 8px}
 .fswh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:.8rem;margin-bottom:4px}.fswh b{font-size:.9rem}.fswh .de{direction:ltr;color:#4b5866}.fswh .kl{color:#4b5866;margin-inline-start:auto}
 .fswg{display:flex;flex-wrap:wrap;gap:4px 12px;direction:ltr}.fswg .tg{min-width:30px}.fswg .tg.sel span:first-child{color:#0b3d91;font-weight:700;text-decoration:underline}
@@ -775,7 +776,16 @@ function commonFaults(c){if(c._cf)return c._cf;const base=simRun(c,null),bs=base
     first.push({id:a.id,p:pri(a),n:g.l.length,sym});if(b)second.push({id:b.id,p:pri(b)+10,n:g.l.length,sym});});
   const L=[...first.sort((a,b)=>a.p-b.p),...second.sort((a,b)=>a.p-b.p)].slice(0,12);
   c._vis=vis;return c._cf=L;}
-function swMap(c){return commonFaults(c).map(x=>x.id);}
+/* the kit's fault switches 8..30: each circuit's faults sit on fixed switches, and the same fault keeps the same switch in every
+   circuit where it can (K1 coil is always the same switch); the switches a circuit does not use are shown off and cannot be raised */
+const NSW=23;let SLOTS=null;
+function slotsAll(){if(SLOTS)return SLOTS;const keep=S.cid,per={},cnt={},key=(c,x)=>fDesc(c.E.find(e=>e.id===x.id));
+  try{for(const id of Object.keys(CIRC)){S.cid=id;const c=CIRC[id];per[id]=commonFaults(c).map(x=>({x,k:key(c,x)}));per[id].forEach(o=>cnt[o.k]=(cnt[o.k]||0)+1);}}finally{S.cid=keep;}
+  const order=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]),slotOf={},used={};Object.keys(per).forEach(id=>used[id]=new Set());
+  order.forEach(k=>{const ids=Object.keys(per).filter(id=>per[id].some(o=>o.k===k));let i=0;while(i<NSW&&ids.some(id=>used[id].has(i)))i++;if(i>=NSW)return;slotOf[k]=i;ids.forEach(id=>used[id].add(i));});
+  SLOTS={};Object.keys(per).forEach(id=>{const A=new Array(NSW).fill(null);per[id].forEach(o=>{if(slotOf[o.k]!=null)A[slotOf[o.k]]=o.x;});SLOTS[id]=A;});return SLOTS;}
+function slots(c){const id=Object.keys(CIRC).find(k=>CIRC[k]===c);return (slotsAll()[id])||new Array(NSW).fill(null);}
+function swMap(c){return slots(c).map(x=>x&&x.id);}
 
 /* ===================================================================== drawing */
 const svg=$('svg'),wrap=$('wrap');
@@ -1154,9 +1164,9 @@ $('dFaults').onclick=openFaults;$('bFaults2').onclick=()=>{document.querySelecto
 let fswKey='',fswSel=-1;
 function renderFsw(){$('fswBox').style.display=S.zero?'none':'';if(!isTr()||S.zero){fswKey='';return;}
   {const L=[...S.F].map(id=>{const e=byId(id);return e?fDesc(e):id;});$('fswOn').innerHTML=L.length?`الأعطال المفعّلة الآن (${L.length}): <b>${L.map(esc).join(' · ')}</b>`:'لا يوجد عطل مفعّل: ارفع مفتاحًا أعلاه، أو «📍 وضع عطل» ثم المس السلك أو العنصر.';$('fswShow').checked=S.show;}const c=C(),L=commonFaults(c),key=S.cid+'|'+[...S.F].join(',')+'|'+fswSel;if(key===fswKey)return;fswKey=key;
-  $('fswInfo').textContent=`الدائرة ${S.cid}: ${L.length} أعطال شائعة · اضغط المفتاح لعرض تفاصيله`;
-  $('fswg').innerHTML=L.map((x,i)=>`<button class="tg${S.F.has(x.id)?' on':''}${i===fswSel?' sel':''}" data-cf="${i}" aria-pressed="${S.F.has(x.id)}" title="${esc(fDesc(byId(x.id)))}"><span>${i+8}</span><span class="lv"></span></button>`).join('');}
-function showSw(i){const x=commonFaults(C())[i];if(!x)return;const e=byId(x.id),on=S.F.has(x.id);fswSel=i;renderFsw();
+  const Z=slots(c);$('fswInfo').textContent=`الدائرة ${S.cid}: ${Z.filter(Boolean).length} أعطال من ${NSW} مفتاحًا · المفاتيح الرمادية لا علاقة لها بهذه الدائرة`;
+  $('fswg').innerHTML=Z.map((x,i)=>x?`<button class="tg${S.F.has(x.id)?' on':''}${i===fswSel?' sel':''}" data-cf="${i}" aria-pressed="${S.F.has(x.id)}" title="${esc(fDesc(byId(x.id)))}"><span>${i+8}</span><span class="lv"></span></button>`:`<button class="tg na" disabled title="المفتاح ${i+8}: غير فعال في الدائرة ${esc(S.cid)}، لا علاقة له بها"><span>${i+8}</span><span class="lv"></span></button>`).join('');}
+function showSw(i){const x=slots(C())[i];if(!x)return;const e=byId(x.id),on=S.F.has(x.id);fswSel=i;renderFsw();
   insp.innerHTML=`<b>المفتاح ${i+8}</b> <span class="sm">${on?'🟡 العطل مفعّل':'⭘ غير مفعّل'}</span><p>${esc(fDesc(e))}</p>`+
     (x.sym.length?`<div class="sym"><b>العَرَض المتوقع</b><br>${x.sym.map(esc).join('<br>')}</div>`:'')+
     (x.n>1?`<p class="sm">يعطي ${x.n-1} ${x.n-1===1?'عطل آخر':'أعطال أخرى'} العَرَض نفسه، فعلى المتدرب أن يميّز بينها بالقياس.</p>`:'')+
@@ -1164,13 +1174,13 @@ function showSw(i){const x=commonFaults(C())[i];if(!x)return;const e=byId(x.id),
   insp.classList.add('open');$('swX').onclick=()=>{insp.classList.remove('open');fswSel=-1;renderFsw();};
   $('swT').onclick=()=>{S.F.has(x.id)?S.F.delete(x.id):S.F.add(x.id);trainerFaultsChanged();showSw(i);};}
 $('fswg').addEventListener('click',e=>{const b=e.target.closest('[data-cf]');if(b)showSw(+b.dataset.cf);});
-function renderFaults(){const c=C(),m=swMap(c),cf=commonFaults(c);$('fCirc').textContent=S.cid;renderFsw();
-  $('tgrid').innerHTML=m.map((id,i)=>`<button class="tg${S.F.has(id)?' on':''}" data-sw="${i}" title="${esc(fDesc(byId(id)))}" aria-pressed="${S.F.has(id)}"><span>${i+8}</span><span class="lv"></span></button>`).join('');
+function renderFaults(){const c=C(),m=swMap(c),cf=slots(c);$('fCirc').textContent=S.cid;renderFsw();
+  $('tgrid').innerHTML=m.map((id,i)=>id?`<button class="tg${S.F.has(id)?' on':''}" data-sw="${i}" title="${esc(fDesc(byId(id)))}" aria-pressed="${S.F.has(id)}"><span>${i+8}</span><span class="lv"></span></button>`:`<button class="tg na" disabled title="المفتاح ${i+8}: غير فعال في هذه الدائرة"><span>${i+8}</span><span class="lv"></span></button>`).join('');
   const extra=[...S.F].filter(id=>!m.includes(id));
-  $('flist').innerHTML=m.map((id,i)=>`<li class="${S.F.has(id)?'on':''}"><span class="n">${i+8}</span><span>${esc(fDesc(byId(id)))}${cf[i]&&cf[i].sym[0]?`<br><small style="color:var(--muted)">${esc(cf[i].sym[0])}</small>`:''}</span></li>`).join('')+
+  $('flist').innerHTML=m.map((id,i)=>id?`<li class="${S.F.has(id)?'on':''}"><span class="n">${i+8}</span><span>${esc(fDesc(byId(id)))}${cf[i]&&cf[i].sym[0]?`<br><small style="color:var(--muted)">${esc(cf[i].sym[0])}</small>`:''}</span></li>`:'').join('')+
     extra.map(id=>{const e=byId(id);return e?`<li class="on"><span class="n">✚</span><span>${esc(fDesc(e))} (وُضع بالنقر)</span></li>`:'';}).join('');
   $('oShow').checked=S.show;$('oView').checked=S.allowView;}
-$('tgrid').addEventListener('click',e=>{const b=e.target.closest('[data-sw]');if(!b)return;const id=swMap(C())[+b.dataset.sw];S.F.has(id)?S.F.delete(id):S.F.add(id);trainerFaultsChanged();});
+$('tgrid').addEventListener('click',e=>{const b=e.target.closest('[data-sw]');if(!b||b.disabled)return;const id=swMap(C())[+b.dataset.sw];if(!id)return;S.F.has(id)?S.F.delete(id):S.F.add(id);trainerFaultsChanged();});
 $('fRand').onclick=()=>{S.F=new Set([randFault()]);trainerFaultsChanged();};
 $('fNone').onclick=()=>{S.F.clear();trainerFaultsChanged();};
 $('oShow').onchange=e=>{S.show=e.target.checked;drawDyn();save();};

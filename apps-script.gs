@@ -160,7 +160,7 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, err: 'bad' }); }
   // القراءة (عرض النتائج والصور) لا تنتظر القفل، فلا تتعطل وقت إرسال المتدربين؛ الكتابة وحدها تنتظره
-  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet', 'trDrive', 'lkSet'].indexOf(d.action) >= 0;
+  const write = ['submit', 'del', 'setScores', 'rate', 'rasd', 'trReg', 'trSet', 'trDrive', 'lkSet', 'setMan'].indexOf(d.action) >= 0;
   const lock = LockService.getScriptLock();
   if (write) { try { lock.waitLock(25000); } catch (err) { return out_({ ok: false, err: 'busy', msg: 'الخادم مشغول بإرسال آخر، أعد المحاولة' }); } }
   try {
@@ -291,7 +291,8 @@ function doPost(e) {
       return out_({ ok: true, n: v.length, admin: !!W.admin, rows: v.map(r => ({
         uid: String(r[0]), t: r[1] instanceof Date ? r[1].getTime() : r[1],
         n: String(r[2]), id: String(r[3]), ex: String(r[4]), s: r[5], code: String(r[6]),
-        th: String(r[7] || ''), fid: String(r[8] || ''), rasd: r[10] === true || String(r[10]) === '1', tr: String(r[11] || '')
+        th: String(r[7] || ''), fid: String(r[8] || ''), rasd: r[10] === true || String(r[10]) === '1', tr: String(r[11] || ''),
+        man: r[12] === '' || r[12] == null ? '' : Number(r[12]), mn: String(r[13] || '')
       })) });
     }
 
@@ -326,6 +327,23 @@ function doPost(e) {
         if (ids.has(String(v[i][0])) && mine(v[i])) { s.getRange(i + 1, 11).setValue(on ? 1 : ''); n++; try { trMirror_(v[i][11], v[i][0], (sh, r) => sh.getRange(r, 11).setValue(on ? 1 : '')); } catch (err) {} }
       }
       return out_({ ok: true, n: n });
+    }
+
+    // درجة يعدّلها المدرب يدويًا بعد الاطلاع على التجربة (لمعالجة خطأ في التقييم الآلي): تُحفظ في عمود «درجة المدرب»
+    // وتتقدم على الدرجة الآلية في التطبيق. قيمة فارغة تلغي التعديل وتعود الدرجة الآلية
+    if (d.action === 'setMan') {
+      const uid = String(d.uid || ''), x = d.s, val = x === '' || x == null || isNaN(Number(x)) ? '' : Math.max(0, Math.min(20, Number(x)));
+      const note = String(d.note || '').slice(0, 300);
+      if (String(s.getRange(1, 13).getValue() || '') === '') { s.getRange(1, 13).setValue('درجة المدرب (يدوي)'); s.getRange(1, 14).setValue('سبب التعديل'); }
+      const v = s.getDataRange().getValues();
+      for (let i = 1; i < v.length; i++) {
+        if (String(v[i][0]) === uid && mine(v[i])) {
+          s.getRange(i + 1, 13).setValue(val); s.getRange(i + 1, 14).setValue(val === '' ? '' : note);
+          try { trMirror_(v[i][11], uid, (sh, r) => { if (String(sh.getRange(1, 12).getValue() || '') === '') sh.getRange(1, 12).setValue('درجة المدرب (يدوي)'); sh.getRange(r, 12).setValue(val); }); } catch (err) {}
+          return out_({ ok: true, man: val });
+        }
+      }
+      return out_({ ok: false, err: 'notfound' });
     }
 
     // حفظ الدرجات بعد إعادة تقييم النتائج بالقواعد الحالية من نافذة «نتائج المتدربين»: {معرف التجربة: الدرجة}
