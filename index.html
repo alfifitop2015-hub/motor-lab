@@ -563,6 +563,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
     <button class="ib" id="bHelp" title="شرح الدوائر والتركيبات" aria-label="شرح الدوائر والتركيبات">📖 <span>الشرح</span></button>
     <details class="more"><summary class="ib kebab" title="المزيد" aria-label="المزيد">⋮</summary>
       <div class="menu">
+        <button class="mi" id="bGuide">🎬 دليل استخدام التطبيق (فيديو)</button>
         <button class="mi" id="bRate">⭐ قيّم استفادتك من التطبيق</button>
         <hr class="msep">
         <button class="mi trainer-only" id="bResults">📋 نتائج المتدربين</button>
@@ -705,6 +706,13 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
     <div class="rtools"><button id="rLoad">↻ تحديث</button><button id="rNew" title="عرض التي لم تُرصد فقط">لم يُرصد</button><button id="rSeenAll" title="رصد كل النتائج">✔ رصد الكل</button><input id="rFind" placeholder="بحث بالاسم أو الرقم أو التمرين" aria-label="بحث"><button id="rCsv">⬇ تنزيل CSV</button><button id="rAll">☑ تحديد الكل</button><button id="rShareSel" disabled>📤 مشاركة المحدد</button><button id="rBestAll" class="danger" disabled title="يحذف المحاولات الأقل لكل متدرب في كل تمرين ويبقي الأعلى">🧹 إبقاء الأعلى للجميع</button><button id="rDelSel" class="danger" disabled>🗑 حذف المحدد</button></div>
     <p id="rMsg" class="astat" aria-live="polite"></p>
     <div id="rList"></div>
+  </div>
+</div>
+<div class="modal" id="gdModal" role="dialog" aria-modal="true" aria-labelledby="gdT">
+  <div class="box appbox" style="max-width:980px">
+    <div class="ah"><h2 id="gdT">🎬 دليل استخدام التطبيق</h2><button class="btn" id="gdClose">إغلاق</button></div>
+    <p style="margin:0 0 8px;color:var(--muted);font-size:.86rem">جولة على التطبيق نفسه للمتدرب والمدرب: الدخول، واختيار التمرين، وأيقونات اللوحة، والتقييم والإرسال، ونتائج المتدربين، والخروج.</p>
+    <video id="gdV" controls playsinline preload="none" poster="" style="width:100%;aspect-ratio:16/9;border-radius:10px;background:#000"></video>
   </div>
 </div>
 <div class="modal" id="wkModal" role="dialog" aria-modal="true" aria-labelledby="wkT">
@@ -3670,6 +3678,10 @@ function wkRender(){const A=wkAll(),G=gAll(),ks=Object.keys(PNAME).filter(k=>A[k
       <div class="wka"><button data-wkopen="${k}"${cur?' disabled':''}>📂 فتح للتعديل</button><button class="danger" data-wkdel="${k}">🗑 حذف النسخة</button></div></div>`;}).join(''):
     '<p class="greq">لا توجد تمارين محفوظة بعد. اختر التمرين من القائمة أعلى اللوحة ثم وصّل، وتُحفظ آخر نسخة منه تلقائيًا.</p>';}
 $('bWork').onclick=()=>{if(document.body.classList.contains('fs'))exitFS();$('wkMsg').textContent='';wkRender();wkM.classList.add('open');};
+/* the usage guide video: recorded on the app itself (tools/make-guide-video.mjs) */
+{const gM=$('gdModal'),v=$('gdV'),close=()=>{v.pause();gM.classList.remove('open');};
+  $('bGuide').onclick=()=>{const d=document.querySelector('.more');if(d)d.open=false;if(document.body.classList.contains('fs'))exitFS();if(!v.getAttribute('src'))v.src='video/app-guide.mp4';gM.classList.add('open');v.play().catch(()=>{});};
+  $('gdClose').onclick=close;gM.addEventListener('click',e=>{if(e.target===gM)close();});}
 $('wkClose').onclick=()=>wkM.classList.remove('open');wkM.addEventListener('click',e=>{if(e.target===wkM)wkM.classList.remove('open');});
 $('wkList').addEventListener('click',e=>{const o=e.target.closest('[data-wkopen]'),d=e.target.closest('[data-wkdel]');
   if(o){const ex=o.dataset.wkopen,prev=EXP.ex;exPick(ex,true);wkOpen(ex,prev);exMotor(ex);renderTop();wkM.classList.remove('open');return;}
