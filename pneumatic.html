@@ -1165,8 +1165,11 @@ $('imgClose').onclick=()=>$('imgModal').classList.remove('open');
 
 /* ---------- trainer mode (same PIN as the electrical workshop) ---------- */
 const PINH='ba1ab459',hpin=p=>{let h=5381;for(const ch of 'wsh:'+p)h=((h*33)^ch.charCodeAt(0))>>>0;return h.toString(16);};
-function setTrainer(on){document.body.classList.toggle('trainer',on);try{on?localStorage.setItem('wsTrainer',PINH):localStorage.removeItem('wsTrainer');}catch(_){}$('bTrainer').textContent=on?'🔓 الخروج من وضع المدرب':'🔒 وضع المدرب';}
-try{if(localStorage.getItem('wsTrainer')===PINH)setTrainer(true);}catch(_){}
+/* a trainer signed in with their own account in the simulator (wsTrainer «acc:…») is a trainer here too, without the master PIN;
+   leaving trainer mode here keeps that sign-in, it ends only from the simulator */
+const accOn=()=>{try{return (localStorage.getItem('wsTrainer')||'').startsWith('acc:')&&!!localStorage.getItem('wsTrAcc');}catch(_){return false;}};
+function setTrainer(on){document.body.classList.toggle('trainer',on);try{if(!accOn())on?localStorage.setItem('wsTrainer',PINH):localStorage.removeItem('wsTrainer');}catch(_){}$('bTrainer').textContent=on?'🔓 الخروج من وضع المدرب':'🔒 وضع المدرب';}
+try{if(localStorage.getItem('wsTrainer')===PINH||accOn())setTrainer(true);}catch(_){}
 /* what is done in trainer mode stays there: entering it keeps the trainee's board aside, and leaving it brings that board back
    (a ready exercise or a trainee's result opened by the trainer never stays on the board for a trainee to send); undo starts again */
 const TRB='pnTrBak';
