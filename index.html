@@ -2410,8 +2410,6 @@ function render(){
   const PATHS=routeAll();
   const isFxW=w=>(T[w.a]&&T[w.a].zone==='z')||(T[w.b]&&T[w.b].zone==='z');
   const wSVG=w=>{const d=PATHS[w.id];if(!d)return '';
-    {const ma=/^(M[12])\./.exec(w.a),mb=/^(M[12])\./.exec(w.b),A=T[w.a],B=T[w.b];if(ma&&mb&&ma[1]===mb[1]&&A&&B&&A.stud&&B.stud){const L=`M${A.x} ${A.y}L${B.x} ${B.y}`;
-      return `<g class="wire${S.sel===w.id?' sel':''}"><path d="${L}" stroke="#5e4510" stroke-width="15" stroke-linecap="round" fill="none"/><path d="${L}" stroke="#c9a44a" stroke-width="12" stroke-linecap="round" fill="none"/><path d="${L}" stroke="#f1d88f" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".75"/>${[A,B].map(t=>`<polygon points="${hexPts(t.x,t.y,8)}" fill="#d2ad52" stroke="#6d5418"/><circle cx="${t.x}" cy="${t.y}" r="3" fill="#8a6a1c"/>`).join('')}${isLive(w.a)?`<path d="${L}" class="flowb"/><path d="${L}" class="flow"/>`:''}<path d="${L}" class="whit" data-wire="${w.id}" stroke-width="18"/></g>`;}}
     return `<g class="wire${S.sel===w.id?' sel':''}"><path d="${d}" class="wsd"/><path d="${d}" class="wsh" stroke="${shade(w.c,-.5)}"/><path d="${d}" class="wcore" stroke="${w.c===PEW?'#f2c200':w.c}"/>${w.c===PEW?`<path d="${d}" class="wcore" stroke="#2aa84a" stroke-dasharray="9 7" stroke-linecap="butt"/>`:''}<path d="${d}" class="wlt" stroke="${shade(w.c===PEW?'#f2c200':w.c,.42)}"/><path d="${d}" class="whl"/>${isLive(w.a)?`<path d="${d}" class="flowb"/><path d="${d}" class="flow"/>`:''}<path d="${d}" class="whit" data-wire="${w.id}"/></g>`;};
   s+=xsHL(PATHS);
   S.wires.forEach(w=>{if(!isFxW(w))s+=wSVG(w);});s+=wcHL(PATHS);
