@@ -141,9 +141,69 @@ function out_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
 
-function doGet() {
+function doGet(e) {
+  const q = (e && e.parameter) || {};
+  if (q.a && q.u && q.t) return approveLink_(q);
   return out_({ ok: true, msg: 'الخدمة تعمل' });
 }
+
+// ===== إشعار المدير بالبريد عند تسجيل مدرب جديد، مع زرّي «قبول» و«رفض» يعملان بضغطة من البريد =====
+// يصل البريد إلى صاحب هذا الكود (حساب Google الذي نشره) وإلى كل مدرب صلاحيته «مدير».
+// الرابط موقّع برمز سري يُنشأ مرة واحدة ويُحفظ في إعدادات الكود، فلا يستطيع أحد تزويره.
+function approveSecret_() {
+  const P = PropertiesService.getScriptProperties();
+  let k = P.getProperty('APPROVE_SECRET');
+  if (!k) { k = Utilities.getUuid() + Utilities.getUuid(); P.setProperty('APPROVE_SECRET', k); }
+  return k;
+}
+function approveTok_(u, act) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(act + ':' + u, approveSecret_())).replace(/=+$/, '');
+}
+const escH_ = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+function notifyNewTrainer_(u, n, em) {
+  try {
+    const to = [Session.getEffectiveUser().getEmail()];
+    trainers_().getDataRange().getValues().slice(1).forEach(r => { if (String(r[8]) === 'admin' && String(r[3]) === 'ok' && r[5]) to.push(String(r[5])); });
+    const list = to.filter(Boolean).filter((x, i, a) => a.indexOf(x) === i);
+    if (!list.length) return;
+    const url = ScriptApp.getService().getUrl(), lk = a => url + '?a=' + a + '&u=' + encodeURIComponent(u) + '&t=' + approveTok_(u, a);
+    const btn = (href, txt, bg) => '<a href="' + href + '" style="display:inline-block;margin:6px;padding:12px 26px;border-radius:10px;background:' + bg + ';color:#fff;font-weight:700;text-decoration:none">' + txt + '</a>';
+    MailApp.sendEmail({
+      to: list.join(','),
+      subject: 'مدرب جديد بانتظار موافقتك: ' + n,
+      htmlBody: '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;font-size:15px;line-height:1.8">' +
+        '<h2 style="margin:0 0 8px">👨‍🏫 طلب تسجيل مدرب جديد</h2>' +
+        '<p>سجّل مدرب جديد في محاكي ورشة التحكم في المحركات الكهربائية، وهو بانتظار موافقتك:</p>' +
+        '<table style="border-collapse:collapse"><tr><td style="padding:4px 10px;color:#666">الاسم</td><td style="padding:4px 10px"><b>' + escH_(n) + '</b></td></tr>' +
+        '<tr><td style="padding:4px 10px;color:#666">اسم المستخدم</td><td style="padding:4px 10px" dir="ltr">' + escH_(u) + '</td></tr>' +
+        '<tr><td style="padding:4px 10px;color:#666">البريد (Gmail)</td><td style="padding:4px 10px" dir="ltr">' + escH_(em) + '</td></tr>' +
+        '<tr><td style="padding:4px 10px;color:#666">وقت التسجيل</td><td style="padding:4px 10px">' + escH_(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy/MM/dd HH:mm')) + '</td></tr></table>' +
+        '<p style="margin-top:14px">' + btn(lk('ok'), '✔ قبول المدرب', '#1f8a4c') + btn(lk('no'), '✕ رفض', '#b3261e') + '</p>' +
+        '<p style="color:#666;font-size:13px">يمكنك أيضًا مراجعته من التطبيق: وضع المدرب ← ⋮ ← «👥 المدربون». عند القبول يُنشأ له جدول نتائج ومجلد صور في Drive ويُشاركان مع بريده.</p></div>'
+    });
+  } catch (err) { console.log('تعذّر إرسال بريد المدرب الجديد: ' + err); }
+}
+function approveLink_(q) {
+  const page = (title, body, ok) => HtmlService.createHtmlOutput('<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:520px;margin:40px auto;padding:24px;border-radius:14px;border:1px solid #ddd;text-align:center;line-height:1.8">' +
+    '<div style="font-size:42px">' + (ok ? '✅' : '⚠️') + '</div><h2>' + title + '</h2><p>' + body + '</p></div>').setTitle(title);
+  const a = String(q.a), u = String(q.u).toLowerCase();
+  if ((a !== 'ok' && a !== 'no') || String(q.t) !== approveTok_(u, a)) return page('الرابط غير صالح', 'افتح الرابط كما وصلك في البريد، أو راجع المدرب من التطبيق.', false);
+  const lock = LockService.getScriptLock(); try { lock.waitLock(25000); } catch (err) { return page('الخادم مشغول', 'أعد فتح الرابط بعد قليل.', false); }
+  try {
+    const t = trFind_(u);
+    if (!t) return page('المدرب غير موجود', 'ربما حُذف طلبه.', false);
+    if (t.st === (a === 'ok' ? 'ok' : 'no')) return page(a === 'ok' ? 'المدرب مقبول من قبل' : 'الطلب مرفوض من قبل', escH_(t.n) + ' (' + escH_(t.u) + ')', true);
+    trainers_().getRange(t.row, 4).setValue(a === 'ok' ? 'ok' : 'no');
+    if (a === 'ok') {
+      let warn = '';
+      try { trProvision_(t); } catch (err) { warn = '<br>لكن تعذّر إنشاء جدوله في Drive: ' + escH_(String(err && err.message || err).slice(0, 200)) + '. أنشئه من التطبيق ← «المدربون».'; }
+      return page('تم قبول المدرب', escH_(t.n) + ' (' + escH_(t.u) + ') يستطيع الآن الدخول بحسابه.' + warn, true);
+    }
+    return page('تم رفض الطلب', escH_(t.n) + ' (' + escH_(t.u) + ')', true);
+  } finally { lock.releaseLock(); }
+}
+// للتجربة: شغّلها مرة من المحرر (زر Run) لتتأكد أن البريد يصلك، وتمنح الكود إذن الإرسال
+function testNewTrainerMail() { notifyNewTrainer_('test_user', 'مدرب تجريبي (اختبار البريد)', 'test@gmail.com'); }
 
 // شغّل هذه الدالة مرة واحدة من المحرر لمنح الأذونات (زر Run)
 function setup() {
@@ -214,6 +274,7 @@ function doPost(e) {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return out_({ ok: false, err: 'bad', msg: 'اكتب بريدك في Google (Gmail) لتصلك نتائج متدربيك في Drive' });
       if (trFind_(u)) return out_({ ok: false, err: 'taken', msg: 'اسم المستخدم مستخدم، اختر غيره' });
       trainers_().appendRow([u, n, pinHash_(pin), 'pending', new Date(), em, '', '']);
+      notifyNewTrainer_(u, n, em);
       return out_({ ok: true, st: 'pending' });
     }
     // دخول مدرب
