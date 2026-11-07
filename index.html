@@ -934,7 +934,7 @@ body.wcplc .wcbar{z-index:72}body.wcplc #plcModal{align-items:flex-end;padding-t
 (function(){
 let W=1000,H=1640,DY=0;const PH=['L1','L2','L3'],EMPTY=new Set();
 const IN_DELTA=5.0,IN_STAR=1.7,I_FAULT=7.5;
-const COLORS=[['#7a4a22','بني: الطور L1'],['#1b1b1b','أسود: الطور L2'],['#8e949a','رمادي: الطور L3'],['#4aa3df','أزرق فاتح: التعادل N'],['#e0342f','أحمر: دوائر التحكم'],['#ff8a1f','برتقالي: تغذية خارجية وإعاقة'],['#9acd32','أخضر/أصفر: الأرضي PE'],['#1c3fb8','أزرق غامق'],['#f3f3ef','أبيض'],['#2aa84a','أخضر'],['#f2c200','أصفر']];
+const COLORS=[['#7a4a22','بني: الطور L1'],['#1b1b1b','أسود: الطور L2'],['#8e949a','رمادي: الطور L3'],['#4aa3df','أزرق فاتح: التعادل N فقط'],['#e0342f','أحمر: دوائر التحكم'],['#ff8a1f','برتقالي: تغذية خارجية وإعاقة'],['#9acd32','أخضر/أصفر: الأرضي PE'],['#1c3fb8','أزرق غامق: للتعادل فقط'],['#f3f3ef','أبيض'],['#2aa84a','أخضر: للأرضي فقط'],['#f2c200','أصفر: للأرضي فقط'],['#8e44ad','بنفسجي: مداخل PLC']];
 const PEW='#9acd32'; // green/yellow earth wire: drawn yellow with green stripes
 const OKC=new Set(COLORS.map(c=>c[0]).concat(['#c9a44a']));
 const normC=c=>OKC.has(c)?c:({'#1f6fe5':'#4aa3df','#9aa0a6':'#8e949a'}[c]||'#e0342f');
@@ -2546,9 +2546,10 @@ function addWire(a,b,c){if(a===b)return;if(S.wires.some(w=>(w.a===a&&w.b===b)||(
 /* ---------- automatic wire colours and the side each wire takes on the panel ----------
    Wires the trainee draws while the colour is «تلقائي» take the colour of their part of the circuit, and change with it as wiring goes on:
    power: L1 brown, L2 black, L3 grey (the phase is the nearest pole of Q1 through wires and contacts); control: the feed from F1 to the
-   inputs red, outputs between contacts orange, the feed of a coil A1 white, indicator lamps yellow, PLC inputs green, the neutral light blue.
+   inputs red, outputs between contacts orange, the feed of a coil A1 and the indicator lamps white, PLC inputs violet, the neutral light blue
+   (green and yellow are kept for the earth, blue for the neutral).
    Every control wire also gets a side: inputs (the F1 feed and PLC inputs) go up and down the left of the panel, outputs the right. */
-const RD0='#e0342f',ACOL={L:['#7a4a22','#1b1b1b','#8e949a'],feed:'#e0342f',out:'#ff8a1f',coil:'#f3f3ef',lamp:'#f2c200',plc:'#2aa84a',N:'#4aa3df'};
+const RD0='#e0342f',ACOL={L:['#7a4a22','#1b1b1b','#8e949a'],feed:'#e0342f',out:'#ff8a1f',coil:'#f3f3ef',lamp:'#f3f3ef',plc:'#8e44ad',N:'#4aa3df'};
 const isPw=k=>/^Q1\.[1-6]$/.test(k)||/^K\d+\.[1-6]$/.test(k)||/^F(?!1\.)\d+\.[1-6]$/.test(k)||/^X1\.[1-6]b?$/.test(k)||/^(M[12]|X2)\./.test(k);
 function autoColor(){const W=S.wires;if(!W.length)return;
   /* power: breadth-first from the three poles of Q1 over wires and the closed paths of contacts and overloads */
@@ -3472,15 +3473,29 @@ function gradeMapped(ex,W,D){const base=()=>({...gradeWiring(ex,W,D),mp:{},W,D})
     /* wrong wires were found on renamed copies; give them back their original names */
     const back=k=>gRen(k,inv);best.r={...best.r,wrongW:best.r.wrongW.map(w=>w.map(back)),miss:best.r.miss.map(w=>w.map(back))};}
   return best;}
+/* wire colours: blue is the neutral and green, yellow or green/yellow the earth. A blue wire anywhere but the neutral, a neutral wire
+   that is not blue, and an earth colour on any wire, each chosen by the trainee (not «تلقائي»), (the earth is wired already, from the PE terminal to the motors) each take one mark.
+   The neutral is found from the connections: every wire joined, through wires and fixed links, to the N terminals */
+const NEUTRAL_C=['#4aa3df','#1c3fb8'],EARTH_C=['#9acd32','#2aa84a','#f2c200'];
+function colorErrs(obj,D){const AC=new Set(obj.ac||[]),W=(obj.w||[]).map((w,i)=>({a:m21k(w[0]),b:m21k(w[1]),c:String(w[2]||'').toLowerCase(),auto:AC.has(i)})),u=makeUF();
+  [...staticLinks(D||obj.devs||S.devs),['PLC.N1','PLC.N2'],['X1.33','PLC.N1']].forEach(([a,b])=>u.union(a,b));W.forEach(w=>u.union(w.a,w.b));
+  const nr=u.find('X1.33'),E=[],nm=w=>termDesc(w.a)+' و'+termDesc(w.b);
+  /* a wire coloured by «تلقائي» took its colour from the app, so only colours the trainee chose count */
+  W.forEach(w=>{if(w.auto)return;const n=u.find(w.a)===nr;
+    if(EARTH_C.includes(w.c))E.push('لون الأرضي (أخضر/أصفر) على سلك ليس أرضيًا: بين '+nm(w));
+    else if(n&&!NEUTRAL_C.includes(w.c))E.push('سلك التعادل N ليس أزرق: بين '+nm(w));
+    else if(!n&&NEUTRAL_C.includes(w.c))E.push('لون التعادل (أزرق) على سلك ليس تعادلًا: بين '+nm(w));});
+  return E;}
 function gradeNow(ex,obj){obj=obj||serial();const W0=(obj.w||[]).map(w=>[m21k(w[0]),m21k(w[1])]),GM=gradeMapped(ex,W0,obj.devs||S.devs),W=GM.W,{ok,tot,bad,miss,wrongW,wr}=GM.r;
   let op=null;try{const o=gradeOp(ex,obj);op={sys:o.sys,wsys:o.wsys,ctl:o.ctl,pwr:o.pwr,H:o.H,E:o.E,LE:o.LE,DE:o.DE,PE:o.PE,warn:o.warn,sh:o.sh};}catch(e){console.warn(e);}
   /* a panel that works exactly as required in every step of the operating test gets the full grade: extra or different wires are not counted against it */
   const runOk=!!(op&&op.sys&&op.sys.rel>0&&op.sys.ok>=op.sys.rel&&!(op.E||[]).length&&!op.sh),full=r=>runOk&&r.s<20?{...r,s:20,runFull:1}:r;
   const L=LAMPX.has(ex)?null:gradeLamps(ex,W,GM.D||obj.devs||S.devs),lx=L?LAMP_BONUS*L.lr:0,lmp=L?{lb:gUp(lx,10),lr:gUp(100*L.lr,1)}:{};
   const base={ok,tot,bad,miss,wrongW,lampsIn:LAMPX.has(ex),op,...lmp};
+  const CE=colorErrs(obj,GM.D||obj.devs),col=r=>CE.length?{...r,s:Math.max(0,r.s-CE.length),ce:CE,sNoCol:r.s}:r;
   if(PLCX.has(ex)&&PTEST[ex]){const P0=obj.plc||{prog:[],tm:{}},gp=gradeProg(ex,P0.prog,P0.tm);
-    return full({...base,s:Math.min(20,gUp(10*wr+10*gp.r+lx,1)),ws:gUp(10*wr,10),ps:gUp(10*gp.r,10),pOk:gp.ok,pRel:gp.rel,pBad:gp.bad});}
-  return full({...base,s:Math.min(20,gUp(20*wr+lx,1)),sm:gUp(20*wr,10)});}
+    return col(full({...base,s:Math.min(20,gUp(10*wr+10*gp.r+lx,1)),ws:gUp(10*wr,10),ps:gUp(10*gp.r,10),pOk:gp.ok,pRel:gp.rel,pBad:gp.bad}));}
+  return col(full({...base,s:Math.min(20,gUp(20*wr+lx,1)),sm:gUp(20*wr,10)}));}
 /* the operating test: what the trainee's panel does in every step compared with what the exercise requires (shown, not scored) */
 function gradeOp(ex,obj){obj=obj||serial();const plc=PLCX.has(ex)&&PTEST[ex],RP=PPROG[ex]?{prog:PPROG[ex].prog,tm:PPROG[ex].tm}:null,P0=obj.plc||{prog:[],tm:{}};
   // easy exercises: the wiring is tested with the model program, and the whole panel with the trainee's own program; a working whole counts for both
@@ -3580,6 +3595,7 @@ function gOpHTML(G){const o=G.op;if(!o||!o.sys)return '';const full=x=>x&&x.ok==
 function gResHTML(G,view){const pc=G.s/20,col=pc>=.8?'var(--ok)':pc>=.5?'var(--amber)':'var(--warn)';
   return `<div class="gscore"><div class="big" style="color:${col}">${G.s}<small> / 20</small></div><div class="gbar"><i style="width:${pc*100}%;background:${col}"></i></div></div>
   <p style="margin:0 0 6px;font-weight:700">${esc(PNAME[G.ex])}</p>
+  ${G.ce&&G.ce.length?`<div class="greq" style="border-inline-start:4px solid var(--warn)"><b>ألوان الأسلاك: خُصمت ${G.ce.length} ${G.ce.length===1?'درجة':G.ce.length===2?'درجتان':'درجات'} (${G.sNoCol} ← ${G.s})</b><br><small>الأزرق للتعادل N فقط، والأخضر والأصفر للأرضي فقط. درجة عن كل سلك:</small><ul style="margin:4px 0 0;padding-inline-start:18px">${G.ce.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
   ${G.runFull?`<div class="glock" style="background:color-mix(in srgb,var(--ok) 18%,transparent)">✔ اشتغلت لوحتك صحيحة في كل خطوات اختبار التشغيل، فأُعطيت الدرجة كاملة 20 من 20، ولم تُحسب عليك التوصيلات الزائدة أو المختلفة عن المخطط (التفاصيل أدناه للتعلّم فقط).</div>`:''}
   ${G.fn?gFnHTML(G):G.tot!=null?`<ul class="glist"><li><span>✔</span><span>توصيلات صحيحة مطابقة للمخطط</span><b>${G.ok} / ${G.tot}</b></li><li class="${G.bad?'no':''}"><span>✖</span><span>توصيلات خاطئة أو زائدة</span><b>${G.bad}</b></li>${G.lr!=null?`<li class="${G.lr<100?'no':''}"><span>💡</span><span>لمبات البيان (درجة إضافية، تعمل كما في المخطط ${G.lr}%)</span><b>+${G.lb}</b></li>`:''}</ul>
   ${G.ps!=null?`<ul class="glist"><li class="${G.ps<10?'no':''}"><span>${G.ps>=10?'✔':'✖'}</span><span>البرنامج: مخارج صحيحة في اختبارات التشغيل</span><b>${G.pOk} / ${G.pRel}</b></li></ul>
@@ -3611,7 +3627,7 @@ function gRender(){const A=gAll(),ex=GV.ex,G=ex&&A[ex],tr=document.body.classLis
   /* the exercise picked above the board is the one graded; the list appears only when none was picked there */
   let h=EXP.ex&&ex===EXP.ex?`<p class="gexn">التمرين: <b>${Object.keys(PNAME).indexOf(ex)+1}. ${esc(PNAME[ex])}</b>${A[ex]?' — '+(A[ex].top||A[ex]).s+'/20':''}<span>لتقييم تمرين آخر اختره من قائمة التمارين أعلى اللوحة.</span></p>`:`<label style="font-size:.88rem;color:var(--muted)">التمرين المطلوب<select class="gsel" id="gEx"><option value="">اختر التمرين…</option>${Object.keys(PNAME).map((k,i)=>`<option value="${k}"${k===ex?' selected':''}>${i+1}. ${PNAME[k]}${A[k]?' — '+(A[k].top||A[k]).s+'/20':''}</option>`).join('')}</select></label>`;
   if(lkOn(ex)){const L=A[ex];h+=`<div class="glock">🔒 أرسلت هذا التمرين للمدرب${L?' بدرجة <b>'+(L.top||L).s+' من 20</b>':''}، والمدرب فعّل قفل التمارين بعد إرسالها: لا يمكنك تعديله ولا إعادة تقييمه أو إرساله. يمكنك تشغيل لوحتك ومشاهدتها، وإذا احتجت إعادته فاطلب من مدربك إيقاف القفل.</div>`+(L?gResHTML(L.top||L):'');$('gBody').innerHTML=h;return;}
-  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. تُحسب الدرجة من توصيلاتك: 20 × التوصيلات الصحيحة ÷ (المطلوبة + الخاطئة أو الزائدة)، ويُجبر الكسر لصالحك. يُقبل التوصيل المكافئ: سلك على أي طرف من نفس النقطة، أو تلامس مساعد آخر من نفس النوع، أو المحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد. أسلاك لمبات البيان محسوبة في التمرين الأول، وفي باقي التمارين هي درجة إضافية حتى درجة واحدة، ولا يتعدى المجموع 20. بعد التقييم يشغّل المحاكي لوحتك آليًا ويريك هل تعمل وأين أخطاؤك خطوة بخطوة، وإذا اشتغلت صحيحة في كل الخطوات تأخذ الدرجة كاملة 20 ولا تُحسب عليك التوصيلات الزائدة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج.</p>`;}
+  if(!ex){h+=`<p class="greq">اختر التمرين الذي نفّذته. تُحسب الدرجة من توصيلاتك: 20 × التوصيلات الصحيحة ÷ (المطلوبة + الخاطئة أو الزائدة)، ويُجبر الكسر لصالحك. يُقبل التوصيل المكافئ: سلك على أي طرف من نفس النقطة، أو تلامس مساعد آخر من نفس النوع، أو المحرك M1 دلتا أو M2 نجمة في تمارين المحرك الواحد. أسلاك لمبات البيان محسوبة في التمرين الأول، وفي باقي التمارين هي درجة إضافية حتى درجة واحدة، ولا يتعدى المجموع 20. بعد التقييم يشغّل المحاكي لوحتك آليًا ويريك هل تعمل وأين أخطاؤك خطوة بخطوة، وإذا اشتغلت صحيحة في كل الخطوات تأخذ الدرجة كاملة 20 ولا تُحسب عليك التوصيلات الزائدة. في تمارين easy (8 إلى 14 و17): 10 درجات للتوصيل و10 للبرنامج. وتُخصم درجة عن كل سلك اخترت لونه في غير موضعه: الأزرق للتعادل N فقط، والأخضر والأصفر للأرضي فقط (اللون «تلقائي» صحيح دائمًا).</p>`;}
   else if(G){const T=G.top||G;
     h+=`<div class="glock">${G.top?`نتيجة آخر تقييم${G.tries>1?' (المحاولة '+G.tries+')':''} أدناه. أعلى محاولة لك في هذا التمرين <b>${T.s} من 20</b> (المحاولة ${T.try||1})، وتوصيلها محفوظ، وهي التي تُرسل للمدرب.`:`آخر تقييم لهذا التمرين${G.tries>1?' (المحاولة '+G.tries+')':''}، وهو أعلى درجة لك فيه، فهو الذي يُرسل للمدرب.`} صحّح الأخطاء وأعد التقييم متى شئت: لا تضيع عليك الدرجة الأعلى.</div>`+gResHTML(G)+qzHTML(ex)+
     `<p id="gMsg" style="color:var(--warn);font-size:.88rem;min-height:1.2em;margin:4px 0"></p>
