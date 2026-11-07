@@ -1001,7 +1001,7 @@ function relayout(){
   MB.forEach(n=>Object.assign(T['X1.'+n+'b'],{zone:'f'}));
   [['U1',86,16,'d'],['V1',142,16,'d'],['W1',198,16,'d'],['W2',86,62,'u'],['U2',142,62,'u'],['V2',198,62,'u']].forEach(([n,x,y,sd])=>{T['M1.'+n]={x:MO1[0]+x,y:MO1[1]+y+DY,side:sd,label:'',zone:'f',stud:true};});
   [['U1',86,16,'d'],['V1',142,16,'d'],['W1',198,16,'d'],['W2',86,62,'u'],['U2',142,62,'u'],['V2',198,62,'u']].forEach(([n,x,y,sd])=>{T['M2.'+n]={x:MO2[0]+x,y:MO2[1]+y+DY,side:sd,label:'',zone:'f',stud:true,m2:true};});fxTerms();}
-const MO1=[580,1200],MO2=[110,1200];
+const MO1=[110,1200],MO2=[580,1200]; // M1 on the left, M2 on the right
 const M={U1:'M1.U1',V1:'M1.V1',W1:'M1.W1',U2:'M1.U2',V2:'M1.V2',W2:'M1.W2'},M2K={U1:'M2.U1',V1:'M2.V1',W1:'M2.W1',U2:'M2.U2',V2:'M2.V2',W2:'M2.W2'};
 /* Dahlander two-speed motor: in the Dahlander exercises M1 becomes a 1U 1V 1W / 2U 2V 2W motor.
    The terminal keys stay M1.U1 ... M1.W2 (U1 V1 W1 = 1U 1V 1W, U2 V2 W2 = 2U 2V 2W); only the names shown change. */
@@ -1386,7 +1386,7 @@ function drawDev(d){const {x,y,w,h}=d;
 /* field devices outside the panel */
 const FIELD={S0:[85,1215,'#d8322b','إيقاف 1','NC'],S1:[165,1215,'#2aa84a','تشغيل 1','NC+NO'],S2:[245,1215,'#2aa84a','تشغيل 2','NC+NO'],S3:[325,1215,'#d8322b','إيقاف 2','NC'],S4:[405,1215,'#2aa84a','تشغيل 3','NO'],
  H1:[110,1355,'#39d353','تشغيل 1'],H2:[200,1355,'#39d353','تشغيل 2'],H3:[290,1355,'#ff3b30','إيقاف'],H4:[380,1355,'#ffb000','عطل']};
-const TRACK={x1:560,x2:840,y:1565};
+const TRACK={x1:MO1[0]-20,x2:MO1[0]+260,y:1565}; // the carriage runs under M1
 function carX(){return TRACK.x1+(TRACK.x2-TRACK.x1)*S.pos;}
 /* the conduit from the terminal strip to the device board, laid on the panel's bottom and right ducts; it follows the board while it is dragged */
 let CABX=0;const cabD=()=>{const sc=S.fbp.sc,fx=S.fbp.x,fy=S.fbp.y+FBH*sc;return `M${CABX} 1079H978V${fy+14-DY}H${fx+6*sc}V${fy-12*sc-DY}`;};
@@ -1418,13 +1418,14 @@ function drawField(){
   const sndBtn=(k,bx)=>{const on=SNDM[k];return `<g class="act" data-act="snd:${k}" role="button" aria-label="صوت المحرك ${k}"><title>${on?'إيقاف':'تشغيل'} صوت المحرك ${k}</title><rect x="${bx}" y="1166" width="112" height="44" rx="12" fill="${on?'#1fa35a':'#2b3540'}" stroke="${on?'#7dff9e':'#6b7f8f'}" stroke-width="2"/>
     <path d="M${bx+16} 1181h7l9-8v30l-9-8h-7z" fill="#fff"/>${on?`<path d="M${bx+38} 1180q6 8 0 16M${bx+43} 1175q11 13 0 26" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>`:`<path d="M${bx+38} 1181l12 14M${bx+50} 1181l-12 14" stroke="#ff8a80" stroke-width="2.6" stroke-linecap="round"/>`}
     ${txt(bx+82,1193,on?'الصوت':'صامت',12,'#fff',700)}${txt(bx+82,1205,k,8.5,'#c7d2dc',700)}</g>`;};
-  s+=sndBtn('M1',836)+sndBtn('M2',356);
+  s+=sndBtn('M1',MO1[0]+246)+sndBtn('M2',MO2[0]+256);
   const appBtn=(k,bx)=>`<g class="act" data-act="app:${k}" role="button" aria-label="تطبيقات عملية للمحرك ${k}"><title>تطبيقات المحرك ${k} في الواقع العملي</title><rect x="${bx}" y="1216" width="112" height="38" rx="11" fill="#ffb300" stroke="#fff3c4" stroke-width="2"/>${txt(bx+56,1240,'🏭 تطبيقات',12.5,'#1c1400',700)}</g>`;
-  s+=appBtn('M1',836)+appBtn('M2',356);
-  s+=`<text x="740" y="1452" class="dl" style="font-size:14px;fill:${col(m)}">M1: ${stTxt}</text>
-  ${txt(740,1468,SIMEXP()==='p10'?'وصّل الشعب 4-6 (من الأوفرلود F2) بأطراف M1 واعمل جسور الدلتا':'وصّل الشعب 1-6 بأطراف المحرك واعمل الجسور',9.5,'#c7d2dc')}
-  <text x="255" y="1452" class="dl" style="font-size:14px;fill:${col(m2)}">M2: ${st2}</text>
-  ${txt(255,1470,SIMEXP()==='p10'?'وصّل الشعب 1-3 (من الأوفرلود F3) بأطراف M2 واعمل جسور النجمة':'وصّل M2 مباشرة من مخرج الأوفرلود أو الكونتاكتور، واعمل جسور النجمة',9.5,'#c7d2dc')}`;
+  s+=appBtn('M1',MO1[0]+246)+appBtn('M2',MO2[0]+256);
+  const c1=MO1[0]+145,c2=MO2[0]+160;
+  s+=`<text x="${c1}" y="1452" class="dl" style="font-size:14px;fill:${col(m)}">M1: ${stTxt}</text>
+  ${txt(c1,1468,SIMEXP()==='p10'?'وصّل الشعب 1-3 (من الأوفرلود F2) بأطراف M1 واعمل جسور الدلتا':'وصّل الشعب 1-6 بأطراف المحرك واعمل الجسور',9.5,'#c7d2dc')}
+  <text x="${c2}" y="1452" class="dl" style="font-size:14px;fill:${col(m2)}">M2: ${st2}</text>
+  ${txt(c2,1470,SIMEXP()==='p10'?'وصّل الشعب 4-6 (من الأوفرلود F3) بأطراف M2 واعمل جسور النجمة':'وصّل M2 مباشرة من مخرج الأوفرلود أو الكونتاكتور، واعمل جسور النجمة',9.5,'#c7d2dc')}`;
   // track, carriage, limit switches
   const lsDraw=(id,x,act)=>{const dir=id==='LS1'?-1:1,hx=x,hy=TRACK.y-40,ang=dir*(act?62:38);
     return `<g class="act" data-press="${id}"><title>${DN[id]} نهاية مشوار</title>
@@ -1436,7 +1437,7 @@ function drawField(){
   if(lsShown())s+=`<rect x="${TRACK.x1-20}" y="${TRACK.y+14}" width="${TRACK.x2-TRACK.x1+110}" height="10" rx="3" fill="#8b949c"/>
   <g id="carr" transform="translate(${carX()} 0)"><rect x="0" y="${TRACK.y-20}" width="70" height="34" rx="5" fill="#e0a526" stroke="#111"/>${txt(35,TRACK.y+2,'عربة',11,'#111',700)}</g>
   ${lsDraw('LS1',TRACK.x1-18,LSact('LS1'))}${lsDraw('LS2',TRACK.x2+88,LSact('LS2'))}
-  ${txt(740,TRACK.y+48,'M1 يحرك العربة: للأمام نحو SQ2 وللخلف نحو SQ1',10,'#c7d2dc')}`;
+  ${txt((TRACK.x1+TRACK.x2)/2,TRACK.y+48,'M1 يحرك العربة: للأمام نحو SQ2 وللخلف نحو SQ1',10,'#c7d2dc')}`;
   return s;}
 /* small IEC contact symbols on the board (NC, NO, or both joined), pushed by a button (┌) or a roller (limit switch); x,y = top-left, h = height */
 function csym(kinds,x,y,h,act,col){col=col||'#1f2328';const sp=h*1.05,ax=x+h*.42,n=kinds.length,ym=y+h*.5,lw=Math.max(.9,h/12);let s='',mid=[];
@@ -2907,8 +2908,8 @@ const PRESETS={
    ['K1.14','KT1.A1',RD],['K1.14','KT1.15',RD],['KT1.16','K3.21',RD],['K3.22','K2.A1',RD],['KT1.18','K2.21',RD],['K2.22','K3.A1',RD],['KT1.A2','X1.36',BL]],
  p8:[...feed,...k1pow,...toMotor,...deltaJump,...plcIn([8,12]),...plcOut1,...plcLamps1],
  p9:[...feed,...k1pow,...toMotor,...deltaJump,...plcIn([8,12,16,18]),...plcOut1,...plcLamps1],
- /* both motors through the terminal strip: the left terminals 1-3 feed the left motor M2, the right ones 4-6 the right motor M1, so no cable crosses */
- p10:[...feed,...k1pow,['F2.2','X1.4',BR],['F2.4','X1.5',BK],['F2.6','X1.6',GR],...deltaJump,...k2pow,['K2.2','F3.1',BR],['K2.4','F3.3',BK],['K2.6','F3.5',GR],['F3.2','X1.1',BR],['F3.4','X1.2',BK],['F3.6','X1.3',GR],['X1.1b','M2.U1',BR],['X1.2b','M2.V1',BK],['X1.3b','M2.W1',GR],
+ /* both motors through the terminal strip: F2 (left) through terminals 1-3 to the left motor M1, F3 (right) through 4-6 to the right motor M2, so no cable crosses */
+ p10:[...feed,...k1pow,...toMotor,...deltaJump,...k2pow,['K2.2','F3.1',BR],['K2.4','F3.3',BK],['K2.6','F3.5',GR],['F3.2','X1.4',BR],['F3.4','X1.5',BK],['F3.6','X1.6',GR],['X1.4b','M2.U1',BR],['X1.5b','M2.V1',BK],['X1.6b','M2.W1',GR],
    ...plcIn([8,12,16]),['F1.2','F2.95',RD],['F2.96','F3.95',RD],['F3.96','XP.Q1_1',RD],['XP.Q1_1','XP.Q2_1',RD],['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['K1.A2','X1.33',BL],['K2.A2','X1.34',BL],
    ['F1.2','K1.13',RD],['K1.14','X1.29',OR],['K1.13','K2.13',RD],['K2.14','X1.30',OR],['F1.2','K1.21',RD],['K1.22','X1.31',OR],['F1.2','F2.97',RD],['F2.97','F3.97',RD],['F2.98','X1.32',OR],['F3.98','X1.32',OR]],
  p11:[...revPow,...plcIn([8,12,16]),...plcOutRev,['K1.A1','X1.29',OR],['K2.A1','X1.30',OR],['F1.2','F2.97',RD],['F2.98','X1.32',OR]],
@@ -2929,8 +2930,7 @@ const PRESETS={
    ['XP.Q1_2','K1.A1',RD],['XP.Q2_2','K2.A1',RD],['XP.Q3_2','K3.A1',RD],['XP.Q4_2','K4.A1',RD],['K4.A1','K4A.53',RD],['K4A.54','K5.A1',RD],...dahlN]};
 const PNAME={p1:'تشغيل محرك من مكان واحد مع لمبات بيان',p2:'تشغيل محرك من مكانين مع لمبات بيان',p3:'تشغيل محركين بالتتابع مع لمبات بيان',p4:'عكس حركة بطيء (مع توقف)',p5:'عكس حركة سريع (بدون توقف)',p6:'نجمة / دلتا يدوي',p7:'نجمة / دلتا بمؤقت',p8:'تشغيل محرك من مكان واحد بجهاز easy',p9:'تشغيل محرك من مكانين بجهاز easy',p10:'تشغيل محركين بالتتابع بجهاز easy',p11:'عكس حركة بطيء بجهاز easy',p12:'عكس حركة سريع بجهاز easy',p13:'نجمة / دلتا يدوي بجهاز easy',p14:'نجمة / دلتا بمؤقت easy',p15:'عكس حركة مع نهايتي مشوار',p16:'محرك دالندر بسرعتين مع عكس حركة وتحويل بمؤقت',p17:'محرك دالندر بسرعتين مع عكس حركة بجهاز easy'};
 const PLCX=new Set(['p8','p9','p10','p11','p12','p13','p14','p17']);
-const m1Right=[['X1.4b','M1.U1',BR],['X1.5b','M1.V1',BK],['X1.6b','M1.W1',GR]];
-function presetExtra(v){const sd=['p6','p7','p13','p14','p16','p17'].includes(v),m2=['p3','p10'].includes(v);return[...(sd?motorCable:v==='p10'?m1Right:motorCable.slice(0,3)),...(m2?m2Cable:[])];}
+function presetExtra(v){const sd=['p6','p7','p13','p14','p16','p17'].includes(v),m2=['p3','p10'].includes(v);return[...(sd?motorCable:motorCable.slice(0,3)),...(m2?m2Cable:[])];}
 document.getElementById('dPreset').onchange=e=>{const v=e.target.value;e.target.value='';loadPreset(v);};
 /* a ready exercise's wiring, with every wire in automatic colours */
 function presetW(v){const w=[...PRESETS[v],...presetExtra(v)];return{w,ac:w.map((_,i)=>i)};}
@@ -3254,7 +3254,7 @@ const GREQ={p1:'S1 تشغيل مع تثبيت ذاتي، S0 إيقاف. المح
  p7:'S1 يبدأ نجمة ويشغّل المؤقت، وبعد انتهاء زمن المؤقت يتحول المحرك تلقائيًا إلى دلتا. S0 إيقاف. لا يعمل كونتاكتورا النجمة والدلتا معًا. H1 نجمة، H2 دلتا، H3 إيقاف، H4 عطل.',
  p8:'بجهاز easy: S0 (NC) إلى I1، وS1 (NO) إلى I2، والمخرج Q1 يشغّل K1. تلامس الأوفرلود 95-96 يغذي مشترك المخارج. البرنامج: تثبيت ذاتي بالمخرج Q1.',
  p9:'بجهاز easy: S0 إلى I1، وS1 إلى I2، وS2 إلى I3، وS3 إلى I4. Q1 يشغّل K1. التشغيل من I2 أو I3 والإيقاف من I1 أو I4.',
- p10:'بجهاز easy: S0 (الإيقاف الوحيد) إلى I1، وS1 إلى I2، وS2 إلى I3. Q1 يشغّل K1 (M1)، وQ2 يشغّل K2 (M2) بشرط عمل Q1، وS0 يوقف الاثنين. الأوفرلودان F2 وF3 على التوالي في تغذية المخارج. القوى: F2 إلى الشعب 4-6 ثم M1 (الأيمن)، وF3 إلى الشعب 1-3 ثم M2 (الأيسر).',
+ p10:'بجهاز easy: S0 (الإيقاف الوحيد) إلى I1، وS1 إلى I2، وS2 إلى I3. Q1 يشغّل K1 (M1)، وQ2 يشغّل K2 (M2) بشرط عمل Q1، وS0 يوقف الاثنين. الأوفرلودان F2 وF3 على التوالي في تغذية المخارج. القوى: F2 إلى الشعب 1-3 ثم M1 (الأيسر)، وF3 إلى الشعب 4-6 ثم M2 (الأيمن).',
  p11:'بجهاز easy: S0 إلى I1، وS1 (أمامي) إلى I2، وS2 (عكسي) إلى I3. Q1 يشغّل K1 (أمامي) وQ2 يشغّل K2 (عكسي) مباشرة، والإعاقة بين الاتجاهين في البرنامج.',
  p12:'مثل التمرين 11، لكن البرنامج يسمح بالعكس المباشر، مع الإعاقة بين الاتجاهين في البرنامج.',
  p13:'بجهاز easy: S0 إلى I1، وS1 (بدء) إلى I2، وS2 (دلتا) إلى I3. Q1 رئيسي K1، وQ2 نجمة K2، وQ3 دلتا K3، والإعاقة بين النجمة والدلتا في البرنامج.',
@@ -4733,7 +4733,7 @@ const CIRCS={
  p9:{n:'تشغيل محرك من مكانين بجهاز easy',idea:'التشغيل والإيقاف من مكانين، والتوازي والتوالي يُكتبان في البرنامج.',power:['نفس دائرة القوى في التمرين 2.'],
   ctrl:['S0 إلى I1، وS1 إلى I2، وS2 إلى I3، وS3 إلى I4. كل الضواغط تُغذى من F1 بجسور على الترمنالات.','البرنامج: I2 وI3 وQ1 على التوازي (ربطان رأسيان)، ثم I1 ثم I4 على التوالي، ثم الملف Q1.'],
   lamps:'مثل التمرين 8.',err:['وضع I1 وI4 على التوازي في البرنامج: لا يتوقف المحرك إلا بالضغط على الإيقافين معًا.']},
- p10:{n:'تشغيل محركين بالتتابع بجهاز easy',idea:'شرط التتابع (M2 بعد M1) يُكتب في البرنامج بتلامس Q1 في سطر Q2.',power:['مثل دائرة القوى في التمرين 3، لكن المحركان كلاهما عن طريق الشعب: F2 إلى الشعب 4-6 ثم المحرك الأيمن M1 (دلتا)، وF3 إلى الشعب 1-3 ثم المحرك الأيسر M2 (نجمة)، فلا يتقاطع كابلا المحركين.'],
+ p10:{n:'تشغيل محركين بالتتابع بجهاز easy',idea:'شرط التتابع (M2 بعد M1) يُكتب في البرنامج بتلامس Q1 في سطر Q2.',power:['مثل دائرة القوى في التمرين 3، لكن المحركان كلاهما عن طريق الشعب: F2 إلى الشعب 1-3 ثم المحرك الأيسر M1، وF3 إلى الشعب 4-6 ثم المحرك الأيمن M2 (نجمة)، فلا يتقاطع كابلا المحركين.'],
   ctrl:['S0 (إيقاف الخط، مغلق NC) إلى I1، وS1 إلى I2، وS2 إلى I3. ضاغط إيقاف واحد يوقف المحركين.','تغذية المخارج تمر بالأوفرلودين F2 وF3 على التوالي، فعطل أي محرك يوقف الاثنين.','السطر 1: (I2 أو Q1) ثم I1 ← Q1. السطر 3: (I3 أو Q2) ثم I1 ثم Q1 ← Q2.'],
   lamps:'H1 عبر 13-14 لـ K1، وH2 عبر 13-14 لـ K2، وH3 إيقاف، وH4 عطل.',err:['نسيان تلامس Q1 في سطر Q2: يعمل M2 قبل M1.']},
  p11:{n:'عكس حركة بطيء بجهاز easy',idea:'الإعاقة بين الاتجاهين تُكتب في البرنامج: تلامس مغلق (NC) لكل اتجاه في سطر الاتجاه الآخر.',power:['نفس دائرة القوى في التمرين 4.'],
@@ -5054,8 +5054,8 @@ function sdPower(ex){const v=SDPW[ex],x0=60;let s=pwHead(x0),w=300,h=420;
   if(v==='two'){const x1=200,T=[x1,x1+26,x1+52];s+=Q+down(84,100);
     [0,1,2].forEach(i=>{const y=94+i*5;s+=sdDot(x0+26*i,y)+sdL(x0+26*i,y,T[i],y)+pwL(T[i],y,108);});
     s+=pw3('km',x0,100,'K1',['1','3','5'],['2','4','6'])+pw3('km',x1,108,'K2',['1','3','5'],['2','4','6'])+down(160,176)+down(168,184,T)
-      +pw3('fr',x0,176,'F2',['1','3','5'],['2','4','6'])+pw3('fr',x1,184,'F3',['1','3','5'],['2','4','6'])+down(236,262)+pwX1(x0,266,ex==='p10'?['4','5','6']:['1','2','3'],'X1')+down(270,296)+pwMotor(x0+26,322,'M1',true)
-      +(ex==='p10'?down(244,262,T)+pwX1(x1,266,['1','2','3'],'')+down(270,300,T):down(244,300,T))+pwMotor(x1+26,326,'M2',true);w=360;h=400;}
+      +pw3('fr',x0,176,'F2',['1','3','5'],['2','4','6'])+pw3('fr',x1,184,'F3',['1','3','5'],['2','4','6'])+down(236,262)+pwX1(x0,266,['1','2','3'],'X1')+down(270,296)+pwMotor(x0+26,322,'M1',true)
+      +(ex==='p10'?down(244,262,T)+pwX1(x1,266,['4','5','6'],'')+down(270,300,T):down(244,300,T))+pwMotor(x1+26,326,'M2',true);w=360;h=400;}
   if(v==='rev'){const x1=200,T=[x1,x1+26,x1+52];s+=Q+down(84,110);
     [0,1,2].forEach(i=>{const y=90+i*6,j=2-i;s+=sdDot(x0+26*i,y)+sdL(x0+26*i,y,T[j],y)+pwL(T[j],y,110);});
     s+=pw3('km',x0,110,'K1',['1','3','5'],['2','4','6'],'أمامي')+pw3('km',x1,110,'K2',['1','3','5'],['2','4','6'],'خلفي')+down(170,196);
